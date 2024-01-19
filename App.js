@@ -1,20 +1,46 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native'
+// import { StatusBar } from 'expo-status-bar';
+import { createNativeStackNavigator } from '@react-navigation/native-stack'
+// import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
+import HomeScreen from './screens/home'
+import MealsScreen from './screens/meals'
+import ReadingOrderScreen from './screens/readingOrder'
+import PantryScreen from './screens/pantry'
+import ShoppingListScreen from './screens/shoppingList'
+import { View } from 'react-native'
 
 export default function App() {
-  return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
-  );
-}
+    const Stack = createNativeStackNavigator()
+    // const Tab = createBottomTabNavigator()
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+    return (
+        <NavigationContainer>
+            {/* <View style={styles.container}>
+            <Text>Open up App.js to start working on your app!</Text>
+            <Button/>
+            <StatusBar style="auto" />
+          </View> */}
+            <Stack.Navigator>
+                <Stack.Screen
+                    name="Home"
+                    component={HomeScreen}
+                    options={{ title: 'Arkiapuri' }}
+                ></Stack.Screen>
+                <Stack.Screen name="Pantry" component={PantryScreen} />
+                <Stack.Screen name="Meals" component={MealsScreen} />
+                <Stack.Screen
+                    name="Reading order"
+                    component={ReadingOrderScreen}
+                />
+                <Stack.Screen
+                    name="Shopping list"
+                    component={ShoppingListScreen}
+                />
+            </Stack.Navigator>
+            {/* <Tab.Navigator>
+                    <Tab.Screen name="Home" component={HomeScreen} />
+                    <Tab.Screen name="Pantry" component={PantryScreen} />
+                </Tab.Navigator> */}
+        </NavigationContainer>
+    )
+}
