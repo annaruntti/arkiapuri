@@ -1,19 +1,21 @@
-import * as React from 'react';
+import * as React from 'react'
 import { StyleSheet, View, Text } from 'react-native'
-import Button from '../components/Button';
+import Button from '../components/Button'
 
 const ShoppingListScreen = ({}) => {
-  return (
-    <View style={styles.container}>
-        <Text style={styles.container}>Täällä voit lisätä tuotteita ostoslistaan, sekä käyttää listaa apuna kaupassa merkaten tuotteet kerätyksi kun olet kerännyt ne ostoskärryysi tai -koriisi.</Text>
-        <Button
-            title="Lisää tuotteita listaan"
-        />
-    </View>
-  );
-};
+    return (
+        <View style={styles.container}>
+            <Text style={styles.container}>
+                Täällä voit lisätä tuotteita ostoslistaan, sekä käyttää listaa
+                apuna kaupassa merkaten tuotteet kerätyksi kun olet kerännyt ne
+                ostoskärryysi tai -koriisi.
+            </Text>
+            <Button title="Lisää tuotteita listaan" />
+        </View>
+    )
+}
 
-export default ShoppingListScreen;
+export default ShoppingListScreen
 
 const styles = StyleSheet.create({
     container: {
@@ -23,9 +25,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     introText: {
-      fontSize: 25,
-      textAlign: 'center',
-      padding: 20,
-      marginBottom: 10,
+        fontSize: 25,
+        textAlign: 'center',
+        padding: 20,
+        marginBottom: 10,
     },
 })

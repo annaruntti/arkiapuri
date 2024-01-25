@@ -1,19 +1,21 @@
-import * as React from 'react';
+import * as React from 'react'
 import { StyleSheet, View, Text } from 'react-native'
-import Button from '../components/Button';
+import Button from '../components/Button'
 
 const PantryScreen = ({}) => {
-  return (
-    <View style={styles.container}>
-        <Text style={styles.introText}>Täällä voit lisätä ja selata elintarvikkeita, joita kotoasi jo löytyy ja käyttää niitä avuksi ateriasuunnittelussa ja ostoslistan luonnissa.</Text>
-        <Button
-            title="Lisää elintarvike"
-        />
-    </View>
-  );
-};
+    return (
+        <View style={styles.container}>
+            <Text style={styles.introText}>
+                Täällä voit lisätä ja selata elintarvikkeita, joita kotoasi jo
+                löytyy ja käyttää niitä avuksi ateriasuunnittelussa ja
+                ostoslistan luonnissa.
+            </Text>
+            <Button title="Lisää elintarvike" />
+        </View>
+    )
+}
 
-export default PantryScreen;
+export default PantryScreen
 
 const styles = StyleSheet.create({
     container: {
@@ -23,9 +25,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     introText: {
-      fontSize: 25,
-      textAlign: 'center',
-      padding: 30,
-      marginBottom: 20,
+        fontSize: 25,
+        textAlign: 'center',
+        padding: 30,
+        marginBottom: 20,
     },
 })
