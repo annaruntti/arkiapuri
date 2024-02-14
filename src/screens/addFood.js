@@ -1,0 +1,56 @@
+import * as React from 'react'
+import { useState } from 'react'
+import { StyleSheet, View, Text } from 'react-native'
+import Button from '../components/Button'
+import { useApolloClient, useMutation } from '@apollo/client'
+
+const AddFood = (props) => {
+    // apollo client instance
+    const client = useApolloClient()
+    // local states
+    const [title, setTitle] = useState()
+    const [description, setDescription] = useState()
+    const [expirationDate, setexpirationDate] = useState()
+    const [foodId, setFoodId] = useState()
+
+    //hook to add a new food
+    const [createFood, { data, loading, error }] = useMutation(ADD_NEW_FOOD)
+
+    return (
+        <View style={styles.container}>
+            <Text style={styles.introText}>
+                Täällä voit lisätä listaan uusia elintarvikkeita.
+            </Text>
+            <Button
+                title="Lisää uusi elintarvike"
+                onPress={async () => {
+                    createFood({
+                        variables: {
+                            title: title,
+                            description: description,
+                            expirationDate: parseInt(expirationDate),
+                            foodId: foodId,
+                        },
+                    })
+                }}
+            />
+        </View>
+    )
+}
+
+export default AddFood
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#fff',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    introText: {
+        fontSize: 25,
+        textAlign: 'center',
+        padding: 20,
+        marginBottom: 10,
+    },
+})
