@@ -6,8 +6,7 @@ import {
 } from '@apollo/client'
 import { NavigationContainer } from '@react-navigation/native'
 // import { StatusBar } from 'expo-status-bar';
-import { createNativeStackNavigator } from '@react-navigation/native-stack'
-// import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import HomeScreen from './src/screens/home'
 import MealsScreen from './src/screens/meals'
 import ReadingOrderScreen from './src/screens/readingOrder'
@@ -28,38 +27,38 @@ const client = new ApolloClient({
 })
 
 export default function App() {
-    const Stack = createNativeStackNavigator()
-    // const Tab = createBottomTabNavigator()
+    const Tab = createBottomTabNavigator()
 
     return (
         <ApolloProvider client={client}>
             <NavigationContainer>
-                {/* <View style={styles.container}>
-            <Text>Open up App.js to start working on your app!</Text>
-            <Button/>
-            <StatusBar style="auto" />
-          </View> */}
-                <Stack.Navigator>
-                    <Stack.Screen
+                <Tab.Navigator>
+                    <Tab.Screen
                         name="Home"
                         component={HomeScreen}
                         options={{ title: 'Arkiapuri' }}
-                    ></Stack.Screen>
-                    <Stack.Screen name="Pantry" component={PantryScreen} />
-                    <Stack.Screen name="Meals" component={MealsScreen} />
-                    <Stack.Screen
+                    />
+                    <Tab.Screen
+                        name="Meals"
+                        component={MealsScreen}
+                        options={{ title: 'Ateriat' }}
+                    />
+                    <Tab.Screen
+                        name="Pantry"
+                        component={PantryScreen}
+                        options={{ title: 'Ruokakomero' }}
+                    />
+                    <Tab.Screen
                         name="Reading order"
                         component={ReadingOrderScreen}
+                        options={{ title: 'Lukujärjestys' }}
                     />
-                    <Stack.Screen
+                    <Tab.Screen
                         name="Shopping list"
                         component={ShoppingListScreen}
+                        options={{ title: 'Ostoslista' }}
                     />
-                </Stack.Navigator>
-                {/* <Tab.Navigator>
-                    <Tab.Screen name="Home" component={HomeScreen} />
-                    <Tab.Screen name="Pantry" component={PantryScreen} />
-                </Tab.Navigator> */}
+                </Tab.Navigator>
             </NavigationContainer>
         </ApolloProvider>
     )
