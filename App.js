@@ -5,14 +5,16 @@ import {
     ApolloProvider,
 } from '@apollo/client'
 import { NavigationContainer } from '@react-navigation/native'
+import { View, Text } from 'react-native'
 // import { StatusBar } from 'expo-status-bar';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
+import { Feather, MaterialCommunityIcons, AntDesign } from '@expo/vector-icons'
+
 import HomeScreen from './src/screens/home'
 import MealsScreen from './src/screens/meals'
 import ReadingOrderScreen from './src/screens/readingOrder'
 import PantryScreen from './src/screens/pantry'
 import ShoppingListScreen from './src/screens/shoppingList'
-import { View } from 'react-native'
 
 //create http link based on base url
 const httpLink = createHttpLink({
@@ -26,37 +28,156 @@ const client = new ApolloClient({
     // credentials:'include'
 })
 
+const screenOptions = {
+    tabBarShowLabel: false,
+    headerShown: true,
+    tabBarStyle: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        left: 0,
+        elevation: 0,
+        height: 60,
+        bckground: '#fff',
+    },
+}
+
 export default function App() {
     const Tab = createBottomTabNavigator()
 
     return (
         <ApolloProvider client={client}>
             <NavigationContainer>
-                <Tab.Navigator>
+                <Tab.Navigator screenOptions={screenOptions}>
                     <Tab.Screen
                         name="Home"
                         component={HomeScreen}
-                        options={{ title: 'Arkiapuri' }}
+                        options={{
+                            title: 'Arkiapuri',
+                            tabBarIcon: ({ focused }) => (
+                                <View
+                                    style={{
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                    }}
+                                >
+                                    <Feather
+                                        name="home"
+                                        size={24}
+                                        color="black"
+                                    />
+                                    <Text
+                                        style={{ fontSize: 12, color: '#000' }}
+                                    >
+                                        Arkiapuri
+                                    </Text>
+                                </View>
+                            ),
+                        }}
                     />
                     <Tab.Screen
                         name="Meals"
                         component={MealsScreen}
-                        options={{ title: 'Ateriat' }}
+                        options={{
+                            title: 'Ateriat',
+                            tabBarIcon: ({ focused }) => (
+                                <View
+                                    style={{
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                    }}
+                                >
+                                    <MaterialCommunityIcons
+                                        name="food-takeout-box-outline"
+                                        size={24}
+                                        color="black"
+                                    />
+                                    <Text
+                                        style={{ fontSize: 12, color: '#000' }}
+                                    >
+                                        Ateriat
+                                    </Text>
+                                </View>
+                            ),
+                        }}
                     />
                     <Tab.Screen
                         name="Pantry"
                         component={PantryScreen}
-                        options={{ title: 'Ruokakomero' }}
-                    />
-                    <Tab.Screen
-                        name="Reading order"
-                        component={ReadingOrderScreen}
-                        options={{ title: 'Lukujärjestys' }}
+                        options={{
+                            title: 'Ateriat',
+                            tabBarIcon: ({ focused }) => (
+                                <View
+                                    style={{
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                    }}
+                                >
+                                    <MaterialCommunityIcons
+                                        name="fridge-industrial-outline"
+                                        size={24}
+                                        color="black"
+                                    />
+                                    <Text
+                                        style={{ fontSize: 12, color: '#000' }}
+                                    >
+                                        Ruokakomero
+                                    </Text>
+                                </View>
+                            ),
+                        }}
                     />
                     <Tab.Screen
                         name="Shopping list"
                         component={ShoppingListScreen}
-                        options={{ title: 'Ostoslista' }}
+                        options={{
+                            title: 'Ostoslista',
+                            tabBarIcon: ({ focused }) => (
+                                <View
+                                    style={{
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                    }}
+                                >
+                                    <Feather
+                                        name="shopping-cart"
+                                        size={24}
+                                        color="black"
+                                    />
+                                    <Text
+                                        style={{ fontSize: 12, color: '#000' }}
+                                    >
+                                        Ostoslista
+                                    </Text>
+                                </View>
+                            ),
+                        }}
+                    />
+                    <Tab.Screen
+                        name="Reading order"
+                        component={ReadingOrderScreen}
+                        options={{
+                            title: 'Lukujärjestys',
+                            tabBarIcon: ({ focused }) => (
+                                <View
+                                    style={{
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                    }}
+                                >
+                                    <AntDesign
+                                        name="calendar"
+                                        size={24}
+                                        color="black"
+                                    />
+                                    <Text
+                                        style={{ fontSize: 12, color: '#000' }}
+                                    >
+                                        Lukujärjestys
+                                    </Text>
+                                </View>
+                            ),
+                        }}
                     />
                 </Tab.Navigator>
             </NavigationContainer>

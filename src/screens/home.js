@@ -5,11 +5,13 @@ import Button from '../components/Button'
 const HomeScreen = ({ navigation }) => {
     return (
         <View style={styles.container}>
-            <Text style={styles.introText}>
-                Tervetuloa Arkiapuriin! Täältä pääset siirtymään aterioiden
-                suunnitteluun ja selaamiseen, lukujärjestykseesi, ruokakomeroon
-                sekä ostoslistaan.
-            </Text>
+            <View>
+                <Text style={styles.introText}>
+                    Tervetuloa Arkiapuriin! Täältä pääset siirtymään aterioiden
+                    suunnitteluun ja selaamiseen, lukujärjestykseesi,
+                    ruokakomeroon sekä ostoslistaan.
+                </Text>
+            </View>
             <Button
                 style={styles.pantryButton}
                 title="Ruokakomero"
