@@ -4,11 +4,14 @@ import {
     InMemoryCache,
     ApolloProvider,
 } from '@apollo/client'
+import { useCallback } from 'react'
 import { NavigationContainer } from '@react-navigation/native'
 import { View, Text } from 'react-native'
 // import { StatusBar } from 'expo-status-bar';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { Feather, MaterialCommunityIcons, AntDesign } from '@expo/vector-icons'
+import { useFonts } from 'expo-font'
+import * as SplashScreen from 'expo-splash-screen'
 
 import HomeScreen from './src/screens/home'
 import MealsScreen from './src/screens/meals'
@@ -42,12 +45,28 @@ const screenOptions = {
     },
 }
 
+SplashScreen.preventAutoHideAsync()
+
 export default function App() {
+    const [fontsLoaded, fontError] = useFonts({
+        'Fira Sans': require('./src/assets/fonts/FiraSans-Regular.ttf'),
+    })
+
+    const onLayoutRootView = useCallback(async () => {
+        if (fontsLoaded || fontError) {
+            await SplashScreen.hideAsync()
+        }
+    }, [fontsLoaded, fontError])
+
+    if (!fontsLoaded && !fontError) {
+        return null
+    }
+
     const Tab = createBottomTabNavigator()
 
     return (
-        <ApolloProvider client={client}>
-            <NavigationContainer>
+        <ApolloProvider client={client} onLayout={onLayoutRootView}>
+            <NavigationContainer style={{ fontFamily: 'Fira Sans' }}>
                 <Tab.Navigator screenOptions={screenOptions}>
                     <Tab.Screen
                         name="Home"

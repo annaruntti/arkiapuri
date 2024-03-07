@@ -41,16 +41,42 @@ const AddFood = (props) => {
 export default AddFood
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
+    homeView: {
         backgroundColor: '#fff',
+        flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
+        width: '100%',
+        paddingHorizontal: 20,
+        paddingVertical: 20,
+    },
+    container: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%',
     },
     introText: {
-        fontSize: 25,
+        fontSize: 20,
         textAlign: 'center',
-        padding: 20,
+        paddingVertical: 20,
         marginBottom: 10,
+    },
+    header: {
+        minHeight: 400,
+    },
+    backgroundImage: {
+        flex: 1,
+        width: '100%',
+        position: 'relative',
+    },
+    layer: {
+        backgroundColor: 'rgba(248, 247, 216, 0.7)',
+        width: '100%',
+        height: '100%',
+    },
+    image: {
+        width: '100%',
+        height: 300,
     },
 })

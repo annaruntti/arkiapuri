@@ -12,7 +12,7 @@ import Button from '../components/Button'
 const HomeScreen = ({ navigation }) => {
     return (
         <ScrollView style={styles.scrollView}>
-            <View style={styles.scrollView}>
+            <View style={styles.homeView}>
                 <View style={styles.header}>
                     {/* <ImageBackground
                     style={styles.backgroundImage}
@@ -31,10 +31,13 @@ const HomeScreen = ({ navigation }) => {
                         source={require('../assets/images/family-cooking.png')}
                         alt="Perhe tekemässä ruokaa"
                     />
+                    <Text style={styles.introTitle}>
+                        Tervetuloa Arkiapuriin!
+                    </Text>
                     <Text style={styles.introText}>
-                        Tervetuloa Arkiapuriin! Täältä pääset siirtymään
-                        aterioiden suunnitteluun ja selaamiseen,
-                        lukujärjestykseesi, ruokakomeroon sekä ostoslistaan.
+                        Arkiapurin avulla voit helposti suunnitella ja selata
+                        aterioita ja reseptejä, luoda oman lukujärjestyksesi,
+                        sekä luoda älykkäitä ostoslistoja.
                     </Text>
                 </View>
                 <View style={styles.container}>
@@ -67,9 +70,9 @@ const HomeScreen = ({ navigation }) => {
 export default HomeScreen
 
 const styles = StyleSheet.create({
-    scrollView: {
-        paddingHorizontal: 20,
-    },
+    // scrollView: {
+    //     paddingHorizontal: 20,
+    // },
     homeView: {
         backgroundColor: '#fff',
         flex: 1,
@@ -84,9 +87,15 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         width: '100%',
+        marginBottom: 30,
+    },
+    introTitle: {
+        textAlign: 'center',
+        fontSize: 24,
+        paddingTop: 20,
     },
     introText: {
-        fontSize: 20,
+        fontSize: 18,
         textAlign: 'center',
         paddingVertical: 20,
         marginBottom: 10,
