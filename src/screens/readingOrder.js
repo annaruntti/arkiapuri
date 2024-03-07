@@ -6,7 +6,7 @@ const ReadingOrderScreen = ({}) => {
     return (
         <View style={styles.container}>
             <Text style={styles.introText}>
-                Check out your weekly outlook here
+                Täältä löydät viikon lukujärjestyksesi
             </Text>
             <View>
                 <TableOne />

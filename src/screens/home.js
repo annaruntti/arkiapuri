@@ -1,12 +1,12 @@
 import * as React from 'react'
-import { StyleSheet, Text, View, ImageBackground } from 'react-native'
+import { StyleSheet, Text, View, Image, ImageBackground } from 'react-native'
 import Button from '../components/Button'
 
 const HomeScreen = ({ navigation }) => {
     return (
         <View style={styles.homeView}>
             <View style={styles.header}>
-                <ImageBackground
+                {/* <ImageBackground
                     style={styles.backgroundImage}
                     source={require('../assets/images/letut.png')}
                 >
@@ -17,7 +17,16 @@ const HomeScreen = ({ navigation }) => {
                             lukujärjestykseesi, ruokakomeroon sekä ostoslistaan.
                         </Text>
                     </View>
-                </ImageBackground>
+                </ImageBackground> */}
+                <Image
+                    style={styles.image}
+                    source={require('../assets/images/family-cooking.png')}
+                />
+                <Text style={styles.introText}>
+                    Tervetuloa Arkiapuriin! Täältä pääset siirtymään aterioiden
+                    suunnitteluun ja selaamiseen, lukujärjestykseesi,
+                    ruokakomeroon sekä ostoslistaan.
+                </Text>
             </View>
             <View style={styles.container}>
                 <Button
@@ -79,5 +88,9 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(248, 247, 216, 0.7)',
         width: '100%',
         height: '100%',
+    },
+    image: {
+        width: '100%',
+        height: 300,
     },
 })
