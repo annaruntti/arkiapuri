@@ -111,12 +111,13 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         borderBottomWidth: 1,
         borderColor: '#ddd',
-        padding: 7,
-        backgroundColor: '#3bcd6b',
+        padding: 8,
+        backgroundColor: '#FFC121',
     },
     table_head_captions: {
-        fontSize: 15,
-        color: 'white',
+        fontSize: 20,
+        fontWeight: 500,
+        color: '#000',
     },
 
     table_body_single_row: {
