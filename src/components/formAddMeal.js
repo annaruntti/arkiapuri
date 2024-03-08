@@ -1,43 +1,33 @@
-import { StyleSheet } from 'react-native'
-import { useForm } from 'react-hook-form'
+import { StyleSheet, View } from 'react-native'
 
-const AddMealForm = () => {
-    const {
-        register,
-        handleSubmit,
-        formState: { errors },
-    } = useForm()
-
-    const Submit = (data) => {
-        // Handle submit codes here
-    }
-
+const AddMealForm = (props) => {
     return (
-        <form onSubmit={handleSubmit(Submit)}>
-            {/* "handleSubmit" will validate your inputs before invoking "Submit"
-            function */}
+        <View>
             <label htmlFor="Meal name">Aterian nimi</label>
             {/* register your input into the hook by invoking the "register" function */}
             <input
                 type="text"
                 style={styles.formInput}
-                {...register('Meal name')}
+                {...props.register('Meal name')}
             />
             <label htmlFor="mealCategory">Kategoriat</label>
             {/* include validation with required or other standard HTML validation rules */}
             <input
                 type="text"
                 style={styles.formInput}
-                {...register('mealCategory')}
+                {...props.register('mealCategory')}
             />
             <label htmlFor="food">Ruokalajit</label>
-            <input type="text" style={styles.formInput} {...register('food')} />
-            <span>
+            <input
+                type="text"
+                style={styles.formInfoInput}
+                {...props.register('food')}
+            />
+            <span style={styles.inputInfo}>
                 Esim. kasvispihvi. Ruokalajit koostuvat ainesosista ja
                 ruokalajeilla voi olla resepti.
             </span>
-            <button type="submit">Tallenna ateria</button>
-        </form>
+        </View>
     )
 }
 
@@ -45,9 +35,18 @@ export default AddMealForm
 
 const styles = StyleSheet.create({
     formInput: {
-        width: '100%',
+        width: '90%',
         marginBottom: 15,
         padding: 10,
-        borderRadius: 15,
+        borderRadius: 5,
+    },
+    formInfoInput: {
+        width: '90%',
+        marginBottom: 5,
+        padding: 10,
+        borderRadius: 5,
+    },
+    inputInfo: {
+        marginBottom: 15,
     },
 })

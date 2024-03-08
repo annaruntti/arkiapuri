@@ -1,10 +1,22 @@
 import React, { useState } from 'react'
 import { Alert, Modal, StyleSheet, View, Text, Pressable } from 'react-native'
+import { useForm } from 'react-hook-form'
 import AddMealForm from '../components/formAddMeal'
 // import Button from '../components/Button'
 
 const MealsScreen = ({}) => {
     const [modalVisible, setModalVisible] = useState(false)
+
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm()
+
+    const Submit = (data) => {
+        // Handle submit codes here
+    }
+
     return (
         <View style={styles.container}>
             <Modal
@@ -19,11 +31,16 @@ const MealsScreen = ({}) => {
             >
                 <View style={styles.layerView}>
                     <View style={styles.modalView}>
-                        <Text style={styles.modalText}>
+                        <Text style={styles.introText}>
                             Luo ateria oheisella lomakkeella
                         </Text>
-                        <AddMealForm />
+                        <form onSubmit={handleSubmit(Submit)}>
+                            {/* "handleSubmit" will validate your inputs before invoking "Submit"
+                        function */}
+                            <AddMealForm register={register} />
+                        </form>
                         <Pressable
+                            type="submit"
                             style={[styles.button, styles.buttonClose]}
                             onPress={() => setModalVisible(!modalVisible)}
                         >
@@ -31,6 +48,7 @@ const MealsScreen = ({}) => {
                                 Tallenna ateria
                             </Text>
                         </Pressable>
+                        {/* <button type="submit">Tallenna ateria</button> */}
                     </View>
                 </View>
             </Modal>
@@ -71,7 +89,7 @@ const styles = StyleSheet.create({
     modalView: {
         margin: 20,
         backgroundColor: 'white',
-        borderRadius: 20,
+        borderRadius: 5,
         padding: 35,
         alignItems: 'center',
         shadowColor: '#000',
