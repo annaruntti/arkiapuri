@@ -2,7 +2,6 @@ import React, { useState } from 'react'
 import { Alert, Modal, StyleSheet, View, Text, Pressable } from 'react-native'
 import { useForm } from 'react-hook-form'
 import AddMealForm from '../components/formAddMeal'
-// import Button from '../components/Button'
 
 const MealsScreen = ({}) => {
     const [modalVisible, setModalVisible] = useState(false)
