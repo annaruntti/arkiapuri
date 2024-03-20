@@ -1,6 +1,17 @@
+import { useState } from 'react'
 import { StyleSheet, View } from 'react-native'
+import DateTimePicker from '@react-native-community/datetimepicker'
 
 const AddFoodForm = (props) => {
+    const [foodName, setFoodName] = useState('')
+    const [foodCategory, setFoodCategory] = useState('')
+    const [price, setPrice] = useState('')
+    const [amount, setAmount] = useState('')
+    const [bestBeforeDate, setbestBeforeDate] = useState('')
+
+    const [date, setDate] = useState(new Date())
+    const [showPicker, setShowPicker] = useState(false)
+
     return (
         <View>
             <label htmlFor="Food name">Elintarvikkeen nimi</label>
@@ -38,6 +49,9 @@ const AddFoodForm = (props) => {
                 style={styles.formInfoInput}
                 {...props.register('bestBeforeDate')}
             />
+            {showPicker && (
+                <DateTimePicker mode="date" display="spinner" value={date} />
+            )}
         </View>
     )
 }
