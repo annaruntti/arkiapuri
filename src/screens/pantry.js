@@ -1,13 +1,5 @@
 import React, { useState } from 'react'
-import {
-    Alert,
-    Modal,
-    StyleSheet,
-    View,
-    Text,
-    Pressable,
-    TextInput,
-} from 'react-native'
+import { Alert, Modal, StyleSheet, View, Text, TextInput } from 'react-native'
 import { Controller, useForm } from 'react-hook-form'
 import Button from '../components/Button'
 
@@ -20,8 +12,8 @@ const PantryScreen = ({}) => {
         formState: { errors },
     } = useForm({
         defaultValues: {
-            firstName: '',
-            lastName: '',
+            foodName: '',
+            foodType: '',
         },
     })
     const onSubmit = (data) => {
@@ -48,7 +40,9 @@ const PantryScreen = ({}) => {
                             lomakkeella.
                         </Text>
                         <View style={styles.form}>
-                            <Text style={styles.label}>First name</Text>
+                            <Text style={styles.label}>
+                                Elintarvikkeen nimi
+                            </Text>
                             <Controller
                                 control={control}
                                 rules={{
@@ -65,10 +59,16 @@ const PantryScreen = ({}) => {
                                         value={value}
                                     />
                                 )}
-                                name="firstName"
+                                name="foodName"
                             />
-                            {errors.firstName && <Text>This is required.</Text>}
-                            <Text style={styles.label}>Last name</Text>
+                            {errors.foodName && (
+                                <Text style={styles.errorMsg}>
+                                    This is required.
+                                </Text>
+                            )}
+                            <Text style={styles.label}>
+                                Elintarvikkeen tyyppi
+                            </Text>
                             <Controller
                                 control={control}
                                 rules={{
@@ -86,12 +86,17 @@ const PantryScreen = ({}) => {
                                         value={value}
                                     />
                                 )}
-                                name="lastName"
+                                name="foodType"
                             />
-                            {errors.lastName && <Text>This is required.</Text>}
+                            {errors.foodType && (
+                                <Text style={styles.errorMsg}>
+                                    This is required.
+                                </Text>
+                            )}
                         </View>
                         <Button
-                            title="Submit"
+                            style={styles.button}
+                            title="Tallenna"
                             onPress={handleSubmit(onSubmit)}
                         />
                     </View>
@@ -102,12 +107,11 @@ const PantryScreen = ({}) => {
                 löytyy ja käyttää niitä avuksi ateriasuunnittelussa ja
                 ostoslistan luonnissa.
             </Text>
-            <Pressable
-                style={[styles.button, styles.buttonOpen]}
+            <Button
+                style={styles.button}
+                title="Lisää elintarvike"
                 onPress={() => setModalVisible(true)}
-            >
-                <Text style={styles.textStyle}>Lisää elintarvike</Text>
-            </Pressable>
+            />
         </View>
     )
 }
@@ -120,6 +124,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         alignItems: 'center',
         justifyContent: 'center',
+        padding: 35,
     },
     introText: {
         fontSize: 25,
@@ -148,32 +153,37 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         elevation: 5,
     },
+    form: {
+        width: '100%',
+        marginBottom: 15,
+    },
+    label: {
+        marginTop: 10,
+    },
     formInput: {
         backgroundColor: 'white',
         borderColor: 'black',
+        borderStyle: 'solid',
+        borderWidth: 1,
         height: 40,
         padding: 10,
         borderRadius: 4,
-        marginBottom: 10,
     },
     button: {
         borderRadius: 25,
-        padding: 15,
+        padding: 7,
         elevation: 2,
-    },
-    buttonOpen: {
         backgroundColor: '#FFC121',
-    },
-    buttonClose: {
-        backgroundColor: '#FFC121',
-    },
-    textStyle: {
         color: 'black',
         fontWeight: 'bold',
         textAlign: 'center',
+        width: '100%',
     },
     modalText: {
         marginBottom: 15,
         textAlign: 'center',
+    },
+    errorMsg: {
+        color: 'red',
     },
 })

@@ -14,18 +14,6 @@ const HomeScreen = ({ navigation }) => {
         <ScrollView style={styles.scrollView}>
             <View style={styles.homeView}>
                 <View style={styles.header}>
-                    {/* <ImageBackground
-                    style={styles.backgroundImage}
-                    source={require('../assets/images/letut.png')}
-                >
-                    <View style={styles.layer}>
-                        <Text style={styles.introText}>
-                            Tervetuloa Arkiapuriin! Täältä pääset siirtymään
-                            aterioiden suunnitteluun ja selaamiseen,
-                            lukujärjestykseesi, ruokakomeroon sekä ostoslistaan.
-                        </Text>
-                    </View>
-                </ImageBackground> */}
                     <Image
                         style={styles.image}
                         source={require('../assets/images/family-cooking.png')}
@@ -116,5 +104,25 @@ const styles = StyleSheet.create({
     image: {
         width: '100%',
         height: 300,
+    },
+    pantryButton: {
+        width: '100%',
+        borderRadius: 5,
+        padding: 10,
+    },
+    mealsButton: {
+        width: '100%',
+        borderRadius: 5,
+        padding: 10,
+    },
+    readingOrderButton: {
+        width: '100%',
+        borderRadius: 5,
+        padding: 10,
+    },
+    shoppingListButton: {
+        width: '100%',
+        borderRadius: 5,
+        padding: 10,
     },
 })
