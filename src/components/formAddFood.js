@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import DateTimePicker from '@react-native-community/datetimepicker'
+import FormInput from './formTextInput'
 
 const AddFoodForm = (props) => {
     const [foodName, setFoodName] = useState('')
@@ -14,16 +15,29 @@ const AddFoodForm = (props) => {
 
     return (
         <View>
-            <label htmlFor="Food name">Elintarvikkeen nimi</label>
+            <FormInput
+                label="Elintarvikkeen nimi"
+                name="foodName"
+                rules={{
+                    required: true,
+                    pattern: {
+                        value: '^.{2,}$',
+                        message: 'Kirjoita elintarvikkeen nimi',
+                    },
+                }}
+            />
+
+            {/* <label htmlFor="foodName">Elintarvikkeen nimi</label> */}
             {/* register your input into the hook by invoking the "register" function */}
-            <input
+            {/* <input
                 type="text"
                 style={styles.formInput}
-                {...props.register('Food name')}
-            />
-            <label htmlFor="Food Category">Elintarvikkeen tyyppi</label>
+                {...props.register('foodName')}
+            /> */}
+
+            {/* <label htmlFor="Food Category">Elintarvikkeen tyyppi</label> */}
             {/* include validation with required or other standard HTML validation rules */}
-            <select {...props.register('Food Category', { required: true })}>
+            {/* <select {...props.handleForm('Food Category', { required: true })}>
                 <option value="">Valitse tyyppi</option>
                 <option value="tuoretuote">Tuore</option>
                 <option value="pakaste">Pakaste</option>
@@ -35,23 +49,23 @@ const AddFoodForm = (props) => {
             <input
                 type="text"
                 style={styles.formInfoInput}
-                {...props.register('price')}
+                {...props.handleForm('price')}
             />
             <label htmlFor="amount">Määrä</label>
             <input
                 type="text"
                 style={styles.formInfoInput}
-                {...props.register('amount')}
+                {...props.handleForm('amount')}
             />
             <label htmlFor="bestBeforeDate">Parasta ennen</label>
             <input
                 type="text"
                 style={styles.formInfoInput}
-                {...props.register('bestBeforeDate')}
+                {...props.handleForm('bestBeforeDate')}
             />
             {showPicker && (
                 <DateTimePicker mode="date" display="spinner" value={date} />
-            )}
+            )} */}
         </View>
     )
 }

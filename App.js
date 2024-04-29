@@ -4,10 +4,9 @@ import {
     InMemoryCache,
     ApolloProvider,
 } from '@apollo/client'
-import { useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { NavigationContainer } from '@react-navigation/native'
-import { View, Text } from 'react-native'
-// import { StatusBar } from 'expo-status-bar';
+import { View, Text, StatusBar } from 'react-native'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { Feather, MaterialCommunityIcons, AntDesign } from '@expo/vector-icons'
 import { useFonts } from 'expo-font'
@@ -48,24 +47,61 @@ const screenOptions = {
 SplashScreen.preventAutoHideAsync()
 
 export default function App() {
-    const [fontsLoaded, fontError] = useFonts({
-        'Fira Sans': require('./src/assets/fonts/FiraSans-Regular.ttf'),
-    })
+    // const [fontsLoaded, fontError] = useFonts({
+    //     'Fira Sans': require('./src/assets/fonts/FiraSans-Regular.ttf'),
+    // })
 
-    const onLayoutRootView = useCallback(async () => {
-        if (fontsLoaded || fontError) {
-            await SplashScreen.hideAsync()
+    // const onLayoutRootView = useCallback(async () => {
+    //     if (fontsLoaded || fontError) {
+    //         await SplashScreen.hideAsync()
+    //     }
+    // }, [fontsLoaded, fontError])
+
+    // if (!fontsLoaded && !fontError) {
+    //     return null
+    // }
+
+    const [isLoading, setIsLoading] = useState(true)
+
+    useEffect(() => {
+        async function prepare() {
+            try {
+                // keeps the splash screen visible while assets are cached
+                await SplashScreen.preventAutoHideAsync()
+
+                // pre-load/cache assets: images, fonts, and videos
+                await func.loadAssetsAsync()
+            } catch (e) {
+                // console.warn(e);
+            } finally {
+                // loading is complete
+                setIsLoading(false)
+            }
         }
-    }, [fontsLoaded, fontError])
 
-    if (!fontsLoaded && !fontError) {
+        prepare()
+    }, [])
+
+    useEffect(() => {
+        // when loading is complete
+        if (isLoading === false) {
+            // hide splash function
+            const hideSplash = async () => SplashScreen.hideAsync()
+
+            // hide splash screen to show app
+            hideSplash()
+        }
+    }, [isLoading])
+
+    if (isLoading) {
         return null
     }
 
     const Tab = createBottomTabNavigator()
 
     return (
-        <ApolloProvider client={client} onLayout={onLayoutRootView}>
+        // <ApolloProvider client={client} onLayout={onLayoutRootView}>
+        <ApolloProvider client={client}>
             <NavigationContainer style={{ fontFamily: 'Fira Sans' }}>
                 <Tab.Navigator screenOptions={screenOptions}>
                     <Tab.Screen

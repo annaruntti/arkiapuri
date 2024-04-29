@@ -1,19 +1,32 @@
 import React, { useState } from 'react'
-import { Alert, Modal, StyleSheet, View, Text, Pressable } from 'react-native'
-import { useForm } from 'react-hook-form'
-import AddFoodForm from '../components/formAddFood'
+import {
+    Alert,
+    Modal,
+    StyleSheet,
+    View,
+    Text,
+    Pressable,
+    TextInput,
+} from 'react-native'
+import { Controller, useForm } from 'react-hook-form'
+import Button from '../components/Button'
 
 const PantryScreen = ({}) => {
     const [modalVisible, setModalVisible] = useState(false)
 
     const {
-        register,
+        control,
         handleSubmit,
         formState: { errors },
-    } = useForm()
-
-    const Submit = (data) => {
-        // Handle submit codes here
+    } = useForm({
+        defaultValues: {
+            firstName: '',
+            lastName: '',
+        },
+    })
+    const onSubmit = (data) => {
+        setModalVisible(!modalVisible)
+        console.log(data)
     }
 
     return (
@@ -34,20 +47,53 @@ const PantryScreen = ({}) => {
                             Lisää ruokakomeroosi elintarvikkeita oheisella
                             lomakkeella.
                         </Text>
-                        <form onSubmit={handleSubmit(Submit)}>
-                            {/* "handleSubmit" will validate your inputs before invoking "Submit"
-                        function */}
-                            <AddFoodForm register={register} />
-                        </form>
-                        <Pressable
-                            type="submit"
-                            style={[styles.button, styles.buttonClose]}
-                            onPress={() => setModalVisible(!modalVisible)}
-                        >
-                            <Text style={styles.textStyle}>
-                                Lisää elintarvike
-                            </Text>
-                        </Pressable>
+                        <View style={styles.form}>
+                            <Text style={styles.label}>First name</Text>
+                            <Controller
+                                control={control}
+                                rules={{
+                                    required: true,
+                                }}
+                                render={({
+                                    field: { onChange, onBlur, value },
+                                }) => (
+                                    <TextInput
+                                        style={styles.formInput}
+                                        placeholder=""
+                                        onBlur={onBlur}
+                                        onChangeText={onChange}
+                                        value={value}
+                                    />
+                                )}
+                                name="firstName"
+                            />
+                            {errors.firstName && <Text>This is required.</Text>}
+                            <Text style={styles.label}>Last name</Text>
+                            <Controller
+                                control={control}
+                                rules={{
+                                    maxLength: 100,
+                                    required: true,
+                                }}
+                                render={({
+                                    field: { onChange, onBlur, value },
+                                }) => (
+                                    <TextInput
+                                        style={styles.formInput}
+                                        placeholder=""
+                                        onBlur={onBlur}
+                                        onChangeText={onChange}
+                                        value={value}
+                                    />
+                                )}
+                                name="lastName"
+                            />
+                            {errors.lastName && <Text>This is required.</Text>}
+                        </View>
+                        <Button
+                            title="Submit"
+                            onPress={handleSubmit(onSubmit)}
+                        />
                     </View>
                 </View>
             </Modal>
@@ -101,6 +147,14 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.25,
         shadowRadius: 4,
         elevation: 5,
+    },
+    formInput: {
+        backgroundColor: 'white',
+        borderColor: 'black',
+        height: 40,
+        padding: 10,
+        borderRadius: 4,
+        marginBottom: 10,
     },
     button: {
         borderRadius: 25,
