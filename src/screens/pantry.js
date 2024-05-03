@@ -1,7 +1,29 @@
 import React, { useState } from 'react'
 import { Alert, Modal, StyleSheet, View, Text, TextInput } from 'react-native'
 import { Controller, useForm } from 'react-hook-form'
+import SectionedMultiSelect from 'react-native-sectioned-multi-select'
+import { MaterialIcons as Icon } from '@expo/vector-icons'
 import Button from '../components/Button'
+
+const items = [
+    { name: 'Kasviproteiinit', id: 1 },
+    { name: 'Kala', id: 2 },
+    { name: 'Liha', id: 3 },
+    { name: 'Kasvikset', id: 4 },
+    { name: 'Kuiva-aineet', id: 5 },
+    { name: 'Valmisateriat', id: 6 },
+    { name: 'Pakasteet', id: 7 },
+    { name: 'Ruoanlaittovälineet', id: 8 },
+    { name: 'Tarvikkeet', id: 9 },
+    { name: 'Gluteeniton', id: 10 },
+    { name: 'Maidoton', id: 11 },
+    { name: 'Laktoositon', id: 12 },
+    { name: 'Munaton', id: 13 },
+    { name: 'Kasvisruoka', id: 14 },
+    { name: 'Vegaaninen', id: 15 },
+    { name: 'Vähähiilihydraattinen', id: 16 },
+    { name: 'Juomat', id: 17 },
+]
 
 const PantryScreen = ({}) => {
     const [modalVisible, setModalVisible] = useState(false)
@@ -12,8 +34,8 @@ const PantryScreen = ({}) => {
         formState: { errors },
     } = useForm({
         defaultValues: {
-            foodName: '',
-            foodType: '',
+            groceryName: '',
+            groceryType: [],
         },
     })
     const onSubmit = (data) => {
@@ -53,15 +75,15 @@ const PantryScreen = ({}) => {
                                 }) => (
                                     <TextInput
                                         style={styles.formInput}
-                                        placeholder=""
+                                        placeholder="Esim. leivinpaperi"
                                         onBlur={onBlur}
                                         onChangeText={onChange}
                                         value={value}
                                     />
                                 )}
-                                name="foodName"
+                                name="groceryName"
                             />
-                            {errors.foodName && (
+                            {errors.groceryName && (
                                 <Text style={styles.errorMsg}>
                                     This is required.
                                 </Text>
@@ -75,20 +97,18 @@ const PantryScreen = ({}) => {
                                     maxLength: 100,
                                     required: true,
                                 }}
-                                render={({
-                                    field: { onChange, onBlur, value },
-                                }) => (
-                                    <TextInput
-                                        style={styles.formInput}
-                                        placeholder=""
-                                        onBlur={onBlur}
-                                        onChangeText={onChange}
-                                        value={value}
+                                render={({ field: { value, onChange } }) => (
+                                    <SectionedMultiSelect
+                                        items={items}
+                                        IconRenderer={Icon}
+                                        uniqueKey="id"
+                                        onSelectedItemsChange={onChange}
+                                        selectedItems={value}
                                     />
                                 )}
-                                name="foodType"
+                                name="groceryType"
                             />
-                            {errors.foodType && (
+                            {errors.groceryType && (
                                 <Text style={styles.errorMsg}>
                                     This is required.
                                 </Text>
