@@ -24,8 +24,6 @@ const items = [
 ]
 
 const FormAddGrocery = (props) => {
-    console.log(props.errors.groceryName, 'test')
-
     return (
         <View style={styles.form}>
             <Text style={styles.label}>Elintarvikkeen nimi</Text>
@@ -58,7 +56,10 @@ const FormAddGrocery = (props) => {
                 }}
                 render={({ field: { value, onChange } }) => (
                     <SectionedMultiSelect
-                        style={styles.formInput}
+                        styles={{
+                            backdrop: styles.multiSelectBackdrop,
+                            selectToggle: styles.multiSelectBox,
+                        }}
                         items={items}
                         IconRenderer={Icon}
                         uniqueKey="id"
@@ -88,7 +89,7 @@ const styles = StyleSheet.create({
     },
     formInput: {
         backgroundColor: 'white',
-        borderColor: 'black',
+        borderColor: '#bbb',
         borderStyle: 'solid',
         borderWidth: 1,
         height: 40,
@@ -111,5 +112,15 @@ const styles = StyleSheet.create({
     },
     errorMsg: {
         color: 'red',
+    },
+    multiSelectBackdrop: {
+        backgroundColor: 'rgba(255, 183, 0, 0.2)',
+    },
+    multiSelectBox: {
+        borderWidth: 1,
+        borderRadius: 4,
+        borderColor: '#bbb',
+        padding: 10,
+        marginBottom: 12,
     },
 })
