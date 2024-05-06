@@ -16,11 +16,12 @@ const PantryScreen = ({}) => {
         defaultValues: {
             groceryName: '',
             groceryType: [],
+            groceryPrice: '',
         },
     })
     const onSubmit = (data) => {
         setModalVisible(!modalVisible)
-        console.log(data)
+        console.log(data, 'data')
     }
 
     return (
