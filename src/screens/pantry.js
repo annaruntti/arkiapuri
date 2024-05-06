@@ -17,6 +17,7 @@ const PantryScreen = ({}) => {
             groceryName: '',
             groceryType: [],
             groceryPrice: '',
+            groceryNumber: '',
         },
     })
     const onSubmit = (data) => {

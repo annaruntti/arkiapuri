@@ -45,7 +45,12 @@ const FormAddGrocery = (props) => {
                 {...props.register('groceryName')}
             />
             {props.errors.groceryName && (
-                <Text style={styles.errorMsg}>Tämä on pakollinen tieto</Text>
+                <View style={styles.messageSection}>
+                    <Icon name="error" color="red" size={14} />
+                    <Text style={styles.errorMsg}>
+                        Tämä on pakollinen tieto
+                    </Text>
+                </View>
             )}
             <Text style={styles.label}>Elintarvikkeen tyyppi</Text>
             <Controller
@@ -75,7 +80,47 @@ const FormAddGrocery = (props) => {
                 {...props.register('groceryType')}
             />
             {props.errors.groceryType && (
-                <Text style={styles.errorMsg}>Tämä on pakollinen tieto</Text>
+                <View style={styles.messageSection}>
+                    <Icon name="error" color="red" size={14} />
+                    <Text style={styles.errorMsg}>
+                        Tämä on pakollinen tieto
+                    </Text>
+                </View>
+            )}
+            <Text style={styles.label}>Kappalemäärä</Text>
+            <Controller
+                control={props.control}
+                rules={{
+                    maxLength: 3,
+                    valueAsNumber: true,
+                    pattern: {
+                        value: /^(0|[1-9]\d*)(\.\d+)?$/,
+                    },
+                }}
+                render={({ field: { onChange, onBlur, value } }) => (
+                    <View style={styles.inputAndIcon}>
+                        <TextInput
+                            style={styles.formInput}
+                            placeholder="Esim. 4"
+                            onChangeText={onChange}
+                            onBlur={onBlur}
+                            value={value}
+                            keyboardType="numeric"
+                        />
+                        <Text style={styles.inputMetric}>Kpl</Text>
+                    </View>
+                )}
+                name="groceryNumber"
+                {...props.register('groceryNumber')}
+            />
+            {props.errors.groceryPrice && (
+                <View style={styles.messageSection}>
+                    <Icon name="error" color="red" size={14} />
+                    <Text style={styles.errorMsg}>
+                        Syötä lukumäärä montako elintarviketta tätä tuotetta
+                        haluat lisätä.
+                    </Text>
+                </View>
             )}
             <Text style={styles.label}>Arvioitu hinta</Text>
             <Controller
@@ -88,7 +133,7 @@ const FormAddGrocery = (props) => {
                     },
                 }}
                 render={({ field: { onChange, onBlur, value } }) => (
-                    <View style={styles.searchSection}>
+                    <View style={styles.inputAndIcon}>
                         <TextInput
                             style={styles.formInput}
                             placeholder="Esim. 4"
@@ -97,22 +142,20 @@ const FormAddGrocery = (props) => {
                             value={value}
                             keyboardType="numeric"
                         />
-                        <Icon
-                            style={styles.searchIcon}
-                            name="euro"
-                            size={20}
-                            color="#000"
-                        />
+                        <Text style={styles.inputMetric}>€</Text>
                     </View>
                 )}
                 name="groceryPrice"
                 {...props.register('groceryPrice')}
             />
             {props.errors.groceryPrice && (
-                <Text style={styles.errorMsg}>
-                    Täytä arvioitu hinta numerona. Syötä vähintään 1 ja
-                    maksimissaan 4 lukua.
-                </Text>
+                <View style={styles.messageSection}>
+                    <Icon name="error" color="red" size={14} />
+                    <Text style={styles.errorMsg}>
+                        Täytä arvioitu hinta numerona. Syötä vähintään 1 ja
+                        maksimissaan 4 lukua.
+                    </Text>
+                </View>
             )}
         </View>
     )
@@ -127,6 +170,7 @@ const styles = StyleSheet.create({
     },
     label: {
         marginTop: 10,
+        marginBottom: 5,
     },
     formInput: {
         backgroundColor: 'white',
@@ -136,16 +180,26 @@ const styles = StyleSheet.create({
         height: 40,
         padding: 10,
         borderRadius: 4,
+        marginBottom: 8,
     },
-    searchSection: {
+    inputAndIcon: {
+        flex: 1,
+        flexDirection: 'row',
+        justifyContent: 'left',
+        alignItems: 'left',
+        backgroundColor: '#fff',
+        marginBottom: 12,
+    },
+    messageSection: {
         flex: 1,
         flexDirection: 'row',
         justifyContent: 'left',
         alignItems: 'left',
         backgroundColor: '#fff',
     },
-    searchIcon: {
+    inputMetric: {
         padding: 10,
+        fontSize: 20,
     },
     button: {
         borderRadius: 25,
@@ -163,6 +217,7 @@ const styles = StyleSheet.create({
     },
     errorMsg: {
         color: 'red',
+        marginLeft: 5,
     },
     multiSelectBackdrop: {
         backgroundColor: 'rgba(255, 183, 0, 0.2)',
@@ -172,6 +227,6 @@ const styles = StyleSheet.create({
         borderRadius: 4,
         borderColor: '#bbb',
         padding: 10,
-        marginBottom: 12,
+        marginBottom: 8,
     },
 })
