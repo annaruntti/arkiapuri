@@ -1,7 +1,16 @@
-import { StyleSheet, View, Text, TextInput } from 'react-native'
+import {
+    StyleSheet,
+    View,
+    Text,
+    TextInput,
+    SafeAreaView,
+    Button,
+} from 'react-native'
+import { useState } from 'react'
 import { Controller } from 'react-hook-form'
 import SectionedMultiSelect from 'react-native-sectioned-multi-select'
 import { MaterialIcons as Icon } from '@expo/vector-icons'
+import DateTimePicker from '@react-native-community/datetimepicker'
 
 const items = [
     { name: 'Kasviproteiinit', id: 1 },
@@ -24,6 +33,25 @@ const items = [
 ]
 
 const FormAddGrocery = (props) => {
+    const [date, setDate] = useState(new Date(1598051730000))
+    const [mode, setMode] = useState('date')
+    const [show, setShow] = useState(false)
+
+    const onChange = (event, selectedDate) => {
+        const currentDate = selectedDate
+        setShow(false)
+        setDate(currentDate)
+    }
+
+    const showMode = (currentMode) => {
+        setShow(true)
+        setMode(currentMode)
+    }
+
+    const showDatepicker = () => {
+        showMode('date')
+    }
+
     return (
         <View style={styles.form}>
             <Text style={styles.label}>Elintarvikkeen nimi</Text>
@@ -157,6 +185,21 @@ const FormAddGrocery = (props) => {
                     </Text>
                 </View>
             )}
+            <SafeAreaView>
+                <Button
+                    onPress={showDatepicker}
+                    title="Aseta tuotteen viimeinen käyttöpäivä"
+                />
+                <Text>selected: {date.toLocaleString()}</Text>
+                {show && (
+                    <DateTimePicker
+                        testID="dateTimePicker"
+                        value={date}
+                        mode={mode}
+                        onChange={onChange}
+                    />
+                )}
+            </SafeAreaView>
         </View>
     )
 }
