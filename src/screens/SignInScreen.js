@@ -47,67 +47,58 @@ const SignInScreen = () => {
     return (
         <ScrollView showsVerticalScrollIndicator={false}>
             <View style={styles.root}>
-                {/* <Image
+                <View style={styles.header}>
+                    {/* <Image
                     source={Logo}
                     style={[styles.logo, { height: height * 0.3 }]}
                     resizeMode="contain"
                 /> */}
-                <Text>Testi</Text>
+                    <Text style={styles.headerTitle}>Kirjaudu sisään</Text>
+                </View>
 
                 <CustomInput
+                    label="Käyttäjänimi"
                     name="username"
-                    placeholder="Username"
+                    placeholder="Kirjoita käyttäjätunnuksesi"
                     control={control}
+                    rules={{ required: 'Käyttäjänimi on pakollinen tieto' }}
                 />
                 <CustomInput
+                    label="Salasana"
                     name="password"
-                    placeholder="Password"
+                    placeholder="Kirjoita salsanasi"
                     secureTextEntry
                     control={control}
+                    rules={{
+                        required: 'Salasana on pakollinen tieto',
+                        minLength: {
+                            value: 6,
+                            message:
+                                'Salsanan pituuden tulee olla vähintään 6 merkkiä',
+                        },
+                    }}
                 />
+                <View style="buttonView">
+                    <Button
+                        title="Sign In"
+                        onPress={handleSubmit(onSignInPressed)}
+                        style={styles.button}
+                    />
 
-                <Controller
-                    control={control}
-                    name="username"
-                    render={({ field: { value, onChange, onBlur } }) => (
-                        <TextInput
-                            value={value}
-                            onChangeText={onChange}
-                            onBlur={onBlur}
-                            placeholder={'username'}
-                        />
-                    )}
-                />
-                <Controller
-                    control={control}
-                    name="password"
-                    render={({ field: { value, onChange, onBlur } }) => (
-                        <TextInput
-                            value={value}
-                            onChangeText={onChange}
-                            onBlur={onBlur}
-                            placeholder={'password'}
-                        />
-                    )}
-                />
-                <Button
-                    text="Sign In"
-                    onPress={handleSubmit(onSignInPressed)}
-                />
+                    <Button
+                        title="Forgot password?"
+                        onPress={onForgotPasswordPressed}
+                        type="TERTIARY"
+                    />
 
-                {/* <Button
-                    text="Forgot password?"
-                    onPress={onForgotPasswordPressed}
-                    type="TERTIARY"
-                />
+                    {/* <SocialSignInButtons /> */}
 
-                <SocialSignInButtons />
-
-                <Button
-                    text="Don't have an account? Create one"
-                    onPress={onSignUpPress}
-                    type="TERTIARY"
-                /> */}
+                    <Button
+                        title="Don't have an account? Create one"
+                        onPress={onSignUpPress}
+                        type="TERTIARY"
+                    />
+                </View>
             </View>
         </ScrollView>
     )
@@ -115,13 +106,33 @@ const SignInScreen = () => {
 
 const styles = StyleSheet.create({
     root: {
-        alignItems: 'center',
+        alignItems: 'left',
         padding: 20,
+    },
+    header: {
+        paddingVertical: 20,
+    },
+    headerTitle: {
+        fontSize: 25,
+        fontWeight: 'bold',
     },
     logo: {
         width: '70%',
         maxWidth: 300,
         maxHeight: 200,
+    },
+    buttonView: {
+        paddingHorizontal: 8,
+    },
+    button: {
+        borderRadius: 25,
+        padding: 7,
+        elevation: 2,
+        backgroundColor: '#FFC121',
+        color: 'black',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        width: '100%',
     },
 })
 

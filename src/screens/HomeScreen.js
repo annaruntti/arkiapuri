@@ -32,22 +32,26 @@ const HomeScreen = ({ navigation }) => {
                     <Button
                         style={styles.pantryButton}
                         title="Ruokakomero"
-                        onPress={() => navigation.navigate('Pantry')}
+                        onPress={() => navigation.navigate('PantryScreen')}
                     />
                     <Button
                         style={styles.mealsButton}
                         title="Ateriat"
-                        onPress={() => navigation.navigate('Meals')}
+                        onPress={() => navigation.navigate('MealsScreen')}
                     />
                     <Button
                         style={styles.readingOrderButton}
                         title="Lukujärjestys"
-                        onPress={() => navigation.navigate('Reading order')}
+                        onPress={() =>
+                            navigation.navigate('ReadingOrderScreen')
+                        }
                     />
                     <Button
                         style={styles.shoppingListButton}
                         title="Ostoslista"
-                        onPress={() => navigation.navigate('Shopping list')}
+                        onPress={() =>
+                            navigation.navigate('ShoppingListScreen')
+                        }
                     />
                 </View>
             </View>

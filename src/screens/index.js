@@ -1,4 +1,5 @@
 import SignInScreen from './SignInScreen'
+import SignUpScreen from './SignUpScreen'
 import Home from './HomeScreen'
 import AddFood from './AddFoodScreen'
 import MealsScreen from './MealsScreen'
@@ -9,6 +10,7 @@ import ShoppingListScreen from './ShoppingListScreen'
 
 export {
     SignInScreen,
+    SignUpScreen,
     Home,
     AddFood,
     MealsScreen,

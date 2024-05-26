@@ -7,6 +7,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { Feather, MaterialCommunityIcons, AntDesign } from '@expo/vector-icons'
 
 import SignInScreen from '../screens/SignInScreen'
+import SignUpScreen from '../screens/SignUpScreen'
 import HomeScreen from '../screens/HomeScreen'
 import MealsScreen from '../screens/MealsScreen'
 import ReadingOrderScreen from '../screens/ReadingOrderScreen'
@@ -16,15 +17,6 @@ import ShoppingListScreen from '../screens/ShoppingListScreen'
 const screenOptions = {
     tabBarShowLabel: false,
     headerShown: false,
-    tabBarStyle: {
-        position: 'absolute',
-        bottom: 0,
-        right: 0,
-        left: 0,
-        elevation: 0,
-        height: 60,
-        bckground: '#fff',
-    },
 }
 
 const HomeStack = createNativeStackNavigator()
@@ -33,6 +25,7 @@ function HomeStackScreen() {
     return (
         <HomeStack.Navigator>
             <HomeStack.Screen name="SignIn" component={SignInScreen} />
+            <HomeStack.Screen name="SignUp" component={SignUpScreen} />
             <HomeStack.Screen name="Home" component={HomeScreen} />
         </HomeStack.Navigator>
     )
@@ -43,7 +36,7 @@ const MealsStack = createNativeStackNavigator()
 function MealsStackScreen() {
     return (
         <MealsStack.Navigator>
-            <MealsStack.Screen name="Meals" component={MealsScreen} />
+            <MealsStack.Screen name="MealsScreen" component={MealsScreen} />
         </MealsStack.Navigator>
     )
 }
@@ -53,7 +46,7 @@ const PantryStack = createNativeStackNavigator()
 function PantryStackScreen() {
     return (
         <PantryStack.Navigator>
-            <PantryStack.Screen name="Pantry" component={PantryScreen} />
+            <PantryStack.Screen name="PantryScreen" component={PantryScreen} />
         </PantryStack.Navigator>
     )
 }
