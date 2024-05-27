@@ -6,6 +6,8 @@ import { useNavigation } from '@react-navigation/core'
 import { useForm } from 'react-hook-form'
 import Button from '../components/Button'
 
+const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/
+
 const SignUpScreen = () => {
     const { control, handleSubmit } = useForm()
 
@@ -16,7 +18,7 @@ const SignUpScreen = () => {
     }
 
     const onSignInPress = () => {
-        navigation.navigate('SignIn')
+        navigation.navigate('Kirjaudu siään')
     }
 
     const onTermsOfUsePressed = () => {
@@ -39,12 +41,33 @@ const SignUpScreen = () => {
                     name="username"
                     control={control}
                     placeholder="Kirjoita käyttäjänimesi"
+                    rules={{
+                        required: 'Käyttäjätunnus on pakollinen tieto',
+                        minLength: {
+                            value: 6,
+                            message:
+                                'Käyttäjätunnuksen pituuden tulee olla vähintään 6 merkkiä',
+                        },
+                        maxLength: {
+                            value: 24,
+                            message:
+                                'Käyttäjätunnuksen pituuden tulee olla enintään 24 merkkiä',
+                        },
+                    }}
                 />
                 <CustomInput
                     label="Sähköpostiosoite"
                     name="email"
                     control={control}
                     placeholder="Kirjoita sähköpostiosoitteesi"
+                    rules={{
+                        pattern: {
+                            value: emailRegex,
+                            message:
+                                'Kirjoita sähköpostiosoitteesi muodossa esim. "matti.meikalainen@gmail.com"',
+                        },
+                        required: 'Sähköpostiosoite on pakollinen tieto',
+                    }}
                 />
                 <CustomInput
                     label="Salasana"

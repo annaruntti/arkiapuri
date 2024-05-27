@@ -33,7 +33,7 @@ const SignInScreen = () => {
     const onSignInPressed = (data) => {
         console.log(data, 'data')
         // validate user
-        navigation.navigate('Home')
+        navigation.navigate('Arkiapuri')
     }
 
     const onForgotPasswordPressed = () => {
@@ -41,7 +41,7 @@ const SignInScreen = () => {
     }
 
     const onSignUpPress = () => {
-        navigation.navigate('SignUp')
+        navigation.navigate('Luo tunnus')
     }
 
     return (
@@ -74,7 +74,7 @@ const SignInScreen = () => {
                         minLength: {
                             value: 6,
                             message:
-                                'Salsanan pituuden tulee olla vähintään 6 merkkiä',
+                                'Salasanan pituuden tulee olla vähintään 6 merkkiä',
                         },
                     }}
                 />

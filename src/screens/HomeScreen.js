@@ -6,8 +6,10 @@ import {
     Image,
     ImageBackground,
     ScrollView,
+    TouchableOpacity,
 } from 'react-native'
 import Button from '../components/Button'
+import images from '../assets/images'
 
 const HomeScreen = ({ navigation }) => {
     return (
@@ -16,8 +18,9 @@ const HomeScreen = ({ navigation }) => {
                 <View style={styles.header}>
                     <Image
                         style={styles.image}
-                        source={require('../assets/images/family-cooking.png')}
+                        source={images.homeImage}
                         alt="Perhe tekemässä ruokaa"
+                        resizeMode={'cover'}
                     />
                     <Text style={styles.introTitle}>
                         Tervetuloa Arkiapuriin!
@@ -29,30 +32,34 @@ const HomeScreen = ({ navigation }) => {
                     </Text>
                 </View>
                 <View style={styles.container}>
-                    <Button
-                        style={styles.pantryButton}
-                        title="Ruokakomero"
-                        onPress={() => navigation.navigate('PantryScreen')}
-                    />
-                    <Button
-                        style={styles.mealsButton}
-                        title="Ateriat"
-                        onPress={() => navigation.navigate('MealsScreen')}
-                    />
-                    <Button
-                        style={styles.readingOrderButton}
-                        title="Lukujärjestys"
-                        onPress={() =>
-                            navigation.navigate('ReadingOrderScreen')
-                        }
-                    />
-                    <Button
-                        style={styles.shoppingListButton}
-                        title="Ostoslista"
-                        onPress={() =>
-                            navigation.navigate('ShoppingListScreen')
-                        }
-                    />
+                    <TouchableOpacity style={styles.button}>
+                        <Button
+                            style={styles.pantryButton}
+                            title="Ruokakomero"
+                            onPress={() => navigation.navigate('Ruokakomero')}
+                        />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.button}>
+                        <Button
+                            style={styles.mealsButton}
+                            title="Ateriat"
+                            onPress={() => navigation.navigate('Ateriat')}
+                        />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.button}>
+                        <Button
+                            style={styles.readingOrderButton}
+                            title="Lukujärjestys"
+                            onPress={() => navigation.navigate('Lukujärjestys')}
+                        />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.button}>
+                        <Button
+                            style={styles.shoppingListButton}
+                            title="Ostoslista"
+                            onPress={() => navigation.navigate('Ostoslista')}
+                        />
+                    </TouchableOpacity>
                 </View>
             </View>
         </ScrollView>
@@ -106,8 +113,40 @@ const styles = StyleSheet.create({
         height: '100%',
     },
     image: {
+        width: 300,
+        height: 240,
+        marginLeft: 'auto',
+        marginRight: 'auto',
+    },
+    button: {
+        borderRadius: 15,
+        paddingTop: 5,
+        paddingBottom: 5,
+        paddingLeft: 50,
+        paddingRight: 50,
+        backgroundColor: '#FFFFFF',
+        shadowColor: 'rgba(0, 0, 0, 0.1)',
+        shadowOpacity: 0.8,
+        elevation: 6,
+        shadowRadius: 15,
+        shadowOffset: { width: 1, height: 13 },
         width: '100%',
-        height: 300,
+        marginBottom: 8,
+    },
+    buttonHover: {
+        marginTop: 10,
+        borderRadius: 25,
+        paddingTop: 5,
+        paddingBottom: 5,
+        paddingLeft: 50,
+        paddingRight: 50,
+        shadowColor: 'rgba(46, 229, 157, 0.4)',
+        shadowOpacity: 1.5,
+        elevation: 8,
+        shadowRadius: 20,
+        shadowOffset: { width: 1, height: 13 },
+        backgroundColor: '#2EE59D',
+        color: '#FFFFFF',
     },
     pantryButton: {
         width: '100%',

@@ -36,7 +36,7 @@ const MealsStack = createNativeStackNavigator()
 function MealsStackScreen() {
     return (
         <MealsStack.Navigator>
-            <MealsStack.Screen name="MealsScreen" component={MealsScreen} />
+            <MealsStack.Screen name="Ateriat" component={MealsScreen} />
         </MealsStack.Navigator>
     )
 }
@@ -46,7 +46,7 @@ const PantryStack = createNativeStackNavigator()
 function PantryStackScreen() {
     return (
         <PantryStack.Navigator>
-            <PantryStack.Screen name="PantryScreen" component={PantryScreen} />
+            <PantryStack.Screen name="Ruokakomero" component={PantryScreen} />
         </PantryStack.Navigator>
     )
 }
@@ -57,7 +57,7 @@ function ShoppingListStackScreen() {
     return (
         <ShoppingListStack.Navigator>
             <ShoppingListStack.Screen
-                name="ShoppingList"
+                name="Ostoslista"
                 component={ShoppingListScreen}
             />
         </ShoppingListStack.Navigator>
@@ -70,7 +70,7 @@ function ReadingOrderStackScreen() {
     return (
         <ReadingOrderStack.Navigator>
             <ReadingOrderStack.Screen
-                name="ReadingOrder"
+                name="Lukujärjestys"
                 component={ReadingOrderScreen}
             />
         </ReadingOrderStack.Navigator>
