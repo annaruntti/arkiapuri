@@ -78,21 +78,18 @@ const SignInScreen = () => {
                         },
                     }}
                 />
-                <View style="buttonView">
+                <View style={styles.buttonView}>
                     <Button
                         title="Sign In"
                         onPress={handleSubmit(onSignInPressed)}
                         style={styles.button}
                     />
-
                     <Button
                         title="Forgot password?"
                         onPress={onForgotPasswordPressed}
                         type="TERTIARY"
                     />
-
                     {/* <SocialSignInButtons /> */}
-
                     <Button
                         title="Don't have an account? Create one"
                         onPress={onSignUpPress}
@@ -122,7 +119,7 @@ const styles = StyleSheet.create({
         maxHeight: 200,
     },
     buttonView: {
-        paddingHorizontal: 8,
+        paddingVertical: 8,
     },
     button: {
         borderRadius: 25,

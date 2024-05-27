@@ -24,9 +24,9 @@ const HomeStack = createNativeStackNavigator()
 function HomeStackScreen() {
     return (
         <HomeStack.Navigator>
-            <HomeStack.Screen name="SignIn" component={SignInScreen} />
-            <HomeStack.Screen name="SignUp" component={SignUpScreen} />
-            <HomeStack.Screen name="Home" component={HomeScreen} />
+            <HomeStack.Screen name="Kirjaudu sisään" component={SignInScreen} />
+            <HomeStack.Screen name="Luo tunnus" component={SignUpScreen} />
+            <HomeStack.Screen name="Arkiapuri" component={HomeScreen} />
         </HomeStack.Navigator>
     )
 }

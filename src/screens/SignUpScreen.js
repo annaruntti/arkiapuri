@@ -60,7 +60,7 @@ const SignUpScreen = () => {
                     placeholder="Syötä salsana uudelleen"
                     secureTextEntry
                 />
-                <View style="buttonView">
+                <View style={styles.buttonView}>
                     <Button
                         title="Register"
                         style={styles.button}
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
         maxHeight: 200,
     },
     buttonView: {
-        paddingHorizontal: 8,
+        paddingvertical: 8,
     },
     button: {
         borderRadius: 25,
@@ -119,6 +119,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         width: '100%',
+        marginBottom: 8,
     },
     text: {
         color: 'gray',
