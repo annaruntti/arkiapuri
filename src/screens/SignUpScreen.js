@@ -9,7 +9,8 @@ import Button from '../components/Button'
 const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/
 
 const SignUpScreen = () => {
-    const { control, handleSubmit } = useForm()
+    const { control, handleSubmit, watch } = useForm()
+    const pwd = watch('password')
 
     const navigation = useNavigation()
 
@@ -96,17 +97,8 @@ const SignUpScreen = () => {
                     placeholder="Syötä salasana uudelleen"
                     secureTextEntry
                     rules={{
-                        required: 'Salasana on pakollinen tieto',
-                        minLength: {
-                            value: 6,
-                            message:
-                                'Salasanan pituuden tulee olla vähintään 6 merkkiä',
-                        },
-                        maxLength: {
-                            value: 24,
-                            message:
-                                'Salasanan pituuden tulee olla enintään 24 merkkiä',
-                        },
+                        validate: (value) =>
+                            value === pwd || 'Salasana ei täsmää',
                     }}
                 />
                 <View style={styles.buttonView}>
