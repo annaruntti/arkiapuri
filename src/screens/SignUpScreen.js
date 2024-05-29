@@ -75,13 +75,39 @@ const SignUpScreen = () => {
                     control={control}
                     placeholder="Syötä vahva salasana"
                     secureTextEntry
+                    rules={{
+                        required: 'Salasana on pakollinen tieto',
+                        minLength: {
+                            value: 6,
+                            message:
+                                'Salasanan pituuden tulee olla vähintään 6 merkkiä',
+                        },
+                        maxLength: {
+                            value: 24,
+                            message:
+                                'Salasanan pituuden tulee olla enintään 24 merkkiä',
+                        },
+                    }}
                 />
                 <CustomInput
                     label="Salasana uudelleen"
                     name="repeatPassword"
                     control={control}
-                    placeholder="Syötä salsana uudelleen"
+                    placeholder="Syötä salasana uudelleen"
                     secureTextEntry
+                    rules={{
+                        required: 'Salasana on pakollinen tieto',
+                        minLength: {
+                            value: 6,
+                            message:
+                                'Salasanan pituuden tulee olla vähintään 6 merkkiä',
+                        },
+                        maxLength: {
+                            value: 24,
+                            message:
+                                'Salasanan pituuden tulee olla enintään 24 merkkiä',
+                        },
+                    }}
                 />
                 <View style={styles.buttonView}>
                     <Button
