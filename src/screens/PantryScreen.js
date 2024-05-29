@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
         borderRadius: 25,
         padding: 7,
         elevation: 2,
-        backgroundColor: '#FFC121',
+        backgroundColor: '#FFB703',
         color: 'black',
         fontWeight: 'bold',
         textAlign: 'center',

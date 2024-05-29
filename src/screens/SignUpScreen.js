@@ -9,7 +9,11 @@ import Button from '../components/Button'
 const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/
 
 const SignUpScreen = () => {
-    const { control, handleSubmit, watch } = useForm()
+    const { control, handleSubmit, watch } = useForm({
+        defaultValues: {
+            username: 'Default username',
+        },
+    })
     const pwd = watch('password')
 
     const navigation = useNavigation()
@@ -102,29 +106,40 @@ const SignUpScreen = () => {
                     }}
                 />
                 <View style={styles.buttonView}>
-                    <Button
-                        title="Register"
-                        style={styles.button}
-                        onPress={handleSubmit(onRegisterPressed)}
-                    />
-
-                    <Text style={styles.text}>
-                        By registering, you confirm that you accept our{' '}
-                        <Text style={styles.link} onPress={onTermsOfUsePressed}>
-                            Terms of Use
-                        </Text>{' '}
-                        and{' '}
-                        <Text style={styles.link} onPress={onPrivacyPressed}>
-                            Privacy Policy
-                        </Text>
-                    </Text>
+                    <View style={styles.buttonContainer}>
+                        <Button
+                            title="Register"
+                            style={styles.primaryButton}
+                            onPress={handleSubmit(onRegisterPressed)}
+                        />
+                    </View>
                     {/* <SocialSignInButtons /> */}
-
-                    <Button
-                        title="Have an account? Sign in"
-                        onPress={onSignInPress}
-                        type="TERTIARY"
-                    />
+                    <View style={styles.buttonContainer}>
+                        <Button
+                            title="Have an account? Sign in"
+                            onPress={onSignInPress}
+                            type="TERTIARY"
+                            style={styles.tertiaryButton}
+                        />
+                    </View>
+                    <View style={styles.buttonContainer}>
+                        <Text style={styles.text}>
+                            By registering, you confirm that you accept our{' '}
+                            <Text
+                                style={styles.link}
+                                onPress={onTermsOfUsePressed}
+                            >
+                                Terms of Use
+                            </Text>{' '}
+                            and{' '}
+                            <Text
+                                style={styles.link}
+                                onPress={onPrivacyPressed}
+                            >
+                                Privacy Policy
+                            </Text>
+                        </Text>
+                    </View>
                 </View>
             </View>
         </ScrollView>
@@ -149,18 +164,52 @@ const styles = StyleSheet.create({
         maxHeight: 200,
     },
     buttonView: {
-        paddingvertical: 8,
+        paddingVertical: 10,
     },
-    button: {
+    buttonContainer: {
+        marginBottom: 10,
+    },
+    primaryButton: {
         borderRadius: 25,
-        padding: 7,
+        paddingTop: 7,
+        paddingBottom: 7,
+        paddingLeft: 10,
+        paddingRight: 10,
         elevation: 2,
-        backgroundColor: '#FFC121',
+        backgroundColor: '#FFB703',
         color: 'black',
         fontWeight: 'bold',
         textAlign: 'center',
-        width: '100%',
-        marginBottom: 8,
+        width: 'auto',
+        minWidth: 50,
+    },
+    secondaryButton: {
+        borderRadius: 25,
+        paddingTop: 7,
+        paddingBottom: 7,
+        paddingLeft: 10,
+        paddingRight: 10,
+        elevation: 2,
+        backgroundColor: '#8ECAE6',
+        color: 'black',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        width: 'auto',
+        minWidth: 50,
+    },
+    tertiaryButton: {
+        borderRadius: 25,
+        paddingTop: 7,
+        paddingBottom: 7,
+        paddingLeft: 10,
+        paddingRight: 10,
+        elevation: 2,
+        backgroundColor: '#219EBC',
+        color: 'black',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        width: 'auto',
+        minWidth: 50,
     },
     text: {
         color: 'gray',

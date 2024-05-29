@@ -79,22 +79,30 @@ const SignInScreen = () => {
                     }}
                 />
                 <View style={styles.buttonView}>
-                    <Button
-                        title="Sign In"
-                        onPress={handleSubmit(onSignInPressed)}
-                        style={styles.button}
-                    />
-                    <Button
-                        title="Forgot password?"
-                        onPress={onForgotPasswordPressed}
-                        type="TERTIARY"
-                    />
+                    <View style={styles.buttonContainer}>
+                        <Button
+                            title="Sign In"
+                            onPress={handleSubmit(onSignInPressed)}
+                            style={styles.primaryButton}
+                        />
+                    </View>
+                    <View style={styles.buttonContainer}>
+                        <Button
+                            title="Forgot password?"
+                            onPress={onForgotPasswordPressed}
+                            type="TERTIARY"
+                            style={styles.secondaryButton}
+                        />
+                    </View>
                     {/* <SocialSignInButtons /> */}
-                    <Button
-                        title="Don't have an account? Create one"
-                        onPress={onSignUpPress}
-                        type="TERTIARY"
-                    />
+                    <View style={styles.buttonContainer}>
+                        <Button
+                            title="Don't have an account? Create one"
+                            onPress={onSignUpPress}
+                            type="TERTIARY"
+                            style={styles.tertiaryButton}
+                        />
+                    </View>
                 </View>
             </View>
         </ScrollView>
@@ -119,17 +127,52 @@ const styles = StyleSheet.create({
         maxHeight: 200,
     },
     buttonView: {
-        paddingVertical: 8,
+        paddingVertical: 10,
     },
-    button: {
+    buttonContainer: {
+        marginBottom: 10,
+    },
+    primaryButton: {
         borderRadius: 25,
-        padding: 7,
+        paddingTop: 7,
+        paddingBottom: 7,
+        paddingLeft: 10,
+        paddingRight: 10,
         elevation: 2,
-        backgroundColor: '#FFC121',
+        backgroundColor: '#FFB703',
         color: 'black',
         fontWeight: 'bold',
         textAlign: 'center',
-        width: '100%',
+        width: 'auto',
+        minWidth: 50,
+    },
+    secondaryButton: {
+        borderRadius: 25,
+        paddingTop: 7,
+        paddingBottom: 7,
+        paddingLeft: 10,
+        paddingRight: 10,
+        elevation: 2,
+        backgroundColor: '#8ECAE6',
+        color: 'black',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        width: 'auto',
+        minWidth: 50,
+    },
+    tertiaryButton: {
+        borderRadius: 25,
+        paddingTop: 7,
+        paddingBottom: 7,
+        paddingLeft: 10,
+        paddingRight: 10,
+        elevation: 2,
+        backgroundColor: '#219EBC',
+        color: 'black',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        width: 'auto',
+        minWidth: 50,
     },
 })
 
