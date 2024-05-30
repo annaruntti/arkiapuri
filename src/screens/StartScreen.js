@@ -13,21 +13,17 @@ const StartScreen = ({ navigation }) => {
     }
     return (
         <View style={styles.loginView}>
-            <LinearGradient
-                // Background Linear Gradient
-                colors={['rgba(0,0,0,0.8)', 'transparent']}
-                style={styles.background}
+            <ImageBackground
+                imageStyle={{
+                    resizeMode: 'cover', // works only here!
+                }}
+                style={styles.image}
+                source={image}
             >
-                <ImageBackground
-                    // style={{
-                    //     width: '100%', // applied to Image
-                    //     height: '100%',
-                    // }}
-                    // imageStyle={{
-                    //     resizeMode: 'cover', // works only here!
-                    // }}
-                    style={styles.image}
-                    source={image}
+                <LinearGradient
+                    // Background Linear Gradient
+                    colors={['rgba(0,0,0,0.8)', 'transparent']}
+                    style={styles.background}
                 >
                     <View style={styles.layer}>
                         <View style={styles.textContentArea}>
@@ -42,8 +38,8 @@ const StartScreen = ({ navigation }) => {
                             />
                         </View>
                     </View>
-                </ImageBackground>
-            </LinearGradient>
+                </LinearGradient>
+            </ImageBackground>
         </View>
     )
 }
@@ -57,12 +53,20 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         width: '100%',
     },
+    image: {
+        flex: 1,
+        resizeMode: 'cover',
+        justifyContent: 'center',
+        width: '100%',
+        height: '100%',
+        alignItems: 'center',
+    },
     background: {
         position: 'absolute',
         left: 0,
         right: 0,
         top: 0,
-        height: '90vh',
+        height: '100%',
     },
     textContentArea: {
         flex: 1,
@@ -70,14 +74,13 @@ const styles = StyleSheet.create({
         justifyContent: 'top',
         width: '100%',
         padding: 40,
-        backgroundColor: '#000000a0',
     },
     introText: {
         fontSize: 25,
         fontWeight: 'bold',
         color: '#fff',
         textAlign: 'center',
-        paddingTop: 40,
+        paddingTop: 50,
         paddingBottom: 20,
         marginBottom: 10,
         textShadowColor: 'rgba(0, 0, 0, 0.75)',
@@ -85,7 +88,7 @@ const styles = StyleSheet.create({
         textShadowRadius: 10,
     },
     layer: {
-        height: '90vh',
+        height: '100%',
     },
     button: {
         borderRadius: 25,
@@ -99,10 +102,5 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         width: 'auto',
-    },
-    image: {
-        flex: 1,
-        resizeMode: 'cover',
-        justifyContent: 'center',
     },
 })
