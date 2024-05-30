@@ -19,6 +19,7 @@
     "@react-navigation/native-stack": "^6.9.17",
     "expo": "^51.0.8",
     "expo-font": "~11.10.2",
+    "expo-linear-gradient": "^13.0.2",
     "expo-splash-screen": "~0.26.5",
     "expo-status-bar": "~1.11.1",
     "graphql": "^15.8.0",
