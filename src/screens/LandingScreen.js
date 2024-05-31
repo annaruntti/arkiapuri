@@ -23,7 +23,7 @@ const LandingScreen = ({ navigation }) => {
             <ImageBackground
                 imageStyle={{
                     resizeMode: 'cover', // works only here!
-                    top: -18,
+                    top: -22,
                 }}
                 style={styles.image}
                 source={image}
@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
     },
     textContentArea: {
         flex: 1,
-        alignItems: 'center',
+        alignItems: 'flex-start',
         justifyContent: 'top',
         width: '100%',
         padding: 40,
@@ -110,8 +110,8 @@ const styles = StyleSheet.create({
         fontSize: 25,
         fontWeight: 'bold',
         color: '#fff',
-        textAlign: 'center',
-        paddingTop: 40,
+        textAlign: 'left',
+        paddingTop: 20,
         textShadowColor: 'rgba(0, 0, 0, 0.75)',
         textShadowOffset: { width: -1, height: 1 },
         textShadowRadius: 10,
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: 500,
         color: '#fff',
-        textAlign: 'center',
+        textAlign: 'left',
         paddingTop: 10,
         paddingBottom: 20,
         marginBottom: 10,
@@ -140,7 +140,8 @@ const styles = StyleSheet.create({
         paddingBottom: 20,
         paddingLeft: 20,
         backgroundColor: '#fff',
-        width: '100%',
+        width: 'auto',
+        minWidth: 360,
         justifyContent: 'flex-end',
         alignItems: 'flex-end',
     },
