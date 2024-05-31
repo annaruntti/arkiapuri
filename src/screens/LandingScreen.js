@@ -47,9 +47,10 @@ const LandingScreen = ({ navigation }) => {
                 </LinearGradient>
                 <View style={styles.bottomBox}>
                     <Svg
-                        height={87}
+                        height={86}
+                        // height="auto"
                         width={Dimensions.get('screen').width}
-                        viewBox="0 0 1440 320"
+                        viewBox="0 0 1440 280"
                         style={styles.bottomWavy}
                     >
                         <Path
@@ -63,9 +64,9 @@ const LandingScreen = ({ navigation }) => {
                             ilmaista ja vie vain hetken!
                         </Text>
                         <Button
-                            title="Aloita kirjautumalla sisään"
+                            title="Kirjaudu sisään"
                             onPress={onSignUpPress}
-                            style={styles.button}
+                            style={styles.primaryButton}
                         />
                     </View>
                 </View>
@@ -147,20 +148,25 @@ const styles = StyleSheet.create({
     },
     bottomBoxText: {
         textAlign: 'right',
-        fontSize: 18,
-        marginBottom: 15,
+        fontSize: 20,
+        marginBottom: 22,
     },
-    button: {
+    // bottomWavy: {
+    //     position: 'relative',
+    //     bottom: 1,
+    // },
+    primaryButton: {
         borderRadius: 25,
         paddingTop: 7,
         paddingBottom: 7,
         paddingLeft: 10,
         paddingRight: 10,
         elevation: 2,
-        backgroundColor: '#FFB703',
+        backgroundColor: '#9C86FC',
         color: 'black',
         fontWeight: 'bold',
         textAlign: 'center',
         width: 'auto',
+        minWidth: 50,
     },
 })

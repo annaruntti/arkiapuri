@@ -83,7 +83,7 @@ const Tab = createBottomTabNavigator()
 
 export default function Navigation() {
     return (
-        <NavigationContainer style={{ fontFamily: 'Fira Sans' }}>
+        <NavigationContainer>
             <Tab.Navigator screenOptions={screenOptions}>
                 <Tab.Screen
                     name="HomeStack"

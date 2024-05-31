@@ -62,7 +62,7 @@ const PantryScreen = ({}) => {
                 ostoslistan luonnissa.
             </Text>
             <Button
-                style={styles.button}
+                style={styles.primaryButton}
                 title="Lisää elintarvike"
                 onPress={() => setModalVisible(true)}
             />
@@ -123,15 +123,19 @@ const styles = StyleSheet.create({
         padding: 10,
         borderRadius: 4,
     },
-    button: {
+    primaryButton: {
         borderRadius: 25,
-        padding: 7,
+        paddingTop: 7,
+        paddingBottom: 7,
+        paddingLeft: 10,
+        paddingRight: 10,
         elevation: 2,
-        backgroundColor: '#FFB703',
+        backgroundColor: '#9C86FC',
         color: 'black',
         fontWeight: 'bold',
         textAlign: 'center',
-        width: '100%',
+        width: 'auto',
+        minWidth: 50,
     },
     modalText: {
         marginBottom: 15,
