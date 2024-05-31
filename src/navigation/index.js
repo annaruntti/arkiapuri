@@ -4,7 +4,12 @@ import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 
-import { Feather, MaterialCommunityIcons, AntDesign } from '@expo/vector-icons'
+import {
+    Feather,
+    MaterialCommunityIcons,
+    AntDesign,
+    FontAwesome6,
+} from '@expo/vector-icons'
 
 import LandingScreen from '../screens/LandingScreen'
 import SignInScreen from '../screens/SignInScreen'
@@ -117,8 +122,8 @@ export default function Navigation() {
                                     justifyContent: 'center',
                                 }}
                             >
-                                <MaterialCommunityIcons
-                                    name="food-takeout-box-outline"
+                                <FontAwesome6
+                                    name="bowl-food"
                                     size={24}
                                     color="black"
                                 />
@@ -141,8 +146,8 @@ export default function Navigation() {
                                     justifyContent: 'center',
                                 }}
                             >
-                                <MaterialCommunityIcons
-                                    name="fridge-industrial-outline"
+                                <AntDesign
+                                    name="database"
                                     size={24}
                                     color="black"
                                 />
