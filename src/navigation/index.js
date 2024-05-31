@@ -6,7 +6,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 
 import { Feather, MaterialCommunityIcons, AntDesign } from '@expo/vector-icons'
 
-import StartScreen from '../screens/StartScreen'
+import LandingScreen from '../screens/LandingScreen'
 import SignInScreen from '../screens/SignInScreen'
 import SignUpScreen from '../screens/SignUpScreen'
 import HomeScreen from '../screens/HomeScreen'
@@ -25,10 +25,7 @@ const HomeStack = createNativeStackNavigator()
 function HomeStackScreen() {
     return (
         <HomeStack.Navigator>
-            <HomeStack.Screen
-                name="Tervetuloa Arkiapuriin!"
-                component={StartScreen}
-            />
+            <HomeStack.Screen name="Tervetuloa" component={LandingScreen} />
             <HomeStack.Screen name="Kirjaudu sisään" component={SignInScreen} />
             <HomeStack.Screen name="Luo tunnus" component={SignUpScreen} />
             <HomeStack.Screen name="Arkiapuri" component={HomeScreen} />
