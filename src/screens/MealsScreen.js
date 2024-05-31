@@ -7,13 +7,17 @@ const MealsScreen = ({}) => {
     const [modalVisible, setModalVisible] = useState(false)
 
     const {
-        register,
+        control,
         handleSubmit,
         formState: { errors },
     } = useForm()
 
-    const Submit = (data) => {
-        // Handle submit codes here
+    console.log(errors, 'errors')
+
+    const onSubmit = (data) => {
+        console.log(data, 'data')
+        // validate user
+        setModalVisible(!modalVisible)
     }
 
     return (
@@ -33,15 +37,12 @@ const MealsScreen = ({}) => {
                         <Text style={styles.introText}>
                             Luo ateria oheisella lomakkeella
                         </Text>
-                        <form onSubmit={handleSubmit(Submit)}>
-                            {/* "handleSubmit" will validate your inputs before invoking "Submit"
-                        function */}
-                            <AddMealForm register={register} />
-                        </form>
+                        <AddMealForm control={control} />
                         <Pressable
                             type="submit"
                             style={[styles.button, styles.buttonClose]}
-                            onPress={() => setModalVisible(!modalVisible)}
+                            // onPress={() => setModalVisible(!modalVisible)}
+                            onPress={handleSubmit(onSubmit)}
                         >
                             <Text style={styles.textStyle}>
                                 Tallenna ateria
