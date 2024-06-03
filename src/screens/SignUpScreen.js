@@ -1,25 +1,22 @@
 import React, { useState } from 'react'
 import { View, Text, StyleSheet, ScrollView } from 'react-native'
-import CustomInput from '../components/CustomInput'
-// import SocialSignInButtons from '../components/SocialSignInButtons'
 import { useNavigation } from '@react-navigation/core'
 import { useForm } from 'react-hook-form'
+
+import CustomInput from '../components/CustomInput'
+// import SocialSignInButtons from '../components/SocialSignInButtons'
 import Button from '../components/Button'
 
 const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/
 
 const SignUpScreen = () => {
-    const { control, handleSubmit, watch } = useForm({
-        defaultValues: {
-            username: 'Default username',
-        },
-    })
+    const { control, handleSubmit, watch } = useForm()
     const pwd = watch('password')
 
     const navigation = useNavigation()
 
     const onRegisterPressed = () => {
-        navigation.navigate('ConfirmEmail')
+        navigation.navigate('Vahvista sähköposti')
     }
 
     const onSignInPress = () => {

@@ -14,6 +14,7 @@ import {
 import LandingScreen from '../screens/LandingScreen'
 import SignInScreen from '../screens/SignInScreen'
 import SignUpScreen from '../screens/SignUpScreen'
+import ConfirmEmailScreen from '../screens/ConfirmEmailScreen'
 import HomeScreen from '../screens/HomeScreen'
 import MealsScreen from '../screens/MealsScreen'
 import ReadingOrderScreen from '../screens/ReadingOrderScreen'
@@ -33,6 +34,10 @@ function HomeStackScreen() {
             <HomeStack.Screen name="Tervetuloa" component={LandingScreen} />
             <HomeStack.Screen name="Kirjaudu sisään" component={SignInScreen} />
             <HomeStack.Screen name="Luo tunnus" component={SignUpScreen} />
+            <HomeStack.Screen
+                name="Vahvista sähköposti"
+                component={ConfirmEmailScreen}
+            />
             <HomeStack.Screen name="Arkiapuri" component={HomeScreen} />
         </HomeStack.Navigator>
     )
