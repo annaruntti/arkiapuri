@@ -16,9 +16,6 @@ import { useForm, Controller } from 'react-hook-form'
 import CustomInput from '../components/CustomInput'
 
 const SignInScreen = () => {
-    // const [username, setUsername] = useState('')
-    // const [password, setPassword] = useState('')
-
     const { height } = useWindowDimensions()
     const navigation = useNavigation()
 

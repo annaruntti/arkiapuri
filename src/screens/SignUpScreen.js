@@ -7,6 +7,8 @@ import CustomInput from '../components/CustomInput'
 // import SocialSignInButtons from '../components/SocialSignInButtons'
 import Button from '../components/Button'
 
+import client from '../api/client'
+
 const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/
 
 const SignUpScreen = () => {
@@ -15,7 +17,11 @@ const SignUpScreen = () => {
 
     const navigation = useNavigation()
 
-    const onRegisterPressed = () => {
+    const onRegisterPressed = async (data) => {
+        const res = await client.post('create-user', {
+            ...data,
+        })
+        console.log(res.data, 'data')
         navigation.navigate('Vahvista sähköposti')
     }
 
@@ -93,7 +99,7 @@ const SignUpScreen = () => {
                 />
                 <CustomInput
                     label="Salasana uudelleen"
-                    name="repeatPassword"
+                    name="confirmPassword"
                     control={control}
                     placeholder="Syötä salasana uudelleen"
                     secureTextEntry

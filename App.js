@@ -1,31 +1,46 @@
-import {
-    ApolloClient,
-    createHttpLink,
-    InMemoryCache,
-    ApolloProvider,
-} from '@apollo/client'
+// import {
+//     ApolloClient,
+//     createHttpLink,
+//     InMemoryCache,
+//     ApolloProvider,
+// } from '@apollo/client'
 import { useEffect, useState } from 'react'
 import { SafeAreaView, StyleSheet } from 'react-native'
 import * as SplashScreen from 'expo-splash-screen'
+import axios from 'axios'
 
 import Navigation from './src/navigation'
 
-//create http link based on base url
-const httpLink = createHttpLink({
-    uri: 'http://192.168.1.34:4000/graphql',
-})
+// //create http link based on base url
+// const httpLink = createHttpLink({
+//     uri: 'http://192.168.1.34:4000/graphql',
+// })
 
-//Create apollo client object
-const client = new ApolloClient({
-    link: httpLink,
-    cache: new InMemoryCache(),
-    // credentials:'include'
-})
+// //Create apollo client object
+// const client = new ApolloClient({
+//     link: httpLink,
+//     cache: new InMemoryCache(),
+//     // credentials:'include'
+// })
 
 SplashScreen.preventAutoHideAsync()
 
 const App = () => {
     const [isLoading, setIsLoading] = useState(true)
+
+    const fetchApi = async () => {
+        //my ip
+        try {
+            const res = await axios.get('http://192.168.50.223:8000/')
+            console.log(res.data)
+        } catch (error) {
+            console.log(error.message)
+        }
+    }
+
+    useEffect(() => {
+        fetchApi()
+    }, [])
 
     useEffect(() => {
         async function prepare() {
@@ -62,11 +77,11 @@ const App = () => {
     }
 
     return (
-        <ApolloProvider client={client}>
-            <SafeAreaView style={styles.root}>
-                <Navigation />
-            </SafeAreaView>
-        </ApolloProvider>
+        // <ApolloProvider client={client}>
+        <SafeAreaView style={styles.root}>
+            <Navigation />
+        </SafeAreaView>
+        // </ApolloProvider>
     )
 }
 

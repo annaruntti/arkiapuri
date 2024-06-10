@@ -11,8 +11,9 @@ const ConfirmEmailScreen = () => {
 
     const navigation = useNavigation()
 
-    const onConfirmPressed = () => {
-        navigation.navigate('Home')
+    const onConfirmPressed = (data) => {
+        console.log(data, 'data')
+        navigation.navigate('Arkiapuri')
     }
 
     const onSignInPress = () => {
