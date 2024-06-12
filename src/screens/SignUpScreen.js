@@ -18,11 +18,24 @@ const SignUpScreen = () => {
     const navigation = useNavigation()
 
     const onRegisterPressed = async (data) => {
-        const res = await client.post('create-user', {
-            ...data,
-        })
-        console.log(res.data, 'data')
-        navigation.navigate('Vahvista sähköposti')
+        const res = await fetch('http://localhost:8000/create-user', {
+            method: 'POST',
+            body: data,
+        }).then((res) => res.json())
+        alert(JSON.stringify(res))
+
+        // const res = await client
+        //     .post('create-user', {
+        //         data,
+        //     })
+        //     .then((res) => res.json())
+        // alert(JSON.stringify(res))
+
+        console.log(res, 'data1')
+
+        console.log(data, 'data3')
+        // navigation.navigate('Vahvista sähköposti')
+        // console.log(data, 'data3')
     }
 
     const onSignInPress = () => {
