@@ -2,12 +2,13 @@ import React, { useState } from 'react'
 import { View, Text, StyleSheet, ScrollView } from 'react-native'
 import { useNavigation } from '@react-navigation/core'
 import { useForm } from 'react-hook-form'
+import axios from 'axios'
 
 import CustomInput from '../components/CustomInput'
 // import SocialSignInButtons from '../components/SocialSignInButtons'
 import Button from '../components/Button'
 
-import client from '../api/client'
+// import client from '../api/client'
 
 const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/
 
@@ -18,24 +19,17 @@ const SignUpScreen = () => {
     const navigation = useNavigation()
 
     const onRegisterPressed = async (data) => {
-        const res = await fetch('http://localhost:8000/create-user', {
-            method: 'POST',
-            body: data,
-        }).then((res) => res.json())
-        alert(JSON.stringify(res))
+        axios
+            .post('http://192.168.50.223:8000/create-user', data)
+            .then((response) => {
+                console.log(response.data)
+            })
+            .catch((error) => {
+                console.error('Error sending data: ', error)
+            })
 
-        // const res = await client
-        //     .post('create-user', {
-        //         data,
-        //     })
-        //     .then((res) => res.json())
-        // alert(JSON.stringify(res))
-
-        console.log(res, 'data1')
-
-        console.log(data, 'data3')
-        // navigation.navigate('Vahvista sähköposti')
-        // console.log(data, 'data3')
+        console.log(data, 'data2')
+        navigation.navigate('Vahvista sähköposti')
     }
 
     const onSignInPress = () => {

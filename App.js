@@ -7,7 +7,7 @@
 import { useEffect, useState } from 'react'
 import { SafeAreaView, StyleSheet } from 'react-native'
 import * as SplashScreen from 'expo-splash-screen'
-import axios from 'axios'
+// import axios from 'axios'
 
 import Navigation from './src/navigation'
 
@@ -28,20 +28,20 @@ SplashScreen.preventAutoHideAsync()
 const App = () => {
     const [isLoading, setIsLoading] = useState(true)
 
-    const fetchApi = async () => {
-        //my ip
-        try {
-            // const res = await axios.get('http://192.168.50.223:8000/')
-            const res = await axios.get('http://localhost:8000/')
-            console.log(res.data)
-        } catch (error) {
-            console.log(error.message)
-        }
-    }
+    // const fetchApi = async () => {
+    //     //my ip
+    //     try {
+    //         const res = await axios.get('http://10.144.85.12:8000/')
+    //         // const res = await axios.get('http://localhost:8000/')
+    //         console.log(res.data)
+    //     } catch (error) {
+    //         console.log(error.message)
+    //     }
+    // }
 
-    useEffect(() => {
-        fetchApi()
-    }, [])
+    // useEffect(() => {
+    //     fetchApi()
+    // }, [])
 
     useEffect(() => {
         async function prepare() {
