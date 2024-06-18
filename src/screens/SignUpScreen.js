@@ -45,7 +45,10 @@ const SignUpScreen = () => {
     }
 
     return (
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView
+            style={styles.scrollView}
+            showsVerticalScrollIndicator={false}
+        >
             <View style={styles.root}>
                 <View style={styles.header}>
                     <Text style={styles.headerTitle}>Luo käyttäjätunnus</Text>
@@ -157,6 +160,9 @@ const SignUpScreen = () => {
 }
 
 const styles = StyleSheet.create({
+    scrollView: {
+        backgroundColor: '#fff',
+    },
     root: {
         alignItems: 'left',
         padding: 20,

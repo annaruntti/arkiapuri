@@ -40,8 +40,8 @@ const PantryScreen = ({}) => {
                 <View style={styles.layerView}>
                     <View style={styles.modalView}>
                         <Text style={styles.introText}>
-                            Lisää ruokakomeroosi elintarvikkeita oheisella
-                            lomakkeella.
+                            Lisää pentteriin eli ruokakomeroosi elintarvikkeita
+                            oheisella lomakkeella.
                         </Text>
                         <FormAddGrocery
                             register={register}

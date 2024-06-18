@@ -46,15 +46,20 @@ const SignInScreen = () => {
     }
 
     return (
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView
+            style={styles.scrollView}
+            showsVerticalScrollIndicator={false}
+        >
             <View style={styles.root}>
                 <View style={styles.header}>
-                    <Image
-                        style={styles.image}
-                        source={image}
-                        alt="Henkilö käyttämässä puhelintaan"
-                        resizeMode={'contain'}
-                    />
+                    <View style={styles.headerImage}>
+                        <Image
+                            style={styles.image}
+                            source={image}
+                            alt="Henkilö käyttämässä puhelintaan"
+                            resizeMode={'contain'}
+                        />
+                    </View>
                     <Text style={styles.headerTitle}>Kirjaudu sisään</Text>
                 </View>
 
@@ -90,19 +95,18 @@ const SignInScreen = () => {
                     </View>
                     <View style={styles.buttonContainer}>
                         <Button
-                            title="Forgot password?"
-                            onPress={onForgotPasswordPressed}
-                            type="TERTIARY"
-                            style={styles.secondaryButton}
-                        />
-                    </View>
-                    {/* <SocialSignInButtons /> */}
-                    <View style={styles.buttonContainer}>
-                        <Button
                             title="Don't have an account? Create one"
                             onPress={onSignUpPress}
                             type="TERTIARY"
                             style={styles.tertiaryButton}
+                        />
+                    </View>
+                    <View style={styles.buttonContainer}>
+                        <Button
+                            title="Forgot password?"
+                            onPress={onForgotPasswordPressed}
+                            type="TERTIARY"
+                            style={styles.secondaryButton}
                         />
                     </View>
                 </View>
@@ -112,21 +116,26 @@ const SignInScreen = () => {
 }
 
 const styles = StyleSheet.create({
+    scrollView: {
+        backgroundColor: '#fff',
+    },
     root: {
-        alignItems: 'left',
         paddingHorizontal: 20,
     },
     header: {
         paddingVertical: 20,
         paddingTop: 20,
     },
+    headerImage: {
+        alignItems: 'center',
+    },
     headerTitle: {
-        fontSize: 25,
+        fontSize: 18,
         fontWeight: 'bold',
     },
     image: {
-        width: 300,
-        height: 240,
+        width: 240,
+        height: 180,
         marginLeft: 'auto',
         marginRight: 'auto',
         marginBottom: 20,
@@ -153,7 +162,7 @@ const styles = StyleSheet.create({
         color: 'black',
         fontWeight: 'bold',
         textAlign: 'center',
-        width: '100%',
+        width: 'auto',
     },
     secondaryButton: {
         borderRadius: 25,
@@ -166,7 +175,7 @@ const styles = StyleSheet.create({
         color: 'black',
         fontWeight: 'bold',
         textAlign: 'center',
-        width: '100%',
+        width: 'auto',
     },
     tertiaryButton: {
         borderRadius: 25,
@@ -179,7 +188,7 @@ const styles = StyleSheet.create({
         color: 'black',
         fontWeight: 'bold',
         textAlign: 'center',
-        width: '100%',
+        width: 'auto',
     },
 })
 

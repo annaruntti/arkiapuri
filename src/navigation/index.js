@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Text, View } from 'react-native'
+import { Text, View, Image } from 'react-native'
 import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
@@ -28,17 +28,64 @@ const screenOptions = {
 
 const HomeStack = createNativeStackNavigator()
 
+function LogoTitle() {
+    const image = {
+        uri: 'https://images.ctfassets.net/hef5a6s5axrs/2wzxlzyydJLVr8T7k67cOO/90074490ee64362fe6f0e384d2b3daf8/arkiapuri-removebg-preview.png',
+    }
+    return (
+        <View style={{ flexDirection: 'row' }}>
+            <Image
+                style={{ width: 40, height: 40 }}
+                source={image}
+                alt="Arkiapuri-logo"
+            />
+            <Text
+                style={{
+                    marginVertical: 'auto',
+                    fontWeight: 'bold',
+                    paddingHorizontal: 5,
+                }}
+            >
+                Arkiapuri
+            </Text>
+        </View>
+    )
+}
+
 function HomeStackScreen() {
     return (
-        <HomeStack.Navigator>
-            <HomeStack.Screen name="Tervetuloa" component={LandingScreen} />
-            <HomeStack.Screen name="Kirjaudu sisään" component={SignInScreen} />
-            <HomeStack.Screen name="Luo tunnus" component={SignUpScreen} />
+        <HomeStack.Navigator
+            screenOptions={{
+                headerStyle: {
+                    backgroundColor: '#fff',
+                },
+            }}
+        >
+            <HomeStack.Screen
+                name="Tervetuloa"
+                component={LandingScreen}
+                options={{ headerTitle: (props) => <LogoTitle {...props} /> }}
+            />
+            <HomeStack.Screen
+                name="Kirjaudu sisään"
+                component={SignInScreen}
+                options={{ headerTitle: (props) => <LogoTitle {...props} /> }}
+            />
+            <HomeStack.Screen
+                name="Luo tunnus"
+                component={SignUpScreen}
+                options={{ headerTitle: (props) => <LogoTitle {...props} /> }}
+            />
             <HomeStack.Screen
                 name="Vahvista sähköposti"
+                options={{ headerTitle: (props) => <LogoTitle {...props} /> }}
                 component={ConfirmEmailScreen}
             />
-            <HomeStack.Screen name="Arkiapuri" component={HomeScreen} />
+            <HomeStack.Screen
+                name="Arkiapuri"
+                options={{ headerTitle: (props) => <LogoTitle {...props} /> }}
+                component={HomeScreen}
+            />
         </HomeStack.Navigator>
     )
 }
@@ -48,7 +95,11 @@ const MealsStack = createNativeStackNavigator()
 function MealsStackScreen() {
     return (
         <MealsStack.Navigator>
-            <MealsStack.Screen name="Ateriat" component={MealsScreen} />
+            <MealsStack.Screen
+                name="Ateriat"
+                options={{ headerTitle: (props) => <LogoTitle {...props} /> }}
+                component={MealsScreen}
+            />
         </MealsStack.Navigator>
     )
 }
@@ -58,7 +109,11 @@ const PantryStack = createNativeStackNavigator()
 function PantryStackScreen() {
     return (
         <PantryStack.Navigator>
-            <PantryStack.Screen name="Ruokakomero" component={PantryScreen} />
+            <PantryStack.Screen
+                name="Pentteri"
+                options={{ headerTitle: (props) => <LogoTitle {...props} /> }}
+                component={PantryScreen}
+            />
         </PantryStack.Navigator>
     )
 }
@@ -70,6 +125,7 @@ function ShoppingListStackScreen() {
         <ShoppingListStack.Navigator>
             <ShoppingListStack.Screen
                 name="Ostoslista"
+                options={{ headerTitle: (props) => <LogoTitle {...props} /> }}
                 component={ShoppingListScreen}
             />
         </ShoppingListStack.Navigator>
@@ -83,6 +139,7 @@ function ReadingOrderStackScreen() {
         <ReadingOrderStack.Navigator>
             <ReadingOrderStack.Screen
                 name="Lukujärjestys"
+                options={{ headerTitle: (props) => <LogoTitle {...props} /> }}
                 component={ReadingOrderScreen}
             />
         </ReadingOrderStack.Navigator>
@@ -143,7 +200,7 @@ export default function Navigation() {
                     name="PantryStack"
                     component={PantryStackScreen}
                     options={{
-                        title: 'Ruokakomero',
+                        title: 'Pentteri',
                         tabBarIcon: ({ focused }) => (
                             <View
                                 style={{
@@ -157,7 +214,7 @@ export default function Navigation() {
                                     color="black"
                                 />
                                 <Text style={{ fontSize: 12, color: '#000' }}>
-                                    Ruokakomero
+                                    Pentteri
                                 </Text>
                             </View>
                         ),

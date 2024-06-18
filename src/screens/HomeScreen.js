@@ -56,10 +56,8 @@ const HomeScreen = ({ navigation }) => {
                         <TouchableOpacity style={styles.button}>
                             <Button
                                 style={styles.pantryButton}
-                                title="Ruokakomero"
-                                onPress={() =>
-                                    navigation.navigate('Ruokakomero')
-                                }
+                                title="Pentteri"
+                                onPress={() => navigation.navigate('Pentteri')}
                             />
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.button}>

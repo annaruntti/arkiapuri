@@ -23,7 +23,7 @@ const LandingScreen = ({ navigation }) => {
             <ImageBackground
                 imageStyle={{
                     resizeMode: 'cover', // works only here!
-                    top: -22,
+                    // top: -22,
                 }}
                 style={styles.image}
                 source={image}
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
         alignItems: 'center',
-        overflow: 'hidden', // prevent image overflow the container
+        // overflow: 'hidden', // prevent image overflow the container
     },
     background: {
         position: 'absolute',
