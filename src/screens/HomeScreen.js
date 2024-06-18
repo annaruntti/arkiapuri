@@ -97,9 +97,6 @@ const HomeScreen = ({ navigation }) => {
 export default HomeScreen
 
 const styles = StyleSheet.create({
-    // scrollView: {
-    //     paddingHorizontal: 20,
-    // },
     homeView: {
         backgroundColor: '#fff',
         flex: 1,
@@ -111,11 +108,6 @@ const styles = StyleSheet.create({
     },
     homeViewBottom: {
         backgroundColor: '#fff',
-        // flex: 1,
-        // alignItems: 'center',
-        // justifyContent: 'center',
-        // width: '100%',
-        // paddingHorizontal: 20,
     },
     container: {
         flex: 1,

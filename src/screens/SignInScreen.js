@@ -15,6 +15,10 @@ import { useNavigation } from '@react-navigation/native'
 import { useForm, Controller } from 'react-hook-form'
 import CustomInput from '../components/CustomInput'
 
+const image = {
+    uri: 'https://images.ctfassets.net/hef5a6s5axrs/1IyAq7R57oKbkLeh84dr1v/9b42c88e57eb245980260266810f3823/vecteezy_cartoon-young-woman-sharing-life-moments-at-social-networks_36895727.png',
+}
+
 const SignInScreen = () => {
     const { height } = useWindowDimensions()
     const navigation = useNavigation()
@@ -45,11 +49,12 @@ const SignInScreen = () => {
         <ScrollView showsVerticalScrollIndicator={false}>
             <View style={styles.root}>
                 <View style={styles.header}>
-                    {/* <Image
-                    source={Logo}
-                    style={[styles.logo, { height: height * 0.3 }]}
-                    resizeMode="contain"
-                /> */}
+                    <Image
+                        style={styles.image}
+                        source={image}
+                        alt="Henkilö käyttämässä puhelintaan"
+                        resizeMode={'contain'}
+                    />
                     <Text style={styles.headerTitle}>Kirjaudu sisään</Text>
                 </View>
 
@@ -113,10 +118,18 @@ const styles = StyleSheet.create({
     },
     header: {
         paddingVertical: 20,
+        paddingTop: 20,
     },
     headerTitle: {
         fontSize: 25,
         fontWeight: 'bold',
+    },
+    image: {
+        width: 300,
+        height: 240,
+        marginLeft: 'auto',
+        marginRight: 'auto',
+        marginBottom: 20,
     },
     logo: {
         width: '70%',

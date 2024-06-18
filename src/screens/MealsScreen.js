@@ -127,6 +127,6 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         width: 'auto',
-        minWidth: 50,
+        minWidth: 150,
     },
 })
