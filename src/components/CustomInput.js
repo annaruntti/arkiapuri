@@ -1,6 +1,6 @@
 import React from 'react'
-import { View, Text, TextInput, StyleSheet, Pressable } from 'react-native'
-import { Controller, useFormContext } from 'react-hook-form'
+import { View, Text, TextInput, StyleSheet } from 'react-native'
+import { Controller } from 'react-hook-form'
 import { MaterialIcons as Icon } from '@expo/vector-icons'
 
 const CustomInput = ({

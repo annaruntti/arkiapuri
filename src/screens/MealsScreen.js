@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
-import { Alert, Modal, StyleSheet, View, Text, Pressable } from 'react-native'
+import { Alert, Modal, StyleSheet, View, Text } from 'react-native'
 import { useForm } from 'react-hook-form'
 import AddMealForm from '../components/formAddMeal'
+import Button from '../components/Button'
 
 const MealsScreen = ({}) => {
     const [modalVisible, setModalVisible] = useState(false)
@@ -38,29 +39,22 @@ const MealsScreen = ({}) => {
                             Luo ateria oheisella lomakkeella
                         </Text>
                         <AddMealForm control={control} />
-                        <Pressable
-                            type="submit"
-                            style={[styles.button, styles.buttonClose]}
-                            // onPress={() => setModalVisible(!modalVisible)}
+                        <Button
+                            style={styles.primaryButton}
+                            title="Tallenna"
                             onPress={handleSubmit(onSubmit)}
-                        >
-                            <Text style={styles.textStyle}>
-                                Tallenna ateria
-                            </Text>
-                        </Pressable>
-                        {/* <button type="submit">Tallenna ateria</button> */}
+                        />
                     </View>
                 </View>
             </Modal>
             <Text style={styles.introText}>
                 Täällä voit lisätä, suunnitella ja selata aterioita.
             </Text>
-            <Pressable
-                style={[styles.button, styles.buttonOpen]}
+            <Button
+                style={styles.primaryButton}
+                title="Lisää uusi ateria"
                 onPress={() => setModalVisible(true)}
-            >
-                <Text style={styles.textStyle}>Lisää uusi ateria</Text>
-            </Pressable>
+            />
         </View>
     )
 }
@@ -120,5 +114,19 @@ const styles = StyleSheet.create({
     modalText: {
         marginBottom: 15,
         textAlign: 'center',
+    },
+    primaryButton: {
+        borderRadius: 25,
+        paddingTop: 7,
+        paddingBottom: 7,
+        paddingLeft: 10,
+        paddingRight: 10,
+        elevation: 2,
+        backgroundColor: '#9C86FC',
+        color: 'black',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        width: 'auto',
+        minWidth: 50,
     },
 })

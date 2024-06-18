@@ -106,8 +106,7 @@ const styles = StyleSheet.create({
         color: 'black',
         fontWeight: 'bold',
         textAlign: 'center',
-        width: 'auto',
-        minWidth: 50,
+        width: '100%',
     },
     secondaryButton: {
         borderRadius: 25,
@@ -120,8 +119,7 @@ const styles = StyleSheet.create({
         color: 'black',
         fontWeight: 'bold',
         textAlign: 'center',
-        width: 'auto',
-        minWidth: 50,
+        width: '100%',
     },
     tertiaryButton: {
         borderRadius: 25,
@@ -134,8 +132,7 @@ const styles = StyleSheet.create({
         color: 'black',
         fontWeight: 'bold',
         textAlign: 'center',
-        width: 'auto',
-        minWidth: 50,
+        width: '100%',
     },
 })
 
