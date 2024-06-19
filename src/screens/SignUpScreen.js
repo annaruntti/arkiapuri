@@ -20,7 +20,7 @@ const SignUpScreen = () => {
 
     const onRegisterPressed = async (data) => {
         axios
-            .post('http://192.168.50.223:8000/create-user', data)
+            .post('http://http://10.144.85.12:8000/create-user', data)
             .then((response) => {
                 console.log(response.data)
             })
@@ -121,7 +121,7 @@ const SignUpScreen = () => {
                 <View style={styles.buttonView}>
                     <View style={styles.buttonContainer}>
                         <Button
-                            title="Register"
+                            title="Tallenna"
                             style={styles.primaryButton}
                             onPress={handleSubmit(onRegisterPressed)}
                         />
@@ -129,7 +129,7 @@ const SignUpScreen = () => {
                     {/* <SocialSignInButtons /> */}
                     <View style={styles.buttonContainer}>
                         <Button
-                            title="Have an account? Sign in"
+                            title="Sisäänkirjautumiseen"
                             onPress={onSignInPress}
                             type="TERTIARY"
                             style={styles.tertiaryButton}

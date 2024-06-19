@@ -88,14 +88,14 @@ const SignInScreen = () => {
                 <View style={styles.buttonView}>
                     <View style={styles.buttonContainer}>
                         <Button
-                            title="Sign In"
+                            title="Kirjaudu sisään"
                             onPress={handleSubmit(onSignInPressed)}
                             style={styles.primaryButton}
                         />
                     </View>
                     <View style={styles.buttonContainer}>
                         <Button
-                            title="Don't have an account? Create one"
+                            title="Luo käyttäjätunnus"
                             onPress={onSignUpPress}
                             type="TERTIARY"
                             style={styles.tertiaryButton}
@@ -103,7 +103,7 @@ const SignInScreen = () => {
                     </View>
                     <View style={styles.buttonContainer}>
                         <Button
-                            title="Forgot password?"
+                            title="Unohditko salasanan?"
                             onPress={onForgotPasswordPressed}
                             type="TERTIARY"
                             style={styles.secondaryButton}
@@ -134,8 +134,8 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     image: {
-        width: 240,
-        height: 180,
+        width: 230,
+        height: 160,
         marginLeft: 'auto',
         marginRight: 'auto',
         marginBottom: 20,

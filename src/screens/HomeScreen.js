@@ -39,7 +39,7 @@ const HomeScreen = ({ navigation }) => {
             </View>
             <View style={styles.homeViewBottom}>
                 <Svg
-                    height={86}
+                    height={90}
                     width={Dimensions.get('screen').width}
                     style={styles.bottomWavy}
                     xmlns="http://www.w3.org/2000/svg"
@@ -139,8 +139,8 @@ const styles = StyleSheet.create({
         height: '100%',
     },
     image: {
-        width: 300,
-        height: 240,
+        width: 280,
+        height: 220,
         marginLeft: 'auto',
         marginRight: 'auto',
     },
