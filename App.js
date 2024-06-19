@@ -5,7 +5,7 @@
 //     ApolloProvider,
 // } from '@apollo/client'
 import { useEffect, useState } from 'react'
-import { SafeAreaView, StyleSheet } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import * as SplashScreen from 'expo-splash-screen'
 // import axios from 'axios'
 
@@ -79,9 +79,9 @@ const App = () => {
 
     return (
         // <ApolloProvider client={client}>
-        <SafeAreaView style={styles.root}>
+        <View style={styles.root}>
             <Navigation />
-        </SafeAreaView>
+        </View>
         // </ApolloProvider>
     )
 }
