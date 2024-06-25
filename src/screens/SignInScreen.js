@@ -33,18 +33,17 @@ const SignInScreen = () => {
 
     console.log(errors, 'errors')
 
-    const onSignInPressed = (data) => {
+    const onSignInPressed = async (data) => {
         axios
             .post('http://192.168.50.223:3001/sign-in', data)
             .then((response) => {
-                console.log(response.data)
+                if (response.data.success) {
+                    navigation.navigate('Arkiapuri')
+                }
             })
             .catch((error) => {
                 console.error('Error sending data: ', error)
             })
-
-        console.log(data, 'data3')
-        navigation.navigate('Arkiapuri')
     }
 
     const onForgotPasswordPressed = () => {
