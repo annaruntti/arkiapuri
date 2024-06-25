@@ -6,14 +6,16 @@ import {
     StyleSheet,
     useWindowDimensions,
     ScrollView,
-    TextInput,
 } from 'react-native'
-// import Logo from '../../../assets/images/Logo_1.png'
+import axios from 'axios'
+import { useNavigation } from '@react-navigation/native'
+import { useForm } from 'react-hook-form'
+
 import Button from '../components/Button'
 // import SocialSignInButtons from '../../components/SocialSignInButtons'
-import { useNavigation } from '@react-navigation/native'
-import { useForm, Controller } from 'react-hook-form'
 import CustomInput from '../components/CustomInput'
+
+const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/
 
 const image = {
     uri: 'https://images.ctfassets.net/hef5a6s5axrs/1IyAq7R57oKbkLeh84dr1v/9b42c88e57eb245980260266810f3823/vecteezy_cartoon-young-woman-sharing-life-moments-at-social-networks_36895727.png',
@@ -32,8 +34,16 @@ const SignInScreen = () => {
     console.log(errors, 'errors')
 
     const onSignInPressed = (data) => {
-        console.log(data, 'data')
-        // validate user
+        axios
+            .post('http://192.168.50.223:3001/sign-in', data)
+            .then((response) => {
+                console.log(response.data)
+            })
+            .catch((error) => {
+                console.error('Error sending data: ', error)
+            })
+
+        console.log(data, 'data3')
         navigation.navigate('Arkiapuri')
     }
 
@@ -64,11 +74,18 @@ const SignInScreen = () => {
                 </View>
 
                 <CustomInput
-                    label="Käyttäjänimi"
-                    name="username"
-                    placeholder="Kirjoita käyttäjätunnuksesi"
+                    label="Sähköpostiosoite"
+                    name="email"
                     control={control}
-                    rules={{ required: 'Käyttäjänimi on pakollinen tieto' }}
+                    placeholder="Kirjoita sähköpostiosoitteesi"
+                    rules={{
+                        pattern: {
+                            value: emailRegex,
+                            message:
+                                'Kirjoita sähköpostiosoitteesi muodossa esim. "matti.meikalainen@gmail.com"',
+                        },
+                        required: 'Sähköpostiosoite on pakollinen tieto',
+                    }}
                 />
                 <CustomInput
                     label="Salasana"

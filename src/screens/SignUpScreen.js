@@ -20,7 +20,7 @@ const SignUpScreen = () => {
 
     const onRegisterPressed = async (data) => {
         axios
-            .post('http://http://10.144.85.12:8000/create-user', data)
+            .post('http://192.168.50.223:3001/create-user', data)
             .then((response) => {
                 console.log(response.data)
             })
