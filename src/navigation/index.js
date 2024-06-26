@@ -4,22 +4,19 @@ import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 
-import {
-    Feather,
-    MaterialCommunityIcons,
-    AntDesign,
-    FontAwesome6,
-} from '@expo/vector-icons'
+import { Feather, AntDesign, FontAwesome6 } from '@expo/vector-icons'
 
 import LandingScreen from '../screens/LandingScreen'
 import SignInScreen from '../screens/SignInScreen'
 import SignUpScreen from '../screens/SignUpScreen'
+import ImageUploadScreen from '../screens/ImageUploadScreen'
 import ConfirmEmailScreen from '../screens/ConfirmEmailScreen'
 import HomeScreen from '../screens/HomeScreen'
 import MealsScreen from '../screens/MealsScreen'
 import ReadingOrderScreen from '../screens/ReadingOrderScreen'
 import PantryScreen from '../screens/PantryScreen'
 import ShoppingListScreen from '../screens/ShoppingListScreen'
+import { useLogin } from '../context/LoginProvider'
 
 const screenOptions = {
     tabBarShowLabel: false,
@@ -53,7 +50,47 @@ function LogoTitle() {
 }
 
 function HomeStackScreen() {
-    return (
+    const { isLoggedIn } = useLogin()
+    return isLoggedIn ? (
+        <HomeStack.Navigator
+            screenOptions={{
+                headerStyle: {
+                    backgroundColor: '#fff',
+                },
+            }}
+        >
+            {/* <HomeStack.Screen
+                name="Tervetuloa"
+                component={LandingScreen}
+                options={{ headerTitle: (props) => <LogoTitle {...props} /> }}
+            />
+            <HomeStack.Screen
+                name="Kirjaudu sisään"
+                component={SignInScreen}
+                options={{ headerTitle: (props) => <LogoTitle {...props} /> }}
+            />
+            <HomeStack.Screen
+                name="Luo tunnus"
+                component={SignUpScreen}
+                options={{ headerTitle: (props) => <LogoTitle {...props} /> }}
+            />
+            <HomeStack.Screen
+                name="Lataa profiilikuva"
+                options={{ headerTitle: (props) => <LogoTitle {...props} /> }}
+                component={ImageUploadScreen}
+            />
+            <HomeStack.Screen
+                name="Vahvista sähköposti"
+                options={{ headerTitle: (props) => <LogoTitle {...props} /> }}
+                component={ConfirmEmailScreen}
+            /> */}
+            <HomeStack.Screen
+                name="Arkiapuri"
+                options={{ headerTitle: (props) => <LogoTitle {...props} /> }}
+                component={HomeScreen}
+            />
+        </HomeStack.Navigator>
+    ) : (
         <HomeStack.Navigator
             screenOptions={{
                 headerStyle: {
@@ -75,6 +112,11 @@ function HomeStackScreen() {
                 name="Luo tunnus"
                 component={SignUpScreen}
                 options={{ headerTitle: (props) => <LogoTitle {...props} /> }}
+            />
+            <HomeStack.Screen
+                name="Lataa profiilikuva"
+                options={{ headerTitle: (props) => <LogoTitle {...props} /> }}
+                component={ImageUploadScreen}
             />
             <HomeStack.Screen
                 name="Vahvista sähköposti"

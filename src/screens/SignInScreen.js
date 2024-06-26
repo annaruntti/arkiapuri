@@ -35,7 +35,7 @@ const SignInScreen = () => {
 
     const onSignInPressed = async (data) => {
         axios
-            .post('http://192.168.50.223:3001/sign-in', data)
+            .post('http://10.144.85.12:3001/sign-in', data)
             .then((response) => {
                 if (response.data.success) {
                     navigation.navigate('Arkiapuri')

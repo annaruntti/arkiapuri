@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { View, Text, StyleSheet, ScrollView } from 'react-native'
 import { useNavigation } from '@react-navigation/core'
 import { useForm } from 'react-hook-form'
@@ -20,7 +20,7 @@ const SignUpScreen = () => {
 
     const onRegisterPressed = async (data) => {
         axios
-            .post('http://192.168.50.223:3001/create-user', data)
+            .post('http://10.144.85.12:3001/create-user', data)
             .then((response) => {
                 console.log(response.data)
             })
@@ -29,7 +29,7 @@ const SignUpScreen = () => {
             })
 
         console.log(data, 'data2')
-        navigation.navigate('Vahvista sähköposti')
+        navigation.navigate('Lataa profiilikuva')
     }
 
     const onSignInPress = () => {
