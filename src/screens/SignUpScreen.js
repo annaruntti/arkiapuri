@@ -22,24 +22,21 @@ const SignUpScreen = () => {
         axios
             .post('http://192.168.50.223:3001/create-user', data)
             .then((response) => {
-                try {
-                    axios
-                        .post('http://192.168.50.223:3001/sign-in', data)
-                        .then((response) => {
-                            const signInRes = response.data
-                            console.log('signInRes', signInRes)
-                            if (signInRes.success) {
-                                navigation.navigate('Lataa profiilikuva', {
-                                    token: signInRes.token,
-                                })
-                            }
-                        })
-                        .catch((error) => {
-                            console.error('Error sending data: ', error)
-                        })
-                } catch (error) {
-                    console.log('error')
-                }
+                console.log('response', response)
+                axios
+                    .post('http://192.168.50.223:3001/sign-in', data)
+                    .then((response) => {
+                        const signInRes = response.data
+                        console.log('signInRes', signInRes)
+                        if (signInRes.success) {
+                            navigation.navigate('Lataa profiilikuva', {
+                                token: signInRes.token,
+                            })
+                        }
+                    })
+                    .catch((error) => {
+                        console.error('Error sending data: ', error)
+                    })
             })
             .catch((error) => {
                 console.error('Error sending data: ', error)

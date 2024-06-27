@@ -8,7 +8,9 @@ import client from '../api/client'
 const ImageUpload = (props) => {
     const [profileImage, setProfileImage] = useState('')
     const [progress, setProgress] = useState(0)
-    // const { token } = props.route.params
+    const { token } = props.route.params
+
+    console.log('token', token)
 
     const openImageLibrary = async () => {
         const { status } =
@@ -24,9 +26,10 @@ const ImageUpload = (props) => {
                 allowsEditing: true,
             })
 
-            if (!response.cancelled) {
-                setProfileImage(response.uri)
+            if (!response.canceled) {
+                setProfileImage(response.assets[0].uri)
             }
+            console.log('response', response.assets[0].uri)
         }
     }
 
