@@ -8,7 +8,7 @@ import CustomInput from '../components/CustomInput'
 // import SocialSignInButtons from '../components/SocialSignInButtons'
 import Button from '../components/Button'
 
-// import client from '../api/client'
+import client from '../api/client'
 
 const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/
 
@@ -20,16 +20,30 @@ const SignUpScreen = () => {
 
     const onRegisterPressed = async (data) => {
         axios
-            .post('http://10.144.85.12:3001/create-user', data)
+            .post('http://192.168.50.223:3001/create-user', data)
             .then((response) => {
-                console.log(response.data)
+                try {
+                    axios
+                        .post('http://192.168.50.223:3001/sign-in', data)
+                        .then((response) => {
+                            const signInRes = response.data
+                            console.log('signInRes', signInRes)
+                            if (signInRes.success) {
+                                navigation.navigate('Lataa profiilikuva', {
+                                    token: signInRes.token,
+                                })
+                            }
+                        })
+                        .catch((error) => {
+                            console.error('Error sending data: ', error)
+                        })
+                } catch (error) {
+                    console.log('error')
+                }
             })
             .catch((error) => {
                 console.error('Error sending data: ', error)
             })
-
-        console.log(data, 'data2')
-        navigation.navigate('Lataa profiilikuva')
     }
 
     const onSignInPress = () => {

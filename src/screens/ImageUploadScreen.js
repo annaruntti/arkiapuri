@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { View, StyleSheet, TouchableOpacity, Text, Image } from 'react-native'
+import { View, StyleSheet, Text, Image, Pressable } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
 import { StackActions } from '@react-navigation/native'
 
@@ -8,7 +8,7 @@ import client from '../api/client'
 const ImageUpload = (props) => {
     const [profileImage, setProfileImage] = useState('')
     const [progress, setProgress] = useState(0)
-    const { token } = props.route.params
+    // const { token } = props.route.params
 
     const openImageLibrary = async () => {
         const { status } =
@@ -58,7 +58,7 @@ const ImageUpload = (props) => {
     return (
         <View style={styles.container}>
             <View>
-                <TouchableOpacity
+                <Pressable
                     onPress={openImageLibrary}
                     style={styles.uploadBtnContainer}
                 >
@@ -72,7 +72,7 @@ const ImageUpload = (props) => {
                             Upload Profile Image
                         </Text>
                     )}
-                </TouchableOpacity>
+                </Pressable>
                 <Text style={styles.skip}>Skip</Text>
                 {profileImage ? (
                     <Text
