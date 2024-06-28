@@ -4,6 +4,7 @@ import * as ImagePicker from 'expo-image-picker'
 import { StackActions } from '@react-navigation/native'
 
 import client from '../api/client'
+import Button from '../components/Button'
 
 const ImageUpload = (props) => {
     const [profileImage, setProfileImage] = useState('')
@@ -71,26 +72,17 @@ const ImageUpload = (props) => {
                             style={{ width: '100%', height: '100%' }}
                         />
                     ) : (
-                        <Text style={styles.uploadBtn}>
-                            Upload Profile Image
-                        </Text>
+                        <Text style={styles.uploadBtn}>Lataa profiilikuva</Text>
                     )}
                 </Pressable>
-                <Text style={styles.skip}>Skip</Text>
+                <Text style={styles.skip}>Ohita</Text>
                 {profileImage ? (
-                    <Text
+                    <Button
                         onPress={uploadProfileImage}
-                        style={[
-                            styles.skip,
-                            {
-                                backgroundColor: 'green',
-                                color: 'white',
-                                borderRadius: 8,
-                            },
-                        ]}
+                        style={styles.primaryButton}
                     >
-                        Upload
-                    </Text>
+                        Tallenna kuva
+                    </Button>
                 ) : null}
             </View>
         </View>
@@ -127,6 +119,19 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
         letterSpacing: 2,
         opacity: 0.5,
+    },
+    primaryButton: {
+        borderRadius: 25,
+        paddingTop: 7,
+        paddingBottom: 7,
+        paddingLeft: 10,
+        paddingRight: 10,
+        elevation: 2,
+        backgroundColor: '#9C86FC',
+        color: 'black',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        width: '100%',
     },
 })
 
