@@ -4,12 +4,13 @@ import {
     Text,
     TextInput,
     SafeAreaView,
-    Button,
+    TouchableOpacity
 } from 'react-native'
 import { useState } from 'react'
 import { Controller } from 'react-hook-form'
 import SectionedMultiSelect from 'react-native-sectioned-multi-select'
 import { MaterialIcons as Icon } from '@expo/vector-icons'
+import Fontisto from '@expo/vector-icons/Fontisto';
 import DateTimePicker from '@react-native-community/datetimepicker'
 
 const items = [
@@ -33,24 +34,20 @@ const items = [
 ]
 
 const FormAddGrocery = (props) => {
-    const [date, setDate] = useState(new Date(1598051730000))
-    const [mode, setMode] = useState('date')
-    const [show, setShow] = useState(false)
+    const [date, setDate] = useState(new Date());
+    const [show, setShow] = useState(false);
+    const [mode, setMode] = useState('date');
 
     const onChange = (event, selectedDate) => {
-        const currentDate = selectedDate
-        setShow(false)
-        setDate(currentDate)
-    }
-
-    const showMode = (currentMode) => {
-        setShow(true)
-        setMode(currentMode)
-    }
+        const currentDate = selectedDate || date;
+        setShow(false);
+        setDate(currentDate);
+    };
 
     const showDatepicker = () => {
-        showMode('date')
-    }
+        setShow(true);
+        setMode('date');
+    };
 
     return (
         <View style={styles.form}>
@@ -92,6 +89,10 @@ const FormAddGrocery = (props) => {
                         styles={{
                             backdrop: styles.multiSelectBackdrop,
                             selectToggle: styles.multiSelectBox,
+                            button: styles.primaryButton,
+                            confirmText: styles.primaryButtonText,
+                            cancelButton: styles.cancelButton,
+                            cancelButtonText: styles.cancelButtonText,
                         }}
                         items={items}
                         IconRenderer={Icon}
@@ -99,9 +100,12 @@ const FormAddGrocery = (props) => {
                         displayKey="name"
                         onSelectedItemsChange={onChange}
                         selectedItems={value}
-                        removeAllText="Clear all"
+                        removeAllText="Poista kaikki"
                         showCancelButton={true}
                         showRemoveAll={true}
+                        searchPlaceholderText="Etsi kategoriaa"
+                        confirmText="Tallenna kategoriat"
+                        selectText='Valitse yksi tai useampi kategoria'
                     />
                 )}
                 name="groceryType"
@@ -185,21 +189,28 @@ const FormAddGrocery = (props) => {
                     </Text>
                 </View>
             )}
-            <SafeAreaView>
-                <Button
-                    onPress={showDatepicker}
-                    title="Aseta tuotteen viimeinen käyttöpäivä"
-                />
-                <Text>selected: {date.toLocaleString()}</Text>
-                {show && (
-                    <DateTimePicker
-                        testID="dateTimePicker"
-                        value={date}
-                        mode={mode}
-                        onChange={onChange}
+            <SafeAreaView style={styles.container}>
+            <Text style={styles.label}>Aseta tuotteen viimeinen käyttöpäivä</Text>
+            <View style={styles.inputAndIcon}>
+                <TouchableOpacity onPress={showDatepicker}>
+                    <TextInput
+                        style={styles.formInput}
+                        value={date.toLocaleDateString()}
+                        editable={false}
                     />
-                )}
-            </SafeAreaView>
+                </TouchableOpacity>
+                <Text style={styles.inputMetric}><Fontisto name="date" size={24} color="black" /></Text>
+            </View>
+            {show && (
+                <DateTimePicker
+                    testID="dateTimePicker"
+                    value={date}
+                    mode={mode}
+                    display="default"
+                    onChange={onChange}
+                />
+            )}
+        </SafeAreaView>
         </View>
     )
 }
@@ -244,15 +255,33 @@ const styles = StyleSheet.create({
         padding: 10,
         fontSize: 20,
     },
-    button: {
+    primaryButton: {
         borderRadius: 25,
-        padding: 7,
+        paddingVertical: 20,
+        paddingHorizontal: 20,
         elevation: 2,
-        backgroundColor: '#FFC121',
-        color: 'black',
+        backgroundColor: '#9C86FC',
+        minWidth: 150,
+        marginLeft: 10,
+        marginRight: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'row',
+        marginBottom: 10,
+    },
+    primaryButtonText: {
+        color: '#000',
         fontWeight: 'bold',
-        textAlign: 'center',
-        width: '100%',
+    },
+    cancelButton: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        backgroundColor: 'transparent',
+    },
+    cancelButtonText: {
+        color: '#000',
+        fontWeight: 'bold',
     },
     modalText: {
         marginBottom: 15,

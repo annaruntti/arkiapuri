@@ -49,7 +49,7 @@ const PantryScreen = ({}) => {
                             errors={errors}
                         />
                         <Button
-                            style={styles.button}
+                            style={styles.primaryButton}
                             title="Tallenna"
                             onPress={handleSubmit(onSubmit)}
                         />
