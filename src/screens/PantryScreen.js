@@ -18,6 +18,7 @@ const PantryScreen = ({}) => {
             groceryType: [],
             groceryPrice: '',
             groceryNumber: '',
+            expiryDate: '',
         },
     })
     const onSubmit = (data) => {

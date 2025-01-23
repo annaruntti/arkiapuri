@@ -4,13 +4,13 @@ import {
     Text,
     TextInput,
     SafeAreaView,
-    TouchableOpacity
+    TouchableOpacity,
 } from 'react-native'
 import { useState } from 'react'
 import { Controller } from 'react-hook-form'
 import SectionedMultiSelect from 'react-native-sectioned-multi-select'
 import { MaterialIcons as Icon } from '@expo/vector-icons'
-import Fontisto from '@expo/vector-icons/Fontisto';
+import Fontisto from '@expo/vector-icons/Fontisto'
 import DateTimePicker from '@react-native-community/datetimepicker'
 
 const items = [
@@ -34,20 +34,20 @@ const items = [
 ]
 
 const FormAddGrocery = (props) => {
-    const [date, setDate] = useState(new Date());
-    const [show, setShow] = useState(false);
-    const [mode, setMode] = useState('date');
+    const [date, setDate] = useState(new Date())
+    const [show, setShow] = useState(false)
+    const [mode, setMode] = useState('date')
 
     const onChange = (event, selectedDate) => {
-        const currentDate = selectedDate || date;
-        setShow(false);
-        setDate(currentDate);
-    };
+        const currentDate = selectedDate || date
+        setShow(false)
+        setDate(currentDate)
+    }
 
     const showDatepicker = () => {
-        setShow(true);
-        setMode('date');
-    };
+        setShow(true)
+        setMode('date')
+    }
 
     return (
         <View style={styles.form}>
@@ -105,7 +105,7 @@ const FormAddGrocery = (props) => {
                         showRemoveAll={true}
                         searchPlaceholderText="Etsi kategoriaa"
                         confirmText="Tallenna kategoriat"
-                        selectText='Valitse yksi tai useampi kategoria'
+                        selectText="Valitse yksi tai useampi kategoria"
                     />
                 )}
                 name="groceryType"
@@ -189,28 +189,49 @@ const FormAddGrocery = (props) => {
                     </Text>
                 </View>
             )}
-            <SafeAreaView style={styles.container}>
-            <Text style={styles.label}>Aseta tuotteen viimeinen käyttöpäivä</Text>
-            <View style={styles.inputAndIcon}>
-                <TouchableOpacity onPress={showDatepicker}>
-                    <TextInput
-                        style={styles.formInput}
-                        value={date.toLocaleDateString()}
-                        editable={false}
-                    />
-                </TouchableOpacity>
-                <Text style={styles.inputMetric}><Fontisto name="date" size={24} color="black" /></Text>
-            </View>
-            {show && (
-                <DateTimePicker
-                    testID="dateTimePicker"
-                    value={date}
-                    mode={mode}
-                    display="default"
-                    onChange={onChange}
-                />
+            <Text style={styles.label}>
+                Aseta tuotteen viimeinen käyttöpäivä
+            </Text>
+            <Controller
+                control={props.control}
+                render={({ field: { onChange, value } }) => (
+                    <View style={styles.inputAndIcon}>
+                        <TouchableOpacity onPress={showDatepicker}>
+                            <TextInput
+                                style={styles.formInput}
+                                value={date.toLocaleDateString()}
+                                editable={false}
+                            />
+                        </TouchableOpacity>
+                        <Text style={styles.inputMetric}>
+                            <Fontisto name="date" size={24} color="black" />
+                        </Text>
+                        {show && (
+                            <DateTimePicker
+                                testID="dateTimePicker"
+                                value={date}
+                                mode={mode}
+                                display="default"
+                                onChange={(event, selectedDate) => {
+                                    onChange(selectedDate)
+                                    setDate(selectedDate)
+                                    setShow(false)
+                                }}
+                            />
+                        )}
+                    </View>
+                )}
+                name="expiryDate"
+                {...props.register('expiryDate')}
+            />
+            {props.errors.expiryDate && (
+                <View style={styles.messageSection}>
+                    <Icon name="error" color="red" size={14} />
+                    <Text style={styles.errorMsg}>
+                        Tämä on pakollinen tieto
+                    </Text>
+                </View>
             )}
-        </SafeAreaView>
         </View>
     )
 }
