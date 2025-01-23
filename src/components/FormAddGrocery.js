@@ -3,7 +3,6 @@ import {
     View,
     Text,
     TextInput,
-    SafeAreaView,
     TouchableOpacity,
 } from 'react-native'
 import { useState } from 'react'
@@ -13,25 +12,7 @@ import { MaterialIcons as Icon } from '@expo/vector-icons'
 import Fontisto from '@expo/vector-icons/Fontisto'
 import DateTimePicker from '@react-native-community/datetimepicker'
 
-const items = [
-    { name: 'Kasviproteiinit', id: 1 },
-    { name: 'Kala', id: 2 },
-    { name: 'Liha', id: 3 },
-    { name: 'Kasvikset', id: 4 },
-    { name: 'Kuiva-aineet', id: 5 },
-    { name: 'Valmisateriat', id: 6 },
-    { name: 'Pakasteet', id: 7 },
-    { name: 'Ruoanlaittovälineet', id: 8 },
-    { name: 'Tarvikkeet', id: 9 },
-    { name: 'Gluteeniton', id: 10 },
-    { name: 'Maidoton', id: 11 },
-    { name: 'Laktoositon', id: 12 },
-    { name: 'Munaton', id: 13 },
-    { name: 'Kasvisruoka', id: 14 },
-    { name: 'Vegaaninen', id: 15 },
-    { name: 'Vähähiilihydraattinen', id: 16 },
-    { name: 'Juomat', id: 17 },
-]
+import categories from '../data/categories'
 
 const FormAddGrocery = (props) => {
     const [date, setDate] = useState(new Date())
@@ -94,7 +75,7 @@ const FormAddGrocery = (props) => {
                             cancelButton: styles.cancelButton,
                             cancelButtonText: styles.cancelButtonText,
                         }}
-                        items={items}
+                        items={categories}
                         IconRenderer={Icon}
                         uniqueKey="id"
                         displayKey="name"

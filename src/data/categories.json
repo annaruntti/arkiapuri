@@ -1,0 +1,19 @@
+[
+    { "name": "Kasviproteiinit", "id": 1 },
+    { "name": "Kala", "id": 2 },
+    { "name": "Liha", "id": 3 },
+    { "name": "Kasvikset", "id": 4 },
+    { "name": "Kuiva-aineet", "id": 5 },
+    { "name": "Valmisateriat", "id": 6 },
+    { "name": "Pakasteet", "id": 7 },
+    { "name": "Ruoanlaittovälineet", "id": 8 },
+    { "name": "Tarvikkeet", "id": 9 },
+    { "name": "Gluteeniton", "id": 10 },
+    { "name": "Maidoton", "id": 11 },
+    { "name": "Laktoositon", "id": 12 },
+    { "name": "Munaton", "id": 13 },
+    { "name": "Kasvisruoka", "id": 14 },
+    { "name": "Vegaaninen", "id": 15 },
+    { "name": "Vähähiilihydraattinen", "id": 16 },
+    { "name": "Juomat", "id": 17 }
+]
