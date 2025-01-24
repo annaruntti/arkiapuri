@@ -44,7 +44,7 @@ const SignUpScreen = () => {
     }
 
     const onSignInPress = () => {
-        navigation.navigate('Kirjaudu siään')
+        navigation.navigate('Kirjaudu sisään')
     }
 
     const onTermsOfUsePressed = () => {
