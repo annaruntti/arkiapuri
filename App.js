@@ -1,8 +1,6 @@
-import { useEffect, useState } from 'react'
-import { StyleSheet, View } from 'react-native'
+import React, { useEffect, useState } from 'react'
+import { StyleSheet, View, Text } from 'react-native'
 import * as SplashScreen from 'expo-splash-screen'
-// import axios from 'axios'
-
 import Navigation from './src/navigation'
 import LoginProvider from './src/context/LoginProvider'
 
@@ -12,17 +10,12 @@ const App = () => {
     const [isLoading, setIsLoading] = useState(true)
 
     useEffect(() => {
-        async function prepare() {
+        const prepare = async () => {
             try {
-                // keeps the splash screen visible while assets are cached
-                await SplashScreen.preventAutoHideAsync()
-
-                // pre-load/cache assets: images, fonts, and videos
-                await func.loadAssetsAsync()
+                await new Promise((resolve) => setTimeout(resolve, 2000))
             } catch (e) {
-                // console.warn(e);
+                console.warn(e)
             } finally {
-                // loading is complete
                 setIsLoading(false)
             }
         }
@@ -31,14 +24,12 @@ const App = () => {
     }, [])
 
     useEffect(() => {
-        // when loading is complete
-        if (isLoading === false) {
-            // hide splash function
-            const hideSplash = async () => SplashScreen.hideAsync()
-
-            // hide splash screen to show app
-            hideSplash()
+        const hideSplash = async () => {
+            if (!isLoading) {
+                await SplashScreen.hideAsync()
+            }
         }
+        hideSplash()
     }, [isLoading])
 
     if (isLoading) {
@@ -60,6 +51,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         maxWidth: 400,
         marginHorizontal: 'auto',
+        width: '100%',
     },
 })
 

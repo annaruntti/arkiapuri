@@ -23,7 +23,7 @@ const CustomInput = ({
                 <>
                     <Text style={styles.label}>{label}</Text>
                     <TextInput
-                        value={value}
+                        value={value || ''}
                         onChangeText={onChange}
                         onBlur={onBlur}
                         placeholder={placeholder}

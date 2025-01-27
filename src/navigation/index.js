@@ -59,31 +59,6 @@ function HomeStackScreen() {
                 },
             }}
         >
-            {/* <HomeStack.Screen
-                name="Tervetuloa"
-                component={LandingScreen}
-                options={{ headerTitle: (props) => <LogoTitle {...props} /> }}
-            />
-            <HomeStack.Screen
-                name="Kirjaudu sisään"
-                component={SignInScreen}
-                options={{ headerTitle: (props) => <LogoTitle {...props} /> }}
-            />
-            <HomeStack.Screen
-                name="Luo tunnus"
-                component={SignUpScreen}
-                options={{ headerTitle: (props) => <LogoTitle {...props} /> }}
-            />
-            <HomeStack.Screen
-                name="Lataa profiilikuva"
-                options={{ headerTitle: (props) => <LogoTitle {...props} /> }}
-                component={ImageUploadScreen}
-            />
-            <HomeStack.Screen
-                name="Vahvista sähköposti"
-                options={{ headerTitle: (props) => <LogoTitle {...props} /> }}
-                component={ConfirmEmailScreen}
-            /> */}
             <HomeStack.Screen
                 name="Arkiapuri"
                 options={{ headerTitle: (props) => <LogoTitle {...props} /> }}

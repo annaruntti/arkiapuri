@@ -3,12 +3,11 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native'
 import { useNavigation } from '@react-navigation/core'
 import { useForm } from 'react-hook-form'
 import axios from 'axios'
+import * as Updates from 'expo-updates'
 
 import CustomInput from '../components/CustomInput'
 // import SocialSignInButtons from '../components/SocialSignInButtons'
 import Button from '../components/Button'
-
-import client from '../api/client'
 
 const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/
 
@@ -18,29 +17,50 @@ const SignUpScreen = () => {
 
     const navigation = useNavigation()
 
+    const getServerUrl = (endpoint) => {
+        const { manifest } = Updates
+        let debuggerHost = 'localhost' // Default to localhost for web
+        if (manifest && manifest.debuggerHost) {
+            debuggerHost = manifest.debuggerHost.split(':').shift()
+        } else {
+            // Fallback to a hardcoded IP address for development
+            debuggerHost = '192.168.50.179'
+        }
+        const serverUrl = `http://${debuggerHost}:3001${endpoint}`
+        console.log('Manifest:', manifest)
+        console.log('Debugger Host:', debuggerHost)
+        console.log('Server URL:', serverUrl) // log to verify the URL
+        return serverUrl
+    }
+
     const onRegisterPressed = async (data) => {
-        axios
-            .post('http://localhost:3001/create-user', data)
-            .then((response) => {
-                console.log('response', response)
-                axios
-                    .post('http://localhost:3001/sign-in', data)
-                    .then((response) => {
-                        const signInRes = response.data
-                        console.log('signInRes', signInRes)
-                        if (signInRes.success) {
-                            navigation.navigate('Lataa profiilikuva', {
-                                token: signInRes.token,
-                            })
-                        }
-                    })
-                    .catch((error) => {
-                        console.error('Error sending data: ', error)
-                    })
-            })
-            .catch((error) => {
-                console.error('Error sending data: ', error)
-            })
+        try {
+            const response = await axios.post(
+                getServerUrl('/create-user'),
+                data
+            )
+            console.log('response', response)
+
+            // Extract only the necessary fields for sign-in
+            const signInData = {
+                email: data.email,
+                password: data.password,
+            }
+
+            const signInResponse = await axios.post(
+                getServerUrl('/sign-in'),
+                signInData
+            )
+            const signInRes = signInResponse.data
+            console.log('signInRes', signInRes)
+            if (signInRes.success) {
+                navigation.navigate('Lataa profiilikuva', {
+                    token: signInRes.token,
+                })
+            }
+        } catch (error) {
+            console.error('Error sending data: ', error)
+        }
     }
 
     const onSignInPress = () => {
