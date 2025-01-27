@@ -20,11 +20,11 @@ const SignUpScreen = () => {
 
     const onRegisterPressed = async (data) => {
         axios
-            .post('http://192.168.50.223:3001/create-user', data)
+            .post('http://localhost:3001/create-user', data)
             .then((response) => {
                 console.log('response', response)
                 axios
-                    .post('http://192.168.50.223:3001/sign-in', data)
+                    .post('http://localhost:3001/sign-in', data)
                     .then((response) => {
                         const signInRes = response.data
                         console.log('signInRes', signInRes)

@@ -75,14 +75,17 @@ const ImageUpload = (props) => {
                         <Text style={styles.uploadBtn}>Lataa profiilikuva</Text>
                     )}
                 </Pressable>
-                <Text style={styles.skip}>Ohita</Text>
+                <Button
+                    title="Ohita"
+                    onPress={() => props.navigation.navigate('Arkiapuri')}
+                    style={styles.skip}
+                ></Button>
                 {profileImage ? (
                     <Button
+                        title="Tallenna profiilikuva"
                         onPress={uploadProfileImage}
                         style={styles.primaryButton}
-                    >
-                        Tallenna kuva
-                    </Button>
+                    ></Button>
                 ) : null}
             </View>
         </View>

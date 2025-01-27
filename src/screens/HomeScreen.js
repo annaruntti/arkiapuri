@@ -9,26 +9,30 @@ import {
     Dimensions,
 } from 'react-native'
 import Svg, { Path } from 'react-native-svg'
-import Button from '../components/Button'
-// import images from '../assets/images'
 
-const image = {
-    uri: 'https://images.ctfassets.net/hef5a6s5axrs/uLiBysHEdvHowvtmiYGqT/99de25c240728adfb41eb83554c19f04/family-cooking.png',
+const mealImage = {
+    uri: 'https://images.ctfassets.net/hef5a6s5axrs/3OXmXSClR5d46mq2R9wUTQ/9424500e11cf4895ed015acad2ef30e4/pexels-khezez-30302292.jpg',
+}
+
+const pantryImage = {
+    uri: 'https://images.ctfassets.net/hef5a6s5axrs/3zjZr5Vp6ocYpXHmaYHe3v/c1a443286e4897a6e0e68d99c6229622/pexels-alteredsnaps-14043657.jpg',
+}
+
+const shoppingListImage = {
+    uri: 'https://images.ctfassets.net/hef5a6s5axrs/4JAmOxHGMLV1p9gdAPmEBp/db381df2f0635421dbda8d4b104fb435/pexels-jack-sparrow-4199287.jpg',
+}
+
+const readingOrderImage = {
+    uri: 'https://images.ctfassets.net/hef5a6s5axrs/u5DfilbEiD02RJKX0PXxW/feb6f70fceb8ddc3d3e76aaf46408db9/pexels-karolina-grabowska-5882583.jpg',
 }
 
 const HomeScreen = ({ navigation }) => {
     return (
         <ScrollView style={styles.scrollView}>
-            <View style={styles.homeView}>
+            <View style={styles.homeViewTop}>
                 <View style={styles.header}>
-                    <Image
-                        style={styles.image}
-                        source={image}
-                        alt="Perhe tekemässä ruokaa"
-                        resizeMode={'cover'}
-                    />
                     <Text style={styles.introTitle}>
-                        Tervetuloa Arkiapuriin!
+                        Tervetuloa käyttämään Arkiapuria!
                     </Text>
                     <Text style={styles.introText}>
                         Arkiapurin avulla voit helposti suunnitella ja selata
@@ -46,44 +50,88 @@ const HomeScreen = ({ navigation }) => {
                     viewBox="0 0 1440 280"
                 >
                     <Path
-                        fill="#5000ca"
+                        fill="#9C86FC"
                         fill-opacity="1"
-                        d="M0,32L34.3,53.3C68.6,75,137,117,206,128C274.3,139,343,117,411,128C480,139,549,181,617,165.3C685.7,149,754,75,823,85.3C891.4,96,960,192,1029,234.7C1097.1,277,1166,267,1234,218.7C1302.9,171,1371,85,1406,42.7L1440,0L1440,320L1405.7,320C1371.4,320,1303,320,1234,320C1165.7,320,1097,320,1029,320C960,320,891,320,823,320C754.3,320,686,320,617,320C548.6,320,480,320,411,320C342.9,320,274,320,206,320C137.1,320,69,320,34,320L0,320Z"
+                        d="M0,96L40,112C80,128,160,160,240,186.7C320,213,400,235,480,208C560,181,640,107,720,69.3C800,32,880,32,960,74.7C1040,117,1120,203,1200,229.3C1280,256,1360,224,1400,208L1440,192L1440,320L1400,320C1360,320,1280,320,1200,320C1120,320,1040,320,960,320C880,320,800,320,720,320C640,320,560,320,480,320C400,320,320,320,240,320C160,320,80,320,40,320L0,320Z"
                     />
                 </Svg>
-                <View style={styles.buttonArea}>
+                <View style={styles.linkArea}>
                     <View style={styles.container}>
-                        <TouchableOpacity style={styles.button}>
-                            <Button
-                                style={styles.pantryButton}
-                                title="Pentteri"
-                                onPress={() => navigation.navigate('Pentteri')}
-                            />
+                        <TouchableOpacity
+                            style={styles.box}
+                            onPress={() => navigation.navigate('Ateriat')}
+                        >
+                            <Image source={mealImage} style={styles.boxImage} />
+                            <View style={styles.boxTextContent}>
+                                <Text style={styles.boxTextTitle}>Ateriat</Text>
+                                <Text style={styles.boxText}>
+                                    Selaa ja luo aterioita. Aterian ainesosat
+                                    voit lisätä helposti ostoslistaasi ja
+                                    sovellus ehdottaa sinulle aterioita
+                                    pentterisi sisällön perusteella.
+                                </Text>
+                            </View>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.button}>
-                            <Button
-                                style={styles.mealsButton}
-                                title="Ateriat"
-                                onPress={() => navigation.navigate('Ateriat')}
+                        <TouchableOpacity
+                            style={styles.box}
+                            onPress={() => navigation.navigate('Pentteri')}
+                        >
+                            <Image
+                                source={pantryImage}
+                                style={styles.boxImage}
                             />
+                            <View style={styles.boxTextContent}>
+                                <Text style={styles.boxTextTitle}>
+                                    Pentteri
+                                </Text>
+                                <Text style={styles.boxText}>
+                                    Selaa pentterisi sisältöä ja lisää sinne
+                                    elintarvikeita. Ostoslistasi lisää ostetut
+                                    tuotteet automaattisesti pentteriisi.
+                                </Text>
+                            </View>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.button}>
-                            <Button
-                                style={styles.readingOrderButton}
-                                title="Lukujärjestys"
-                                onPress={() =>
-                                    navigation.navigate('Lukujärjestys')
-                                }
+                        <TouchableOpacity
+                            style={styles.box}
+                            onPress={() => navigation.navigate('Ostoslista')}
+                        >
+                            <Image
+                                source={shoppingListImage}
+                                style={styles.boxImage}
                             />
+                            <View style={styles.boxTextContent}>
+                                <Text style={styles.boxTextTitle}>
+                                    Ostoslista
+                                </Text>
+                                <Text style={styles.boxText}>
+                                    Lisää tuotteita ostoslistallesi ja käytä
+                                    listaa apuna kaupassa. Ostetuksi merkityt
+                                    tuotteet lisätään automaattisesti
+                                    pentteriisi.
+                                </Text>
+                            </View>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.button}>
-                            <Button
-                                style={styles.shoppingListButton}
-                                title="Ostoslista"
-                                onPress={() =>
-                                    navigation.navigate('Ostoslista')
-                                }
+                        <TouchableOpacity
+                            style={styles.box}
+                            onPress={() => navigation.navigate('Lukujärjestys')}
+                        >
+                            <Image
+                                source={readingOrderImage}
+                                style={styles.boxImage}
                             />
+                            <View style={styles.boxTextContent}>
+                                <Text style={styles.boxTextTitle}>
+                                    Lukujärjestys
+                                </Text>
+                                <Text style={styles.boxText}>
+                                    Luo oma lukujärjestyksesi ja suunnittele
+                                    viikon ohjelma ja ateriat haluamillesi
+                                    päiville ja ajoille. Voit lisätä
+                                    suunnittelemiasi aterioita
+                                    lukujärjestykseesi, jolloin arjen hallinta
+                                    helpottuu.
+                                </Text>
+                            </View>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -95,7 +143,7 @@ const HomeScreen = ({ navigation }) => {
 export default HomeScreen
 
 const styles = StyleSheet.create({
-    homeView: {
+    homeViewTop: {
         backgroundColor: '#fff',
         flex: 1,
         alignItems: 'center',
@@ -112,7 +160,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         width: '100%',
-        marginBottom: 30,
+        marginBottom: 20,
     },
     introTitle: {
         textAlign: 'center',
@@ -122,11 +170,7 @@ const styles = StyleSheet.create({
     introText: {
         fontSize: 18,
         textAlign: 'center',
-        paddingVertical: 20,
-        marginBottom: 10,
-    },
-    header: {
-        minHeight: 400,
+        paddingTop: 20,
     },
     backgroundImage: {
         flex: 1,
@@ -138,47 +182,73 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
     },
-    image: {
-        width: 280,
-        height: 220,
+    headerImage: {
+        width: 250,
+        height: 190,
         marginLeft: 'auto',
         marginRight: 'auto',
     },
-    buttonArea: {
-        backgroundColor: '#5000ca',
+    linkArea: {
+        backgroundColor: '#9C86FC',
         width: '100%',
         padding: 20,
     },
-    button: {
-        borderRadius: 15,
-        paddingTop: 5,
-        paddingBottom: 5,
-        paddingLeft: 50,
-        paddingRight: 50,
-        backgroundColor: '#FFFFFF',
-        shadowColor: 'rgba(0, 0, 0, 0.1)',
-        shadowOpacity: 0.8,
-        elevation: 6,
-        shadowRadius: 15,
-        shadowOffset: { width: 1, height: 13 },
+    box: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#fff',
+        padding: 10,
+        marginBottom: 10,
+        borderRadius: 5,
         width: '100%',
-        marginBottom: 8,
     },
-    buttonHover: {
-        marginTop: 10,
-        borderRadius: 25,
-        paddingTop: 5,
-        paddingBottom: 5,
-        paddingLeft: 50,
-        paddingRight: 50,
-        shadowColor: 'rgba(46, 229, 157, 0.4)',
-        shadowOpacity: 1.5,
-        elevation: 8,
-        shadowRadius: 20,
-        shadowOffset: { width: 1, height: 13 },
-        backgroundColor: '#2EE59D',
-        color: '#FFFFFF',
+    boxImage: {
+        width: 55,
+        height: 70,
+        marginRight: 10,
     },
+    boxTextContent: {
+        flex: 'auto',
+        alignItems: 'flex-start',
+    },
+    boxTextTitle: {
+        fontSize: 17,
+        color: '#000',
+    },
+    boxText: {
+        fontSize: 12,
+        color: '#000',
+    },
+    // button: {
+    //     borderRadius: 15,
+    //     paddingTop: 5,
+    //     paddingBottom: 5,
+    //     paddingLeft: 50,
+    //     paddingRight: 50,
+    //     backgroundColor: '#FFFFFF',
+    //     shadowColor: 'rgba(0, 0, 0, 0.1)',
+    //     shadowOpacity: 0.8,
+    //     elevation: 6,
+    //     shadowRadius: 15,
+    //     shadowOffset: { width: 1, height: 13 },
+    //     width: '100%',
+    //     marginBottom: 8,
+    // },
+    // buttonHover: {
+    //     marginTop: 10,
+    //     borderRadius: 25,
+    //     paddingTop: 5,
+    //     paddingBottom: 5,
+    //     paddingLeft: 50,
+    //     paddingRight: 50,
+    //     shadowColor: 'rgba(46, 229, 157, 0.4)',
+    //     shadowOpacity: 1.5,
+    //     elevation: 8,
+    //     shadowRadius: 20,
+    //     shadowOffset: { width: 1, height: 13 },
+    //     backgroundColor: '#2EE59D',
+    //     color: '#FFFFFF',
+    // },
     pantryButton: {
         width: '100%',
         borderRadius: 5,

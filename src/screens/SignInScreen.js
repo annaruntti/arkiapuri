@@ -36,7 +36,7 @@ const SignInScreen = () => {
     const onSignInPressed = async (data) => {
         console.log('data', data)
         axios
-            .post('http://192.168.50.223:3001/sign-in', data)
+            .post('http://localhost:3001/sign-in', data)
             .then((response) => {
                 console.log('data4', data)
                 console.log('response', response)

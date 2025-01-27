@@ -11,7 +11,7 @@ import Svg, { Path } from 'react-native-svg'
 import Button from '../components/Button'
 
 const image = {
-    uri: 'https://images.ctfassets.net/hef5a6s5axrs/3OzNmAlq5mzLJyKIJSlGaX/a02fc998f812267ea2c349285897dd5c/IMG_1682.jpg',
+    uri: 'https://images.ctfassets.net/hef5a6s5axrs/4GwuSgvoXA0VX6cv5ix521/8545dbed4f7a510976eb78f8dcf4b91e/pexels-katerina-holmes-5907832.jpg',
 }
 
 const LandingScreen = ({ navigation }) => {
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
         color: '#fff',
         textAlign: 'left',
         paddingTop: 20,
-        textShadowColor: 'rgba(0, 0, 0, 0.75)',
+        textShadowColor: 'rgba(0, 0, 0, 0.85)',
         textShadowOffset: { width: -1, height: 1 },
         textShadowRadius: 10,
     },
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
         paddingTop: 10,
         paddingBottom: 20,
         marginBottom: 10,
-        textShadowColor: 'rgba(0, 0, 0, 0.75)',
+        textShadowColor: 'rgba(0, 0, 0, 0.85)',
         textShadowOffset: { width: -1, height: 1 },
         textShadowRadius: 10,
     },
