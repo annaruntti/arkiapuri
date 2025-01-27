@@ -11,19 +11,19 @@ import {
 import Svg, { Path } from 'react-native-svg'
 
 const mealImage = {
-    uri: 'https://images.ctfassets.net/hef5a6s5axrs/3OXmXSClR5d46mq2R9wUTQ/9424500e11cf4895ed015acad2ef30e4/pexels-khezez-30302292.jpg',
+    uri: 'https://images.ctfassets.net/hef5a6s5axrs/1fvToRJqesGgl6dJCFyyJl/0f484ccfe293cca2a0a4ab57d3324c34/undraw_breakfast_rgx5.png',
 }
 
 const pantryImage = {
-    uri: 'https://images.ctfassets.net/hef5a6s5axrs/3zjZr5Vp6ocYpXHmaYHe3v/c1a443286e4897a6e0e68d99c6229622/pexels-alteredsnaps-14043657.jpg',
+    uri: 'https://images.ctfassets.net/hef5a6s5axrs/ShAURfxCIu9Og4KJZW5dW/ace0e55a861fa451eec6090a9b79c44e/undraw_online-groceries_n03y.png',
 }
 
 const shoppingListImage = {
-    uri: 'https://images.ctfassets.net/hef5a6s5axrs/4JAmOxHGMLV1p9gdAPmEBp/db381df2f0635421dbda8d4b104fb435/pexels-jack-sparrow-4199287.jpg',
+    uri: 'https://images.ctfassets.net/hef5a6s5axrs/4RDsykanJeWsUOE9vZJWsT/be968786ae294ee4dcedbc29823dbbdc/undraw_shopping-app_b80f.png',
 }
 
 const readingOrderImage = {
-    uri: 'https://images.ctfassets.net/hef5a6s5axrs/u5DfilbEiD02RJKX0PXxW/feb6f70fceb8ddc3d3e76aaf46408db9/pexels-karolina-grabowska-5882583.jpg',
+    uri: 'https://images.ctfassets.net/hef5a6s5axrs/5s04BoMG8Blt6H2mvimgUK/ec13e9499e1d6e280ad8ae44c13e674b/undraw_diet_zdwe.png',
 }
 
 const HomeScreen = ({ navigation }) => {
@@ -57,82 +57,90 @@ const HomeScreen = ({ navigation }) => {
                 </Svg>
                 <View style={styles.linkArea}>
                     <View style={styles.container}>
-                        <TouchableOpacity
-                            style={styles.box}
-                            onPress={() => navigation.navigate('Ateriat')}
-                        >
-                            <Image source={mealImage} style={styles.boxImage} />
-                            <View style={styles.boxTextContent}>
-                                <Text style={styles.boxTextTitle}>Ateriat</Text>
-                                <Text style={styles.boxText}>
-                                    Selaa ja luo aterioita. Aterian ainesosat
-                                    voit lisätä helposti ostoslistaasi ja
-                                    sovellus ehdottaa sinulle aterioita
-                                    pentterisi sisällön perusteella.
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.box}
-                            onPress={() => navigation.navigate('Pentteri')}
-                        >
-                            <Image
-                                source={pantryImage}
-                                style={styles.boxImage}
-                            />
-                            <View style={styles.boxTextContent}>
-                                <Text style={styles.boxTextTitle}>
-                                    Pentteri
-                                </Text>
-                                <Text style={styles.boxText}>
-                                    Selaa pentterisi sisältöä ja lisää sinne
-                                    elintarvikeita. Ostoslistasi lisää ostetut
-                                    tuotteet automaattisesti pentteriisi.
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.box}
-                            onPress={() => navigation.navigate('Ostoslista')}
-                        >
-                            <Image
-                                source={shoppingListImage}
-                                style={styles.boxImage}
-                            />
-                            <View style={styles.boxTextContent}>
-                                <Text style={styles.boxTextTitle}>
-                                    Ostoslista
-                                </Text>
-                                <Text style={styles.boxText}>
-                                    Lisää tuotteita ostoslistallesi ja käytä
-                                    listaa apuna kaupassa. Ostetuksi merkityt
-                                    tuotteet lisätään automaattisesti
-                                    pentteriisi.
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.box}
-                            onPress={() => navigation.navigate('Lukujärjestys')}
-                        >
-                            <Image
-                                source={readingOrderImage}
-                                style={styles.boxImage}
-                            />
-                            <View style={styles.boxTextContent}>
-                                <Text style={styles.boxTextTitle}>
-                                    Lukujärjestys
-                                </Text>
-                                <Text style={styles.boxText}>
-                                    Luo oma lukujärjestyksesi ja suunnittele
-                                    viikon ohjelma ja ateriat haluamillesi
-                                    päiville ja ajoille. Voit lisätä
-                                    suunnittelemiasi aterioita
-                                    lukujärjestykseesi, jolloin arjen hallinta
-                                    helpottuu.
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
+                        <View style={styles.boxRow}>
+                            <TouchableOpacity
+                                style={styles.box}
+                                onPress={() => navigation.navigate('Ateriat')}
+                            >
+                                <Image
+                                    source={mealImage}
+                                    style={styles.boxImage}
+                                />
+                                <View style={styles.boxTextContent}>
+                                    <Text style={styles.boxTextTitle}>
+                                        Ateriat
+                                    </Text>
+                                    <Text style={styles.boxText}>
+                                        Selaa ja luo aterioita. Lisää ainesosat
+                                        ostoslistaan ja saat ateriaehdotuksia
+                                        pentterisi sisällön perusteella.
+                                    </Text>
+                                </View>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.box}
+                                onPress={() => navigation.navigate('Pentteri')}
+                            >
+                                <Image
+                                    source={pantryImage}
+                                    style={styles.boxImage}
+                                />
+                                <View style={styles.boxTextContent}>
+                                    <Text style={styles.boxTextTitle}>
+                                        Pentteri
+                                    </Text>
+                                    <Text style={styles.boxText}>
+                                        Selaa pentteriäsi ja lisää
+                                        elintarvikkeita. Ostoslistan tuotteet
+                                        lisätään automaattisesti pentteriisi.
+                                    </Text>
+                                </View>
+                            </TouchableOpacity>
+                        </View>
+                        <View style={styles.boxRow}>
+                            <TouchableOpacity
+                                style={styles.box}
+                                onPress={() =>
+                                    navigation.navigate('Ostoslista')
+                                }
+                            >
+                                <Image
+                                    source={shoppingListImage}
+                                    style={styles.boxImage}
+                                />
+                                <View style={styles.boxTextContent}>
+                                    <Text style={styles.boxTextTitle}>
+                                        Ostoslista
+                                    </Text>
+                                    <Text style={styles.boxText}>
+                                        Lisää tuotteita ostoslistalle ja käytä
+                                        listaa kaupassa. Ostetut tuotteet
+                                        lisätään automaattisesti pentteriin.
+                                    </Text>
+                                </View>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.box}
+                                onPress={() =>
+                                    navigation.navigate('Lukujärjestys')
+                                }
+                            >
+                                <Image
+                                    source={readingOrderImage}
+                                    style={styles.boxImage}
+                                />
+                                <View style={styles.boxTextContent}>
+                                    <Text style={styles.boxTextTitle}>
+                                        Lukujärjestys
+                                    </Text>
+                                    <Text style={styles.boxText}>
+                                        Luo lukujärjestys ja suunnittele viikon
+                                        ohjelma ja ateriat. Lisää ateriat
+                                        lukujärjestykseen helpottaaksesi arkea.
+                                    </Text>
+                                </View>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
             </View>
@@ -194,22 +202,27 @@ const styles = StyleSheet.create({
         padding: 20,
     },
     box: {
-        flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#fff',
         padding: 10,
         marginBottom: 10,
         borderRadius: 5,
+        width: '48%',
+        marginHorizontal: 5,
+    },
+    boxRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
         width: '100%',
     },
     boxImage: {
-        width: 55,
-        height: 70,
-        marginRight: 10,
+        width: 85,
+        height: 65,
+        marginBottom: 10,
     },
     boxTextContent: {
         flex: 'auto',
-        alignItems: 'flex-start',
+        alignItems: 'center',
     },
     boxTextTitle: {
         fontSize: 17,
@@ -218,6 +231,8 @@ const styles = StyleSheet.create({
     boxText: {
         fontSize: 12,
         color: '#000',
+        textAlign: 'center',
+        marginBottom: 5,
     },
     // button: {
     //     borderRadius: 15,
