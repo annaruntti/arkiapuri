@@ -47,8 +47,7 @@ const LandingScreen = ({ navigation }) => {
                 </LinearGradient>
                 <View style={styles.bottomBox}>
                     <Svg
-                        height={86}
-                        // height="auto"
+                        height={100}
                         width={Dimensions.get('screen').width}
                         viewBox="0 0 1440 280"
                         style={styles.bottomWavy}
@@ -64,7 +63,7 @@ const LandingScreen = ({ navigation }) => {
                             ilmaista ja vie vain hetken!
                         </Text>
                         <Button
-                            title="Kirjaudu sisään"
+                            title="Kirjaudu sovellukseen"
                             onPress={onSignUpPress}
                             style={styles.primaryButton}
                         />
@@ -136,7 +135,7 @@ const styles = StyleSheet.create({
         marginTop: 'auto',
     },
     bottomBoxContent: {
-        paddingTop: 5,
+        paddingTop: 10,
         paddingRight: 20,
         paddingBottom: 20,
         paddingLeft: 20,

@@ -64,71 +64,72 @@ const SignUpScreen = () => {
                 <View style={styles.header}>
                     <Text style={styles.headerTitle}>Luo käyttäjätunnus</Text>
                 </View>
-
-                <CustomInput
-                    label="Käyttäjänimi"
-                    name="username"
-                    control={control}
-                    placeholder="Kirjoita käyttäjänimesi"
-                    rules={{
-                        required: 'Käyttäjätunnus on pakollinen tieto',
-                        minLength: {
-                            value: 6,
-                            message:
-                                'Käyttäjätunnuksen pituuden tulee olla vähintään 6 merkkiä',
-                        },
-                        maxLength: {
-                            value: 24,
-                            message:
-                                'Käyttäjätunnuksen pituuden tulee olla enintään 24 merkkiä',
-                        },
-                    }}
-                />
-                <CustomInput
-                    label="Sähköpostiosoite"
-                    name="email"
-                    control={control}
-                    placeholder="Kirjoita sähköpostiosoitteesi"
-                    rules={{
-                        pattern: {
-                            value: emailRegex,
-                            message:
-                                'Kirjoita sähköpostiosoitteesi muodossa esim. "matti.meikalainen@gmail.com"',
-                        },
-                        required: 'Sähköpostiosoite on pakollinen tieto',
-                    }}
-                />
-                <CustomInput
-                    label="Salasana"
-                    name="password"
-                    control={control}
-                    placeholder="Syötä vahva salasana"
-                    secureTextEntry
-                    rules={{
-                        required: 'Salasana on pakollinen tieto',
-                        minLength: {
-                            value: 6,
-                            message:
-                                'Salasanan pituuden tulee olla vähintään 6 merkkiä',
-                        },
-                        maxLength: {
-                            value: 24,
-                            message:
-                                'Salasanan pituuden tulee olla enintään 24 merkkiä',
-                        },
-                    }}
-                />
-                <CustomInput
-                    label="Salasana uudelleen"
-                    name="confirmPassword"
-                    control={control}
-                    placeholder="Syötä salasana uudelleen"
-                    secureTextEntry
-                    rules={{
-                        validate: (value) =>
-                            value === pwd || 'Salasana ei täsmää',
-                    }}
-                />
+                <View style={styles.inputContainer}>
+                    <CustomInput
+                        label="Käyttäjänimi"
+                        name="username"
+                        control={control}
+                        placeholder="Kirjoita käyttäjänimesi"
+                        rules={{
+                            required: 'Käyttäjätunnus on pakollinen tieto',
+                            minLength: {
+                                value: 6,
+                                message:
+                                    'Käyttäjätunnuksen pituuden tulee olla vähintään 6 merkkiä',
+                            },
+                            maxLength: {
+                                value: 24,
+                                message:
+                                    'Käyttäjätunnuksen pituuden tulee olla enintään 24 merkkiä',
+                            },
+                        }}
+                    />
+                    <CustomInput
+                        label="Sähköpostiosoite"
+                        name="email"
+                        control={control}
+                        placeholder="Kirjoita sähköpostiosoitteesi"
+                        rules={{
+                            pattern: {
+                                value: emailRegex,
+                                message:
+                                    'Kirjoita sähköpostiosoitteesi muodossa esim. "matti.meikalainen@gmail.com"',
+                            },
+                            required: 'Sähköpostiosoite on pakollinen tieto',
+                        }}
+                    />
+                    <CustomInput
+                        label="Salasana"
+                        name="password"
+                        control={control}
+                        placeholder="Syötä vahva salasana"
+                        secureTextEntry
+                        rules={{
+                            required: 'Salasana on pakollinen tieto',
+                            minLength: {
+                                value: 6,
+                                message:
+                                    'Salasanan pituuden tulee olla vähintään 6 merkkiä',
+                            },
+                            maxLength: {
+                                value: 24,
+                                message:
+                                    'Salasanan pituuden tulee olla enintään 24 merkkiä',
+                            },
+                        }}
+                    />
+                    <CustomInput
+                        label="Salasana uudelleen"
+                        name="confirmPassword"
+                        control={control}
+                        placeholder="Syötä salasana uudelleen"
+                        secureTextEntry
+                        rules={{
+                            validate: (value) =>
+                                value === pwd || 'Salasana ei täsmää',
+                        }}
+                    />
+                </View>
                 <View style={styles.buttonView}>
                     <View style={styles.buttonContainer}>
                         <Button
@@ -189,6 +190,9 @@ const styles = StyleSheet.create({
         width: '70%',
         maxWidth: 300,
         maxHeight: 200,
+    },
+    inputContainer: {
+        marginBottom: 10,
     },
     buttonView: {
         paddingVertical: 10,

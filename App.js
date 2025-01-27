@@ -58,6 +58,8 @@ const styles = StyleSheet.create({
     root: {
         flex: 1,
         backgroundColor: '#fff',
+        maxWidth: 400,
+        marginHorizontal: 'auto',
     },
 })
 

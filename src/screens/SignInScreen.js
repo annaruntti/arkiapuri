@@ -2,9 +2,9 @@ import React from 'react'
 import {
     View,
     Text,
-    Image,
+    // Image,
     StyleSheet,
-    useWindowDimensions,
+    // useWindowDimensions,
     ScrollView,
 } from 'react-native'
 import axios from 'axios'
@@ -22,7 +22,7 @@ const image = {
 }
 
 const SignInScreen = () => {
-    const { height } = useWindowDimensions()
+    // const { height } = useWindowDimensions()
     const navigation = useNavigation()
 
     const {
@@ -64,46 +64,39 @@ const SignInScreen = () => {
         >
             <View style={styles.root}>
                 <View style={styles.header}>
-                    <View style={styles.headerImage}>
-                        <Image
-                            style={styles.image}
-                            source={image}
-                            alt="Henkilö käyttämässä puhelintaan"
-                            resizeMode={'contain'}
-                        />
-                    </View>
                     <Text style={styles.headerTitle}>Kirjaudu sisään</Text>
                 </View>
-
-                <CustomInput
-                    label="Sähköpostiosoite"
-                    name="email"
-                    control={control}
-                    placeholder="Kirjoita sähköpostiosoitteesi"
-                    rules={{
-                        pattern: {
-                            value: emailRegex,
-                            message:
-                                'Kirjoita sähköpostiosoitteesi muodossa esim. "matti.meikalainen@gmail.com"',
-                        },
-                        required: 'Sähköpostiosoite on pakollinen tieto',
-                    }}
-                />
-                <CustomInput
-                    label="Salasana"
-                    name="password"
-                    placeholder="Kirjoita salsanasi"
-                    secureTextEntry
-                    control={control}
-                    rules={{
-                        required: 'Salasana on pakollinen tieto',
-                        minLength: {
-                            value: 6,
-                            message:
-                                'Salasanan pituuden tulee olla vähintään 6 merkkiä',
-                        },
-                    }}
-                />
+                <View style={styles.inputContainer}>
+                    <CustomInput
+                        label="Sähköpostiosoite"
+                        name="email"
+                        control={control}
+                        placeholder="Kirjoita sähköpostiosoitteesi"
+                        rules={{
+                            pattern: {
+                                value: emailRegex,
+                                message:
+                                    'Kirjoita sähköpostiosoitteesi muodossa esim. "matti.meikalainen@gmail.com"',
+                            },
+                            required: 'Sähköpostiosoite on pakollinen tieto',
+                        }}
+                    />
+                    <CustomInput
+                        label="Salasana"
+                        name="password"
+                        placeholder="Kirjoita salsanasi"
+                        secureTextEntry
+                        control={control}
+                        rules={{
+                            required: 'Salasana on pakollinen tieto',
+                            minLength: {
+                                value: 6,
+                                message:
+                                    'Salasanan pituuden tulee olla vähintään 6 merkkiä',
+                            },
+                        }}
+                    />
+                </View>
                 <View style={styles.buttonView}>
                     <View style={styles.buttonContainer}>
                         <Button
@@ -139,25 +132,18 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
     },
     root: {
-        paddingHorizontal: 20,
+        alignItems: 'left',
+        padding: 20,
     },
     header: {
         paddingVertical: 20,
-        paddingTop: 20,
-    },
-    headerImage: {
-        alignItems: 'center',
     },
     headerTitle: {
-        fontSize: 18,
+        fontSize: 25,
         fontWeight: 'bold',
     },
-    image: {
-        width: 230,
-        height: 160,
-        marginLeft: 'auto',
-        marginRight: 'auto',
-        marginBottom: 20,
+    inputContainer: {
+        marginBottom: 10,
     },
     logo: {
         width: '70%',
