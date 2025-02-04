@@ -9,6 +9,10 @@ const ReadingOrderScreen = ({}) => {
             <CustomText style={styles.introText}>
                 Täältä löydät viikon lukujärjestyksesi
             </CustomText>
+            <CustomText style={styles.infoText}>
+                Luo lukujärjestys ja suunnittele viikon ohjelma ja ateriat.
+                Lisää ateriat lukujärjestykseen helpottaaksesi arkea.
+            </CustomText>
             <View>
                 <TableOne />
             </View>
@@ -24,6 +28,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         alignItems: 'center',
         justifyContent: 'center',
+        padding: 20,
     },
     introText: {
         fontSize: 25,

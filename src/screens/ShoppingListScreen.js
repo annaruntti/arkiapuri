@@ -6,12 +6,15 @@ import CustomText from '../components/CustomText'
 const ShoppingListScreen = ({}) => {
     return (
         <View style={styles.container}>
-            <CustomText style={styles.container}>
-                Täällä voit lisätä tuotteita ostoslistaan, sekä käyttää listaa
+            <CustomText style={styles.introText}>
+                Täällä voit lisätä tuotteita ostoslistalle, sekä käyttää listaa
                 apuna kaupassa merkaten tuotteet kerätyksi kun olet kerännyt ne
                 ostoskärryysi tai -koriisi.
             </CustomText>
-            <Button title="Lisää tuotteita listaan" />
+            <Button
+                style={styles.primaryButton}
+                title="Lisää tuotteita listaan"
+            />
         </View>
     )
 }
@@ -24,11 +27,26 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         alignItems: 'center',
         justifyContent: 'center',
+        padding: 20,
     },
     introText: {
         fontSize: 25,
         textAlign: 'center',
         padding: 20,
         marginBottom: 10,
+    },
+    primaryButton: {
+        borderRadius: 25,
+        paddingTop: 7,
+        paddingBottom: 7,
+        paddingLeft: 10,
+        paddingRight: 10,
+        elevation: 2,
+        backgroundColor: '#9C86FC',
+        color: 'black',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        width: 'auto',
+        minWidth: 50,
     },
 })

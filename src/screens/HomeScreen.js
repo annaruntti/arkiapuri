@@ -8,6 +8,7 @@ import {
     TouchableOpacity,
     Dimensions,
 } from 'react-native'
+import { useNavigation } from '@react-navigation/native'
 import Svg, { Path } from 'react-native-svg'
 import CustomText from '../components/CustomText'
 
@@ -27,7 +28,8 @@ const readingOrderImage = {
     uri: 'https://images.ctfassets.net/hef5a6s5axrs/5s04BoMG8Blt6H2mvimgUK/ec13e9499e1d6e280ad8ae44c13e674b/undraw_diet_zdwe.png',
 }
 
-const HomeScreen = ({ navigation }) => {
+const HomeScreen = () => {
+    const navigation = useNavigation()
     return (
         <ScrollView style={styles.scrollView}>
             <View style={styles.homeViewTop}>
@@ -61,7 +63,11 @@ const HomeScreen = ({ navigation }) => {
                         <View style={styles.boxRow}>
                             <TouchableOpacity
                                 style={styles.box}
-                                onPress={() => navigation.navigate('Ateriat')}
+                                onPress={() =>
+                                    navigation.navigate('MealsStack', {
+                                        screen: 'Ateriat',
+                                    })
+                                }
                             >
                                 <Image
                                     source={mealImage}
@@ -71,16 +77,15 @@ const HomeScreen = ({ navigation }) => {
                                     <CustomText style={styles.boxTextTitle}>
                                         Ateriat
                                     </CustomText>
-                                    <CustomText style={styles.boxText}>
-                                        Selaa ja luo aterioita. Lisää ainesosat
-                                        ostoslistaan ja saat ateriaehdotuksia
-                                        pentterisi sisällön perusteella.
-                                    </CustomText>
                                 </View>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={styles.box}
-                                onPress={() => navigation.navigate('Pentteri')}
+                                onPress={() =>
+                                    navigation.navigate('PantryStack', {
+                                        screen: 'Pentteri',
+                                    })
+                                }
                             >
                                 <Image
                                     source={pantryImage}
@@ -90,11 +95,6 @@ const HomeScreen = ({ navigation }) => {
                                     <CustomText style={styles.boxTextTitle}>
                                         Pentteri
                                     </CustomText>
-                                    <CustomText style={styles.boxText}>
-                                        Selaa pentteriäsi ja lisää
-                                        elintarvikkeita. Ostoslistan tuotteet
-                                        lisätään automaattisesti pentteriisi.
-                                    </CustomText>
                                 </View>
                             </TouchableOpacity>
                         </View>
@@ -102,7 +102,9 @@ const HomeScreen = ({ navigation }) => {
                             <TouchableOpacity
                                 style={styles.box}
                                 onPress={() =>
-                                    navigation.navigate('Ostoslista')
+                                    navigation.navigate('ShoppingListStack', {
+                                        screen: 'Ostoslista',
+                                    })
                                 }
                             >
                                 <Image
@@ -113,17 +115,14 @@ const HomeScreen = ({ navigation }) => {
                                     <CustomText style={styles.boxTextTitle}>
                                         Ostoslista
                                     </CustomText>
-                                    <CustomText style={styles.boxText}>
-                                        Lisää tuotteita ostoslistalle ja käytä
-                                        listaa kaupassa. Ostetut tuotteet
-                                        lisätään automaattisesti pentteriin.
-                                    </CustomText>
                                 </View>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={styles.box}
                                 onPress={() =>
-                                    navigation.navigate('Lukujärjestys')
+                                    navigation.navigate('ReadingOrderStack', {
+                                        screen: 'Lukujärjestys',
+                                    })
                                 }
                             >
                                 <Image
@@ -133,11 +132,6 @@ const HomeScreen = ({ navigation }) => {
                                 <View style={styles.boxTextContent}>
                                     <CustomText style={styles.boxTextTitle}>
                                         Lukujärjestys
-                                    </CustomText>
-                                    <CustomText style={styles.boxText}>
-                                        Luo lukujärjestys ja suunnittele viikon
-                                        ohjelma ja ateriat. Lisää ateriat
-                                        lukujärjestykseen helpottaaksesi arkea.
                                     </CustomText>
                                 </View>
                             </TouchableOpacity>
@@ -198,28 +192,30 @@ const styles = StyleSheet.create({
         marginRight: 'auto',
     },
     linkArea: {
+        flex: 1,
         backgroundColor: '#9C86FC',
-        width: '100%',
-        padding: 20,
+        justifyContent: 'center',
     },
     box: {
-        alignItems: 'center',
+        flex: 1,
+        margin: 10,
+        padding: 20,
         backgroundColor: '#fff',
-        padding: 10,
-        marginBottom: 10,
-        borderRadius: 5,
-        width: '48%',
-        marginHorizontal: 5,
+        borderRadius: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 5,
+        elevation: 3,
     },
     boxRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        width: '100%',
     },
     boxImage: {
-        width: 85,
-        height: 65,
-        marginBottom: 10,
+        width: 110,
+        height: 90,
+        marginBottom: 20,
     },
     boxTextContent: {
         flex: 'auto',
@@ -234,55 +230,5 @@ const styles = StyleSheet.create({
         color: '#000',
         textAlign: 'center',
         marginBottom: 5,
-    },
-    // button: {
-    //     borderRadius: 15,
-    //     paddingTop: 5,
-    //     paddingBottom: 5,
-    //     paddingLeft: 50,
-    //     paddingRight: 50,
-    //     backgroundColor: '#FFFFFF',
-    //     shadowColor: 'rgba(0, 0, 0, 0.1)',
-    //     shadowOpacity: 0.8,
-    //     elevation: 6,
-    //     shadowRadius: 15,
-    //     shadowOffset: { width: 1, height: 13 },
-    //     width: '100%',
-    //     marginBottom: 8,
-    // },
-    // buttonHover: {
-    //     marginTop: 10,
-    //     borderRadius: 25,
-    //     paddingTop: 5,
-    //     paddingBottom: 5,
-    //     paddingLeft: 50,
-    //     paddingRight: 50,
-    //     shadowColor: 'rgba(46, 229, 157, 0.4)',
-    //     shadowOpacity: 1.5,
-    //     elevation: 8,
-    //     shadowRadius: 20,
-    //     shadowOffset: { width: 1, height: 13 },
-    //     backgroundColor: '#2EE59D',
-    //     color: '#FFFFFF',
-    // },
-    pantryButton: {
-        width: '100%',
-        borderRadius: 5,
-        padding: 10,
-    },
-    mealsButton: {
-        width: '100%',
-        borderRadius: 5,
-        padding: 10,
-    },
-    readingOrderButton: {
-        width: '100%',
-        borderRadius: 5,
-        padding: 10,
-    },
-    shoppingListButton: {
-        width: '100%',
-        borderRadius: 5,
-        padding: 10,
     },
 })

@@ -42,8 +42,8 @@ const PantryScreen = ({}) => {
                 <View style={styles.layerView}>
                     <View style={styles.modalView}>
                         <CustomText style={styles.introText}>
-                            Lisää pentteriin eli ruokakomeroosi elintarvikkeita
-                            oheisella lomakkeella.
+                            Lisää pentteriin elintarvikkeita oheisella
+                            lomakkeella.
                         </CustomText>
                         <FormAddGrocery
                             register={register}
@@ -59,9 +59,11 @@ const PantryScreen = ({}) => {
                 </View>
             </Modal>
             <CustomText style={styles.introText}>
-                Täällä voit lisätä ja selata elintarvikkeita, joita kotoasi jo
-                löytyy ja käyttää niitä avuksi ateriasuunnittelussa ja
-                ostoslistan luonnissa.
+                Selaa pentteriäsi eli ruokakomeroasi joita kotoasi jo löytyy ja
+                käyttä niitä avuksi ateriasuunnittelussa ja ostoslistan
+                luonnissa. Voit myös lisätä täällä uusia elintarvikkeita
+                pentteriisi. Ostoslistan tuotteet lisätään automaattisesti
+                pentteriin
             </CustomText>
             <Button
                 style={styles.primaryButton}
@@ -80,7 +82,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 35,
+        padding: 20,
     },
     introText: {
         fontSize: 25,

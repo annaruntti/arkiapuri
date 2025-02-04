@@ -52,6 +52,7 @@ function LogoTitle() {
 
 function HomeStackScreen() {
     const { isLoggedIn } = useLogin()
+    console.log(isLoggedIn, 'isLoggedIn')
     return isLoggedIn ? (
         <HomeStack.Navigator
             screenOptions={{
@@ -245,7 +246,7 @@ export default function Navigation() {
                     }}
                 />
                 <Tab.Screen
-                    name="Shopping list"
+                    name="ShoppingListStack"
                     component={ShoppingListStackScreen}
                     options={{
                         title: 'Ostoslista',
@@ -271,7 +272,7 @@ export default function Navigation() {
                     }}
                 />
                 <Tab.Screen
-                    name="Reading order"
+                    name="ReadingOrderStack"
                     component={ReadingOrderStackScreen}
                     options={{
                         title: 'Lukujärjestys',

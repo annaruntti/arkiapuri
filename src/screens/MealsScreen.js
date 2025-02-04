@@ -49,7 +49,10 @@ const MealsScreen = ({}) => {
                 </View>
             </Modal>
             <CustomText style={styles.introText}>
-                Täällä voit lisätä, suunnitella ja selata aterioita.
+                Selaa tallennettuja aterioita ja luo uusia aterioita. Voit
+                lisätä atrerioihin tarvittavat ainesosat aterian luonnin
+                yhteydessä ostoslistallesi. Näet myös aterian luonnin
+                yhteydessä, löytyykö tuote pentteristäsi.
             </CustomText>
             <Button
                 style={styles.primaryButton}
@@ -68,6 +71,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         alignItems: 'center',
         justifyContent: 'center',
+        padding: 20,
     },
     introText: {
         fontSize: 25,
