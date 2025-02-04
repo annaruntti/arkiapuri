@@ -8,6 +8,7 @@ import * as Updates from 'expo-updates'
 import CustomInput from '../components/CustomInput'
 // import SocialSignInButtons from '../components/SocialSignInButtons'
 import Button from '../components/Button'
+import CustomText from '../components/CustomText'
 
 const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/
 
@@ -82,7 +83,9 @@ const SignUpScreen = () => {
         >
             <View style={styles.root}>
                 <View style={styles.header}>
-                    <Text style={styles.headerTitle}>Luo käyttäjätunnus</Text>
+                    <CustomText style={styles.headerTitle}>
+                        Luo käyttäjätunnus
+                    </CustomText>
                 </View>
                 <View style={styles.inputContainer}>
                     <CustomInput
@@ -168,22 +171,22 @@ const SignUpScreen = () => {
                         />
                     </View>
                     <View style={styles.buttonContainer}>
-                        <Text style={styles.text}>
+                        <CustomText style={styles.text}>
                             By registering, you confirm that you accept our{' '}
-                            <Text
+                            <CustomText
                                 style={styles.link}
                                 onPress={onTermsOfUsePressed}
                             >
                                 Terms of Use
-                            </Text>{' '}
+                            </CustomText>{' '}
                             and{' '}
-                            <Text
+                            <CustomText
                                 style={styles.link}
                                 onPress={onPrivacyPressed}
                             >
                                 Privacy Policy
-                            </Text>
-                        </Text>
+                            </CustomText>
+                        </CustomText>
                     </View>
                 </View>
             </View>

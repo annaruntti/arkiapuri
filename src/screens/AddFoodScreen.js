@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { StyleSheet, View, Text } from 'react-native'
 import Button from '../components/Button'
 import { useApolloClient, useMutation } from '@apollo/client'
+import CustomText from '../components/CustomText'
 
 const AddFood = (props) => {
     // apollo client instance
@@ -18,9 +19,9 @@ const AddFood = (props) => {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.introText}>
+            <CustomText style={styles.introText}>
                 Täällä voit lisätä listaan uusia elintarvikkeita.
-            </Text>
+            </CustomText>
             <Button
                 title="Lisää uusi elintarvike"
                 onPress={async () => {

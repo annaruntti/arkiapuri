@@ -9,6 +9,7 @@ import {
     Dimensions,
 } from 'react-native'
 import Svg, { Path } from 'react-native-svg'
+import CustomText from '../components/CustomText'
 
 const mealImage = {
     uri: 'https://images.ctfassets.net/hef5a6s5axrs/1fvToRJqesGgl6dJCFyyJl/0f484ccfe293cca2a0a4ab57d3324c34/undraw_breakfast_rgx5.png',
@@ -31,14 +32,14 @@ const HomeScreen = ({ navigation }) => {
         <ScrollView style={styles.scrollView}>
             <View style={styles.homeViewTop}>
                 <View style={styles.header}>
-                    <Text style={styles.introTitle}>
+                    <CustomText style={styles.introTitle}>
                         Tervetuloa käyttämään Arkiapuria!
-                    </Text>
-                    <Text style={styles.introText}>
+                    </CustomText>
+                    <CustomText style={styles.introText}>
                         Arkiapurin avulla voit helposti suunnitella ja selata
                         aterioita ja reseptejä, luoda oman lukujärjestyksesi,
                         sekä luoda älykkäitä ostoslistoja.
-                    </Text>
+                    </CustomText>
                 </View>
             </View>
             <View style={styles.homeViewBottom}>
@@ -67,14 +68,14 @@ const HomeScreen = ({ navigation }) => {
                                     style={styles.boxImage}
                                 />
                                 <View style={styles.boxTextContent}>
-                                    <Text style={styles.boxTextTitle}>
+                                    <CustomText style={styles.boxTextTitle}>
                                         Ateriat
-                                    </Text>
-                                    <Text style={styles.boxText}>
+                                    </CustomText>
+                                    <CustomText style={styles.boxText}>
                                         Selaa ja luo aterioita. Lisää ainesosat
                                         ostoslistaan ja saat ateriaehdotuksia
                                         pentterisi sisällön perusteella.
-                                    </Text>
+                                    </CustomText>
                                 </View>
                             </TouchableOpacity>
                             <TouchableOpacity
@@ -86,14 +87,14 @@ const HomeScreen = ({ navigation }) => {
                                     style={styles.boxImage}
                                 />
                                 <View style={styles.boxTextContent}>
-                                    <Text style={styles.boxTextTitle}>
+                                    <CustomText style={styles.boxTextTitle}>
                                         Pentteri
-                                    </Text>
-                                    <Text style={styles.boxText}>
+                                    </CustomText>
+                                    <CustomText style={styles.boxText}>
                                         Selaa pentteriäsi ja lisää
                                         elintarvikkeita. Ostoslistan tuotteet
                                         lisätään automaattisesti pentteriisi.
-                                    </Text>
+                                    </CustomText>
                                 </View>
                             </TouchableOpacity>
                         </View>
@@ -109,14 +110,14 @@ const HomeScreen = ({ navigation }) => {
                                     style={styles.boxImage}
                                 />
                                 <View style={styles.boxTextContent}>
-                                    <Text style={styles.boxTextTitle}>
+                                    <CustomText style={styles.boxTextTitle}>
                                         Ostoslista
-                                    </Text>
-                                    <Text style={styles.boxText}>
+                                    </CustomText>
+                                    <CustomText style={styles.boxText}>
                                         Lisää tuotteita ostoslistalle ja käytä
                                         listaa kaupassa. Ostetut tuotteet
                                         lisätään automaattisesti pentteriin.
-                                    </Text>
+                                    </CustomText>
                                 </View>
                             </TouchableOpacity>
                             <TouchableOpacity
@@ -130,14 +131,14 @@ const HomeScreen = ({ navigation }) => {
                                     style={styles.boxImage}
                                 />
                                 <View style={styles.boxTextContent}>
-                                    <Text style={styles.boxTextTitle}>
+                                    <CustomText style={styles.boxTextTitle}>
                                         Lukujärjestys
-                                    </Text>
-                                    <Text style={styles.boxText}>
+                                    </CustomText>
+                                    <CustomText style={styles.boxText}>
                                         Luo lukujärjestys ja suunnittele viikon
                                         ohjelma ja ateriat. Lisää ateriat
                                         lukujärjestykseen helpottaaksesi arkea.
-                                    </Text>
+                                    </CustomText>
                                 </View>
                             </TouchableOpacity>
                         </View>

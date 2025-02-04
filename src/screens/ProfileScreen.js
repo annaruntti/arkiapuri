@@ -1,13 +1,14 @@
 import * as React from 'react'
 import { StyleSheet, View, Text } from 'react-native'
 import Button from '../components/Button'
+import CustomText from '../components/CustomText'
 
 const Profile = ({}) => {
     return (
         <View style={styles.container}>
-            <Text style={styles.introText}>
+            <CustomText style={styles.introText}>
                 Täällä voit selata, muokata ja lisätä tietojasi.
-            </Text>
+            </CustomText>
             <Button
                 title="Muokkaa tietoja"
                 onPress={() => {

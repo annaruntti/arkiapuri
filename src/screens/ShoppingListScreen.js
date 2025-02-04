@@ -1,15 +1,16 @@
 import * as React from 'react'
 import { StyleSheet, View, Text } from 'react-native'
 import Button from '../components/Button'
+import CustomText from '../components/CustomText'
 
 const ShoppingListScreen = ({}) => {
     return (
         <View style={styles.container}>
-            <Text style={styles.container}>
+            <CustomText style={styles.container}>
                 Täällä voit lisätä tuotteita ostoslistaan, sekä käyttää listaa
                 apuna kaupassa merkaten tuotteet kerätyksi kun olet kerännyt ne
                 ostoskärryysi tai -koriisi.
-            </Text>
+            </CustomText>
             <Button title="Lisää tuotteita listaan" />
         </View>
     )

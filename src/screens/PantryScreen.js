@@ -3,6 +3,7 @@ import { Alert, Modal, StyleSheet, View, Text } from 'react-native'
 import { useForm } from 'react-hook-form'
 import Button from '../components/Button'
 import FormAddGrocery from '../components/FormAddGrocery'
+import CustomText from '../components/CustomText'
 
 const PantryScreen = ({}) => {
     const [modalVisible, setModalVisible] = useState(false)
@@ -40,10 +41,10 @@ const PantryScreen = ({}) => {
             >
                 <View style={styles.layerView}>
                     <View style={styles.modalView}>
-                        <Text style={styles.introText}>
+                        <CustomText style={styles.introText}>
                             Lisää pentteriin eli ruokakomeroosi elintarvikkeita
                             oheisella lomakkeella.
-                        </Text>
+                        </CustomText>
                         <FormAddGrocery
                             register={register}
                             control={control}
@@ -57,11 +58,11 @@ const PantryScreen = ({}) => {
                     </View>
                 </View>
             </Modal>
-            <Text style={styles.introText}>
+            <CustomText style={styles.introText}>
                 Täällä voit lisätä ja selata elintarvikkeita, joita kotoasi jo
                 löytyy ja käyttää niitä avuksi ateriasuunnittelussa ja
                 ostoslistan luonnissa.
-            </Text>
+            </CustomText>
             <Button
                 style={styles.primaryButton}
                 title="Lisää elintarvike"

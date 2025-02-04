@@ -1,13 +1,14 @@
 import * as React from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import TableOne from '../components/Table'
+import CustomText from '../components/CustomText'
 
 const ReadingOrderScreen = ({}) => {
     return (
         <View style={styles.container}>
-            <Text style={styles.introText}>
+            <CustomText style={styles.introText}>
                 Täältä löydät viikon lukujärjestyksesi
-            </Text>
+            </CustomText>
             <View>
                 <TableOne />
             </View>

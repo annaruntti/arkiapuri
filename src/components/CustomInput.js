@@ -2,6 +2,7 @@ import React from 'react'
 import { View, Text, TextInput, StyleSheet } from 'react-native'
 import { Controller } from 'react-hook-form'
 import { MaterialIcons as Icon } from '@expo/vector-icons'
+import CustomText from './CustomText'
 
 const CustomInput = ({
     control,
@@ -21,7 +22,7 @@ const CustomInput = ({
                 fieldState: { error },
             }) => (
                 <>
-                    <Text style={styles.label}>{label}</Text>
+                    <CustomText style={styles.label}>{label}</CustomText>
                     <TextInput
                         value={value || ''}
                         onChangeText={onChange}
@@ -33,9 +34,9 @@ const CustomInput = ({
                     {error && (
                         <View style={styles.messageSection}>
                             <Icon name="error" color="red" size={14} />
-                            <Text style={styles.errorMsg}>
+                            <CustomText style={styles.errorMsg}>
                                 {error.message || 'Error'}
-                            </Text>
+                            </CustomText>
                         </View>
                     )}
                 </>

@@ -1,5 +1,6 @@
 import { StyleSheet, View, Text } from 'react-native'
 import CustomInput from './CustomInput'
+import CustomText from './CustomText'
 
 const AddMealForm = ({ control }) => {
     return (
@@ -39,10 +40,10 @@ const AddMealForm = ({ control }) => {
                     },
                 }}
             />
-            <Text style={styles.inputInfo}>
+            <CustomText style={styles.inputInfo}>
                 Ateriat koostuvat yhdesta tai useamaasta ruuasta. Ruuat
                 koostuvat ainesosista ja ruokalajeilla voi olla resepti.
-            </Text>
+            </CustomText>
         </View>
     )
 }

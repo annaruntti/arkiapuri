@@ -1,6 +1,7 @@
 import React from 'react'
 import { useController, useFormContext } from 'react-hook-form'
 import { TextInput, Text, View, Pressable } from 'react-native'
+import CustomText from './CustomText'
 
 export default function FormInput({ name, label, rules, style, ...props }) {
     const form = useFormContext()
@@ -24,7 +25,9 @@ export default function FormInput({ name, label, rules, style, ...props }) {
                     }}
                 />
             </Pressable>
-            {fieldState.error && <Text>{fieldState.error.message}</Text>}
+            {fieldState.error && (
+                <CustomText>{fieldState.error.message}</CustomText>
+            )}
         </View>
     )
 }

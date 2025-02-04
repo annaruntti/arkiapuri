@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form'
 
 import CustomInput from '../components/CustomInput'
 import Button from '../components/Button'
+import CustomText from '../components/CustomText'
 
 const ConfirmEmailScreen = () => {
     const { control, handleSubmit } = useForm()
@@ -28,7 +29,9 @@ const ConfirmEmailScreen = () => {
         <ScrollView showsVerticalScrollIndicator={false}>
             <View style={styles.root}>
                 <View style={styles.header}>
-                    <Text style={styles.headerTitle}>Vahvista sähköposti</Text>
+                    <CustomText style={styles.headerTitle}>
+                        Vahvista sähköposti
+                    </CustomText>
                 </View>
                 <CustomInput
                     label="Vahvistuskoodi"

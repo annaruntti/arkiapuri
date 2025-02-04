@@ -1,5 +1,6 @@
 import { StyleSheet, FlatList, Text, View } from 'react-native'
 import React from 'react'
+import CustomText from './CustomText'
 
 const data = [
     { id: 1, meal: 'Aamiainen', food: 'Voileipä' },
@@ -25,7 +26,7 @@ const TableOne = () => {
                     borderRightWidth: 1,
                 }}
             >
-                <Text
+                <CustomText
                     style={{
                         fontSize: 16,
                         fontWeight: 'bold',
@@ -33,10 +34,10 @@ const TableOne = () => {
                     }}
                 >
                     {item.meal}
-                </Text>
+                </CustomText>
             </View>
             <View style={{ width: '50%', padding: 10 }}>
-                <Text
+                <CustomText
                     style={{
                         fontSize: 16,
                         fontWeight: '400',
@@ -44,7 +45,7 @@ const TableOne = () => {
                     }}
                 >
                     {item.food}
-                </Text>
+                </CustomText>
             </View>
         </View>
     )
@@ -54,9 +55,9 @@ const TableOne = () => {
                 {/* Table Head */}
                 <View style={styles.table_head}>
                     <View style={{ width: '100%' }}>
-                        <Text style={styles.table_head_captions}>
+                        <CustomText style={styles.table_head_captions}>
                             Maanantai
-                        </Text>
+                        </CustomText>
                     </View>
                 </View>
                 <View
@@ -78,7 +79,9 @@ const TableOne = () => {
                 {/* Table Head */}
                 <View style={styles.table_head}>
                     <View style={{ width: '100%' }}>
-                        <Text style={styles.table_head_captions}>Tiistai</Text>
+                        <CustomText style={styles.table_head_captions}>
+                            Tiistai
+                        </CustomText>
                     </View>
                 </View>
                 <View

@@ -13,6 +13,7 @@ import Fontisto from '@expo/vector-icons/Fontisto'
 import DateTimePicker from '@react-native-community/datetimepicker'
 
 import categories from '../data/categories'
+import CustomText from './CustomText'
 
 const FormAddGrocery = (props) => {
     const [date, setDate] = useState(new Date())
@@ -32,7 +33,7 @@ const FormAddGrocery = (props) => {
 
     return (
         <View style={styles.form}>
-            <Text style={styles.label}>Elintarvikkeen nimi</Text>
+            <CustomText style={styles.label}>Elintarvikkeen nimi</CustomText>
             <Controller
                 control={props.control}
                 rules={{
@@ -53,12 +54,12 @@ const FormAddGrocery = (props) => {
             {props.errors.groceryName && (
                 <View style={styles.messageSection}>
                     <Icon name="error" color="red" size={14} />
-                    <Text style={styles.errorMsg}>
+                    <CustomText style={styles.errorMsg}>
                         Tämä on pakollinen tieto
-                    </Text>
+                    </CustomText>
                 </View>
             )}
-            <Text style={styles.label}>Elintarvikkeen tyyppi</Text>
+            <CustomText style={styles.label}>Elintarvikkeen tyyppi</CustomText>
             <Controller
                 control={props.control}
                 rules={{
@@ -95,12 +96,12 @@ const FormAddGrocery = (props) => {
             {props.errors.groceryType && (
                 <View style={styles.messageSection}>
                     <Icon name="error" color="red" size={14} />
-                    <Text style={styles.errorMsg}>
+                    <CustomText style={styles.errorMsg}>
                         Tämä on pakollinen tieto
-                    </Text>
+                    </CustomText>
                 </View>
             )}
-            <Text style={styles.label}>Kappalemäärä</Text>
+            <CustomText style={styles.label}>Kappalemäärä</CustomText>
             <Controller
                 control={props.control}
                 rules={{
@@ -120,7 +121,7 @@ const FormAddGrocery = (props) => {
                             value={value}
                             keyboardType="numeric"
                         />
-                        <Text style={styles.inputMetric}>Kpl</Text>
+                        <CustomText style={styles.inputMetric}>Kpl</CustomText>
                     </View>
                 )}
                 name="groceryNumber"
@@ -129,13 +130,12 @@ const FormAddGrocery = (props) => {
             {props.errors.groceryPrice && (
                 <View style={styles.messageSection}>
                     <Icon name="error" color="red" size={14} />
-                    <Text style={styles.errorMsg}>
-                        Syötä lukumäärä montako elintarviketta tätä tuotetta
-                        haluat lisätä.
-                    </Text>
+                    <CustomText style={styles.errorMsg}>
+                        Täytä kappalemäärä numerona. Syötä vähintään 1.
+                    </CustomText>
                 </View>
             )}
-            <Text style={styles.label}>Arvioitu hinta</Text>
+            <CustomText style={styles.label}>Arvioitu hinta</CustomText>
             <Controller
                 control={props.control}
                 rules={{
@@ -155,7 +155,7 @@ const FormAddGrocery = (props) => {
                             value={value}
                             keyboardType="numeric"
                         />
-                        <Text style={styles.inputMetric}>€</Text>
+                        <CustomText style={styles.inputMetric}>€</CustomText>
                     </View>
                 )}
                 name="groceryPrice"
@@ -164,15 +164,15 @@ const FormAddGrocery = (props) => {
             {props.errors.groceryPrice && (
                 <View style={styles.messageSection}>
                     <Icon name="error" color="red" size={14} />
-                    <Text style={styles.errorMsg}>
+                    <CustomText style={styles.errorMsg}>
                         Täytä arvioitu hinta numerona. Syötä vähintään 1 ja
                         maksimissaan 4 lukua.
-                    </Text>
+                    </CustomText>
                 </View>
             )}
-            <Text style={styles.label}>
+            <CustomText style={styles.label}>
                 Aseta tuotteen viimeinen käyttöpäivä
-            </Text>
+            </CustomText>
             <Controller
                 control={props.control}
                 render={({ field: { onChange, value } }) => (
@@ -184,9 +184,9 @@ const FormAddGrocery = (props) => {
                                 editable={false}
                             />
                         </TouchableOpacity>
-                        <Text style={styles.inputMetric}>
+                        <CustomText style={styles.inputMetric}>
                             <Fontisto name="date" size={24} color="black" />
-                        </Text>
+                        </CustomText>
                         {show && (
                             <DateTimePicker
                                 testID="dateTimePicker"
@@ -208,9 +208,9 @@ const FormAddGrocery = (props) => {
             {props.errors.expiryDate && (
                 <View style={styles.messageSection}>
                     <Icon name="error" color="red" size={14} />
-                    <Text style={styles.errorMsg}>
+                    <CustomText style={styles.errorMsg}>
                         Tämä on pakollinen tieto
-                    </Text>
+                    </CustomText>
                 </View>
             )}
         </View>

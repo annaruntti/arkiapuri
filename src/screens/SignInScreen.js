@@ -14,6 +14,7 @@ import { useForm } from 'react-hook-form'
 import Button from '../components/Button'
 // import SocialSignInButtons from '../../components/SocialSignInButtons'
 import CustomInput from '../components/CustomInput'
+import CustomText from '../components/CustomText'
 
 const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/
 
@@ -65,7 +66,9 @@ const SignInScreen = () => {
         >
             <View style={styles.root}>
                 <View style={styles.header}>
-                    <Text style={styles.headerTitle}>Kirjaudu sisään</Text>
+                    <CustomText style={styles.headerTitle}>
+                        Kirjaudu sisään
+                    </CustomText>
                 </View>
                 <View style={styles.inputContainer}>
                     <CustomInput

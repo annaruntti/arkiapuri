@@ -3,6 +3,7 @@ import { Alert, Modal, StyleSheet, View, Text } from 'react-native'
 import { useForm } from 'react-hook-form'
 import AddMealForm from '../components/formAddMeal'
 import Button from '../components/Button'
+import CustomText from '../components/CustomText'
 
 const MealsScreen = ({}) => {
     const [modalVisible, setModalVisible] = useState(false)
@@ -35,9 +36,9 @@ const MealsScreen = ({}) => {
             >
                 <View style={styles.layerView}>
                     <View style={styles.modalView}>
-                        <Text style={styles.introText}>
+                        <CustomText style={styles.introText}>
                             Luo ateria oheisella lomakkeella
-                        </Text>
+                        </CustomText>
                         <AddMealForm control={control} />
                         <Button
                             style={styles.primaryButton}
@@ -47,9 +48,9 @@ const MealsScreen = ({}) => {
                     </View>
                 </View>
             </Modal>
-            <Text style={styles.introText}>
+            <CustomText style={styles.introText}>
                 Täällä voit lisätä, suunnitella ja selata aterioita.
-            </Text>
+            </CustomText>
             <Button
                 style={styles.primaryButton}
                 title="Lisää uusi ateria"

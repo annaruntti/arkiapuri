@@ -5,6 +5,7 @@ import { StackActions } from '@react-navigation/native'
 
 import client from '../api/client'
 import Button from '../components/Button'
+import CustomText from '../components/CustomText'
 
 const ImageUpload = (props) => {
     const [profileImage, setProfileImage] = useState('')
@@ -72,7 +73,9 @@ const ImageUpload = (props) => {
                             style={{ width: '100%', height: '100%' }}
                         />
                     ) : (
-                        <Text style={styles.uploadBtn}>Lataa profiilikuva</Text>
+                        <CustomText style={styles.uploadBtn}>
+                            Lataa profiilikuva
+                        </CustomText>
                     )}
                 </Pressable>
                 <Button

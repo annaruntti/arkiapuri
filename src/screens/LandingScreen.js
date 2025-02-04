@@ -9,6 +9,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient'
 import Svg, { Path } from 'react-native-svg'
 import Button from '../components/Button'
+import CustomText from '../components/CustomText'
 
 const image = {
     uri: 'https://images.ctfassets.net/hef5a6s5axrs/4GwuSgvoXA0VX6cv5ix521/8545dbed4f7a510976eb78f8dcf4b91e/pexels-katerina-holmes-5907832.jpg',
@@ -35,13 +36,13 @@ const LandingScreen = ({ navigation }) => {
                 >
                     <View style={styles.layer}>
                         <View style={styles.textContentArea}>
-                            <Text style={styles.introTextTitle}>
+                            <CustomText style={styles.introTextTitle}>
                                 Tervetuloa Arkiapuriin!
-                            </Text>
-                            <Text style={styles.introText}>
+                            </CustomText>
+                            <CustomText style={styles.introText}>
                                 Arkiapuri tuo apua jokaisen jokapäiväiseen
                                 elämään.
-                            </Text>
+                            </CustomText>
                         </View>
                     </View>
                 </LinearGradient>
@@ -58,10 +59,10 @@ const LandingScreen = ({ navigation }) => {
                         />
                     </Svg>
                     <View style={styles.bottomBoxContent}>
-                        <Text style={styles.bottomBoxText}>
+                        <CustomText style={styles.bottomBoxText}>
                             Kirjaudu sisään tai rekisteröidy. Se on helppoa,
                             ilmaista ja vie vain hetken!
-                        </Text>
+                        </CustomText>
                         <Button
                             title="Kirjaudu sovellukseen"
                             onPress={onSignUpPress}

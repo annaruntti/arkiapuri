@@ -17,6 +17,7 @@ import ReadingOrderScreen from '../screens/ReadingOrderScreen'
 import PantryScreen from '../screens/PantryScreen'
 import ShoppingListScreen from '../screens/ShoppingListScreen'
 import { useLogin } from '../context/LoginProvider'
+import CustomText from '../components/CustomText'
 
 const screenOptions = {
     tabBarShowLabel: false,
@@ -36,7 +37,7 @@ function LogoTitle() {
                 source={image}
                 alt="Arkiapuri-logo"
             />
-            <Text
+            <CustomText
                 style={{
                     marginVertical: 'auto',
                     fontWeight: 'bold',
@@ -44,7 +45,7 @@ function LogoTitle() {
                 }}
             >
                 Arkiapuri
-            </Text>
+            </CustomText>
         </View>
     )
 }
@@ -182,9 +183,11 @@ export default function Navigation() {
                                 }}
                             >
                                 <Feather name="home" size={24} color="black" />
-                                <Text style={{ fontSize: 12, color: '#000' }}>
+                                <CustomText
+                                    style={{ fontSize: 12, color: '#000' }}
+                                >
                                     Arkiapuri
-                                </Text>
+                                </CustomText>
                             </View>
                         ),
                     }}
@@ -206,9 +209,11 @@ export default function Navigation() {
                                     size={24}
                                     color="black"
                                 />
-                                <Text style={{ fontSize: 12, color: '#000' }}>
+                                <CustomText
+                                    style={{ fontSize: 12, color: '#000' }}
+                                >
                                     Ateriat
-                                </Text>
+                                </CustomText>
                             </View>
                         ),
                     }}
@@ -230,9 +235,11 @@ export default function Navigation() {
                                     size={24}
                                     color="black"
                                 />
-                                <Text style={{ fontSize: 12, color: '#000' }}>
+                                <CustomText
+                                    style={{ fontSize: 12, color: '#000' }}
+                                >
                                     Pentteri
-                                </Text>
+                                </CustomText>
                             </View>
                         ),
                     }}
@@ -254,9 +261,11 @@ export default function Navigation() {
                                     size={24}
                                     color="black"
                                 />
-                                <Text style={{ fontSize: 12, color: '#000' }}>
+                                <CustomText
+                                    style={{ fontSize: 12, color: '#000' }}
+                                >
                                     Ostoslista
-                                </Text>
+                                </CustomText>
                             </View>
                         ),
                     }}
@@ -278,9 +287,11 @@ export default function Navigation() {
                                     size={24}
                                     color="black"
                                 />
-                                <Text style={{ fontSize: 12, color: '#000' }}>
+                                <CustomText
+                                    style={{ fontSize: 12, color: '#000' }}
+                                >
                                     Lukujärjestys
-                                </Text>
+                                </CustomText>
                             </View>
                         ),
                     }}
