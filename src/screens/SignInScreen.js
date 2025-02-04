@@ -1,8 +1,6 @@
 import React from 'react'
 import {
     View,
-    Text,
-    // Image,
     StyleSheet,
     // useWindowDimensions,
     ScrollView,
@@ -15,16 +13,14 @@ import Button from '../components/Button'
 // import SocialSignInButtons from '../../components/SocialSignInButtons'
 import CustomInput from '../components/CustomInput'
 import CustomText from '../components/CustomText'
+import { useLogin } from '../context/LoginProvider'
 
 const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/
-
-const image = {
-    uri: 'https://images.ctfassets.net/hef5a6s5axrs/1IyAq7R57oKbkLeh84dr1v/9b42c88e57eb245980260266810f3823/vecteezy_cartoon-young-woman-sharing-life-moments-at-social-networks_36895727.png',
-}
 
 const SignInScreen = () => {
     // const { height } = useWindowDimensions()
     const navigation = useNavigation()
+    const { login } = useLogin()
 
     const {
         control,
@@ -43,6 +39,7 @@ const SignInScreen = () => {
                 console.log('data4', data)
                 console.log('response', response)
                 if (response.data.success) {
+                    login(response.data.userProfile) // Call login function with user profile
                     navigation.navigate('Arkiapuri')
                 }
             })

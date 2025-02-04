@@ -6,10 +6,18 @@ const LoginProvider = ({ children }) => {
     const [isLoggedIn, setIsLoggedIn] = useState(false)
     const [profile, setProfile] = useState({})
 
+    const login = (userProfile) => {
+        setIsLoggedIn(true)
+        setProfile(userProfile)
+    }
+
+    const logout = () => {
+        setIsLoggedIn(false)
+        setProfile({})
+    }
+
     return (
-        <LoginContext.Provider
-            value={{ isLoggedIn, setIsLoggedIn, profile, setProfile }}
-        >
+        <LoginContext.Provider value={{ isLoggedIn, login, logout, profile }}>
             {children}
         </LoginContext.Provider>
     )
