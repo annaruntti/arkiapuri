@@ -1,28 +1,35 @@
 import * as React from 'react'
-import { StyleSheet, Text, View } from 'react-native'
+import { StyleSheet, View, ScrollView } from 'react-native'
 import TableOne from '../components/Table'
 import CustomText from '../components/CustomText'
 
 const ReadingOrderScreen = ({}) => {
     return (
-        <View style={styles.container}>
-            <CustomText style={styles.introText}>
-                Täältä löydät viikon lukujärjestyksesi
-            </CustomText>
-            <CustomText style={styles.infoText}>
-                Luo lukujärjestys ja suunnittele viikon ohjelma ja ateriat.
-                Lisää ateriat lukujärjestykseen helpottaaksesi arkea.
-            </CustomText>
-            <View>
-                <TableOne />
+        <ScrollView contentContainerStyle={styles.scrollViewContent}>
+            <View style={styles.container}>
+                <CustomText style={styles.introText}>
+                    Täältä löydät viikon lukujärjestyksesi
+                </CustomText>
+                <CustomText style={styles.infoText}>
+                    Luo lukujärjestys ja suunnittele viikon ohjelma ja ateriat.
+                    Lisää ateriat lukujärjestykseen helpottaaksesi arkea.
+                </CustomText>
+                <View style={styles.tableContainer}>
+                    <TableOne />
+                </View>
             </View>
-        </View>
+        </ScrollView>
     )
 }
 
 export default ReadingOrderScreen
 
 const styles = StyleSheet.create({
+    scrollViewContent: {
+        flexGrow: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
     container: {
         flex: 1,
         backgroundColor: '#fff',
@@ -31,9 +38,17 @@ const styles = StyleSheet.create({
         padding: 20,
     },
     introText: {
-        fontSize: 25,
+        fontSize: 19,
         textAlign: 'center',
         padding: 20,
         marginBottom: 10,
+    },
+    infoText: {
+        fontSize: 17,
+        textAlign: 'center',
+        marginBottom: 20,
+    },
+    tableContainer: {
+        width: '100%',
     },
 })

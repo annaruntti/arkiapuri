@@ -42,10 +42,26 @@ function LogoTitle() {
                     marginVertical: 'auto',
                     fontWeight: 'bold',
                     paddingHorizontal: 5,
+                    fontSize: 18,
                 }}
             >
                 Arkiapuri
             </CustomText>
+        </View>
+    )
+}
+
+function UserProfile() {
+    return (
+        <View
+            style={{
+                flex: 1,
+                alignItems: 'flex-end',
+                justifyContent: 'center',
+                margin: 10,
+            }}
+        >
+            <FontAwesome6 name="circle-user" size={24} color="black" />
         </View>
     )
 }
@@ -59,13 +75,11 @@ function HomeStackScreen() {
                 headerStyle: {
                     backgroundColor: '#fff',
                 },
+                headerTitle: (props) => <LogoTitle {...props} />,
+                headerRight: () => <UserProfile />,
             }}
         >
-            <HomeStack.Screen
-                name="Arkiapuri"
-                options={{ headerTitle: (props) => <LogoTitle {...props} /> }}
-                component={HomeScreen}
-            />
+            <HomeStack.Screen name="Arkiapuri" component={HomeScreen} />
         </HomeStack.Navigator>
     ) : (
         <HomeStack.Navigator
@@ -73,38 +87,22 @@ function HomeStackScreen() {
                 headerStyle: {
                     backgroundColor: '#fff',
                 },
+                headerTitle: (props) => <LogoTitle {...props} />,
+                headerRight: () => <UserProfile />,
             }}
         >
-            <HomeStack.Screen
-                name="Tervetuloa"
-                component={LandingScreen}
-                options={{ headerTitle: (props) => <LogoTitle {...props} /> }}
-            />
-            <HomeStack.Screen
-                name="Kirjaudu sisään"
-                component={SignInScreen}
-                options={{ headerTitle: (props) => <LogoTitle {...props} /> }}
-            />
-            <HomeStack.Screen
-                name="Luo tunnus"
-                component={SignUpScreen}
-                options={{ headerTitle: (props) => <LogoTitle {...props} /> }}
-            />
+            <HomeStack.Screen name="Tervetuloa" component={LandingScreen} />
+            <HomeStack.Screen name="Kirjaudu sisään" component={SignInScreen} />
+            <HomeStack.Screen name="Luo tunnus" component={SignUpScreen} />
             <HomeStack.Screen
                 name="Lataa profiilikuva"
-                options={{ headerTitle: (props) => <LogoTitle {...props} /> }}
                 component={ImageUploadScreen}
             />
             <HomeStack.Screen
                 name="Vahvista sähköposti"
-                options={{ headerTitle: (props) => <LogoTitle {...props} /> }}
                 component={ConfirmEmailScreen}
             />
-            <HomeStack.Screen
-                name="Arkiapuri"
-                options={{ headerTitle: (props) => <LogoTitle {...props} /> }}
-                component={HomeScreen}
-            />
+            <HomeStack.Screen name="Arkiapuri" component={HomeScreen} />
         </HomeStack.Navigator>
     )
 }
@@ -113,12 +111,16 @@ const MealsStack = createNativeStackNavigator()
 
 function MealsStackScreen() {
     return (
-        <MealsStack.Navigator>
-            <MealsStack.Screen
-                name="Ateriat"
-                options={{ headerTitle: (props) => <LogoTitle {...props} /> }}
-                component={MealsScreen}
-            />
+        <MealsStack.Navigator
+            screenOptions={{
+                headerStyle: {
+                    backgroundColor: '#fff',
+                },
+                headerTitle: (props) => <LogoTitle {...props} />,
+                headerRight: () => <UserProfile />,
+            }}
+        >
+            <MealsStack.Screen name="Ateriat" component={MealsScreen} />
         </MealsStack.Navigator>
     )
 }
@@ -127,12 +129,16 @@ const PantryStack = createNativeStackNavigator()
 
 function PantryStackScreen() {
     return (
-        <PantryStack.Navigator>
-            <PantryStack.Screen
-                name="Pentteri"
-                options={{ headerTitle: (props) => <LogoTitle {...props} /> }}
-                component={PantryScreen}
-            />
+        <PantryStack.Navigator
+            screenOptions={{
+                headerStyle: {
+                    backgroundColor: '#fff',
+                },
+                headerTitle: (props) => <LogoTitle {...props} />,
+                headerRight: () => <UserProfile />,
+            }}
+        >
+            <PantryStack.Screen name="Pentteri" component={PantryScreen} />
         </PantryStack.Navigator>
     )
 }
@@ -141,10 +147,17 @@ const ShoppingListStack = createNativeStackNavigator()
 
 function ShoppingListStackScreen() {
     return (
-        <ShoppingListStack.Navigator>
+        <ShoppingListStack.Navigator
+            screenOptions={{
+                headerStyle: {
+                    backgroundColor: '#fff',
+                },
+                headerTitle: (props) => <LogoTitle {...props} />,
+                headerRight: () => <UserProfile />,
+            }}
+        >
             <ShoppingListStack.Screen
                 name="Ostoslista"
-                options={{ headerTitle: (props) => <LogoTitle {...props} /> }}
                 component={ShoppingListScreen}
             />
         </ShoppingListStack.Navigator>
@@ -155,10 +168,17 @@ const ReadingOrderStack = createNativeStackNavigator()
 
 function ReadingOrderStackScreen() {
     return (
-        <ReadingOrderStack.Navigator>
+        <ReadingOrderStack.Navigator
+            screenOptions={{
+                headerStyle: {
+                    backgroundColor: '#fff',
+                },
+                headerTitle: (props) => <LogoTitle {...props} />,
+                headerRight: () => <UserProfile />,
+            }}
+        >
             <ReadingOrderStack.Screen
                 name="Lukujärjestys"
-                options={{ headerTitle: (props) => <LogoTitle {...props} /> }}
                 component={ReadingOrderScreen}
             />
         </ReadingOrderStack.Navigator>

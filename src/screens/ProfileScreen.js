@@ -29,7 +29,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     introText: {
-        fontSize: 25,
+        fontSize: 17,
         textAlign: 'center',
         padding: 20,
         marginBottom: 10,

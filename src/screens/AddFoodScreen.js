@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
         width: '100%',
     },
     introText: {
-        fontSize: 20,
+        fontSize: 17,
         textAlign: 'center',
         paddingVertical: 20,
         marginBottom: 10,

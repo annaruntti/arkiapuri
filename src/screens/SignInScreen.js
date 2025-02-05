@@ -33,14 +33,19 @@ const SignInScreen = () => {
     const onSignInPressed = async (data) => {
         console.log('data', data)
         axios
-            // .post('http://localhost:3001/sign-in', data) // this is for web, in mobile use ip address
-            .post('http://192.168.250.107:3001/sign-in', data)
+            .post('http://localhost:3001/sign-in', data) // this is for web, in mobile use ip address
+            // .post('http://192.168.250.107:3001/sign-in', data)
             .then((response) => {
                 console.log('data4', data)
                 console.log('response', response)
                 if (response.data.success) {
-                    login(response.data.userProfile) // Call login function with user profile
-                    navigation.navigate('Arkiapuri')
+                    const userProfile = response.data.user
+                    if (userProfile) {
+                        login(userProfile)
+                        navigation.navigate('Arkiapuri')
+                    } else {
+                        console.error('User profile is undefined')
+                    }
                 }
             })
             .catch((error) => {

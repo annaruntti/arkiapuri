@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
         textShadowRadius: 10,
     },
     introText: {
-        fontSize: 20,
+        fontSize: 17,
         fontWeight: 500,
         color: '#fff',
         textAlign: 'left',

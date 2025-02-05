@@ -50,8 +50,8 @@ const TableOne = () => {
         </View>
     )
     return (
-        <View>
-            <View>
+        <View style={styles.table}>
+            <View style={styles.tableSection}>
                 {/* Table Head */}
                 <View style={styles.table_head}>
                     <View style={{ width: '100%' }}>
@@ -75,12 +75,36 @@ const TableOne = () => {
                     />
                 </View>
             </View>
-            <View>
+            <View style={styles.tableSection}>
                 {/* Table Head */}
                 <View style={styles.table_head}>
                     <View style={{ width: '100%' }}>
                         <CustomText style={styles.table_head_captions}>
                             Tiistai
+                        </CustomText>
+                    </View>
+                </View>
+                <View
+                    style={{
+                        flex: 1,
+                        justifyContent: 'center',
+                        borderColor: '#ccc',
+                        borderWidth: 1,
+                    }}
+                >
+                    <FlatList
+                        data={data}
+                        renderItem={item}
+                        keyExtractor={(item) => item.id.toString()}
+                    />
+                </View>
+            </View>
+            <View style={styles.tableSection}>
+                {/* Table Head */}
+                <View style={styles.table_head}>
+                    <View style={{ width: '100%' }}>
+                        <CustomText style={styles.table_head_captions}>
+                            Keskiviikko
                         </CustomText>
                     </View>
                 </View>
@@ -105,10 +129,14 @@ const TableOne = () => {
 export default TableOne
 
 const styles = StyleSheet.create({
-    wrapper: {
+    table: {
         justifyContent: 'center',
         alignItems: 'center',
         flex: 1,
+        width: '100%',
+    },
+    tableSection: {
+        width: '100%',
     },
     table_head: {
         flexDirection: 'row',
