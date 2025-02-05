@@ -48,7 +48,7 @@ const LandingScreen = ({ navigation }) => {
                 </LinearGradient>
                 <View style={styles.bottomBox}>
                     <Svg
-                        height={100}
+                        height={90}
                         width={Dimensions.get('screen').width}
                         viewBox="0 0 1440 280"
                         style={styles.bottomWavy}
@@ -148,13 +148,9 @@ const styles = StyleSheet.create({
     },
     bottomBoxText: {
         textAlign: 'right',
-        fontSize: 20,
+        fontSize: 19,
         marginBottom: 22,
     },
-    // bottomWavy: {
-    //     position: 'relative',
-    //     bottom: 1,
-    // },
     primaryButton: {
         borderRadius: 25,
         paddingTop: 7,

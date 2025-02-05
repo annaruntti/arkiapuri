@@ -25,7 +25,7 @@ const SignUpScreen = () => {
             debuggerHost = manifest.debuggerHost.split(':').shift()
         } else {
             // Fallback to a hardcoded IP address for development
-            debuggerHost = '192.168.50.179'
+            debuggerHost = '192.168.250.107'
         }
         const serverUrl = `http://${debuggerHost}:3001${endpoint}`
         console.log('Manifest:', manifest)

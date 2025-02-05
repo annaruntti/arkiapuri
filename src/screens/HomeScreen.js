@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         width: '100%',
         paddingHorizontal: 20,
-        paddingVertical: 20,
+        paddingTop: 10,
     },
     homeViewBottom: {
         backgroundColor: '#fff',
@@ -163,15 +163,15 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         width: '100%',
-        marginBottom: 20,
+        marginBottom: 15,
     },
     introTitle: {
         textAlign: 'center',
         fontSize: 24,
-        paddingTop: 20,
+        paddingTop: 15,
     },
     introText: {
-        fontSize: 18,
+        fontSize: 17,
         textAlign: 'center',
         paddingTop: 20,
     },
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
     box: {
         flex: 1,
         margin: 10,
-        padding: 20,
+        padding: 15,
         backgroundColor: '#fff',
         borderRadius: 10,
         shadowColor: '#000',
@@ -213,9 +213,10 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
     },
     boxImage: {
-        width: 110,
-        height: 90,
+        width: 90,
+        height: 70,
         marginBottom: 20,
+        marginHorizontal: 'auto',
     },
     boxTextContent: {
         flex: 'auto',
