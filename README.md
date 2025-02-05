@@ -17,3 +17,68 @@ After running `npm install` on the project folder in order to install all requir
 2. on your device using [development build](https://docs.expo.dev/develop/development-builds/create-a-build/) (more suitable for testing production grade behaviour, needs to be built again if dependencies change),
 3. run an emulator using Android Studio or Xcode or
 4. web version (since the project also uses react-native-web) can be tested with pressing `w` after `npm start`.
+
+## Notes:
+
+### Running the Application Locally
+
+To run the application locally, follow these steps:
+
+1. **Clone the Repository**:
+
+    ```sh
+    git clone https://github.com/your-repo/arkiapuri.git
+    cd arkiapuri
+    ```
+
+2. **Install Dependencies**:
+
+    ```sh
+    npm install
+    ```
+
+3. **Set Up Environment Variables**:
+   Create a [.env](http://_vscodecontentref_/2) file in the root of the project and add the following environment variables:
+
+    For web development:
+
+    ```env
+    API_URL=http://localhost:3001
+    ```
+
+    For mobile development, you need to set your IP address:
+
+    ```env
+    API_URL=http://<your-ip-address>:3001
+    ```
+
+    Replace `<your-ip-address>` with your actual IP address. You can find your IP address by running `ipconfig` on Windows or `ifconfig` on macOS/Linux in the terminal.
+
+4. **Start the Backend Server**:
+   Ensure that your backend server is running on port `3001`. If you are using a different port, update the `API_URL` accordingly.
+
+5. **Run the Application**:
+
+    For web:
+
+    ```sh
+    npm start
+    ```
+
+    Navigate to http://localhost:8081
+
+    For mobile (using Expo):
+
+    ```sh
+    npm start
+    ```
+
+    Follow the instructions in the terminal to open the app on your mobile device using the Expo Go app.
+
+### Additional Notes:
+
+- **Mobile Development**: Ensure that your mobile device is connected to the same network as your development machine.
+- **API Endpoints**: Make sure that the API endpoints in your application match the ones provided by your backend server.
+- **Troubleshooting**: If you encounter issues, check the console logs for errors and ensure that the backend server is running and accessible from your development machine.
+
+By following these steps, you should be able to set up and run the application locally for both web and mobile development.
