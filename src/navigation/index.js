@@ -1,6 +1,6 @@
 import * as React from 'react'
-import { Text, View, Image } from 'react-native'
-import { NavigationContainer } from '@react-navigation/native'
+import { TouchableOpacity, View, Image, StyleSheet } from 'react-native'
+import { NavigationContainer, useNavigation } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 
@@ -16,6 +16,7 @@ import MealsScreen from '../screens/MealsScreen'
 import ReadingOrderScreen from '../screens/ReadingOrderScreen'
 import PantryScreen from '../screens/PantryScreen'
 import ShoppingListScreen from '../screens/ShoppingListScreen'
+import ProfileScreen from '../screens/ProfileScreen'
 import { useLogin } from '../context/LoginProvider'
 import CustomText from '../components/CustomText'
 
@@ -51,20 +52,25 @@ function LogoTitle() {
     )
 }
 
-function UserProfile() {
+const UserProfile = () => {
+    const navigation = useNavigation()
+
+    const handlePress = () => {
+        navigation.navigate('Omat tiedot')
+    }
+
     return (
-        <View
-            style={{
-                flex: 1,
-                alignItems: 'flex-end',
-                justifyContent: 'center',
-                margin: 10,
-            }}
-        >
+        <TouchableOpacity onPress={handlePress} style={styles.iconButton}>
             <FontAwesome6 name="circle-user" size={24} color="black" />
-        </View>
+        </TouchableOpacity>
     )
 }
+
+const styles = StyleSheet.create({
+    iconButton: {
+        paddingRight: 10,
+    },
+})
 
 function HomeStackScreen() {
     const { isLoggedIn } = useLogin()
@@ -80,6 +86,7 @@ function HomeStackScreen() {
             }}
         >
             <HomeStack.Screen name="Arkiapuri" component={HomeScreen} />
+            <HomeStack.Screen name="Omat tiedot" component={ProfileScreen} />
         </HomeStack.Navigator>
     ) : (
         <HomeStack.Navigator
@@ -103,6 +110,7 @@ function HomeStackScreen() {
                 component={ConfirmEmailScreen}
             />
             <HomeStack.Screen name="Arkiapuri" component={HomeScreen} />
+            <HomeStack.Screen name="Omat tiedot" component={ProfileScreen} />
         </HomeStack.Navigator>
     )
 }
@@ -121,6 +129,7 @@ function MealsStackScreen() {
             }}
         >
             <MealsStack.Screen name="Ateriat" component={MealsScreen} />
+            <MealsStack.Screen name="Omat tiedot" component={ProfileScreen} />
         </MealsStack.Navigator>
     )
 }
@@ -139,6 +148,7 @@ function PantryStackScreen() {
             }}
         >
             <PantryStack.Screen name="Pentteri" component={PantryScreen} />
+            <PantryStack.Screen name="Omat tiedot" component={ProfileScreen} />
         </PantryStack.Navigator>
     )
 }
@@ -160,6 +170,10 @@ function ShoppingListStackScreen() {
                 name="Ostoslista"
                 component={ShoppingListScreen}
             />
+            <ShoppingListStack.Screen
+                name="Omat tiedot"
+                component={ProfileScreen}
+            />
         </ShoppingListStack.Navigator>
     )
 }
@@ -180,6 +194,10 @@ function ReadingOrderStackScreen() {
             <ReadingOrderStack.Screen
                 name="Lukujärjestys"
                 component={ReadingOrderScreen}
+            />
+            <ReadingOrderStack.Screen
+                name="Omat tiedot"
+                component={ProfileScreen}
             />
         </ReadingOrderStack.Navigator>
     )

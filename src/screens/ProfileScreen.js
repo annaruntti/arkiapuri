@@ -1,15 +1,16 @@
 import * as React from 'react'
-import { StyleSheet, View, Text } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import Button from '../components/Button'
 import CustomText from '../components/CustomText'
 
-const Profile = ({}) => {
+const ProfileScreen = ({}) => {
     return (
         <View style={styles.container}>
             <CustomText style={styles.introText}>
                 Täällä voit selata, muokata ja lisätä tietojasi.
             </CustomText>
             <Button
+                style={styles.primaryButton}
                 title="Muokkaa tietoja"
                 onPress={() => {
                     console.log('You tapped the button!')
@@ -19,7 +20,7 @@ const Profile = ({}) => {
     )
 }
 
-export default Profile
+export default ProfileScreen
 
 const styles = StyleSheet.create({
     container: {
@@ -33,5 +34,10 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         padding: 20,
         marginBottom: 10,
+    },
+    primaryButton: {
+        borderRadius: 25,
+        padding: 15,
+        elevation: 2,
     },
 })
