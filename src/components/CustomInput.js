@@ -6,12 +6,26 @@ import CustomText from './CustomText'
 
 const CustomInput = ({
     control,
-    label,
     name,
-    rules = {},
+    rules,
+    label,
+    isControlled = true,
     placeholder,
     secureTextEntry,
 }) => {
+    if (!isControlled) {
+        return (
+            <View style={styles.container}>
+                {label && <Text style={styles.label}>{label}</Text>}
+                <TextInput
+                    style={styles.input}
+                    placeholder={placeholder}
+                    secureTextEntry={secureTextEntry}
+                />
+            </View>
+        )
+    }
+
     return (
         <Controller
             control={control}
@@ -21,8 +35,8 @@ const CustomInput = ({
                 field: { value, onChange, onBlur },
                 fieldState: { error },
             }) => (
-                <>
-                    <CustomText style={styles.label}>{label}</CustomText>
+                <View style={styles.container}>
+                    {label && <Text style={styles.label}>{label}</Text>}
                     <TextInput
                         value={value || ''}
                         onChangeText={onChange}
@@ -39,7 +53,7 @@ const CustomInput = ({
                             </CustomText>
                         </View>
                     )}
-                </>
+                </View>
             )}
         />
     )
@@ -79,6 +93,9 @@ const styles = StyleSheet.create({
     },
     label: {
         marginBottom: 5,
+    },
+    container: {
+        marginBottom: 10,
     },
 })
 
