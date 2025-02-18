@@ -66,7 +66,7 @@ const ShoppingListDetail = ({ shoppingList, onClose, onUpdate }) => {
 
                 // Reset checked items
                 setCheckedItems([])
-                // Update parent component
+                // Update item list
                 if (onUpdate) onUpdate(updatedList)
             }
         } catch (error) {
@@ -83,10 +83,12 @@ const ShoppingListDetail = ({ shoppingList, onClose, onUpdate }) => {
                 location: 'shopping-list',
             }
 
-            // Add item to shopping list
-            const response = await axios.post(
-                getServerUrl(`/shopping-lists/${shoppingList._id}/items`),
-                { item: newItem },
+            const response = await axios.put(
+                getServerUrl(`/shopping-lists/${shoppingList._id}`),
+                {
+                    ...shoppingList,
+                    items: [...shoppingList.items, newItem],
+                },
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -95,15 +97,16 @@ const ShoppingListDetail = ({ shoppingList, onClose, onUpdate }) => {
             )
 
             if (response.data.success) {
-                const updatedList = {
-                    ...shoppingList,
-                    items: [...shoppingList.items, response.data.item],
-                }
+                // Updating the list with the correct data
+                const updatedList = response.data.shoppingList
                 onUpdate(updatedList)
                 setShowItemForm(false)
+
+                // Log to verify the update
+                console.log('Updated shopping list:', updatedList)
             }
         } catch (error) {
-            console.error('Error adding item:', error)
+            console.error('Error adding item:', error?.response?.data || error)
             Alert.alert('Virhe', 'Tuotteen lisääminen epäonnistui')
         }
     }
@@ -273,6 +276,35 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         fontSize: 12,
     },
+    primaryButton: {
+        borderRadius: 25,
+        paddingTop: 7,
+        paddingBottom: 7,
+        paddingLeft: 10,
+        paddingRight: 10,
+        elevation: 2,
+        backgroundColor: '#9C86FC',
+        color: 'black',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        width: 'auto',
+        marginBottom: 10,
+    },
+    secondaryButton: {
+        borderRadius: 25,
+        paddingTop: 7,
+        paddingBottom: 7,
+        paddingLeft: 10,
+        paddingRight: 10,
+        elevation: 2,
+        backgroundColor: '#38E4D9',
+        color: 'black',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        width: 'auto',
+        marginTop: 10,
+        marginBottom: 10,
+    },
     tertiaryButton: {
         borderRadius: 25,
         paddingTop: 7,
@@ -287,20 +319,6 @@ const styles = StyleSheet.create({
         width: 'auto',
         borderWidth: 3,
         borderColor: '#9C86FC',
-        marginTop: 10,
-    },
-    secondaryButton: {
-        borderRadius: 25,
-        paddingTop: 7,
-        paddingBottom: 7,
-        paddingLeft: 10,
-        paddingRight: 10,
-        elevation: 2,
-        backgroundColor: '#38E4D9',
-        color: 'black',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        width: 'auto',
         marginTop: 10,
     },
     modalView: {
@@ -329,20 +347,6 @@ const styles = StyleSheet.create({
         top: 10,
         zIndex: 1,
         padding: 5,
-    },
-    primaryButton: {
-        borderRadius: 25,
-        paddingTop: 7,
-        paddingBottom: 7,
-        paddingLeft: 10,
-        paddingRight: 10,
-        elevation: 2,
-        backgroundColor: '#9C86FC',
-        color: 'black',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        width: 'auto',
-        marginBottom: 10,
     },
 })
 

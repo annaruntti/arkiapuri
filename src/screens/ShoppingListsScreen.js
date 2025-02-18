@@ -70,11 +70,14 @@ const ShoppingListScreen = () => {
     }
 
     const handleListUpdate = (updatedList) => {
+        console.log('Updating list in screen component:', updatedList)
         setShoppingLists((prev) =>
             prev.map((list) =>
                 list._id === updatedList._id ? updatedList : list
             )
         )
+        // Also update the selected list to show the new item immediately
+        setSelectedList(updatedList)
     }
 
     const renderShoppingList = ({ item }) => (
