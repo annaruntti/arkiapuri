@@ -162,31 +162,35 @@ const ShoppingListScreen = () => {
                 </View>
             </Modal>
 
-            <CustomText style={styles.introText}>
-                Täällä voit luoda uusia ostoslistoja ja jakaa ne perheenjäsenten
-                kanssa. Voitte käyttää ja päivittää ostoslistoja reaaliajassa.
-            </CustomText>
-
-            <Button
-                style={styles.primaryButton}
-                title="Luo uusi ostoslista"
-                onPress={() => setModalVisible(true)}
-            />
-
-            {shoppingLists.length > 0 ? (
-                <FlatList
-                    style={styles.listContainer}
-                    data={shoppingLists}
-                    renderItem={renderShoppingList}
-                    keyExtractor={(item) => item._id}
-                    showsVerticalScrollIndicator={false}
-                />
-            ) : (
-                <CustomText style={styles.emptyText}>
-                    Ei vielä ostoslistoja. Luo ensimmäinen lista painamalla "Luo
-                    uusi ostoslista" -nappia.
+            <View style={styles.content}>
+                <CustomText style={styles.introText}>
+                    Täällä voit luoda uusia ostoslistoja ja jakaa ne
+                    perheenjäsenten kanssa. Voitte käyttää ja päivittää
+                    ostoslistoja reaaliajassa.
                 </CustomText>
-            )}
+
+                <Button
+                    style={styles.primaryButton}
+                    title="Luo uusi ostoslista"
+                    onPress={() => setModalVisible(true)}
+                />
+
+                {shoppingLists.length > 0 ? (
+                    <FlatList
+                        style={styles.listContainer}
+                        contentContainerStyle={{ paddingBottom: 20 }}
+                        data={shoppingLists}
+                        renderItem={renderShoppingList}
+                        keyExtractor={(item) => item._id}
+                        showsVerticalScrollIndicator={false}
+                    />
+                ) : (
+                    <CustomText style={styles.emptyText}>
+                        Ei vielä ostoslistoja. Luo ensimmäinen lista painamalla
+                        "Luo uusi ostoslista" -nappia.
+                    </CustomText>
+                )}
+            </View>
         </View>
     )
 }
@@ -203,6 +207,7 @@ const styles = StyleSheet.create({
         fontSize: 17,
         textAlign: 'center',
         marginBottom: 20,
+        maxWidth: '100%',
     },
     emptyText: {
         textAlign: 'center',
@@ -213,6 +218,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0, 0, 0, 0.75)',
         flex: 1,
         justifyContent: 'center',
+        paddingVertical: 20,
     },
     modalView: {
         margin: 20,
@@ -236,7 +242,8 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     listContainer: {
-        marginTop: 20,
+        width: '100%',
+        maxHeight: '60%',
     },
     listItem: {
         backgroundColor: '#f8f8f8',
@@ -270,7 +277,8 @@ const styles = StyleSheet.create({
         color: 'black',
         fontWeight: 'bold',
         textAlign: 'center',
-        width: 'auto',
+        width: '100%',
+        marginBottom: 20,
     },
     secondaryButton: {
         borderRadius: 25,
@@ -306,5 +314,12 @@ const styles = StyleSheet.create({
         top: 10,
         zIndex: 1,
         padding: 5,
+    },
+    content: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: '100%',
+        padding: 10,
     },
 })

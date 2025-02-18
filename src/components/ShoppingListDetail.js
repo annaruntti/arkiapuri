@@ -197,29 +197,30 @@ const ShoppingListDetail = ({ shoppingList, onClose, onUpdate }) => {
                 keyExtractor={(item) => item._id}
                 style={styles.list}
             />
-            {checkedItems.length > 0 && (
+            <View style={styles.buttonContainer}>
+                {checkedItems.length > 0 && (
+                    <Button
+                        title={`Siirrä ${checkedItems.length} tuotetta ruokavarastoon`}
+                        onPress={moveCheckedToPantry}
+                        style={styles.secondaryButton}
+                    />
+                )}
                 <Button
-                    title={`Siirrä ${checkedItems.length} tuotetta ruokavarastoon`}
-                    onPress={moveCheckedToPantry}
-                    style={styles.secondaryButton}
+                    title="Lisää tuote"
+                    onPress={() => setShowItemForm(true)}
+                    style={styles.primaryButton}
                 />
-            )}
-            <Button
-                title="Lisää tuote"
-                onPress={() => setShowItemForm(true)}
-                style={styles.primaryButton}
-            />
+            </View>
         </View>
     )
 }
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
-        padding: 20,
+        width: '100%',
     },
     header: {
-        marginBottom: 20,
+        marginBottom: 10,
     },
     title: {
         fontSize: 24,
@@ -233,13 +234,14 @@ const styles = StyleSheet.create({
     stats: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 20,
-        paddingBottom: 10,
+        marginBottom: 10,
+        paddingBottom: 5,
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
     },
     list: {
-        flex: 1,
+        width: '100%',
+        marginBottom: 10,
     },
     itemRow: {
         backgroundColor: '#f8f8f8',
@@ -332,8 +334,8 @@ const styles = StyleSheet.create({
         padding: 20,
         borderRadius: 10,
         width: '90%',
+        minHeight: 200,
         maxHeight: '80%',
-        paddingTop: 45,
     },
     modalTitle: {
         fontSize: 18,
@@ -347,6 +349,13 @@ const styles = StyleSheet.create({
         top: 10,
         zIndex: 1,
         padding: 5,
+    },
+    buttonContainer: {
+        width: '100%',
+        marginTop: 10,
+    },
+    formContainer: {
+        width: '100%',
     },
 })
 

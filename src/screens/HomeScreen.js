@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         width: '100%',
         paddingHorizontal: 20,
-        paddingTop: 10,
+        paddingTop: 20,
     },
     homeViewBottom: {
         backgroundColor: '#fff',
@@ -195,11 +195,19 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#9C86FC',
         justifyContent: 'center',
+        minHeight: 460,
+        paddingVertical: 10,
+    },
+    boxRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 5,
     },
     box: {
         flex: 1,
         margin: 10,
         padding: 15,
+        height: 160,
         backgroundColor: '#fff',
         borderRadius: 10,
         shadowColor: '#000',
@@ -207,10 +215,6 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 5,
         elevation: 3,
-    },
-    boxRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
     },
     boxImage: {
         width: 90,
