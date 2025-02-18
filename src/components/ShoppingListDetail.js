@@ -1,14 +1,23 @@
 import React, { useState } from 'react'
-import { StyleSheet, View, FlatList, TouchableOpacity } from 'react-native'
+import {
+    StyleSheet,
+    View,
+    FlatList,
+    TouchableOpacity,
+    Modal,
+    Alert,
+} from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
 import axios from 'axios'
 import CustomText from './CustomText'
 import Button from './Button'
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
+import FormFoodItem from './FormFoodItem'
 
 const ShoppingListDetail = ({ shoppingList, onClose, onUpdate }) => {
     const [checkedItems, setCheckedItems] = useState([])
+    const [showItemForm, setShowItemForm] = useState(false)
 
     const handleCheckItem = (item) => {
         setCheckedItems((prev) =>
@@ -66,6 +75,39 @@ const ShoppingListDetail = ({ shoppingList, onClose, onUpdate }) => {
         }
     }
 
+    const handleAddItem = async (itemData) => {
+        try {
+            const token = await storage.getItem('userToken')
+            const newItem = {
+                ...itemData,
+                location: 'shopping-list',
+            }
+
+            // Add item to shopping list
+            const response = await axios.post(
+                getServerUrl(`/shopping-lists/${shoppingList._id}/items`),
+                { item: newItem },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            )
+
+            if (response.data.success) {
+                const updatedList = {
+                    ...shoppingList,
+                    items: [...shoppingList.items, response.data.item],
+                }
+                onUpdate(updatedList)
+                setShowItemForm(false)
+            }
+        } catch (error) {
+            console.error('Error adding item:', error)
+            Alert.alert('Virhe', 'Tuotteen lisääminen epäonnistui')
+        }
+    }
+
     const renderItem = ({ item }) => (
         <TouchableOpacity
             style={styles.itemRow}
@@ -102,6 +144,34 @@ const ShoppingListDetail = ({ shoppingList, onClose, onUpdate }) => {
 
     return (
         <View style={styles.container}>
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={showItemForm}
+                onRequestClose={() => setShowItemForm(false)}
+            >
+                <View style={styles.modalView}>
+                    <View style={styles.modalContent}>
+                        <TouchableOpacity
+                            style={styles.closeButton}
+                            onPress={() => setShowItemForm(false)}
+                        >
+                            <MaterialIcons
+                                name="close"
+                                size={24}
+                                color="black"
+                            />
+                        </TouchableOpacity>
+                        <CustomText style={styles.modalTitle}>
+                            Lisää tuote ostoslistaan
+                        </CustomText>
+                        <FormFoodItem
+                            onSubmit={handleAddItem}
+                            location="shopping-list"
+                        />
+                    </View>
+                </View>
+            </Modal>
             <View style={styles.header}>
                 <CustomText style={styles.title}>
                     {shoppingList.name}
@@ -110,7 +180,6 @@ const ShoppingListDetail = ({ shoppingList, onClose, onUpdate }) => {
                     {shoppingList.description}
                 </CustomText>
             </View>
-
             <View style={styles.stats}>
                 <CustomText>
                     Tuotteita: {shoppingList.items?.length || 0}
@@ -119,14 +188,12 @@ const ShoppingListDetail = ({ shoppingList, onClose, onUpdate }) => {
                     Kokonaishinta: {shoppingList.totalEstimatedPrice}€
                 </CustomText>
             </View>
-
             <FlatList
                 data={shoppingList.items}
                 renderItem={renderItem}
                 keyExtractor={(item) => item._id}
                 style={styles.list}
             />
-
             {checkedItems.length > 0 && (
                 <Button
                     title={`Siirrä ${checkedItems.length} tuotetta ruokavarastoon`}
@@ -134,11 +201,10 @@ const ShoppingListDetail = ({ shoppingList, onClose, onUpdate }) => {
                     style={styles.secondaryButton}
                 />
             )}
-
             <Button
-                title="Sulje"
-                onPress={onClose}
-                style={styles.tertiaryButton}
+                title="Lisää tuote"
+                onPress={() => setShowItemForm(true)}
+                style={styles.primaryButton}
             />
         </View>
     )
@@ -236,6 +302,47 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         width: 'auto',
         marginTop: 10,
+    },
+    modalView: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        backgroundColor: 'white',
+        padding: 20,
+        borderRadius: 10,
+        width: '90%',
+        maxHeight: '80%',
+        paddingTop: 45,
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 15,
+        textAlign: 'center',
+    },
+    closeButton: {
+        position: 'absolute',
+        right: 10,
+        top: 10,
+        zIndex: 1,
+        padding: 5,
+    },
+    primaryButton: {
+        borderRadius: 25,
+        paddingTop: 7,
+        paddingBottom: 7,
+        paddingLeft: 10,
+        paddingRight: 10,
+        elevation: 2,
+        backgroundColor: '#9C86FC',
+        color: 'black',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        width: 'auto',
+        marginBottom: 10,
     },
 })
 
