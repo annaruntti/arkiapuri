@@ -1,11 +1,19 @@
 import React, { useState, useEffect } from 'react'
-import { Alert, Modal, StyleSheet, View, FlatList } from 'react-native'
+import {
+    Alert,
+    Modal,
+    StyleSheet,
+    View,
+    FlatList,
+    TouchableOpacity,
+} from 'react-native'
 import axios from 'axios'
 import Button from '../components/Button'
 import FormAddShoppingList from '../components/FormAddShoppingList'
 import CustomText from '../components/CustomText'
 import storage from '../utils/storage'
 import { getServerUrl } from '../utils/getServerUrl'
+import { MaterialIcons } from '@expo/vector-icons'
 
 const ShoppingListScreen = () => {
     const [modalVisible, setModalVisible] = useState(false)
@@ -21,9 +29,22 @@ const ShoppingListScreen = () => {
                     Authorization: `Bearer ${token}`,
                 },
             })
-            setShoppingLists(response.data)
+
+            // Extract shopping lists from response
+            if (response.data.success) {
+                setShoppingLists(response.data.shoppingLists)
+            } else {
+                console.error(
+                    'Failed to fetch shopping lists:',
+                    response.data.message
+                )
+                Alert.alert('Virhe', 'Ostoslistojen haku epäonnistui')
+            }
         } catch (error) {
-            console.error('Error fetching shopping lists:', error)
+            console.error(
+                'Error fetching shopping lists:',
+                error?.response?.data || error
+            )
             Alert.alert('Virhe', 'Ostoslistojen haku epäonnistui')
         }
     }
@@ -76,6 +97,16 @@ const ShoppingListScreen = () => {
             >
                 <View style={styles.layerView}>
                     <View style={styles.modalView}>
+                        <TouchableOpacity
+                            style={styles.closeButton}
+                            onPress={() => setModalVisible(false)}
+                        >
+                            <MaterialIcons
+                                name="close"
+                                size={24}
+                                color="black"
+                            />
+                        </TouchableOpacity>
                         <CustomText style={styles.modalTitle}>
                             Luo uusi ostoslista
                         </CustomText>
@@ -103,7 +134,7 @@ const ShoppingListScreen = () => {
                     style={styles.listContainer}
                     data={shoppingLists}
                     renderItem={renderShoppingList}
-                    keyExtractor={(item) => item.id}
+                    keyExtractor={(item) => item._id}
                     showsVerticalScrollIndicator={false}
                 />
             ) : (
@@ -144,6 +175,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         borderRadius: 5,
         padding: 35,
+        paddingTop: 45,
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
@@ -185,18 +217,50 @@ const styles = StyleSheet.create({
     },
     primaryButton: {
         borderRadius: 25,
-        paddingVertical: 7,
-        paddingHorizontal: 10,
+        paddingTop: 7,
+        paddingBottom: 7,
+        paddingLeft: 10,
+        paddingRight: 10,
         elevation: 2,
         backgroundColor: '#9C86FC',
-        marginVertical: 10,
+        color: 'black',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        width: 'auto',
     },
     secondaryButton: {
         borderRadius: 25,
-        paddingVertical: 7,
-        paddingHorizontal: 10,
+        paddingTop: 7,
+        paddingBottom: 7,
+        paddingLeft: 10,
+        paddingRight: 10,
         elevation: 2,
-        backgroundColor: '#E0E0E0',
-        marginTop: 10,
+        backgroundColor: '#38E4D9',
+        color: 'black',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        width: 'auto',
+    },
+    tertiaryButton: {
+        borderRadius: 25,
+        paddingTop: 7,
+        paddingBottom: 7,
+        paddingLeft: 10,
+        paddingRight: 10,
+        elevation: 2,
+        backgroundColor: '#fff',
+        color: 'black',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        width: 'auto',
+        borderWidth: 3,
+        borderColor: '#9C86FC',
+    },
+    closeButton: {
+        position: 'absolute',
+        right: 10,
+        top: 10,
+        zIndex: 1,
+        padding: 5,
     },
 })

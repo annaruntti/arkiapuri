@@ -167,7 +167,7 @@ const SignUpScreen = () => {
                             title="Sisäänkirjautumiseen"
                             onPress={onSignInPress}
                             type="TERTIARY"
-                            style={styles.tertiaryButton}
+                            style={styles.secondaryButton}
                         />
                     </View>
                     <View style={styles.buttonContainer}>
@@ -234,22 +234,9 @@ const styles = StyleSheet.create({
         color: 'black',
         fontWeight: 'bold',
         textAlign: 'center',
-        width: '100%',
+        width: 'auto',
     },
     secondaryButton: {
-        borderRadius: 25,
-        paddingTop: 7,
-        paddingBottom: 7,
-        paddingLeft: 10,
-        paddingRight: 10,
-        elevation: 2,
-        backgroundColor: '#FACE67',
-        color: 'black',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        width: '100%',
-    },
-    tertiaryButton: {
         borderRadius: 25,
         paddingTop: 7,
         paddingBottom: 7,
@@ -260,7 +247,22 @@ const styles = StyleSheet.create({
         color: 'black',
         fontWeight: 'bold',
         textAlign: 'center',
-        width: '100%',
+        width: 'auto',
+    },
+    tertiaryButton: {
+        borderRadius: 25,
+        paddingTop: 7,
+        paddingBottom: 7,
+        paddingLeft: 10,
+        paddingRight: 10,
+        elevation: 2,
+        backgroundColor: '#fff',
+        color: 'black',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        width: 'auto',
+        borderWidth: 3,
+        borderColor: '#9C86FC',
     },
     text: {
         color: 'gray',

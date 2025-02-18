@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { StyleSheet, View, Modal, Alert, Platform } from 'react-native'
+import { StyleSheet, View, Modal, Alert, TouchableOpacity } from 'react-native'
 import { useForm } from 'react-hook-form'
 import axios from 'axios'
 import CustomInput from './CustomInput'
@@ -8,6 +8,7 @@ import Button from './Button'
 import FoodItemForm from './FormFoodItem'
 import storage from '../utils/storage'
 import { getServerUrl } from '../utils/getServerUrl'
+import { MaterialIcons } from '@expo/vector-icons'
 
 const FormAddShoppingList = ({ onSubmit, onClose }) => {
     const [showItemForm, setShowItemForm] = useState(false)
@@ -147,17 +148,22 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
             >
                 <View style={styles.modalView}>
                     <View style={styles.modalContent}>
+                        <TouchableOpacity
+                            style={styles.closeButton}
+                            onPress={() => setShowItemForm(false)}
+                        >
+                            <MaterialIcons
+                                name="close"
+                                size={24}
+                                color="black"
+                            />
+                        </TouchableOpacity>
                         <CustomText style={styles.modalTitle}>
                             Lisää tuote ostoslistaan
                         </CustomText>
                         <FoodItemForm
                             onSubmit={handleAddItem}
                             location="shopping-list"
-                        />
-                        <Button
-                            style={styles.secondaryButton}
-                            title="Peruuta"
-                            onPress={() => setShowItemForm(false)}
                         />
                     </View>
                 </View>
@@ -202,6 +208,7 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         width: '90%',
         maxHeight: '80%',
+        paddingTop: 45,
     },
     modalTitle: {
         fontSize: 18,
@@ -220,7 +227,7 @@ const styles = StyleSheet.create({
         color: 'black',
         fontWeight: 'bold',
         textAlign: 'center',
-        width: '100%',
+        width: 'auto',
     },
     secondaryButton: {
         borderRadius: 25,
@@ -229,16 +236,38 @@ const styles = StyleSheet.create({
         paddingLeft: 10,
         paddingRight: 10,
         elevation: 2,
-        backgroundColor: '#FACE67',
+        backgroundColor: '#38E4D9',
         color: 'black',
         fontWeight: 'bold',
         textAlign: 'center',
-        width: '100%',
+        width: 'auto',
         marginBottom: 10,
+    },
+    tertiaryButton: {
+        borderRadius: 25,
+        paddingTop: 7,
+        paddingBottom: 7,
+        paddingLeft: 10,
+        paddingRight: 10,
+        elevation: 2,
+        backgroundColor: '#fff',
+        color: 'black',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        width: 'auto',
+        borderWidth: 3,
+        borderColor: '#9C86FC',
     },
     errorMsg: {
         color: 'red',
         marginTop: -5,
+    },
+    closeButton: {
+        position: 'absolute',
+        right: 10,
+        top: 10,
+        zIndex: 1,
+        padding: 5,
     },
 })
 

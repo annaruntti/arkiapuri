@@ -143,7 +143,7 @@ const SignInScreen = () => {
                             title="Luo käyttäjätunnus"
                             onPress={onSignUpPress}
                             type="TERTIARY"
-                            style={styles.tertiaryButton}
+                            style={styles.secondaryButton}
                         />
                     </View>
                     <View style={styles.buttonContainer}>
@@ -151,7 +151,7 @@ const SignInScreen = () => {
                             title="Unohditko salasanan?"
                             onPress={onForgotPasswordPressed}
                             type="TERTIARY"
-                            style={styles.secondaryButton}
+                            style={styles.tertiaryButton}
                         />
                     </View>
                 </View>
@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
         paddingLeft: 10,
         paddingRight: 10,
         elevation: 2,
-        backgroundColor: '#FACE67',
+        backgroundColor: '#38E4D9',
         color: 'black',
         fontWeight: 'bold',
         textAlign: 'center',
@@ -222,11 +222,13 @@ const styles = StyleSheet.create({
         paddingLeft: 10,
         paddingRight: 10,
         elevation: 2,
-        backgroundColor: '#38E4D9',
+        backgroundColor: '#fff',
         color: 'black',
         fontWeight: 'bold',
         textAlign: 'center',
         width: 'auto',
+        borderWidth: 3,
+        borderColor: '#9C86FC',
     },
 })
 

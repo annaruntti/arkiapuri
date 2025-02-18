@@ -1,6 +1,7 @@
 import { StyleSheet, View, Text } from 'react-native'
 import CustomInput from './CustomInput'
 import CustomText from './CustomText'
+import Button from './Button'
 
 const AddMealForm = ({ control }) => {
     return (
@@ -44,6 +45,16 @@ const AddMealForm = ({ control }) => {
                 Ateriat koostuvat yhdesta tai useamaasta ruuasta. Ruuat
                 koostuvat ainesosista ja ruokalajeilla voi olla resepti.
             </CustomText>
+            <Button
+                title="Valitse päivämäärä"
+                onPress={showDatePicker}
+                style={styles.tertiaryButton}
+            />
+            <Button
+                style={styles.tertiaryButton}
+                title="Peruuta"
+                onPress={onClose}
+            />
         </View>
     )
 }
