@@ -91,10 +91,45 @@ const FoodItemForm = ({ onSubmit, location = 'shopping-list' }) => {
                         styles={{
                             backdrop: styles.multiSelectBackdrop,
                             selectToggle: styles.multiSelectBox,
-                            button: styles.primaryButton,
-                            confirmText: styles.primaryButtonText,
+                            button: {
+                                borderRadius: 25,
+                                paddingTop: 7,
+                                paddingBottom: 7,
+                                paddingLeft: 10,
+                                paddingRight: 10,
+                                elevation: 2,
+                                backgroundColor: '#9C86FC',
+                                marginTop: 10,
+                            },
+                            confirmText: {
+                                color: 'black',
+                                fontWeight: 'bold',
+                                textAlign: 'center',
+                                fontSize: 16,
+                            },
                             cancelButton: styles.cancelButton,
                             cancelButtonText: styles.cancelButtonText,
+                            modalWrapper: {
+                                padding: 20,
+                                paddingTop: 45,
+                            },
+                            container: {
+                                padding: 15,
+                            },
+                            itemText: {
+                                fontSize: 16,
+                                paddingVertical: 10,
+                                paddingHorizontal: 15,
+                            },
+                            subItemText: {
+                                fontSize: 15,
+                                paddingVertical: 8,
+                                paddingHorizontal: 30,
+                            },
+                            searchBar: {
+                                padding: 15,
+                                marginBottom: 10,
+                            },
                         }}
                         items={categories}
                         IconRenderer={Icon}
