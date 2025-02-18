@@ -14,10 +14,12 @@ import CustomText from '../components/CustomText'
 import storage from '../utils/storage'
 import { getServerUrl } from '../utils/getServerUrl'
 import { MaterialIcons } from '@expo/vector-icons'
+import ShoppingListDetail from '../components/ShoppingListDetail'
 
 const ShoppingListScreen = () => {
     const [modalVisible, setModalVisible] = useState(false)
     const [shoppingLists, setShoppingLists] = useState([])
+    const [selectedList, setSelectedList] = useState(null)
 
     const fetchShoppingLists = async () => {
         try {
@@ -63,6 +65,18 @@ const ShoppingListScreen = () => {
         }
     }
 
+    const handleViewList = (list) => {
+        setSelectedList(list)
+    }
+
+    const handleListUpdate = (updatedList) => {
+        setShoppingLists((prev) =>
+            prev.map((list) =>
+                list._id === updatedList._id ? updatedList : list
+            )
+        )
+    }
+
     const renderShoppingList = ({ item }) => (
         <View style={styles.listItem}>
             <View style={styles.listHeader}>
@@ -80,9 +94,7 @@ const ShoppingListScreen = () => {
             <Button
                 style={styles.secondaryButton}
                 title="Näytä lista"
-                onPress={() => {
-                    /* Navigate to list detail view */
-                }}
+                onPress={() => handleViewList(item)}
             />
         </View>
     )
@@ -114,6 +126,35 @@ const ShoppingListScreen = () => {
                             onSubmit={handleCreateList}
                             onClose={() => setModalVisible(false)}
                         />
+                    </View>
+                </View>
+            </Modal>
+
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={!!selectedList}
+                onRequestClose={() => setSelectedList(null)}
+            >
+                <View style={styles.layerView}>
+                    <View style={styles.modalView}>
+                        <TouchableOpacity
+                            style={styles.closeButton}
+                            onPress={() => setSelectedList(null)}
+                        >
+                            <MaterialIcons
+                                name="close"
+                                size={24}
+                                color="black"
+                            />
+                        </TouchableOpacity>
+                        {selectedList && (
+                            <ShoppingListDetail
+                                shoppingList={selectedList}
+                                onClose={() => setSelectedList(null)}
+                                onUpdate={handleListUpdate}
+                            />
+                        )}
                     </View>
                 </View>
             </Modal>
