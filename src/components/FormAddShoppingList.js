@@ -1,12 +1,13 @@
 import React, { useState } from 'react'
-import { StyleSheet, View, Modal, Alert } from 'react-native'
+import { StyleSheet, View, Modal, Alert, Platform } from 'react-native'
 import { useForm } from 'react-hook-form'
 import axios from 'axios'
 import CustomInput from './CustomInput'
 import CustomText from './CustomText'
 import Button from './Button'
 import FoodItemForm from './FormFoodItem'
-import * as Updates from 'expo-updates'
+import storage from '../utils/storage'
+import { getServerUrl } from '../utils/getServerUrl'
 
 const FormAddShoppingList = ({ onSubmit, onClose }) => {
     const [showItemForm, setShowItemForm] = useState(false)
@@ -25,18 +26,6 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
         },
     })
 
-    const getServerUrl = (endpoint) => {
-        const { manifest } = Updates
-        let debuggerHost = 'localhost'
-        if (manifest && manifest.debuggerHost) {
-            debuggerHost = manifest.debuggerHost.split(':').shift()
-        } else {
-            debuggerHost = '192.168.250.107'
-        }
-        const serverUrl = `http://${debuggerHost}:3001${endpoint}`
-        return serverUrl
-    }
-
     const handleAddItem = (itemData) => {
         const newItem = {
             ...itemData,
@@ -48,16 +37,36 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
 
     const handleSubmitForm = async (data) => {
         try {
+            const token = await storage.getItem('userToken')
+            console.log('Token for submit:', token)
+
+            if (!token) {
+                console.error('No token found')
+                Alert.alert('Virhe', 'Kirjaudu sisään uudelleen')
+                return
+            }
+
             const shoppingListData = {
                 ...data,
                 items,
                 totalEstimatedPrice: data.totalEstimatedPrice || 0,
             }
 
+            console.log('Sending request with token:', token)
+            console.log('Shopping list data:', shoppingListData)
+
             const response = await axios.post(
                 getServerUrl('/shopping-lists'),
-                shoppingListData
+                shoppingListData,
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
             )
+
+            console.log('Response:', response.data)
 
             if (response.data) {
                 onSubmit(response.data)
@@ -66,8 +75,15 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
                 onClose()
             }
         } catch (error) {
-            console.error('Error creating shopping list:', error)
-            Alert.alert('Virhe', 'Ostoslistan luonti epäonnistui')
+            console.error(
+                'Error creating shopping list:',
+                error?.response?.data || error
+            )
+            if (error?.response?.status === 401) {
+                Alert.alert('Virhe', 'Kirjaudu sisään uudelleen')
+            } else {
+                Alert.alert('Virhe', 'Ostoslistan luonti epäonnistui')
+            }
         }
     }
 

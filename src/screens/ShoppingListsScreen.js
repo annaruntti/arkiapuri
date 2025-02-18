@@ -4,29 +4,23 @@ import axios from 'axios'
 import Button from '../components/Button'
 import FormAddShoppingList from '../components/FormAddShoppingList'
 import CustomText from '../components/CustomText'
-import * as Updates from 'expo-updates'
+import storage from '../utils/storage'
+import { getServerUrl } from '../utils/getServerUrl'
 
 const ShoppingListScreen = () => {
     const [modalVisible, setModalVisible] = useState(false)
     const [shoppingLists, setShoppingLists] = useState([])
-    // Add loading state
-    // const [isLoading, setIsLoading] = useState(false)
-
-    const getServerUrl = (endpoint) => {
-        const { manifest } = Updates
-        let debuggerHost = 'localhost'
-        if (manifest && manifest.debuggerHost) {
-            debuggerHost = manifest.debuggerHost.split(':').shift()
-        } else {
-            debuggerHost = '192.168.250.107'
-        }
-        const serverUrl = `http://${debuggerHost}:3001${endpoint}`
-        return serverUrl
-    }
 
     const fetchShoppingLists = async () => {
         try {
-            const response = await axios.get(getServerUrl('/shopping-lists'))
+            const token = await storage.getItem('userToken')
+            console.log('Token for request:', token)
+
+            const response = await axios.get(getServerUrl('/shopping-lists'), {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            })
             setShoppingLists(response.data)
         } catch (error) {
             console.error('Error fetching shopping lists:', error)

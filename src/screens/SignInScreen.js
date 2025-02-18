@@ -1,13 +1,10 @@
 import React from 'react'
-import {
-    View,
-    StyleSheet,
-    // useWindowDimensions,
-    ScrollView,
-} from 'react-native'
+import { View, StyleSheet, ScrollView, Alert } from 'react-native'
 import axios from 'axios'
 import { useNavigation } from '@react-navigation/native'
 import { useForm } from 'react-hook-form'
+import storage from '../utils/storage'
+import { getServerUrl } from '../utils/getServerUrl'
 
 import Button from '../components/Button'
 // import SocialSignInButtons from '../../components/SocialSignInButtons'
@@ -18,7 +15,6 @@ import { useLogin } from '../context/LoginProvider'
 const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/
 
 const SignInScreen = () => {
-    // const { height } = useWindowDimensions()
     const navigation = useNavigation()
     const { login } = useLogin()
 
@@ -31,26 +27,57 @@ const SignInScreen = () => {
     console.log(errors, 'errors')
 
     const onSignInPressed = async (data) => {
-        console.log('data', data)
-        axios
-            .post('http://localhost:3001/sign-in', data) // this is for web, in mobile use ip address
-            // .post('http://192.168.250.107:3001/sign-in', data)
-            .then((response) => {
-                console.log('data4', data)
-                console.log('response', response)
-                if (response.data.success) {
-                    const userProfile = response.data.user
-                    if (userProfile) {
-                        login(userProfile)
-                        navigation.navigate('Arkiapuri')
-                    } else {
-                        console.error('User profile is undefined')
-                    }
+        console.log('Sign in data:', data)
+        try {
+            const response = await axios.post(getServerUrl('/sign-in'), data)
+            console.log(JSON.stringify(response.data, null, 2))
+
+            if (response.data.success) {
+                // Backend returns { success: true, token: "...", user: {...} }
+                const { token } = response.data
+
+                if (!token) {
+                    console.error('No token in response')
+                    return
                 }
-            })
-            .catch((error) => {
-                console.error('Error sending data: ', error)
-            })
+
+                // Store token as string
+                try {
+                    await storage.removeItem('userToken') // Clear any existing token
+                    await storage.setItem('userToken', token)
+                    const savedToken = await storage.getItem('userToken')
+                    console.log('Verification - Saved token:', savedToken)
+
+                    if (savedToken === token) {
+                        console.log('Token stored successfully')
+                        if (response.data.user) {
+                            login(response.data.user)
+                            navigation.navigate('Arkiapuri')
+                        }
+                    } else {
+                        throw new Error('Token verification failed')
+                    }
+                } catch (storageError) {
+                    console.error('Storage error:', storageError)
+                    Alert.alert(
+                        'Virhe',
+                        'Kirjautumistietojen tallennus epäonnistui'
+                    )
+                }
+            } else {
+                console.error('Sign in failed:', response.data.message)
+                Alert.alert(
+                    'Virhe',
+                    response.data.message || 'Kirjautuminen epäonnistui'
+                )
+            }
+        } catch (error) {
+            console.error('Sign in error:', error?.response?.data || error)
+            Alert.alert(
+                'Virhe',
+                'Kirjautuminen epäonnistui. Tarkista internet-yhteys.'
+            )
+        }
     }
 
     const onForgotPasswordPressed = () => {
