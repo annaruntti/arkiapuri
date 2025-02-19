@@ -1,12 +1,17 @@
-import React, { useState } from 'react'
-import { Alert, Modal, StyleSheet, View, Text } from 'react-native'
+import React, { useState, useEffect } from 'react'
+import { Alert, Modal, StyleSheet, View, Text, FlatList } from 'react-native'
 import { useForm } from 'react-hook-form'
 import Button from '../components/Button'
 import FormAddGrocery from '../components/FormAddGrocery'
 import CustomText from '../components/CustomText'
+import axios from 'axios'
+import { getServerUrl } from '../utils/getServerUrl'
+import storage from '../utils/storage'
 
 const PantryScreen = ({}) => {
     const [modalVisible, setModalVisible] = useState(false)
+    const [pantryItems, setPantryItems] = useState([])
+    const [loading, setLoading] = useState(true)
 
     const {
         control,
@@ -22,10 +27,84 @@ const PantryScreen = ({}) => {
             expiryDate: '',
         },
     })
-    const onSubmit = (data) => {
-        setModalVisible(!modalVisible)
-        console.log(data, 'data')
+
+    const fetchPantryItems = async () => {
+        try {
+            setLoading(true)
+            const token = await storage.getItem('userToken')
+            const response = await axios.get(getServerUrl('/pantry'), {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            })
+
+            console.log('Pantry response:', response.data)
+
+            if (response.data.success) {
+                const items = response.data.pantry.items || []
+                console.log('Pantry items:', items)
+                setPantryItems(items)
+            } else {
+                console.error(
+                    'Failed to fetch pantry items:',
+                    response.data.message
+                )
+                Alert.alert('Virhe', 'Ruokakomeron haku epäonnistui')
+                setPantryItems([])
+            }
+        } catch (error) {
+            console.error(
+                'Error fetching pantry items:',
+                error?.response?.data || error
+            )
+            Alert.alert('Virhe', 'Ruokakomeron haku epäonnistui')
+            setPantryItems([])
+        } finally {
+            setLoading(false)
+        }
     }
+
+    useEffect(() => {
+        fetchPantryItems()
+    }, [])
+
+    const onSubmit = async (data) => {
+        try {
+            setModalVisible(false)
+            await fetchPantryItems()
+        } catch (error) {
+            Alert.alert('Virhe', 'Tuotteen lisääminen epäonnistui')
+        }
+    }
+
+    const renderPantryItem = ({ item }) => (
+        <View style={styles.listItem}>
+            <View style={styles.listHeader}>
+                <CustomText style={styles.listTitle}>{item.name}</CustomText>
+                <View style={styles.itemCategories}>
+                    {item.categories?.map((category, index) => (
+                        <CustomText key={index} style={styles.category}>
+                            {category}
+                        </CustomText>
+                    ))}
+                </View>
+            </View>
+            <View style={styles.listStats}>
+                <CustomText>
+                    {item.quantity} {item.unit}
+                </CustomText>
+                <CustomText>
+                    {item.calories ? `${item.calories} kcal/100g` : ''}
+                </CustomText>
+            </View>
+            <CustomText style={styles.expirationDate}>
+                Parasta ennen:{' '}
+                {new Date(item.expirationDate).toLocaleDateString()}
+            </CustomText>
+        </View>
+    )
+
+    console.log('Current pantryItems state:', pantryItems)
 
     return (
         <View style={styles.container}>
@@ -70,6 +149,23 @@ const PantryScreen = ({}) => {
                 title="Lisää elintarvike"
                 onPress={() => setModalVisible(true)}
             />
+            {loading ? (
+                <CustomText>Ladataan...</CustomText>
+            ) : Array.isArray(pantryItems) && pantryItems.length > 0 ? (
+                <FlatList
+                    style={styles.listContainer}
+                    contentContainerStyle={{ paddingBottom: 20 }}
+                    data={pantryItems}
+                    renderItem={renderPantryItem}
+                    keyExtractor={(item) => item._id}
+                    showsVerticalScrollIndicator={false}
+                />
+            ) : (
+                <CustomText style={styles.emptyText}>
+                    Ei vielä tuotteita ruokakomerossa. Lisää tuotteita
+                    painamalla "Lisää tuote" -nappia.
+                </CustomText>
+            )}
         </View>
     )
 }
@@ -139,6 +235,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         width: 'auto',
+        marginBottom: 20,
     },
     secondaryButton: {
         borderRadius: 25,
@@ -172,5 +269,48 @@ const styles = StyleSheet.create({
     },
     errorMsg: {
         color: 'red',
+    },
+    listItem: {
+        backgroundColor: '#f8f8f8',
+        padding: 15,
+        borderRadius: 10,
+        marginBottom: 10,
+    },
+    listHeader: {
+        marginBottom: 10,
+    },
+    listTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    listStats: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 5,
+    },
+    itemCategories: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 5,
+        marginTop: 5,
+    },
+    category: {
+        backgroundColor: '#e0e0e0',
+        paddingVertical: 2,
+        paddingHorizontal: 8,
+        borderRadius: 12,
+        fontSize: 12,
+    },
+    expirationDate: {
+        color: '#666',
+        fontSize: 14,
+    },
+    listContainer: {
+        width: '100%',
+    },
+    emptyText: {
+        textAlign: 'center',
+        marginTop: 20,
+        color: '#666',
     },
 })
