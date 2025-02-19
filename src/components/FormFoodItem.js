@@ -46,6 +46,7 @@ const FoodItemForm = ({ onSubmit, location = 'shopping-list' }) => {
     }
 
     const handleFormSubmit = (data) => {
+        console.log('Form data before submit:', data)
         onSubmit(data)
         reset()
     }
@@ -184,7 +185,10 @@ const FoodItemForm = ({ onSubmit, location = 'shopping-list' }) => {
 
                 <Controller
                     control={control}
-                    rules={{ required: true }}
+                    rules={{
+                        required: true,
+                        validate: (value) => value.trim() !== '',
+                    }}
                     render={({ field: { onChange, value } }) => (
                         <TextInput
                             style={[styles.formInput, styles.unitInput]}

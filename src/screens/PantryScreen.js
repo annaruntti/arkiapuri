@@ -1,32 +1,17 @@
 import React, { useState, useEffect } from 'react'
 import { Alert, Modal, StyleSheet, View, Text, FlatList } from 'react-native'
-import { useForm } from 'react-hook-form'
 import Button from '../components/Button'
-import FormAddGrocery from '../components/FormAddGrocery'
+import FormFoodItem from '../components/FormFoodItem'
 import CustomText from '../components/CustomText'
 import axios from 'axios'
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
+import categories from '../data/categories'
 
 const PantryScreen = ({}) => {
     const [modalVisible, setModalVisible] = useState(false)
     const [pantryItems, setPantryItems] = useState([])
     const [loading, setLoading] = useState(true)
-
-    const {
-        control,
-        register,
-        handleSubmit,
-        formState: { errors },
-    } = useForm({
-        defaultValues: {
-            groceryName: '',
-            groceryType: [],
-            groceryPrice: '',
-            groceryNumber: '',
-            expiryDate: '',
-        },
-    })
 
     const fetchPantryItems = async () => {
         try {
@@ -41,9 +26,26 @@ const PantryScreen = ({}) => {
             console.log('Pantry response:', response.data)
 
             if (response.data.success) {
-                const items = response.data.pantry.items || []
-                console.log('Pantry items:', items)
-                setPantryItems(items)
+                // Get the items array from the pantry
+                const pantryItems = response.data.pantry.items || []
+
+                // Process items with data from foodItem if it exists in the response
+                const processedItems = pantryItems.map((item) => {
+                    // Get foodItem data from the response
+                    const foodItem = response.data.foodItem || {}
+
+                    return {
+                        ...item,
+                        // Use foodItem data if available, otherwise use item data or defaults
+                        unit: item.unit || foodItem.unit || 'kpl',
+                        category: item.category || foodItem.category || [],
+                        calories: item.calories || foodItem.calories || 0,
+                        price: item.price || foodItem.price || 0,
+                    }
+                })
+
+                console.log('Processed pantry items:', processedItems)
+                setPantryItems(processedItems)
             } else {
                 console.error(
                     'Failed to fetch pantry items:',
@@ -68,11 +70,68 @@ const PantryScreen = ({}) => {
         fetchPantryItems()
     }, [])
 
-    const onSubmit = async (data) => {
+    const handleAddItem = async (itemData) => {
         try {
-            setModalVisible(false)
-            await fetchPantryItems()
+            const token = await storage.getItem('userToken')
+
+            console.log('Item data before formatting:', itemData)
+
+            if (
+                !Array.isArray(itemData.category) ||
+                itemData.category.length === 0
+            ) {
+                Alert.alert('Virhe', 'Valitse vähintään yksi kategoria')
+                return
+            }
+
+            const formattedItem = {
+                name: itemData.name,
+                category: itemData.category.map((id) => {
+                    const category = categories.find((cat) => cat.id === id)
+                    if (!category) {
+                        console.error('Category not found for id:', id)
+                        return id
+                    }
+                    return category.name
+                }),
+                quantity: Number(itemData.quantity),
+                unit: itemData.unit,
+                price: itemData.price ? Number(itemData.price) : 0,
+                calories: itemData.calories ? Number(itemData.calories) : 0,
+                expirationDate: itemData.expirationDate,
+            }
+
+            console.log('Formatted item:', formattedItem)
+
+            if (!formattedItem.unit) {
+                Alert.alert('Virhe', 'Yksikkö on pakollinen tieto')
+                return
+            }
+
+            const response = await axios.post(
+                getServerUrl('/pantry/items'),
+                formattedItem,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            )
+
+            if (response.data.success) {
+                setModalVisible(false)
+                setTimeout(async () => {
+                    try {
+                        await fetchPantryItems()
+                    } catch (error) {
+                        console.error('Error refreshing list:', error)
+                    }
+                }, 100)
+            } else {
+                Alert.alert('Virhe', 'Tuotteen lisääminen epäonnistui')
+            }
         } catch (error) {
+            console.error('Error adding item:', error?.response?.data || error)
             Alert.alert('Virhe', 'Tuotteen lisääminen epäonnistui')
         }
     }
@@ -82,16 +141,22 @@ const PantryScreen = ({}) => {
             <View style={styles.listHeader}>
                 <CustomText style={styles.listTitle}>{item.name}</CustomText>
                 <View style={styles.itemCategories}>
-                    {item.categories?.map((category, index) => (
-                        <CustomText key={index} style={styles.category}>
-                            {category}
+                    {item.category?.length > 0 ? (
+                        item.category.map((category, index) => (
+                            <CustomText key={index} style={styles.category}>
+                                {category}
+                            </CustomText>
+                        ))
+                    ) : (
+                        <CustomText style={styles.category}>
+                            Ei kategoriaa
                         </CustomText>
-                    ))}
+                    )}
                 </View>
             </View>
             <View style={styles.listStats}>
                 <CustomText>
-                    {item.quantity} {item.unit}
+                    {item.quantity} {item.unit || 'kpl'}
                 </CustomText>
                 <CustomText>
                     {item.calories ? `${item.calories} kcal/100g` : ''}
@@ -112,34 +177,23 @@ const PantryScreen = ({}) => {
                 animationType="slide"
                 transparent={true}
                 visible={modalVisible}
-                overFullScreen={true}
-                onRequestClose={() => {
-                    Alert.alert('Modal has been closed.')
-                    setModalVisible(!modalVisible)
-                }}
+                onRequestClose={() => setModalVisible(false)}
             >
                 <View style={styles.layerView}>
                     <View style={styles.modalView}>
-                        <CustomText style={styles.introText}>
-                            Lisää pentteriin elintarvikkeita oheisella
-                            lomakkeella.
+                        <CustomText style={styles.modalTitle}>
+                            Lisää tuote ruokakomeroon
                         </CustomText>
-                        <FormAddGrocery
-                            register={register}
-                            control={control}
-                            errors={errors}
-                        />
-                        <Button
-                            style={styles.primaryButton}
-                            title="Tallenna"
-                            onPress={handleSubmit(onSubmit)}
+                        <FormFoodItem
+                            onSubmit={handleAddItem}
+                            location="pantry"
                         />
                     </View>
                 </View>
             </Modal>
             <CustomText style={styles.introText}>
                 Selaa pentteriäsi eli ruokakomeroasi joita kotoasi jo löytyy ja
-                käyttä niitä avuksi ateriasuunnittelussa ja ostoslistan
+                käytä niitä avuksi ateriasuunnittelussa ja ostoslistan
                 luonnissa. Voit myös lisätä täällä uusia elintarvikkeita
                 pentteriisi. Ostoslistan tuotteet lisätään automaattisesti
                 pentteriin
@@ -207,21 +261,11 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         elevation: 5,
     },
-    form: {
-        width: '100%',
-        marginBottom: 15,
-    },
-    label: {
-        marginTop: 10,
-    },
-    formInput: {
-        backgroundColor: 'white',
-        borderColor: 'black',
-        borderStyle: 'solid',
-        borderWidth: 1,
-        height: 40,
-        padding: 10,
-        borderRadius: 4,
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        marginBottom: 20,
     },
     primaryButton: {
         borderRadius: 25,

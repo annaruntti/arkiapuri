@@ -36,7 +36,7 @@ const ShoppingListDetail = ({ shoppingList, onClose, onUpdate }) => {
 
             // Move items to pantry
             const response = await axios.post(
-                getServerUrl('/pantry/add-items'),
+                getServerUrl('/pantry/move-from-shopping'),
                 { items: itemsToMove },
                 {
                     headers: {
@@ -71,7 +71,7 @@ const ShoppingListDetail = ({ shoppingList, onClose, onUpdate }) => {
             }
         } catch (error) {
             console.error('Error moving items to pantry:', error)
-            Alert.alert('Virhe', 'Tuotteiden siirto ruokavarastoon epäonnistui')
+            Alert.alert('Virhe', 'Tuotteiden siirto ruokakomeroon epäonnistui')
         }
     }
 
