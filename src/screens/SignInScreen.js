@@ -5,18 +5,18 @@ import { useNavigation } from '@react-navigation/native'
 import { useForm } from 'react-hook-form'
 import storage from '../utils/storage'
 import { getServerUrl } from '../utils/getServerUrl'
+import { useLogin } from '../context/LoginProvider'
 
 import Button from '../components/Button'
 // import SocialSignInButtons from '../../components/SocialSignInButtons'
 import CustomInput from '../components/CustomInput'
 import CustomText from '../components/CustomText'
-import { useLogin } from '../context/LoginProvider'
 
 const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/
 
 const SignInScreen = () => {
     const navigation = useNavigation()
-    const { login } = useLogin()
+    const { setIsLoggedIn, setProfile, login } = useLogin()
 
     const {
         control,
@@ -29,41 +29,14 @@ const SignInScreen = () => {
     const onSignInPressed = async (data) => {
         console.log('Sign in data:', data)
         try {
-            const response = await axios.post(getServerUrl('/sign-in'), data)
-            console.log(JSON.stringify(response.data, null, 2))
+            const response = await axios.post(getServerUrl('/sign-in'), {
+                email: data.email,
+                password: data.password,
+            })
 
             if (response.data.success) {
-                // Backend returns { success: true, token: "...", user: {...} }
-                const { token } = response.data
-
-                if (!token) {
-                    console.error('No token in response')
-                    return
-                }
-
-                // Store token as string
-                try {
-                    await storage.removeItem('userToken') // Clear any existing token
-                    await storage.setItem('userToken', token)
-                    const savedToken = await storage.getItem('userToken')
-                    console.log('Verification - Saved token:', savedToken)
-
-                    if (savedToken === token) {
-                        console.log('Token stored successfully')
-                        if (response.data.user) {
-                            login(response.data.user)
-                            navigation.navigate('Arkiapuri')
-                        }
-                    } else {
-                        throw new Error('Token verification failed')
-                    }
-                } catch (storageError) {
-                    console.error('Storage error:', storageError)
-                    Alert.alert(
-                        'Virhe',
-                        'Kirjautumistietojen tallennus epäonnistui'
-                    )
-                }
+                await storage.setItem('userToken', response.data.token)
+                await login(response.data.user)
             } else {
                 console.error('Sign in failed:', response.data.message)
                 Alert.alert(
@@ -72,11 +45,8 @@ const SignInScreen = () => {
                 )
             }
         } catch (error) {
-            console.error('Sign in error:', error?.response?.data || error)
-            Alert.alert(
-                'Virhe',
-                'Kirjautuminen epäonnistui. Tarkista internet-yhteys.'
-            )
+            console.error('Login error:', error)
+            Alert.alert('Virhe', 'Kirjautuminen epäonnistui')
         }
     }
 

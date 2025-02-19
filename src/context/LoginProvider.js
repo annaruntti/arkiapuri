@@ -1,43 +1,77 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import storage from '../utils/storage'
+import axios from 'axios'
+import { getServerUrl } from '../utils/getServerUrl'
 
 const LoginContext = createContext()
 
 const LoginProvider = ({ children }) => {
     const [isLoggedIn, setIsLoggedIn] = useState(false)
     const [profile, setProfile] = useState({})
+    const [isLoading, setIsLoading] = useState(true)
 
     useEffect(() => {
-        const loadStoredData = async () => {
+        const checkToken = async () => {
+            setIsLoading(true) // Ensure loading is true when starting
             try {
-                const storedIsLoggedIn = await storage.getItem('isLoggedIn')
+                const token = await storage.getItem('userToken')
                 const storedProfile = await storage.getItem('profile')
 
-                if (storedIsLoggedIn === 'true' && storedProfile) {
-                    setIsLoggedIn(true)
-                    setProfile(JSON.parse(storedProfile))
+                if (token && storedProfile) {
+                    const response = await axios.get(getServerUrl('/profile'), {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    })
+                    if (response.data.success) {
+                        setProfile(response.data.user)
+                        setIsLoggedIn(true)
+                    } else {
+                        await storage.removeItem('userToken')
+                        await storage.removeItem('profile')
+                        await storage.removeItem('isLoggedIn')
+                    }
                 }
             } catch (error) {
-                console.error('Failed to load stored data', error)
+                console.error('Token verification failed:', error)
+                await storage.removeItem('userToken')
+                await storage.removeItem('profile')
+                await storage.removeItem('isLoggedIn')
+            } finally {
+                setIsLoading(false)
             }
         }
 
-        loadStoredData()
+        checkToken()
     }, [])
 
     const login = async (userProfile) => {
         try {
+            // Store both token and profile data
+            const token = await storage.getItem('userToken') // Get the token that was just stored
+            if (!token) {
+                throw new Error('No token found')
+            }
+
             await storage.setItem('isLoggedIn', 'true')
             await storage.setItem('profile', JSON.stringify(userProfile))
+
+            // Update state
             setIsLoggedIn(true)
             setProfile(userProfile)
         } catch (error) {
             console.error('Failed to save login data', error)
+            // Clean up if something goes wrong
+            await storage.removeItem('userToken')
+            await storage.removeItem('isLoggedIn')
+            await storage.removeItem('profile')
+            throw error // Re-throw to handle in the component
         }
     }
 
     const logout = async () => {
         try {
+            await storage.removeItem('userToken')
             await storage.removeItem('isLoggedIn')
             await storage.removeItem('profile')
             setIsLoggedIn(false)
@@ -48,7 +82,17 @@ const LoginProvider = ({ children }) => {
     }
 
     return (
-        <LoginContext.Provider value={{ isLoggedIn, login, logout, profile }}>
+        <LoginContext.Provider
+            value={{
+                isLoggedIn,
+                setIsLoggedIn,
+                profile,
+                setProfile,
+                isLoading,
+                login,
+                logout,
+            }}
+        >
             {children}
         </LoginContext.Provider>
     )

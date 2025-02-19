@@ -1,20 +1,42 @@
 import * as React from 'react'
-import { StyleSheet, View } from 'react-native'
+import { StyleSheet, View, Alert } from 'react-native'
 import Button from '../components/Button'
 import CustomText from '../components/CustomText'
+import { useAuth } from '../context/AuthContext'
+import { useNavigation } from '@react-navigation/native'
 
-const ProfileScreen = ({}) => {
+const ProfileScreen = () => {
+    const { logout, user } = useAuth()
+    const navigation = useNavigation()
+
+    const handleLogout = async () => {
+        try {
+            await logout()
+            // Navigate to the login screen or any other appropriate screen
+            navigation.navigate('Auth')
+        } catch (error) {
+            console.error('Logout error:', error)
+            Alert.alert('Virhe', 'Uloskirjautuminen epäonnistui')
+        }
+    }
+
     return (
         <View style={styles.container}>
             <CustomText style={styles.introText}>
                 Täällä voit selata, muokata ja lisätä tietojasi.
             </CustomText>
+            <CustomText>Sähköposti: {user?.email}</CustomText>
             <Button
                 style={styles.primaryButton}
                 title="Muokkaa tietoja"
                 onPress={() => {
                     console.log('You tapped the button!')
                 }}
+            />
+            <Button
+                style={styles.logoutButton}
+                title="Kirjaudu ulos"
+                onPress={handleLogout}
             />
         </View>
     )
@@ -69,6 +91,19 @@ const styles = StyleSheet.create({
         paddingRight: 10,
         elevation: 2,
         backgroundColor: '#38E4D9',
+        color: 'black',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        width: 'auto',
+    },
+    logoutButton: {
+        borderRadius: 25,
+        paddingTop: 7,
+        paddingBottom: 7,
+        paddingLeft: 10,
+        paddingRight: 10,
+        elevation: 2,
+        backgroundColor: '#FACE67',
         color: 'black',
         fontWeight: 'bold',
         textAlign: 'center',

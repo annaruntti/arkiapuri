@@ -3,6 +3,7 @@ import { TouchableOpacity, View, Image, StyleSheet } from 'react-native'
 import { NavigationContainer, useNavigation } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
+import { useLogin } from '../context/LoginProvider'
 
 import { Feather, AntDesign, FontAwesome6 } from '@expo/vector-icons'
 
@@ -17,7 +18,6 @@ import ReadingOrderScreen from '../screens/ReadingOrderScreen'
 import PantryScreen from '../screens/PantryScreen'
 import ShoppingListScreen from '../screens/ShoppingListsScreen'
 import ProfileScreen from '../screens/ProfileScreen'
-import { useLogin } from '../context/LoginProvider'
 import CustomText from '../components/CustomText'
 
 const screenOptions = {
@@ -56,7 +56,7 @@ const UserProfile = () => {
     const navigation = useNavigation()
 
     const handlePress = () => {
-        navigation.navigate('Omat tiedot')
+        navigation.navigate('Profile')
     }
 
     return (
@@ -73,9 +73,7 @@ const styles = StyleSheet.create({
 })
 
 function HomeStackScreen() {
-    const { isLoggedIn } = useLogin()
-    console.log(isLoggedIn, 'isLoggedIn')
-    return isLoggedIn ? (
+    return (
         <HomeStack.Navigator
             screenOptions={{
                 headerStyle: {
@@ -86,31 +84,6 @@ function HomeStackScreen() {
             }}
         >
             <HomeStack.Screen name="Arkiapuri" component={HomeScreen} />
-            <HomeStack.Screen name="Omat tiedot" component={ProfileScreen} />
-        </HomeStack.Navigator>
-    ) : (
-        <HomeStack.Navigator
-            screenOptions={{
-                headerStyle: {
-                    backgroundColor: '#fff',
-                },
-                headerTitle: (props) => <LogoTitle {...props} />,
-                headerRight: () => <UserProfile />,
-            }}
-        >
-            <HomeStack.Screen name="Tervetuloa" component={LandingScreen} />
-            <HomeStack.Screen name="Kirjaudu sisään" component={SignInScreen} />
-            <HomeStack.Screen name="Luo tunnus" component={SignUpScreen} />
-            <HomeStack.Screen
-                name="Lataa profiilikuva"
-                component={ImageUploadScreen}
-            />
-            <HomeStack.Screen
-                name="Vahvista sähköposti"
-                component={ConfirmEmailScreen}
-            />
-            <HomeStack.Screen name="Arkiapuri" component={HomeScreen} />
-            <HomeStack.Screen name="Omat tiedot" component={ProfileScreen} />
         </HomeStack.Navigator>
     )
 }
@@ -129,7 +102,6 @@ function MealsStackScreen() {
             }}
         >
             <MealsStack.Screen name="Ateriat" component={MealsScreen} />
-            <MealsStack.Screen name="Omat tiedot" component={ProfileScreen} />
         </MealsStack.Navigator>
     )
 }
@@ -148,7 +120,6 @@ function PantryStackScreen() {
             }}
         >
             <PantryStack.Screen name="Pentteri" component={PantryScreen} />
-            <PantryStack.Screen name="Omat tiedot" component={ProfileScreen} />
         </PantryStack.Navigator>
     )
 }
@@ -169,10 +140,6 @@ function ShoppingListStackScreen() {
             <ShoppingListStack.Screen
                 name="Ostoslista"
                 component={ShoppingListScreen}
-            />
-            <ShoppingListStack.Screen
-                name="Omat tiedot"
-                component={ProfileScreen}
             />
         </ShoppingListStack.Navigator>
     )
@@ -195,147 +162,188 @@ function ReadingOrderStackScreen() {
                 name="Lukujärjestys"
                 component={ReadingOrderScreen}
             />
-            <ReadingOrderStack.Screen
-                name="Omat tiedot"
-                component={ProfileScreen}
-            />
         </ReadingOrderStack.Navigator>
     )
 }
 
 const Tab = createBottomTabNavigator()
 
+function TabNavigator() {
+    return (
+        <Tab.Navigator screenOptions={screenOptions}>
+            <Tab.Screen
+                name="HomeStack"
+                component={HomeStackScreen}
+                options={{
+                    title: 'Arkiapuri',
+                    tabBarIcon: ({ focused }) => (
+                        <View
+                            style={{
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <Feather name="home" size={24} color="black" />
+                            <CustomText style={{ fontSize: 12, color: '#000' }}>
+                                Arkiapuri
+                            </CustomText>
+                        </View>
+                    ),
+                }}
+            />
+            <Tab.Screen
+                name="MealsStack"
+                component={MealsStackScreen}
+                options={{
+                    title: 'Ateriat',
+                    tabBarIcon: ({ focused }) => (
+                        <View
+                            style={{
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <FontAwesome6
+                                name="bowl-food"
+                                size={24}
+                                color="black"
+                            />
+                            <CustomText style={{ fontSize: 12, color: '#000' }}>
+                                Ateriat
+                            </CustomText>
+                        </View>
+                    ),
+                }}
+            />
+            <Tab.Screen
+                name="PantryStack"
+                component={PantryStackScreen}
+                options={{
+                    title: 'Pentteri',
+                    tabBarIcon: ({ focused }) => (
+                        <View
+                            style={{
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <AntDesign
+                                name="database"
+                                size={24}
+                                color="black"
+                            />
+                            <CustomText style={{ fontSize: 12, color: '#000' }}>
+                                Pentteri
+                            </CustomText>
+                        </View>
+                    ),
+                }}
+            />
+            <Tab.Screen
+                name="ShoppingListStack"
+                component={ShoppingListStackScreen}
+                options={{
+                    title: 'Ostoslista',
+                    tabBarIcon: ({ focused }) => (
+                        <View
+                            style={{
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <Feather
+                                name="shopping-cart"
+                                size={24}
+                                color="black"
+                            />
+                            <CustomText style={{ fontSize: 12, color: '#000' }}>
+                                Ostoslista
+                            </CustomText>
+                        </View>
+                    ),
+                }}
+            />
+            <Tab.Screen
+                name="ReadingOrderStack"
+                component={ReadingOrderStackScreen}
+                options={{
+                    title: 'Lukujärjestys',
+                    tabBarIcon: ({ focused }) => (
+                        <View
+                            style={{
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <AntDesign
+                                name="calendar"
+                                size={24}
+                                color="black"
+                            />
+                            <CustomText style={{ fontSize: 12, color: '#000' }}>
+                                Lukujärjestys
+                            </CustomText>
+                        </View>
+                    ),
+                }}
+            />
+        </Tab.Navigator>
+    )
+}
+
+const RootStack = createNativeStackNavigator()
+
 export default function Navigation() {
+    const { isLoggedIn } = useLogin()
+
     return (
         <NavigationContainer>
-            <Tab.Navigator screenOptions={screenOptions}>
-                <Tab.Screen
-                    name="HomeStack"
-                    component={HomeStackScreen}
-                    options={{
-                        title: 'Arkiapuri',
-                        tabBarIcon: ({ focused }) => (
-                            <View
-                                style={{
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                }}
-                            >
-                                <Feather name="home" size={24} color="black" />
-                                <CustomText
-                                    style={{ fontSize: 12, color: '#000' }}
-                                >
-                                    Arkiapuri
-                                </CustomText>
-                            </View>
-                        ),
-                    }}
-                />
-                <Tab.Screen
-                    name="MealsStack"
-                    component={MealsStackScreen}
-                    options={{
-                        title: 'Ateriat',
-                        tabBarIcon: ({ focused }) => (
-                            <View
-                                style={{
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                }}
-                            >
-                                <FontAwesome6
-                                    name="bowl-food"
-                                    size={24}
-                                    color="black"
-                                />
-                                <CustomText
-                                    style={{ fontSize: 12, color: '#000' }}
-                                >
-                                    Ateriat
-                                </CustomText>
-                            </View>
-                        ),
-                    }}
-                />
-                <Tab.Screen
-                    name="PantryStack"
-                    component={PantryStackScreen}
-                    options={{
-                        title: 'Pentteri',
-                        tabBarIcon: ({ focused }) => (
-                            <View
-                                style={{
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                }}
-                            >
-                                <AntDesign
-                                    name="database"
-                                    size={24}
-                                    color="black"
-                                />
-                                <CustomText
-                                    style={{ fontSize: 12, color: '#000' }}
-                                >
-                                    Pentteri
-                                </CustomText>
-                            </View>
-                        ),
-                    }}
-                />
-                <Tab.Screen
-                    name="ShoppingListStack"
-                    component={ShoppingListStackScreen}
-                    options={{
-                        title: 'Ostoslista',
-                        tabBarIcon: ({ focused }) => (
-                            <View
-                                style={{
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                }}
-                            >
-                                <Feather
-                                    name="shopping-cart"
-                                    size={24}
-                                    color="black"
-                                />
-                                <CustomText
-                                    style={{ fontSize: 12, color: '#000' }}
-                                >
-                                    Ostoslista
-                                </CustomText>
-                            </View>
-                        ),
-                    }}
-                />
-                <Tab.Screen
-                    name="ReadingOrderStack"
-                    component={ReadingOrderStackScreen}
-                    options={{
-                        title: 'Lukujärjestys',
-                        tabBarIcon: ({ focused }) => (
-                            <View
-                                style={{
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                }}
-                            >
-                                <AntDesign
-                                    name="calendar"
-                                    size={24}
-                                    color="black"
-                                />
-                                <CustomText
-                                    style={{ fontSize: 12, color: '#000' }}
-                                >
-                                    Lukujärjestys
-                                </CustomText>
-                            </View>
-                        ),
-                    }}
-                />
-            </Tab.Navigator>
+            <RootStack.Navigator screenOptions={{ headerShown: false }}>
+                {isLoggedIn ? (
+                    <>
+                        <RootStack.Screen
+                            name="Main"
+                            component={TabNavigator}
+                        />
+                        <RootStack.Screen
+                            name="Profile"
+                            component={ProfileScreen}
+                        />
+                    </>
+                ) : (
+                    <>
+                        <RootStack.Screen
+                            name="Auth"
+                            component={AuthStackScreen}
+                        />
+                    </>
+                )}
+            </RootStack.Navigator>
         </NavigationContainer>
+    )
+}
+
+function AuthStackScreen() {
+    return (
+        <HomeStack.Navigator
+            screenOptions={{
+                headerStyle: {
+                    backgroundColor: '#fff',
+                },
+                headerTitle: (props) => <LogoTitle {...props} />,
+            }}
+        >
+            <HomeStack.Screen name="Tervetuloa" component={LandingScreen} />
+            <HomeStack.Screen name="Kirjaudu sisään" component={SignInScreen} />
+            <HomeStack.Screen name="Luo tunnus" component={SignUpScreen} />
+            <HomeStack.Screen
+                name="Lataa profiilikuva"
+                component={ImageUploadScreen}
+            />
+            <HomeStack.Screen
+                name="Vahvista sähköposti"
+                component={ConfirmEmailScreen}
+            />
+        </HomeStack.Navigator>
     )
 }
