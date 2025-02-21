@@ -2,18 +2,18 @@ import * as React from 'react'
 import { StyleSheet, View, Alert } from 'react-native'
 import Button from '../components/Button'
 import CustomText from '../components/CustomText'
-import { useAuth } from '../context/AuthContext'
+import { useLogin } from '../context/LoginProvider'
 import { useNavigation } from '@react-navigation/native'
 
 const ProfileScreen = () => {
-    const { logout, user } = useAuth()
+    const { logout, profile } = useLogin()
     const navigation = useNavigation()
 
     const handleLogout = async () => {
         try {
             await logout()
-            // Navigate to the login screen or any other appropriate screen
-            navigation.navigate('Auth')
+            // Navigation will be handled automatically by the Navigation component
+            // since it's watching isLoggedIn state
         } catch (error) {
             console.error('Logout error:', error)
             Alert.alert('Virhe', 'Uloskirjautuminen epäonnistui')
@@ -25,7 +25,7 @@ const ProfileScreen = () => {
             <CustomText style={styles.introText}>
                 Täällä voit selata, muokata ja lisätä tietojasi.
             </CustomText>
-            <CustomText>Sähköposti: {user?.email}</CustomText>
+            <CustomText>Sähköposti: {profile?.email}</CustomText>
             <Button
                 style={styles.primaryButton}
                 title="Muokkaa tietoja"

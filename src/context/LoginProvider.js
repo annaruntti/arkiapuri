@@ -12,31 +12,35 @@ const LoginProvider = ({ children }) => {
 
     useEffect(() => {
         const checkToken = async () => {
-            setIsLoading(true) // Ensure loading is true when starting
+            setIsLoading(true)
             try {
                 const token = await storage.getItem('userToken')
-                const storedProfile = await storage.getItem('profile')
+                console.log('Retrieved token:', token)
 
-                if (token && storedProfile) {
+                if (token) {
+                    // Use the correct endpoint
                     const response = await axios.get(getServerUrl('/profile'), {
                         headers: {
                             Authorization: `Bearer ${token}`,
                         },
                     })
+
+                    console.log('Profile response:', response.data)
+
                     if (response.data.success) {
                         setProfile(response.data.user)
                         setIsLoggedIn(true)
                     } else {
                         await storage.removeItem('userToken')
-                        await storage.removeItem('profile')
-                        await storage.removeItem('isLoggedIn')
+                        setIsLoggedIn(false)
                     }
+                } else {
+                    setIsLoggedIn(false)
                 }
             } catch (error) {
                 console.error('Token verification failed:', error)
                 await storage.removeItem('userToken')
-                await storage.removeItem('profile')
-                await storage.removeItem('isLoggedIn')
+                setIsLoggedIn(false)
             } finally {
                 setIsLoading(false)
             }

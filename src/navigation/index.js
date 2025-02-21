@@ -56,7 +56,9 @@ const UserProfile = () => {
     const navigation = useNavigation()
 
     const handlePress = () => {
-        navigation.navigate('Profile')
+        navigation.navigate('ProfileStack', {
+            screen: 'Omat tiedot',
+        })
     }
 
     return (
@@ -163,6 +165,24 @@ function ReadingOrderStackScreen() {
                 component={ReadingOrderScreen}
             />
         </ReadingOrderStack.Navigator>
+    )
+}
+
+const ProfileStack = createNativeStackNavigator()
+
+function ProfileStackScreen() {
+    return (
+        <ProfileStack.Navigator
+            screenOptions={{
+                headerStyle: {
+                    backgroundColor: '#fff',
+                },
+                headerTitle: (props) => <LogoTitle {...props} />,
+                headerRight: () => <UserProfile />,
+            }}
+        >
+            <ProfileStack.Screen name="Omat tiedot" component={ProfileScreen} />
+        </ProfileStack.Navigator>
     )
 }
 
@@ -287,6 +307,13 @@ function TabNavigator() {
                     ),
                 }}
             />
+            <Tab.Screen
+                name="ProfileStack"
+                component={ProfileStackScreen}
+                options={{
+                    tabBarButton: () => null,
+                }}
+            />
         </Tab.Navigator>
     )
 }
@@ -300,23 +327,9 @@ export default function Navigation() {
         <NavigationContainer>
             <RootStack.Navigator screenOptions={{ headerShown: false }}>
                 {isLoggedIn ? (
-                    <>
-                        <RootStack.Screen
-                            name="Main"
-                            component={TabNavigator}
-                        />
-                        <RootStack.Screen
-                            name="Profile"
-                            component={ProfileScreen}
-                        />
-                    </>
+                    <RootStack.Screen name="Main" component={TabNavigator} />
                 ) : (
-                    <>
-                        <RootStack.Screen
-                            name="Auth"
-                            component={AuthStackScreen}
-                        />
-                    </>
+                    <RootStack.Screen name="Auth" component={AuthStackScreen} />
                 )}
             </RootStack.Navigator>
         </NavigationContainer>
