@@ -321,7 +321,6 @@ const styles = StyleSheet.create({
         width: 'auto',
         borderWidth: 3,
         borderColor: '#9C86FC',
-        marginTop: 10,
     },
     modalView: {
         flex: 1,

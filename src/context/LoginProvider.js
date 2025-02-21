@@ -18,7 +18,6 @@ const LoginProvider = ({ children }) => {
                 console.log('Retrieved token:', token)
 
                 if (token) {
-                    // Use the correct endpoint
                     const response = await axios.get(getServerUrl('/profile'), {
                         headers: {
                             Authorization: `Bearer ${token}`,
@@ -28,7 +27,12 @@ const LoginProvider = ({ children }) => {
                     console.log('Profile response:', response.data)
 
                     if (response.data.success) {
-                        setProfile(response.data.user)
+                        // Store complete user data including profile image
+                        setProfile({
+                            ...response.data.user,
+                            profileImage:
+                                response.data.user.profileImage || null,
+                        })
                         setIsLoggedIn(true)
                     } else {
                         await storage.removeItem('userToken')

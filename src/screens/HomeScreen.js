@@ -217,8 +217,8 @@ const styles = StyleSheet.create({
         elevation: 3,
     },
     boxImage: {
-        width: 90,
-        height: 70,
+        width: 100,
+        height: 80,
         marginBottom: 20,
         marginHorizontal: 'auto',
     },
