@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react'
-import { Alert, Modal, StyleSheet, View, Text, FlatList } from 'react-native'
+import {
+    Alert,
+    Modal,
+    StyleSheet,
+    View,
+    Text,
+    FlatList,
+    Pressable,
+} from 'react-native'
 import Button from '../components/Button'
 import FormFoodItem from '../components/FormFoodItem'
 import CustomText from '../components/CustomText'
@@ -7,6 +15,7 @@ import axios from 'axios'
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
 import categories from '../data/categories'
+import { AntDesign } from '@expo/vector-icons'
 
 const PantryScreen = ({}) => {
     const [modalVisible, setModalVisible] = useState(false)
@@ -179,14 +188,23 @@ const PantryScreen = ({}) => {
                 visible={modalVisible}
                 onRequestClose={() => setModalVisible(false)}
             >
-                <View style={styles.layerView}>
-                    <View style={styles.modalView}>
-                        <CustomText style={styles.modalTitle}>
-                            Lisää tuote ruokakomeroon
-                        </CustomText>
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        <Pressable
+                            onPress={() => setModalVisible(false)}
+                            style={styles.closeButton}
+                        >
+                            <AntDesign name="close" size={24} color="black" />
+                        </Pressable>
+                        <View style={styles.modalHeader}>
+                            <CustomText style={styles.modalTitle}>
+                                Lisää tuote ruokakomeroon
+                            </CustomText>
+                        </View>
                         <FormFoodItem
                             onSubmit={handleAddItem}
                             location="pantry"
+                            style={styles.formContainer}
                         />
                     </View>
                 </View>
@@ -240,32 +258,36 @@ const styles = StyleSheet.create({
         padding: 20,
         marginBottom: 10,
     },
-    layerView: {
-        backgroundColor: 'rgba(0, 0, 0, 0.75)',
-        position: 'relative',
+    modalContainer: {
         flex: 1,
         justifyContent: 'center',
-    },
-    modalView: {
-        margin: 20,
-        backgroundColor: 'white',
-        borderRadius: 5,
-        padding: 35,
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
-        elevation: 5,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    modalContent: {
+        backgroundColor: 'white',
+        borderRadius: 10,
+        padding: 20,
+        width: '90%',
+        maxWidth: 400,
+        position: 'relative',
+    },
+    closeButton: {
+        position: 'absolute',
+        right: 10,
+        top: 10,
+        padding: 5,
+        zIndex: 1,
+    },
+    modalHeader: {
+        width: '100%',
+        marginTop: 30,
+        marginBottom: 20,
     },
     modalTitle: {
         fontSize: 20,
         fontWeight: 'bold',
         textAlign: 'center',
-        marginBottom: 20,
     },
     primaryButton: {
         borderRadius: 25,
@@ -356,5 +378,8 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginTop: 20,
         color: '#666',
+    },
+    formContainer: {
+        padding: 20,
     },
 })
