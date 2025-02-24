@@ -6,6 +6,7 @@ import {
     FlatList,
     Pressable,
     Alert,
+    ScrollView,
 } from 'react-native'
 import CustomText from '../components/CustomText'
 import Button from '../components/Button'
@@ -19,6 +20,8 @@ const MealsScreen = () => {
     const [modalVisible, setModalVisible] = useState(false)
     const [meals, setMeals] = useState([])
     const [loading, setLoading] = useState(true)
+    const [selectedMeal, setSelectedMeal] = useState(null)
+    const [detailModalVisible, setDetailModalVisible] = useState(false)
 
     const fetchMeals = async () => {
         try {
@@ -56,12 +59,20 @@ const MealsScreen = () => {
         }
     }
 
+    const handleMealPress = (meal) => {
+        setSelectedMeal(meal)
+        setDetailModalVisible(true)
+    }
+
     const renderMealItem = ({ item }) => (
-        <View style={styles.mealItem}>
+        <Pressable
+            style={styles.mealItem}
+            onPress={() => handleMealPress(item)}
+        >
             <CustomText style={styles.mealTitle}>{item.name}</CustomText>
             <CustomText>Vaikeustaso: {item.difficultyLevel}</CustomText>
             <CustomText>Valmistusaika: {item.cookingTime} min</CustomText>
-        </View>
+        </Pressable>
     )
 
     return (
@@ -89,6 +100,92 @@ const MealsScreen = () => {
                             onSubmit={handleAddMeal}
                             onClose={() => setModalVisible(false)}
                         />
+                    </View>
+                </View>
+            </Modal>
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={detailModalVisible}
+                onRequestClose={() => setDetailModalVisible(false)}
+            >
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        <Pressable
+                            onPress={() => setDetailModalVisible(false)}
+                            style={styles.closeButton}
+                        >
+                            <AntDesign name="close" size={24} color="black" />
+                        </Pressable>
+                        <ScrollView style={styles.detailScroll}>
+                            <View style={styles.modalHeader}>
+                                <CustomText style={styles.modalTitle}>
+                                    {selectedMeal?.name}
+                                </CustomText>
+                            </View>
+                            <View style={styles.mealDetails}>
+                                <View style={styles.detailRow}>
+                                    <CustomText style={styles.detailLabel}>
+                                        Vaikeustaso:
+                                    </CustomText>
+                                    <CustomText style={styles.detailValue}>
+                                        {selectedMeal?.difficultyLevel}
+                                    </CustomText>
+                                </View>
+                                <View style={styles.detailRow}>
+                                    <CustomText style={styles.detailLabel}>
+                                        Valmistusaika:
+                                    </CustomText>
+                                    <CustomText style={styles.detailValue}>
+                                        {selectedMeal?.cookingTime} min
+                                    </CustomText>
+                                </View>
+                                <View style={styles.detailRow}>
+                                    <CustomText style={styles.detailLabel}>
+                                        Aterian tyyppi:
+                                    </CustomText>
+                                    <CustomText style={styles.detailValue}>
+                                        {selectedMeal?.defaultRole}
+                                    </CustomText>
+                                </View>
+                                <View style={styles.detailSection}>
+                                    <CustomText style={styles.sectionTitle}>
+                                        Resepti:
+                                    </CustomText>
+                                    <CustomText style={styles.recipeText}>
+                                        {selectedMeal?.recipe || 'Ei reseptiä'}
+                                    </CustomText>
+                                </View>
+                                <View style={styles.detailSection}>
+                                    <CustomText style={styles.sectionTitle}>
+                                        Raaka-aineet:
+                                    </CustomText>
+                                    {selectedMeal?.foodItems?.map(
+                                        (item, index) => (
+                                            <CustomText
+                                                key={index}
+                                                style={styles.ingredientItem}
+                                            >
+                                                • {item.name} ({item.quantity}{' '}
+                                                {item.unit})
+                                            </CustomText>
+                                        )
+                                    )}
+                                </View>
+                                <View style={styles.detailSection}>
+                                    <CustomText style={styles.sectionTitle}>
+                                        Suunniteltu valmistuspäivä:
+                                    </CustomText>
+                                    <CustomText>
+                                        {selectedMeal?.plannedCookingDate
+                                            ? new Date(
+                                                  selectedMeal.plannedCookingDate
+                                              ).toLocaleDateString('fi-FI')
+                                            : 'Ei määritetty'}
+                                    </CustomText>
+                                </View>
+                            </View>
+                        </ScrollView>
                     </View>
                 </View>
             </Modal>
@@ -188,6 +285,14 @@ const styles = StyleSheet.create({
         padding: 15,
         borderRadius: 10,
         marginBottom: 10,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
     },
     mealTitle: {
         fontSize: 18,
@@ -203,6 +308,41 @@ const styles = StyleSheet.create({
     },
     formContainer: {
         padding: 20,
+    },
+    detailScroll: {
+        padding: 20,
+        paddingTop: 50,
+    },
+    mealDetails: {
+        paddingTop: 10,
+    },
+    detailRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingVertical: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+    detailLabel: {
+        fontWeight: 'bold',
+        flex: 1,
+    },
+    detailValue: {
+        flex: 2,
+    },
+    detailSection: {
+        marginTop: 20,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 10,
+    },
+    recipeText: {
+        lineHeight: 24,
+    },
+    ingredientItem: {
+        paddingVertical: 4,
     },
 })
 
