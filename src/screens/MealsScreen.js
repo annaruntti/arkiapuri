@@ -1,26 +1,68 @@
-import React, { useState } from 'react'
-import { Alert, Modal, StyleSheet, View, Text } from 'react-native'
-import { useForm } from 'react-hook-form'
-import AddMealForm from '../components/formAddMeal'
-import Button from '../components/Button'
+import React, { useState, useEffect } from 'react'
+import {
+    View,
+    StyleSheet,
+    Modal,
+    FlatList,
+    Pressable,
+    Alert,
+} from 'react-native'
 import CustomText from '../components/CustomText'
+import Button from '../components/Button'
+import AddMealForm from '../components/FormAddMeal'
+import { AntDesign } from '@expo/vector-icons'
+import axios from 'axios'
+import { getServerUrl } from '../utils/getServerUrl'
+import storage from '../utils/storage'
 
-const MealsScreen = ({}) => {
+const MealsScreen = () => {
     const [modalVisible, setModalVisible] = useState(false)
+    const [meals, setMeals] = useState([])
+    const [loading, setLoading] = useState(true)
 
-    const {
-        control,
-        handleSubmit,
-        formState: { errors },
-    } = useForm()
-
-    console.log(errors, 'errors')
-
-    const onSubmit = (data) => {
-        console.log(data, 'data')
-        // validate user
-        setModalVisible(!modalVisible)
+    const fetchMeals = async () => {
+        try {
+            setLoading(true)
+            const token = await storage.getItem('userToken')
+            const response = await axios.get(getServerUrl('/meals'), {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            })
+            if (response.data.success) {
+                setMeals(response.data.meals)
+            }
+        } catch (error) {
+            console.error('Error fetching meals:', error)
+            Alert.alert('Virhe', 'Aterioiden haku epäonnistui')
+        } finally {
+            setLoading(false)
+        }
     }
+
+    useEffect(() => {
+        fetchMeals()
+    }, [])
+
+    const handleAddMeal = async (newMeal) => {
+        try {
+            // Add the new meal to the existing meals array
+            setMeals((prevMeals) => [...prevMeals, newMeal])
+            // Close the modal
+            setModalVisible(false)
+        } catch (error) {
+            console.error('Error updating meals list:', error)
+            Alert.alert('Virhe', 'Aterian lisääminen listaan epäonnistui')
+        }
+    }
+
+    const renderMealItem = ({ item }) => (
+        <View style={styles.mealItem}>
+            <CustomText style={styles.mealTitle}>{item.name}</CustomText>
+            <CustomText>Vaikeustaso: {item.difficultyLevel}</CustomText>
+            <CustomText>Valmistusaika: {item.cookingTime} min</CustomText>
+        </View>
+    )
 
     return (
         <View style={styles.container}>
@@ -28,22 +70,24 @@ const MealsScreen = ({}) => {
                 animationType="slide"
                 transparent={true}
                 visible={modalVisible}
-                overFullScreen={true}
-                onRequestClose={() => {
-                    Alert.alert('Modal has been closed.')
-                    setModalVisible(!modalVisible)
-                }}
+                onRequestClose={() => setModalVisible(false)}
             >
-                <View style={styles.layerView}>
-                    <View style={styles.modalView}>
-                        <CustomText style={styles.introText}>
-                            Luo ateria oheisella lomakkeella
-                        </CustomText>
-                        <AddMealForm control={control} />
-                        <Button
-                            style={styles.primaryButton}
-                            title="Tallenna"
-                            onPress={handleSubmit(onSubmit)}
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        <Pressable
+                            onPress={() => setModalVisible(false)}
+                            style={styles.closeButton}
+                        >
+                            <AntDesign name="close" size={24} color="black" />
+                        </Pressable>
+                        <View style={styles.modalHeader}>
+                            <CustomText style={styles.modalTitle}>
+                                Lisää uusi ateria
+                            </CustomText>
+                        </View>
+                        <AddMealForm
+                            onSubmit={handleAddMeal}
+                            onClose={() => setModalVisible(false)}
                         />
                     </View>
                 </View>
@@ -55,15 +99,28 @@ const MealsScreen = ({}) => {
                 yhteydessä, löytyykö tuote pentteristäsi.
             </CustomText>
             <Button
-                style={styles.primaryButton}
-                title="Lisää uusi ateria"
+                title="Lisää ateria"
                 onPress={() => setModalVisible(true)}
+                style={styles.primaryButton}
             />
+
+            {loading ? (
+                <CustomText>Ladataan...</CustomText>
+            ) : meals.length > 0 ? (
+                <FlatList
+                    data={meals}
+                    renderItem={renderMealItem}
+                    keyExtractor={(item) => item._id}
+                    style={styles.list}
+                />
+            ) : (
+                <CustomText style={styles.emptyText}>
+                    Ei vielä aterioita. Lisää ensimmäinen ateriasi!
+                </CustomText>
+            )}
         </View>
     )
 }
-
-export default MealsScreen
 
 const styles = StyleSheet.create({
     container: {
@@ -79,45 +136,37 @@ const styles = StyleSheet.create({
         padding: 20,
         marginBottom: 10,
     },
-    layerView: {
-        backgroundColor: 'rgba(0, 0, 0, 0.75)',
-        position: 'relative',
+    modalContainer: {
         flex: 1,
         justifyContent: 'center',
-    },
-    modalView: {
-        margin: 20,
-        backgroundColor: 'white',
-        borderRadius: 5,
-        padding: 35,
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
-        elevation: 5,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        paddingVertical: 20,
     },
-    button: {
-        borderRadius: 25,
-        padding: 15,
-        elevation: 2,
+    modalContent: {
+        backgroundColor: 'white',
+        borderRadius: 10,
+        width: '90%',
+        maxWidth: 400,
+        maxHeight: '95%',
+        position: 'relative',
+        flex: 1,
     },
-    buttonOpen: {
-        backgroundColor: '#B283EC',
+    closeButton: {
+        position: 'absolute',
+        right: 10,
+        top: 10,
+        padding: 5,
+        zIndex: 1,
     },
-    buttonClose: {
-        backgroundColor: '#B283EC',
+    modalHeader: {
+        width: '100%',
+        marginTop: 30,
+        marginBottom: 20,
     },
-    textStyle: {
-        color: 'black',
+    modalTitle: {
+        fontSize: 20,
         fontWeight: 'bold',
-        textAlign: 'center',
-    },
-    modalText: {
-        marginBottom: 15,
         textAlign: 'center',
     },
     primaryButton: {
@@ -132,31 +181,29 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         width: 'auto',
+        marginBottom: 20,
     },
-    secondaryButton: {
-        borderRadius: 25,
-        paddingTop: 7,
-        paddingBottom: 7,
-        paddingLeft: 10,
-        paddingRight: 10,
-        elevation: 2,
-        backgroundColor: '#FACE67',
-        color: 'black',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        width: 'auto',
+    mealItem: {
+        backgroundColor: '#f8f8f8',
+        padding: 15,
+        borderRadius: 10,
+        marginBottom: 10,
     },
-    tertiaryButton: {
-        borderRadius: 25,
-        paddingTop: 7,
-        paddingBottom: 7,
-        paddingLeft: 10,
-        paddingRight: 10,
-        elevation: 2,
-        backgroundColor: '#38E4D9',
-        color: 'black',
+    mealTitle: {
+        fontSize: 18,
         fontWeight: 'bold',
+    },
+    list: {
+        width: '100%',
+    },
+    emptyText: {
         textAlign: 'center',
-        width: 'auto',
+        marginTop: 20,
+        color: '#666',
+    },
+    formContainer: {
+        padding: 20,
     },
 })
+
+export default MealsScreen

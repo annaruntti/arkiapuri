@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
         paddingLeft: 10,
         paddingRight: 10,
         elevation: 2,
-        backgroundColor: '#FACE67',
+        backgroundColor: '#38E4D9',
         color: 'black',
         fontWeight: 'bold',
         textAlign: 'center',
