@@ -1,16 +1,97 @@
 import * as React from 'react'
-import { StyleSheet, View, Alert, Image } from 'react-native'
+import {
+    StyleSheet,
+    View,
+    Alert,
+    Image,
+    Platform,
+    TouchableOpacity,
+} from 'react-native'
+import * as ImagePicker from 'expo-image-picker'
 import Button from '../components/Button'
 import CustomText from '../components/CustomText'
 import { useLogin } from '../context/LoginProvider'
 import { useNavigation } from '@react-navigation/native'
+import { getServerUrl } from '../utils/getServerUrl'
+import axios from 'axios'
+import storage from '../utils/storage'
 
 const ProfileScreen = () => {
-    const { logout, profile } = useLogin()
+    const { logout, profile, setProfile } = useLogin()
     const navigation = useNavigation()
 
     const defaultImage = {
         uri: 'https://images.ctfassets.net/hef5a6s5axrs/2wzxlzyydJLVr8T7k67cOO/90074490ee64362fe6f0e384d2b3daf8/arkiapuri-removebg-preview.png',
+    }
+
+    const pickImage = async () => {
+        try {
+            // Request permissions
+            if (Platform.OS !== 'web') {
+                const { status } =
+                    await ImagePicker.requestMediaLibraryPermissionsAsync()
+                if (status !== 'granted') {
+                    Alert.alert(
+                        'Sorry, we need camera roll permissions to make this work!'
+                    )
+                    return
+                }
+            }
+
+            // Pick the image
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 1,
+            })
+
+            if (!result.canceled) {
+                await uploadImage(result.assets[0])
+            }
+        } catch (error) {
+            console.error('Error picking image:', error)
+            Alert.alert('Error', 'Failed to pick image')
+        }
+    }
+
+    const uploadImage = async (imageFile) => {
+        try {
+            const token = await storage.getItem('userToken')
+            if (!token) {
+                throw new Error('No token found')
+            }
+
+            const formData = new FormData()
+            formData.append('profile', {
+                uri: imageFile.uri,
+                type: 'image/jpeg',
+                name: 'profile.jpg',
+            })
+
+            const response = await axios.post(
+                getServerUrl('/profile/image'),
+                formData,
+                {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            )
+
+            if (response.data.success) {
+                // Update profile with the new image URL from the nested object
+                setProfile({
+                    ...profile,
+                    profileImage: response.data.user.profileImage.url,
+                })
+                Alert.alert('Success', 'Profile image updated successfully')
+            }
+        } catch (error) {
+            console.error('Error uploading image:', error)
+            Alert.alert('Error', 'Failed to upload image')
+        }
     }
 
     const handleLogout = async () => {
@@ -26,16 +107,21 @@ const ProfileScreen = () => {
 
     return (
         <View style={styles.container}>
-            <View style={styles.profileImageContainer}>
-                <Image
-                    source={
-                        profile?.profileImage
-                            ? { uri: profile.profileImage }
-                            : defaultImage
-                    }
-                    style={styles.profileImage}
-                />
-            </View>
+            <TouchableOpacity onPress={pickImage}>
+                <View style={styles.profileImageContainer}>
+                    <Image
+                        source={
+                            profile?.profileImage
+                                ? { uri: profile.profileImage }
+                                : defaultImage
+                        }
+                        style={styles.profileImage}
+                    />
+                    <View style={styles.editOverlay}>
+                        <CustomText style={styles.editText}>Edit</CustomText>
+                    </View>
+                </View>
+            </TouchableOpacity>
             <CustomText style={styles.introText}>
                 <b>{profile?.username}</b>
             </CustomText>
@@ -122,5 +208,18 @@ const styles = StyleSheet.create({
     profileImage: {
         width: '100%',
         height: '100%',
+    },
+    editOverlay: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        padding: 5,
+        alignItems: 'center',
+    },
+    editText: {
+        color: 'white',
+        fontSize: 12,
     },
 })

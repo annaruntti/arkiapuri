@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native'
 import { useNavigation } from '@react-navigation/core'
 import { useForm } from 'react-hook-form'
 import axios from 'axios'
-import * as Updates from 'expo-updates'
+import { getServerUrl } from '../utils/getServerUrl'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 import CustomInput from '../components/CustomInput'
 // import SocialSignInButtons from '../components/SocialSignInButtons'
@@ -18,22 +19,6 @@ const SignUpScreen = () => {
 
     const navigation = useNavigation()
 
-    const getServerUrl = (endpoint) => {
-        const { manifest } = Updates
-        let debuggerHost = 'localhost' // Default to localhost for web
-        if (manifest && manifest.debuggerHost) {
-            debuggerHost = manifest.debuggerHost.split(':').shift()
-        } else {
-            // Fallback to a hardcoded IP address for development
-            debuggerHost = '192.168.250.14'
-        }
-        const serverUrl = `http://${debuggerHost}:3001${endpoint}`
-        console.log('Manifest:', manifest)
-        console.log('Debugger Host:', debuggerHost)
-        console.log('Server URL:', serverUrl) // log to verify the URL
-        return serverUrl
-    }
-
     const onRegisterPressed = async (data) => {
         try {
             const response = await axios.post(
@@ -42,7 +27,6 @@ const SignUpScreen = () => {
             )
             console.log('response', response)
 
-            // Extract only the necessary fields for sign-in
             const signInData = {
                 email: data.email,
                 password: data.password,
@@ -55,6 +39,7 @@ const SignUpScreen = () => {
             const signInRes = signInResponse.data
             console.log('signInRes', signInRes)
             if (signInRes.success) {
+                await AsyncStorage.setItem('userToken', signInRes.token)
                 navigation.navigate('Lataa profiilikuva', {
                     token: signInRes.token,
                 })

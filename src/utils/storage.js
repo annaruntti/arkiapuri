@@ -6,24 +6,28 @@ const isWeb = Platform.OS === 'web'
 const storage = {
     setItem: async (key, value) => {
         try {
+            if (Platform.OS === 'web') {
+                localStorage.setItem(key, value)
+            }
             // Convert value to string if it's not already
             const stringValue =
                 typeof value === 'string' ? value : JSON.stringify(value)
 
             if (isWeb) {
-                window.localStorage.setItem(key, stringValue)
                 console.log(`Web: Stored ${key}:`, stringValue)
             } else {
                 await AsyncStorage.setItem(key, stringValue)
                 console.log(`Mobile: Stored ${key}:`, stringValue)
             }
-        } catch (error) {
-            console.error(`Error storing ${key}:`, error)
-            throw error
+        } catch (e) {
+            console.error('Error writing to storage:', e)
         }
     },
     getItem: async (key) => {
         try {
+            if (Platform.OS === 'web') {
+                return localStorage.getItem(key)
+            }
             let value
             if (isWeb) {
                 value = window.localStorage.getItem(key)
@@ -39,13 +43,16 @@ const storage = {
             } catch {
                 return value
             }
-        } catch (error) {
-            console.error(`Error retrieving ${key}:`, error)
-            throw error
+        } catch (e) {
+            console.error('Error reading from storage:', e)
+            return null
         }
     },
     removeItem: async (key) => {
         try {
+            if (Platform.OS === 'web') {
+                localStorage.removeItem(key)
+            }
             if (isWeb) {
                 window.localStorage.removeItem(key)
                 console.log(`Web: Removed ${key}`)
@@ -53,9 +60,8 @@ const storage = {
                 await AsyncStorage.removeItem(key)
                 console.log(`Mobile: Removed ${key}`)
             }
-        } catch (error) {
-            console.error(`Error removing ${key}:`, error)
-            throw error
+        } catch (e) {
+            console.error('Error removing from storage:', e)
         }
     },
 }

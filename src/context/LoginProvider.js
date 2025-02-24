@@ -27,15 +27,17 @@ const LoginProvider = ({ children }) => {
                     console.log('Profile response:', response.data)
 
                     if (response.data.success) {
-                        // Store complete user data including profile image
+                        // Store complete user data including profile image URL
                         setProfile({
                             ...response.data.user,
                             profileImage:
-                                response.data.user.profileImage || null,
+                                response.data.user.profileImage?.url || null,
                         })
                         setIsLoggedIn(true)
+                        await storage.setItem('isLoggedIn', 'true')
                     } else {
                         await storage.removeItem('userToken')
+                        await storage.removeItem('isLoggedIn')
                         setIsLoggedIn(false)
                     }
                 } else {
@@ -44,6 +46,7 @@ const LoginProvider = ({ children }) => {
             } catch (error) {
                 console.error('Token verification failed:', error)
                 await storage.removeItem('userToken')
+                await storage.removeItem('isLoggedIn')
                 setIsLoggedIn(false)
             } finally {
                 setIsLoading(false)
