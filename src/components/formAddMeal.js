@@ -217,9 +217,33 @@ const AddMealForm = ({ onSubmit, onClose }) => {
             )
 
             if (response.data.success) {
-                // Add the created food item (which now has an _id) to the meal's food items
+                // Add the created food item to the meal's food items
                 const createdFoodItem = response.data.foodItem
                 setFoodItems([...foodItems, createdFoodItem])
+
+                // If user selected to add to shopping list or pantry, make additional request
+                if (foodItem.addTo === 'shopping-list') {
+                    await axios.post(
+                        getServerUrl('/shopping-lists/items'),
+                        { items: [createdFoodItem] },
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                            },
+                        }
+                    )
+                } else if (foodItem.addTo === 'pantry') {
+                    await axios.post(
+                        getServerUrl('/pantry/items'),
+                        { items: [createdFoodItem] },
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                            },
+                        }
+                    )
+                }
+
                 setFoodItemModalVisible(false)
             } else {
                 Alert.alert('Virhe', 'Raaka-aineen lisääminen epäonnistui')
@@ -376,6 +400,7 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                                 onSubmit={handleAddFoodItem}
                                 onClose={() => setFoodItemModalVisible(false)}
                                 style={styles.formContainer}
+                                showLocationSelector={true}
                             />
                         </ScrollView>
                     </View>

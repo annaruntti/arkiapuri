@@ -11,15 +11,26 @@ import SectionedMultiSelect from 'react-native-sectioned-multi-select'
 import { MaterialIcons as Icon } from '@expo/vector-icons'
 import Fontisto from '@expo/vector-icons/Fontisto'
 import DateTimePicker from '@react-native-community/datetimepicker'
+import { RadioButton } from 'react-native-paper'
 
 import categories from '../data/categories'
 import CustomText from './CustomText'
 import Button from './Button'
 
-const FoodItemForm = ({ onSubmit, location = 'shopping-list' }) => {
+const FoodItemForm = ({
+    onSubmit,
+    location = 'meal',
+    showLocationSelector = false,
+}) => {
     const [date, setDate] = useState(new Date())
     const [show, setShow] = useState(false)
     const [mode, setMode] = useState('date')
+    const [selectedLocations, setSelectedLocations] = useState(['meal'])
+    const [quantities, setQuantities] = useState({
+        meal: '',
+        'shopping-list': '',
+        pantry: '',
+    })
 
     const {
         control,
@@ -27,6 +38,7 @@ const FoodItemForm = ({ onSubmit, location = 'shopping-list' }) => {
         register,
         formState: { errors },
         reset,
+        watch,
     } = useForm({
         defaultValues: {
             name: '',
@@ -40,15 +52,57 @@ const FoodItemForm = ({ onSubmit, location = 'shopping-list' }) => {
         },
     })
 
+    const currentUnit = watch('unit')
+
     const showDatepicker = () => {
         setShow(true)
         setMode('date')
     }
 
+    const handleQuantityChange = (location, value) => {
+        setQuantities((prev) => ({
+            ...prev,
+            [location]: value,
+        }))
+    }
+
+    const handleLocationToggle = (location) => {
+        setSelectedLocations((prev) => {
+            if (prev.includes(location)) {
+                // Remove location if it's not 'meal' (meal is always required)
+                return location === 'meal'
+                    ? prev
+                    : prev.filter((loc) => loc !== location)
+            } else {
+                return [...prev, location]
+            }
+        })
+    }
+
     const handleFormSubmit = (data) => {
-        console.log('Form data before submit:', data)
-        onSubmit(data)
+        // Filter out locations with empty quantities
+        const activeLocations = selectedLocations.filter(
+            (loc) => quantities[loc] !== ''
+        )
+
+        const formData = {
+            ...data,
+            quantities: activeLocations.reduce(
+                (acc, loc) => ({
+                    ...acc,
+                    [loc]: parseFloat(quantities[loc]) || 0,
+                }),
+                {}
+            ),
+            locations: activeLocations,
+        }
+
+        console.log('Form data before submit:', formData)
+        onSubmit(formData)
         reset()
+        // Reset quantities and locations except 'meal'
+        setQuantities({ meal: '', 'shopping-list': '', pantry: '' })
+        setSelectedLocations(['meal'])
     }
 
     return (
@@ -317,6 +371,61 @@ const FoodItemForm = ({ onSubmit, location = 'shopping-list' }) => {
                 </View>
             )}
 
+            {showLocationSelector && (
+                <View style={styles.locationSelector}>
+                    <CustomText style={styles.label}>
+                        Lisää raaka-aine myös:
+                    </CustomText>
+                    <View style={styles.radioGroup}>
+                        {['meal', 'shopping-list', 'pantry'].map((loc) => (
+                            <View key={loc} style={styles.locationRow}>
+                                <TouchableOpacity
+                                    style={styles.radioOption}
+                                    onPress={() => handleLocationToggle(loc)}
+                                >
+                                    <RadioButton
+                                        value={loc}
+                                        status={
+                                            selectedLocations.includes(loc)
+                                                ? 'checked'
+                                                : 'unchecked'
+                                        }
+                                        onPress={() =>
+                                            handleLocationToggle(loc)
+                                        }
+                                        color="#9C86FC"
+                                        disabled={loc === 'meal'} // Meal is always required
+                                    />
+                                    <CustomText style={styles.radioLabel}>
+                                        {loc === 'meal'
+                                            ? 'Ateriaan'
+                                            : loc === 'shopping-list'
+                                              ? 'Ostoslistalle'
+                                              : 'Pentteriin'}
+                                    </CustomText>
+                                </TouchableOpacity>
+                                {selectedLocations.includes(loc) && (
+                                    <View style={styles.quantityInput}>
+                                        <TextInput
+                                            style={styles.unitFormInput}
+                                            value={quantities[loc]}
+                                            onChangeText={(value) =>
+                                                handleQuantityChange(loc, value)
+                                            }
+                                            placeholder="Määrä"
+                                            keyboardType="numeric"
+                                        />
+                                        <CustomText style={styles.unitLabel}>
+                                            {currentUnit || 'kpl'}
+                                        </CustomText>
+                                    </View>
+                                )}
+                            </View>
+                        ))}
+                    </View>
+                </View>
+            )}
+
             <Button
                 style={styles.primaryButton}
                 title="Tallenna tuote"
@@ -346,6 +455,17 @@ const styles = StyleSheet.create({
         padding: 10,
         borderRadius: 4,
         marginBottom: 5,
+    },
+    unitFormInput: {
+        backgroundColor: 'white',
+        borderColor: '#bbb',
+        borderStyle: 'solid',
+        borderWidth: 1,
+        height: 40,
+        padding: 10,
+        borderRadius: 4,
+        marginBottom: 5,
+        width: 40,
     },
     inputAndIcon: {
         flex: 1,
@@ -452,5 +572,35 @@ const styles = StyleSheet.create({
     unitInput: {
         flex: 1,
         width: '100%',
+    },
+    locationSelector: {
+        marginBottom: 20,
+    },
+    radioGroup: {
+        marginTop: 10,
+    },
+    radioOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    radioLabel: {
+        marginLeft: 8,
+        fontSize: 16,
+    },
+    locationRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginVertical: 8,
+    },
+    quantityInput: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+        marginLeft: 10,
+    },
+    unitLabel: {
+        marginLeft: 8,
+        fontSize: 14,
     },
 })
