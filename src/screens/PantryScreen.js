@@ -26,7 +26,7 @@ const PantryScreen = ({}) => {
         try {
             setLoading(true)
             const token = await storage.getItem('userToken')
-            const response = await axios.get(getServerUrl('/pantry'), {
+            const response = await axios.get(getServerUrl('/food-items'), {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -118,7 +118,7 @@ const PantryScreen = ({}) => {
             }
 
             const response = await axios.post(
-                getServerUrl('/pantry/items'),
+                getServerUrl('/food-items'),
                 formattedItem,
                 {
                     headers: {

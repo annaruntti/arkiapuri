@@ -36,7 +36,7 @@ const ShoppingListDetail = ({ shoppingList, onClose, onUpdate }) => {
 
             // Move items to pantry
             const response = await axios.post(
-                getServerUrl('/pantry/move-from-shopping'),
+                getServerUrl('/food-items/move'),
                 { items: itemsToMove },
                 {
                     headers: {

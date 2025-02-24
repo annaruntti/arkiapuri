@@ -150,10 +150,10 @@ const AddMealForm = ({ onSubmit, onClose }) => {
             .filter((item) => item && item._id) // Only include valid items
             .map((item) => item._id)
 
-        console.log('Food items before submission:', foodItems) // Debug log
-        console.log('Food item IDs to submit:', foodItemIds) // Debug log
+        console.log('Food items before submission:', foodItems)
+        console.log('Food item IDs to submit:', foodItemIds)
 
-        // Validate that we have at least one food item
+        // Validate that have at least one food item
         if (foodItemIds.length === 0) {
             Alert.alert('Virhe', 'Lisää vähintään yksi raaka-aine')
             return
@@ -166,15 +166,15 @@ const AddMealForm = ({ onSubmit, onClose }) => {
             difficultyLevel: getDifficultyEnum(difficultyLevel),
             cookingTime: parseInt(cookingTime) || 0,
             defaultRole,
-            plannedCookingDate: plannedCookingDate.toISOString(), // Ensure date is in ISO format
+            plannedCookingDate: plannedCookingDate.toISOString(), // date in ISO format
             foodItems: foodItemIds,
         }
 
-        console.log('Submitting meal data:', mealData) // Debug log
+        console.log('Submitting meal data:', mealData)
 
         try {
             const token = await storage.getItem('userToken')
-            console.log('Using token:', token) // Debug log
+            console.log('Using token:', token)
 
             const response = await axios.post(
                 getServerUrl('/meals'),
@@ -189,25 +189,25 @@ const AddMealForm = ({ onSubmit, onClose }) => {
             if (response.data.success) {
                 onSubmit(response.data.meal)
             } else {
-                console.error('Server response:', response.data) // Debug log
+                console.error('Server response:', response.data)
                 Alert.alert(
                     'Virhe',
                     response.data.message || 'Aterian luonti epäonnistui'
                 )
             }
         } catch (error) {
-            console.error('Full error:', error) // More detailed error log
-            console.error('Error response:', error.response?.data) // Show server error message if available
+            console.error('Full error:', error)
+            console.error('Error response:', error.response?.data)
             Alert.alert('Virhe', 'Aterian luonti epäonnistui')
         }
     }
 
     const handleAddFoodItem = async (foodItem) => {
         try {
-            // First create the food item
+            // Create the food item
             const token = await storage.getItem('userToken')
             const response = await axios.post(
-                getServerUrl('/fooditems'),
+                getServerUrl('/food-items'),
                 foodItem,
                 {
                     headers: {
@@ -390,19 +390,21 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                         >
                             <AntDesign name="close" size={24} color="black" />
                         </Pressable>
-                        <ScrollView style={styles.modalScroll}>
-                            <View style={styles.modalHeader}>
-                                <CustomText style={styles.modalTitle}>
-                                    Lisää raaka-aine
-                                </CustomText>
-                            </View>
+
+                        <View style={styles.modalHeader}>
+                            <CustomText style={styles.modalTitle}>
+                                Lisää raaka-aine
+                            </CustomText>
+                        </View>
+
+                        <View style={styles.modalBody}>
                             <FormFoodItem
                                 onSubmit={handleAddFoodItem}
                                 onClose={() => setFoodItemModalVisible(false)}
                                 style={styles.formContainer}
                                 showLocationSelector={true}
                             />
-                        </ScrollView>
+                        </View>
                     </View>
                 </View>
             </Modal>
@@ -473,8 +475,7 @@ const styles = StyleSheet.create({
         marginBottom: 5,
     },
     labelTitle: {
-        marginTop: 10,
-        marginBottom: 20,
+        paddingTop: 10,
         fontWeight: 'bold',
         textAlign: 'center',
     },
@@ -512,7 +513,6 @@ const styles = StyleSheet.create({
         maxWidth: 400,
         maxHeight: '95%',
         position: 'relative',
-        flex: 1,
     },
     closeButton: {
         position: 'absolute',
@@ -523,16 +523,20 @@ const styles = StyleSheet.create({
     },
     modalHeader: {
         width: '100%',
-        marginTop: 30,
-        marginBottom: 20,
+        paddingTop: 30,
+        paddingBottom: 20,
     },
     modalTitle: {
         fontSize: 20,
         fontWeight: 'bold',
         textAlign: 'center',
     },
+    modalBody: {
+        flex: 1,
+        paddingHorizontal: 20,
+    },
     formContainer: {
-        padding: 20,
+        flex: 1,
     },
     primaryButton: {
         borderRadius: 25,
@@ -630,10 +634,6 @@ const styles = StyleSheet.create({
         borderRadius: 4,
         marginBottom: 15,
         justifyContent: 'center',
-    },
-    modalScroll: {
-        paddingHorizontal: 20,
-        paddingTop: 50,
     },
     modalScrollContainer: {
         padding: 20,

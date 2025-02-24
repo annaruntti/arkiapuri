@@ -5,6 +5,7 @@ import {
     View,
     TextInput,
     TouchableOpacity,
+    Alert,
 } from 'react-native'
 import { Controller, useForm } from 'react-hook-form'
 import SectionedMultiSelect from 'react-native-sectioned-multi-select'
@@ -12,10 +13,13 @@ import { MaterialIcons as Icon } from '@expo/vector-icons'
 import Fontisto from '@expo/vector-icons/Fontisto'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { RadioButton } from 'react-native-paper'
+import axios from 'axios'
+import storage from '../utils/storage'
 
 import categories from '../data/categories'
 import CustomText from './CustomText'
 import Button from './Button'
+import { getServerUrl } from '../utils/getServerUrl'
 
 const FoodItemForm = ({
     onSubmit,
@@ -79,30 +83,51 @@ const FoodItemForm = ({
         })
     }
 
-    const handleFormSubmit = (data) => {
-        // Filter out locations with empty quantities
-        const activeLocations = selectedLocations.filter(
-            (loc) => quantities[loc] !== ''
-        )
+    const handleFormSubmit = async (data) => {
+        try {
+            // Filter out locations with empty quantities
+            const activeLocations = selectedLocations.filter(
+                (loc) => quantities[loc] !== ''
+            )
 
-        const formData = {
-            ...data,
-            quantities: activeLocations.reduce(
-                (acc, loc) => ({
-                    ...acc,
-                    [loc]: parseFloat(quantities[loc]) || 0,
-                }),
-                {}
-            ),
-            locations: activeLocations,
+            const formData = {
+                ...data,
+                quantities: activeLocations.reduce(
+                    (acc, loc) => ({
+                        ...acc,
+                        [loc]: parseFloat(quantities[loc]) || 0,
+                    }),
+                    {}
+                ),
+                locations: activeLocations,
+            }
+
+            console.log('Form data before submit:', formData)
+
+            const token = await storage.getItem('userToken')
+            const response = await axios.post(
+                getServerUrl('/food-items'),
+                formData,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            )
+
+            if (response.data.success) {
+                onSubmit(response.data.foodItem)
+                reset()
+                // Reset quantities and locations except 'meal'
+                setQuantities({ meal: '', 'shopping-list': '', pantry: '' })
+                setSelectedLocations(['meal'])
+            } else {
+                Alert.alert('Virhe', 'Raaka-aineen lisääminen epäonnistui')
+            }
+        } catch (error) {
+            console.error('Error creating food item:', error)
+            Alert.alert('Virhe', 'Raaka-aineen lisääminen epäonnistui')
         }
-
-        console.log('Form data before submit:', formData)
-        onSubmit(formData)
-        reset()
-        // Reset quantities and locations except 'meal'
-        setQuantities({ meal: '', 'shopping-list': '', pantry: '' })
-        setSelectedLocations(['meal'])
     }
 
     return (
@@ -225,7 +250,7 @@ const FoodItemForm = ({
                     }}
                     render={({ field: { onChange, onBlur, value } }) => (
                         <TextInput
-                            style={[styles.formInput, styles.quantityInput]}
+                            style={styles.formInput}
                             placeholder="Esim. 4"
                             onChangeText={onChange}
                             onBlur={onBlur}
@@ -245,7 +270,7 @@ const FoodItemForm = ({
                     }}
                     render={({ field: { onChange, value } }) => (
                         <TextInput
-                            style={[styles.formInput, styles.unitInput]}
+                            style={styles.unitFormInput}
                             placeholder="kpl/kg/l"
                             onChangeText={onChange}
                             value={value}
@@ -373,7 +398,7 @@ const FoodItemForm = ({
 
             {showLocationSelector && (
                 <View style={styles.locationSelector}>
-                    <CustomText style={styles.label}>
+                    <CustomText style={styles.labelTitle}>
                         Lisää raaka-aine myös:
                     </CustomText>
                     <View style={styles.radioGroup}>
@@ -398,7 +423,7 @@ const FoodItemForm = ({
                                     />
                                     <CustomText style={styles.radioLabel}>
                                         {loc === 'meal'
-                                            ? 'Ateriaan'
+                                            ? 'Vain ateriaan'
                                             : loc === 'shopping-list'
                                               ? 'Ostoslistalle'
                                               : 'Pentteriin'}
@@ -439,12 +464,20 @@ export default FoodItemForm
 
 const styles = StyleSheet.create({
     form: {
+        flex: 1,
         width: '100%',
         marginBottom: 15,
     },
     label: {
-        marginTop: 10,
+        paddingTop: 10,
         marginBottom: 5,
+    },
+    labelTitle: {
+        paddingTop: 10,
+        marginBottom: 10,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        fontSize: 16,
     },
     formInput: {
         backgroundColor: 'white',
@@ -465,7 +498,8 @@ const styles = StyleSheet.create({
         padding: 10,
         borderRadius: 4,
         marginBottom: 5,
-        width: 40,
+        width: '100%',
+        marginLeft: 10,
     },
     inputAndIcon: {
         flex: 1,
@@ -591,7 +625,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginVertical: 8,
     },
     quantityInput: {
         flexDirection: 'row',
