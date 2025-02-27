@@ -108,7 +108,11 @@ const SignInScreen = () => {
                             style={styles.primaryButton}
                         />
                     </View>
+                    <br />
                     <View style={styles.buttonContainer}>
+                        <CustomText style={styles.text}>
+                            Eikö sinulla ole vielä käyttäjätunnusta?
+                        </CustomText>
                         <Button
                             title="Luo käyttäjätunnus"
                             onPress={onSignUpPress}
@@ -117,8 +121,11 @@ const SignInScreen = () => {
                         />
                     </View>
                     <View style={styles.buttonContainer}>
+                        <CustomText style={styles.text}>
+                            Unohditko salasanasi?
+                        </CustomText>
                         <Button
-                            title="Unohditko salasanan?"
+                            title="Tilaa uusi salasana"
                             onPress={onForgotPasswordPressed}
                             type="TERTIARY"
                             style={styles.tertiaryButton}
@@ -199,6 +206,11 @@ const styles = StyleSheet.create({
         width: 'auto',
         borderWidth: 3,
         borderColor: '#9C86FC',
+    },
+    text: {
+        color: 'gray',
+        marginVertical: 10,
+        textAlign: 'center',
     },
 })
 

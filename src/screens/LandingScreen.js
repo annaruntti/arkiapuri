@@ -163,6 +163,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         width: 'auto',
+        marginBottom: 20,
     },
     secondaryButton: {
         borderRadius: 25,

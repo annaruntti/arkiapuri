@@ -141,13 +141,16 @@ const SignUpScreen = () => {
                 <View style={styles.buttonView}>
                     <View style={styles.buttonContainer}>
                         <Button
-                            title="Tallenna"
+                            title="Luo käyttäjätunns"
                             style={styles.primaryButton}
                             onPress={handleSubmit(onRegisterPressed)}
                         />
                     </View>
                     {/* <SocialSignInButtons /> */}
                     <View style={styles.buttonContainer}>
+                        <CustomText style={styles.text}>
+                            Onko sinulla jo käyttäjätunnus?
+                        </CustomText>
                         <Button
                             title="Sisäänkirjautumiseen"
                             onPress={onSignInPress}
@@ -157,19 +160,19 @@ const SignUpScreen = () => {
                     </View>
                     <View style={styles.buttonContainer}>
                         <CustomText style={styles.text}>
-                            By registering, you confirm that you accept our{' '}
+                            Rekisteröitymälläsi, hyväksyt{' '}
                             <CustomText
                                 style={styles.link}
                                 onPress={onTermsOfUsePressed}
                             >
-                                Terms of Use
+                                käyttöehdot
                             </CustomText>{' '}
-                            and{' '}
+                            ja{' '}
                             <CustomText
                                 style={styles.link}
                                 onPress={onPrivacyPressed}
                             >
-                                Privacy Policy
+                                tietosuojaselosteen
                             </CustomText>
                         </CustomText>
                     </View>
@@ -252,6 +255,7 @@ const styles = StyleSheet.create({
     text: {
         color: 'gray',
         marginVertical: 10,
+        textAlign: 'center',
     },
     link: {
         color: '#FDB075',
