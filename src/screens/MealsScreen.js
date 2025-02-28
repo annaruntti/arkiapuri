@@ -10,7 +10,7 @@ import {
 } from 'react-native'
 import CustomText from '../components/CustomText'
 import Button from '../components/Button'
-import AddMealForm from '../components/FormAddMeal'
+import AddMealForm from '../components/formAddMeal'
 import { AntDesign } from '@expo/vector-icons'
 import axios from 'axios'
 import { getServerUrl } from '../utils/getServerUrl'

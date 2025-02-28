@@ -26,7 +26,7 @@ const PantryScreen = ({}) => {
         try {
             setLoading(true)
             const token = await storage.getItem('userToken')
-            const response = await axios.get(getServerUrl('/food-items'), {
+            const response = await axios.get(getServerUrl('/pantry'), {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -35,41 +35,17 @@ const PantryScreen = ({}) => {
             console.log('Pantry response:', response.data)
 
             if (response.data.success) {
-                // Get the items array from the pantry
-                const pantryItems = response.data.pantry.items || []
-
-                // Process items with data from foodItem if it exists in the response
-                const processedItems = pantryItems.map((item) => {
-                    // Get foodItem data from the response
-                    const foodItem = response.data.foodItem || {}
-
-                    return {
-                        ...item,
-                        // Use foodItem data if available, otherwise use item data or defaults
-                        unit: item.unit || foodItem.unit || 'kpl',
-                        category: item.category || foodItem.category || [],
-                        calories: item.calories || foodItem.calories || 0,
-                        price: item.price || foodItem.price || 0,
-                    }
-                })
-
-                console.log('Processed pantry items:', processedItems)
-                setPantryItems(processedItems)
+                const items =
+                    response.data.pantry?.items || response.data.items || []
+                setPantryItems(items)
+                console.log('Set pantry items:', items.length)
             } else {
-                console.error(
-                    'Failed to fetch pantry items:',
-                    response.data.message
-                )
-                Alert.alert('Virhe', 'Ruokakomeron haku epäonnistui')
-                setPantryItems([])
+                console.error('Failed to fetch pantry items:', response.data)
+                Alert.alert('Virhe', 'Pentterin tietojen haku epäonnistui')
             }
         } catch (error) {
-            console.error(
-                'Error fetching pantry items:',
-                error?.response?.data || error
-            )
-            Alert.alert('Virhe', 'Ruokakomeron haku epäonnistui')
-            setPantryItems([])
+            console.error('Error fetching pantry items:', error)
+            Alert.alert('Virhe', 'Pentterin tietojen haku epäonnistui')
         } finally {
             setLoading(false)
         }
@@ -145,36 +121,29 @@ const PantryScreen = ({}) => {
         }
     }
 
-    const renderPantryItem = ({ item }) => (
-        <View style={styles.listItem}>
-            <View style={styles.listHeader}>
-                <CustomText style={styles.listTitle}>{item.name}</CustomText>
-                <View style={styles.itemCategories}>
-                    {item.category?.length > 0 ? (
-                        item.category.map((category, index) => (
-                            <CustomText key={index} style={styles.category}>
-                                {category}
-                            </CustomText>
-                        ))
-                    ) : (
-                        <CustomText style={styles.category}>
-                            Ei kategoriaa
-                        </CustomText>
-                    )}
-                </View>
-            </View>
-            <View style={styles.listStats}>
-                <CustomText>
-                    {item.quantity} {item.unit || 'kpl'}
+    const renderItem = ({ item }) => (
+        <View style={styles.itemContainer}>
+            <View style={styles.itemInfo}>
+                <CustomText style={styles.itemName}>{item.name}</CustomText>
+                <CustomText style={styles.itemDetails}>
+                    {item.quantity} {item.unit}
                 </CustomText>
-                <CustomText>
-                    {item.calories ? `${item.calories} kcal/100g` : ''}
-                </CustomText>
+                {item.expirationDate && (
+                    <CustomText style={styles.itemDetails}>
+                        Parasta ennen:{' '}
+                        {new Date(item.expirationDate).toLocaleDateString(
+                            'fi-FI'
+                        )}
+                    </CustomText>
+                )}
             </View>
-            <CustomText style={styles.expirationDate}>
-                Parasta ennen:{' '}
-                {new Date(item.expirationDate).toLocaleDateString()}
-            </CustomText>
+            <View style={styles.itemActions}>
+                <Button
+                    title="Poista"
+                    onPress={() => handleDeleteItem(item._id)}
+                    style={styles.tertiaryButton}
+                />
+            </View>
         </View>
     )
 
@@ -201,11 +170,12 @@ const PantryScreen = ({}) => {
                                 Lisää tuote ruokakomeroon
                             </CustomText>
                         </View>
-                        <FormFoodItem
-                            onSubmit={handleAddItem}
-                            location="pantry"
-                            style={styles.formContainer}
-                        />
+                        <View style={styles.modalBody}>
+                            <FormFoodItem
+                                onSubmit={handleAddItem}
+                                location="pantry"
+                            />
+                        </View>
                     </View>
                 </View>
             </Modal>
@@ -221,23 +191,20 @@ const PantryScreen = ({}) => {
                 title="Lisää elintarvike"
                 onPress={() => setModalVisible(true)}
             />
-            {loading ? (
-                <CustomText>Ladataan...</CustomText>
-            ) : Array.isArray(pantryItems) && pantryItems.length > 0 ? (
-                <FlatList
-                    style={styles.listContainer}
-                    contentContainerStyle={{ paddingBottom: 20 }}
-                    data={pantryItems}
-                    renderItem={renderPantryItem}
-                    keyExtractor={(item) => item._id}
-                    showsVerticalScrollIndicator={false}
-                />
-            ) : (
-                <CustomText style={styles.emptyText}>
-                    Ei vielä tuotteita ruokakomerossa. Lisää tuotteita
-                    painamalla "Lisää tuote" -nappia.
-                </CustomText>
-            )}
+            <FlatList
+                data={pantryItems}
+                renderItem={renderItem}
+                keyExtractor={(item) => item._id}
+                style={styles.list}
+                contentContainerStyle={styles.listContent}
+                ListEmptyComponent={
+                    !loading && (
+                        <CustomText style={styles.emptyText}>
+                            Pentteri on tyhjä
+                        </CustomText>
+                    )
+                }
+            />
         </View>
     )
 }
@@ -260,17 +227,15 @@ const styles = StyleSheet.create({
     },
     modalContainer: {
         flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
     },
     modalContent: {
+        flex: 1,
         backgroundColor: 'white',
-        borderRadius: 10,
-        padding: 20,
-        width: '90%',
-        maxWidth: 400,
-        position: 'relative',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        marginTop: 50,
+        paddingHorizontal: 20,
     },
     closeButton: {
         position: 'absolute',
@@ -281,13 +246,16 @@ const styles = StyleSheet.create({
     },
     modalHeader: {
         width: '100%',
-        marginTop: 30,
-        marginBottom: 20,
+        paddingTop: 20,
+        paddingBottom: 10,
+        alignItems: 'center',
     },
     modalTitle: {
         fontSize: 20,
         fontWeight: 'bold',
-        textAlign: 'center',
+    },
+    modalBody: {
+        flex: 1,
     },
     primaryButton: {
         borderRadius: 25,
@@ -315,6 +283,8 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         width: 'auto',
+        marginBottom: 10,
+        width: '80%',
     },
     tertiaryButton: {
         borderRadius: 25,
@@ -323,11 +293,13 @@ const styles = StyleSheet.create({
         paddingLeft: 10,
         paddingRight: 10,
         elevation: 2,
-        backgroundColor: '#38E4D9',
+        backgroundColor: '#fff',
         color: 'black',
         fontWeight: 'bold',
         textAlign: 'center',
-        width: 'auto',
+        marginBottom: 10,
+        borderWidth: 3,
+        borderColor: '#9C86FC',
     },
     modalText: {
         marginBottom: 15,
@@ -336,43 +308,40 @@ const styles = StyleSheet.create({
     errorMsg: {
         color: 'red',
     },
-    listItem: {
+    itemContainer: {
         backgroundColor: '#f8f8f8',
         padding: 15,
         borderRadius: 10,
         marginBottom: 10,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
     },
-    listHeader: {
-        marginBottom: 10,
+    itemInfo: {
+        flexDirection: 'column',
     },
-    listTitle: {
+    itemName: {
         fontSize: 18,
         fontWeight: 'bold',
     },
-    listStats: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 5,
-    },
-    itemCategories: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 5,
-        marginTop: 5,
-    },
-    category: {
-        backgroundColor: '#e0e0e0',
-        paddingVertical: 2,
-        paddingHorizontal: 8,
-        borderRadius: 12,
-        fontSize: 12,
-    },
-    expirationDate: {
+    itemDetails: {
         color: '#666',
         fontSize: 14,
     },
-    listContainer: {
+    itemActions: {
+        flexDirection: 'row',
+        gap: 5,
+    },
+    deleteButton: {
+        backgroundColor: '#ff3b30',
+        padding: 5,
+        borderRadius: 5,
+    },
+    list: {
         width: '100%',
+    },
+    listContent: {
+        paddingBottom: 20,
     },
     emptyText: {
         textAlign: 'center',
