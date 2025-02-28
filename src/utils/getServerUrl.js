@@ -8,6 +8,7 @@ export const getServerUrl = (endpoint) => {
 
     const { manifest } = Updates
     let debuggerHost = '192.168.250.14' // Default IP for mobile
+    // let debuggerHost = '192.168.50.179' // Default IP for mobile
     if (manifest && manifest.debuggerHost) {
         debuggerHost = manifest.debuggerHost.split(':').shift()
     }

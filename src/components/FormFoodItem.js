@@ -21,6 +21,12 @@ import CustomText from './CustomText'
 import Button from './Button'
 import { getServerUrl } from '../utils/getServerUrl'
 
+const formatNumber = (value) => {
+    if (!value) return value
+    // Replace comma with period for decimal numbers
+    return value.toString().replace(',', '.')
+}
+
 const FoodItemForm = ({
     onSubmit,
     location = 'meal',
@@ -92,10 +98,13 @@ const FoodItemForm = ({
 
             const formData = {
                 ...data,
+                // Format the main quantity
+                quantity: formatNumber(data.quantity),
+                // Format quantities for each location
                 quantities: activeLocations.reduce(
                     (acc, loc) => ({
                         ...acc,
-                        [loc]: parseFloat(quantities[loc]) || 0,
+                        [loc]: parseFloat(formatNumber(quantities[loc])) || 0,
                     }),
                     {}
                 ),
@@ -142,6 +151,7 @@ const FoodItemForm = ({
                     <TextInput
                         style={styles.formInput}
                         placeholder="Esim. leivinpaperi"
+                        placeholderTextColor="#999"
                         onBlur={onBlur}
                         onChangeText={onChange}
                         value={value}
@@ -245,14 +255,15 @@ const FoodItemForm = ({
                         required: true,
                         valueAsNumber: true,
                         pattern: {
-                            value: /^(0|[1-9]\d*)(\.\d+)?$/,
+                            value: /^(0|[1-9]\d*)([.,]\d+)?$/,
                         },
                     }}
                     render={({ field: { onChange, onBlur, value } }) => (
                         <TextInput
-                            style={styles.formInput}
-                            placeholder="Esim. 4"
-                            onChangeText={onChange}
+                            style={styles.quantityFormInput}
+                            placeholder="Esim. 0,5"
+                            placeholderTextColor="#999"
+                            onChangeText={(text) => onChange(text)}
                             onBlur={onBlur}
                             value={value}
                             keyboardType="numeric"
@@ -272,6 +283,7 @@ const FoodItemForm = ({
                         <TextInput
                             style={styles.unitFormInput}
                             placeholder="kpl/kg/l"
+                            placeholderTextColor="#999"
                             onChangeText={onChange}
                             value={value}
                         />
@@ -297,8 +309,9 @@ const FoodItemForm = ({
                 render={({ field: { onChange, onBlur, value } }) => (
                     <View style={styles.inputAndIcon}>
                         <TextInput
-                            style={styles.formInput}
+                            style={styles.quantityFormInput}
                             placeholder="Esim. 250"
+                            placeholderTextColor="#999"
                             onChangeText={onChange}
                             onBlur={onBlur}
                             value={value}
@@ -327,6 +340,7 @@ const FoodItemForm = ({
                                 <TextInput
                                     style={styles.formInput}
                                     placeholder="Esim. 4"
+                                    placeholderTextColor="#999"
                                     onChangeText={onChange}
                                     onBlur={onBlur}
                                     value={value}
@@ -359,7 +373,7 @@ const FoodItemForm = ({
                     <View style={styles.inputAndIcon}>
                         <TouchableOpacity onPress={showDatepicker}>
                             <TextInput
-                                style={styles.formInput}
+                                style={[styles.formInput, styles.dateInput]}
                                 value={date.toLocaleDateString()}
                                 editable={false}
                             />
@@ -438,6 +452,7 @@ const FoodItemForm = ({
                                                 handleQuantityChange(loc, value)
                                             }
                                             placeholder="Määrä"
+                                            placeholderTextColor="#999"
                                             keyboardType="numeric"
                                         />
                                         <CustomText style={styles.unitLabel}>
@@ -488,6 +503,18 @@ const styles = StyleSheet.create({
         padding: 10,
         borderRadius: 4,
         marginBottom: 5,
+        width: '100%',
+    },
+    quantityFormInput: {
+        backgroundColor: 'white',
+        borderColor: '#bbb',
+        borderStyle: 'solid',
+        borderWidth: 1,
+        height: 40,
+        padding: 10,
+        borderRadius: 4,
+        marginBottom: 5,
+        width: '60%',
     },
     unitFormInput: {
         backgroundColor: 'white',
@@ -498,16 +525,14 @@ const styles = StyleSheet.create({
         padding: 10,
         borderRadius: 4,
         marginBottom: 5,
-        width: '100%',
+        width: '35%',
         marginLeft: 10,
     },
     inputAndIcon: {
-        flex: 1,
         flexDirection: 'row',
-        justifyContent: 'left',
-        alignItems: 'left',
-        backgroundColor: '#fff',
+        alignItems: 'center',
         marginBottom: 12,
+        width: '100%',
     },
     messageSection: {
         flex: 1,
@@ -598,10 +623,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 5,
-    },
-    quantityInput: {
-        flex: 2,
-        marginRight: 10,
+        width: '100%',
     },
     unitInput: {
         flex: 1,
@@ -631,9 +653,14 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         flex: 1,
         marginLeft: 10,
+        marginRight: 10,
+        width: '50%',
     },
     unitLabel: {
         marginLeft: 8,
         fontSize: 14,
+    },
+    dateInput: {
+        width: '90%',
     },
 })

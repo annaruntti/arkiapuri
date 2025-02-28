@@ -101,14 +101,13 @@ const SignInScreen = () => {
                     />
                 </View>
                 <View style={styles.buttonView}>
-                    <View style={styles.buttonContainer}>
+                    <View style={styles.buttonMainContainer}>
                         <Button
                             title="Kirjaudu sisään"
                             onPress={handleSubmit(onSignInPressed)}
                             style={styles.primaryButton}
                         />
                     </View>
-                    <br />
                     <View style={styles.buttonContainer}>
                         <CustomText style={styles.text}>
                             Eikö sinulla ole vielä käyttäjätunnusta?
@@ -165,6 +164,9 @@ const styles = StyleSheet.create({
     },
     buttonContainer: {
         marginBottom: 10,
+    },
+    buttonMainContainer: {
+        marginBottom: 20,
     },
     primaryButton: {
         borderRadius: 25,

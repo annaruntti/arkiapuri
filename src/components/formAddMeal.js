@@ -8,16 +8,17 @@ import {
     Modal,
     FlatList,
     Alert,
-    Picker,
+    Platform,
 } from 'react-native'
+import DateTimePicker from '@react-native-community/datetimepicker'
+import { Picker } from '@react-native-picker/picker'
+import { AntDesign, MaterialIcons } from '@expo/vector-icons'
+import axios from 'axios'
 import CustomText from './CustomText'
 import Button from './Button'
 import FormFoodItem from './FormFoodItem'
-import { AntDesign, MaterialIcons } from '@expo/vector-icons'
-import axios from 'axios'
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
-import DateTimePicker from '@react-native-community/datetimepicker'
 
 const AddMealForm = ({ onSubmit, onClose }) => {
     const [name, setName] = useState('')
@@ -30,7 +31,7 @@ const AddMealForm = ({ onSubmit, onClose }) => {
     const [pantryItems, setPantryItems] = useState([])
     const [selectedPantryItems, setSelectedPantryItems] = useState([])
     const [isLoading, setIsLoading] = useState(false)
-    const [defaultRole, setDefaultRole] = useState('dinner')
+    const [selectedRoles, setSelectedRoles] = useState(['dinner'])
     const [plannedCookingDate, setPlannedCookingDate] = useState(new Date())
     const [showDatePicker, setShowDatePicker] = useState(false)
 
@@ -165,12 +166,12 @@ const AddMealForm = ({ onSubmit, onClose }) => {
             recipe: recipe || '',
             difficultyLevel: getDifficultyEnum(difficultyLevel),
             cookingTime: parseInt(cookingTime) || 0,
-            defaultRole,
-            plannedCookingDate: plannedCookingDate.toISOString(), // date in ISO format
+            defaultRoles: selectedRoles,
+            plannedCookingDate: plannedCookingDate.toISOString(),
             foodItems: foodItemIds,
         }
 
-        console.log('Submitting meal data:', mealData)
+        console.log('Submitting meal data with roles:', mealData.defaultRoles)
 
         try {
             const token = await storage.getItem('userToken')
@@ -306,22 +307,45 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                     />
 
                     <CustomText style={styles.label}>Aterian tyyppi</CustomText>
-                    <View style={styles.pickerContainer}>
-                        <Picker
-                            selectedValue={defaultRole}
-                            onValueChange={(itemValue) =>
-                                setDefaultRole(itemValue)
-                            }
-                            style={styles.picker}
-                        >
-                            {Object.entries(mealRoles).map(([value, label]) => (
-                                <Picker.Item
-                                    key={value}
-                                    label={label}
-                                    value={value}
-                                />
-                            ))}
-                        </Picker>
+                    <View style={styles.checkboxGroup}>
+                        {Object.entries(mealRoles).map(([value, label]) => (
+                            <Pressable
+                                key={value}
+                                style={styles.checkboxRow}
+                                onPress={() => {
+                                    setSelectedRoles((prev) => {
+                                        if (prev.includes(value)) {
+                                            // Remove if already selected
+                                            return prev.filter(
+                                                (role) => role !== value
+                                            )
+                                        } else {
+                                            // Add if not selected
+                                            return [...prev, value]
+                                        }
+                                    })
+                                }}
+                            >
+                                <View
+                                    style={[
+                                        styles.checkbox,
+                                        selectedRoles.includes(value) &&
+                                            styles.checkboxChecked,
+                                    ]}
+                                >
+                                    {selectedRoles.includes(value) && (
+                                        <MaterialIcons
+                                            name="check"
+                                            size={16}
+                                            color="white"
+                                        />
+                                    )}
+                                </View>
+                                <CustomText style={styles.checkboxLabel}>
+                                    {label}
+                                </CustomText>
+                            </Pressable>
+                        ))}
                     </View>
 
                     <CustomText style={styles.label}>
@@ -401,7 +425,6 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                             <FormFoodItem
                                 onSubmit={handleAddFoodItem}
                                 onClose={() => setFoodItemModalVisible(false)}
-                                style={styles.formContainer}
                                 showLocationSelector={true}
                             />
                         </View>
@@ -501,18 +524,15 @@ const styles = StyleSheet.create({
     },
     modalContainer: {
         flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        paddingVertical: 20,
     },
     modalContent: {
+        flex: 1,
         backgroundColor: 'white',
-        borderRadius: 10,
-        width: '90%',
-        maxWidth: 400,
-        maxHeight: '95%',
-        position: 'relative',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        marginTop: 50, // Give some space from top
+        paddingHorizontal: 20,
     },
     closeButton: {
         position: 'absolute',
@@ -523,19 +543,15 @@ const styles = StyleSheet.create({
     },
     modalHeader: {
         width: '100%',
-        paddingTop: 30,
-        paddingBottom: 20,
+        paddingTop: 20,
+        paddingBottom: 10,
+        alignItems: 'center',
     },
     modalTitle: {
         fontSize: 20,
         fontWeight: 'bold',
-        textAlign: 'center',
     },
     modalBody: {
-        flex: 1,
-        paddingHorizontal: 20,
-    },
-    formContainer: {
         flex: 1,
     },
     primaryButton: {
@@ -609,20 +625,35 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#666',
     },
-    pickerContainer: {
-        borderRadius: 4,
-        backgroundColor: 'white',
-        marginBottom: 15,
-    },
-    picker: {
+    checkboxGroup: {
         backgroundColor: 'white',
         borderColor: '#bbb',
-        borderStyle: 'solid',
         borderWidth: 1,
-        height: 40,
-        padding: 10,
         borderRadius: 4,
-        marginBottom: 5,
+        padding: 10,
+        marginBottom: 15,
+    },
+    checkboxRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 8,
+    },
+    checkbox: {
+        width: 24,
+        height: 24,
+        borderRadius: 4,
+        borderWidth: 2,
+        borderColor: '#9C86FC',
+        marginRight: 10,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    checkboxChecked: {
+        backgroundColor: '#9C86FC',
+    },
+    checkboxLabel: {
+        fontSize: 16,
+        color: '#000000',
     },
     dateButton: {
         backgroundColor: 'white',
@@ -632,8 +663,9 @@ const styles = StyleSheet.create({
         height: 40,
         padding: 10,
         borderRadius: 4,
-        marginBottom: 15,
+        marginBottom: 20,
         justifyContent: 'center',
+        width: '100%',
     },
     modalScrollContainer: {
         padding: 20,

@@ -123,7 +123,7 @@ const ProfileScreen = () => {
                 </View>
             </TouchableOpacity>
             <CustomText style={styles.introText}>
-                <b>{profile?.username}</b>
+                {profile?.username}
             </CustomText>
             <CustomText style={styles.userInfoText}>
                 Sähköposti: {profile?.email}
