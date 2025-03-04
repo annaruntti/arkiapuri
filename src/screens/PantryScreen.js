@@ -16,6 +16,9 @@ import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
 import categories from '../data/categories'
 import { AntDesign } from '@expo/vector-icons'
+import * as ImagePicker from 'expo-image-picker'
+import * as FileSystem from 'expo-file-system'
+import { analyzeImage } from '../utils/googleVision'
 
 const PantryScreen = ({}) => {
     const [modalVisible, setModalVisible] = useState(false)
@@ -121,6 +124,137 @@ const PantryScreen = ({}) => {
         }
     }
 
+    const handleScanPantry = async () => {
+        try {
+            // Request camera permission
+            const { status } = await ImagePicker.requestCameraPermissionsAsync()
+            if (status !== 'granted') {
+                Alert.alert(
+                    'Virhe',
+                    'Tarvitsemme kameran käyttöoikeuden skannataksemme tuotteita'
+                )
+                return
+            }
+
+            // Take a photo
+            const result = await ImagePicker.launchCameraAsync({
+                mediaTypes: 'images',
+                quality: 0.8,
+                base64: true,
+            })
+
+            if (!result.canceled) {
+                setLoading(true)
+
+                // Analyze the image
+                const visionResponse = await analyzeImage(
+                    result.assets[0].base64
+                )
+
+                // Process the results
+                const detectedProducts = processVisionResults(visionResponse)
+
+                // Update pantry
+                await updatePantryWithDetectedItems(detectedProducts)
+
+                Alert.alert('Onnistui', 'Pentterin tiedot päivitetty')
+            }
+        } catch (error) {
+            console.error('Error scanning pantry:', error)
+            Alert.alert('Virhe', 'Skannaus epäonnistui')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const processVisionResults = (visionResponse) => {
+        const products = []
+
+        // Process text detection (for product names, quantities, etc.)
+        if (visionResponse.textAnnotations) {
+            const text = visionResponse.textAnnotations[0]?.description || ''
+            // Add logic to extract product information from text
+        }
+
+        // Process object detection
+        if (visionResponse.localizedObjectAnnotations) {
+            visionResponse.localizedObjectAnnotations.forEach((obj) => {
+                if (
+                    obj.name.toLowerCase().includes('food') ||
+                    obj.name.toLowerCase().includes('package')
+                ) {
+                    products.push({
+                        name: obj.name,
+                        confidence: obj.score,
+                    })
+                }
+            })
+        }
+
+        // Process labels
+        if (visionResponse.labelAnnotations) {
+            visionResponse.labelAnnotations.forEach((label) => {
+                if (label.score > 0.7) {
+                    // Confidence threshold
+                    products.push({
+                        name: label.description,
+                        confidence: label.score,
+                    })
+                }
+            })
+        }
+
+        return products
+    }
+
+    const updatePantryWithDetectedItems = async (detectedProducts) => {
+        try {
+            const token = await storage.getItem('userToken')
+
+            // Map detected products to match your food item schema
+            const formattedItems = detectedProducts.map((product) => ({
+                name: product.name,
+                category: ['other'], // Default category
+                unit: 'kpl', // Default unit
+                price: 0, // Default price
+                calories: 0, // Default calories
+                locations: ['pantry'], // Set location
+                quantities: {
+                    meal: 0,
+                    'shopping-list': 0,
+                    pantry: 1, // Set quantity for pantry
+                },
+                expirationDate: null, // Optional
+                expireDay: null, // Optional
+            }))
+
+            const response = await axios.post(
+                getServerUrl('/food-items'),
+                formattedItems[0], // Send first detected item
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            )
+
+            if (response.data.success) {
+                await fetchPantryItems()
+                Alert.alert(
+                    'Onnistui',
+                    `Tuote "${formattedItems[0].name}" lisätty pentteriin`
+                )
+            } else {
+                console.error('Failed to add detected item:', response.data)
+                Alert.alert('Virhe', 'Tuotteen lisääminen epäonnistui')
+            }
+        } catch (error) {
+            console.error('Error adding detected item:', error)
+            console.error('Error response:', error.response?.data)
+            Alert.alert('Virhe', 'Tuotteen lisääminen epäonnistui')
+        }
+    }
+
     const renderItem = ({ item }) => (
         <View style={styles.itemContainer}>
             <View style={styles.itemInfo}>
@@ -182,15 +316,26 @@ const PantryScreen = ({}) => {
             <CustomText style={styles.introText}>
                 Selaa pentteriäsi eli ruokakomeroasi joita kotoasi jo löytyy ja
                 käytä niitä avuksi ateriasuunnittelussa ja ostoslistan
-                luonnissa. Voit myös lisätä täällä uusia elintarvikkeita
-                pentteriisi. Ostoslistan tuotteet lisätään automaattisesti
-                pentteriin
+                luonnissa.
             </CustomText>
-            <Button
-                style={styles.primaryButton}
-                title="Lisää elintarvike"
-                onPress={() => setModalVisible(true)}
-            />
+            <CustomText style={styles.infoText}>
+                Voit lisätä uusia elintarvikkeita pentteriisi manuaalisesti
+                lomakkeen avulla tai skannata ne kameran avulla. Ostoslistan
+                tuotteet lisätään automaattisesti pentteriin kun ne merkitään
+                ostetuiksi.
+            </CustomText>
+            <View style={styles.buttonContainer}>
+                <Button
+                    title="Lisää elintarvike"
+                    onPress={() => setModalVisible(true)}
+                    style={styles.primaryButton}
+                />
+                <Button
+                    title="Skannaa pentteri"
+                    onPress={handleScanPantry}
+                    style={styles.secondaryButton}
+                />
+            </View>
             <FlatList
                 data={pantryItems}
                 renderItem={renderItem}
@@ -223,6 +368,13 @@ const styles = StyleSheet.create({
         fontSize: 17,
         textAlign: 'center',
         padding: 20,
+    },
+    infoText: {
+        fontSize: 15,
+        textAlign: 'center',
+        paddingTop: 5,
+        paddingBottom: 10,
+        paddingHorizontal: 15,
         marginBottom: 10,
     },
     modalContainer: {
@@ -283,8 +435,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         width: 'auto',
-        marginBottom: 10,
-        width: '80%',
+        marginBottom: 20,
     },
     tertiaryButton: {
         borderRadius: 25,
@@ -350,5 +501,9 @@ const styles = StyleSheet.create({
     },
     formContainer: {
         padding: 20,
+    },
+    buttonContainer: {
+        flexDirection: 'row',
+        gap: 10,
     },
 })

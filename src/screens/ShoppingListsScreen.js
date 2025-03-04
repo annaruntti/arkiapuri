@@ -6,6 +6,7 @@ import {
     View,
     FlatList,
     TouchableOpacity,
+    ActivityIndicator,
 } from 'react-native'
 import axios from 'axios'
 import Button from '../components/Button'
@@ -15,11 +16,15 @@ import storage from '../utils/storage'
 import { getServerUrl } from '../utils/getServerUrl'
 import { MaterialIcons } from '@expo/vector-icons'
 import ShoppingListDetail from '../components/ShoppingListDetail'
+import * as ImagePicker from 'expo-image-picker'
+import { analyzeImage } from '../utils/googleVision'
 
 const ShoppingListScreen = () => {
     const [modalVisible, setModalVisible] = useState(false)
     const [shoppingLists, setShoppingLists] = useState([])
     const [selectedList, setSelectedList] = useState(null)
+    const [scannedProduct, setScannedProduct] = useState(null)
+    const [loading, setLoading] = useState(false)
 
     const fetchShoppingLists = async () => {
         try {
@@ -80,6 +85,87 @@ const ShoppingListScreen = () => {
         setSelectedList(updatedList)
     }
 
+    const handleScanProduct = async () => {
+        try {
+            const { status } = await ImagePicker.requestCameraPermissionsAsync()
+            if (status !== 'granted') {
+                Alert.alert(
+                    'Virhe',
+                    'Tarvitsemme kameran käyttöoikeuden skannataksemme tuotteita'
+                )
+                return
+            }
+
+            const result = await ImagePicker.launchCameraAsync({
+                mediaTypes: 'images',
+                quality: 0.8,
+                base64: true,
+            })
+
+            if (!result.canceled) {
+                setLoading(true)
+
+                const visionResponse = await analyzeImage(
+                    result.assets[0].base64
+                )
+                const detectedProduct = processVisionResults(visionResponse)
+
+                if (detectedProduct.length > 0) {
+                    // Open add item form with pre-filled data
+                    setModalVisible(true)
+                    // Pass the detected product to your form component
+                    setScannedProduct(detectedProduct[0])
+                } else {
+                    Alert.alert('Virhe', 'Tuotetta ei tunnistettu')
+                }
+            }
+        } catch (error) {
+            console.error('Error scanning product:', error)
+            Alert.alert('Virhe', 'Skannaus epäonnistui')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const processVisionResults = (visionResponse) => {
+        const products = []
+
+        // Process text detection
+        if (visionResponse.textAnnotations) {
+            const text = visionResponse.textAnnotations[0]?.description || ''
+            // Add logic to extract product information from text
+        }
+
+        // Process object detection
+        if (visionResponse.localizedObjectAnnotations) {
+            visionResponse.localizedObjectAnnotations.forEach((obj) => {
+                if (
+                    obj.name.toLowerCase().includes('food') ||
+                    obj.name.toLowerCase().includes('package')
+                ) {
+                    products.push({
+                        name: obj.name,
+                        confidence: obj.score,
+                    })
+                }
+            })
+        }
+
+        // Process labels
+        if (visionResponse.labelAnnotations) {
+            visionResponse.labelAnnotations.forEach((label) => {
+                if (label.score > 0.7) {
+                    products.push({
+                        name: label.description,
+                        confidence: label.score,
+                    })
+                }
+            })
+        }
+
+        return products
+    }
+
     const renderShoppingList = ({ item }) => (
         <View style={styles.listItem}>
             <View style={styles.listHeader}>
@@ -104,6 +190,14 @@ const ShoppingListScreen = () => {
 
     return (
         <View style={styles.container}>
+            {loading && (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#9C86FC" />
+                    <CustomText style={styles.loadingText}>
+                        Analysoidaan kuvaa...
+                    </CustomText>
+                </View>
+            )}
             <Modal
                 animationType="slide"
                 transparent={true}
@@ -128,6 +222,7 @@ const ShoppingListScreen = () => {
                         <FormAddShoppingList
                             onSubmit={handleCreateList}
                             onClose={() => setModalVisible(false)}
+                            scannedProduct={scannedProduct}
                         />
                     </View>
                 </View>
@@ -169,11 +264,18 @@ const ShoppingListScreen = () => {
                     ostoslistoja reaaliajassa.
                 </CustomText>
 
-                <Button
-                    style={styles.primaryButton}
-                    title="Luo uusi ostoslista"
-                    onPress={() => setModalVisible(true)}
-                />
+                <View style={styles.buttonContainer}>
+                    <Button
+                        title="Luo uusi ostoslista"
+                        onPress={() => setModalVisible(true)}
+                        style={styles.primaryButton}
+                    />
+                    <Button
+                        title="Skannaa tuote"
+                        onPress={handleScanProduct}
+                        style={styles.secondaryButton}
+                    />
+                </View>
 
                 {shoppingLists.length > 0 ? (
                     <FlatList
@@ -292,6 +394,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         width: 'auto',
+        marginBottom: 20,
     },
     tertiaryButton: {
         borderRadius: 25,
@@ -321,5 +424,25 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         width: '100%',
         padding: 10,
+    },
+    buttonContainer: {
+        flexDirection: 'row',
+        gap: 10,
+        marginBottom: 20,
+    },
+    loadingContainer: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(255, 255, 255, 0.8)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000,
+    },
+    loadingText: {
+        marginTop: 10,
+        fontSize: 16,
     },
 })
