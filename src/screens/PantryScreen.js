@@ -16,11 +16,14 @@ import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
 import { AntDesign } from '@expo/vector-icons'
 import { scanItems } from '../utils/scanItems'
+import PantryItemDetails from '../components/PantryItemDetails'
 
 const PantryScreen = ({}) => {
     const [modalVisible, setModalVisible] = useState(false)
     const [pantryItems, setPantryItems] = useState([])
     const [loading, setLoading] = useState(true)
+    const [selectedItem, setSelectedItem] = useState(null)
+    const [detailsVisible, setDetailsVisible] = useState(false)
 
     const fetchPantryItems = async () => {
         try {
@@ -247,21 +250,66 @@ const PantryScreen = ({}) => {
         }
     }
 
+    const handleUpdateItem = async (itemId, updatedData) => {
+        try {
+            const token = await storage.getItem('userToken')
+            setLoading(true) // Show loading state while updating
+
+            // Prepare the data to match your backend expectations
+            const updatePayload = {
+                name: updatedData.name,
+                quantity: Number(updatedData.quantity),
+                unit: updatedData.unit,
+                calories: Number(updatedData.calories),
+                category: updatedData.category,
+                expirationDate: updatedData.expirationDate,
+            }
+
+            console.log('Updating item with data:', updatePayload)
+
+            const response = await axios.put(
+                getServerUrl(`/pantry/items/${itemId}`),
+                updatePayload,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            )
+
+            if (response.data.success) {
+                // Fetch the updated list immediately
+                await fetchPantryItems()
+                setDetailsVisible(false)
+                Alert.alert('Onnistui', 'Tuotteen tiedot päivitetty')
+            } else {
+                Alert.alert('Virhe', 'Tuotteen päivitys epäonnistui')
+            }
+        } catch (error) {
+            console.error('Error updating item:', error)
+            Alert.alert(
+                'Virhe',
+                'Tuotteen päivitys epäonnistui: ' +
+                    (error.response?.data?.message || error.message)
+            )
+        } finally {
+            setLoading(false) // Hide loading state
+        }
+    }
+
     const renderItem = ({ item }) => (
-        <View style={styles.itemContainer}>
+        <TouchableOpacity
+            style={styles.itemContainer}
+            onPress={() => {
+                setSelectedItem(item)
+                setDetailsVisible(true)
+            }}
+        >
             <View style={styles.itemInfo}>
                 <CustomText style={styles.itemName}>{item.name}</CustomText>
                 <CustomText style={styles.itemDetails}>
                     {item.quantity} {item.unit}
                 </CustomText>
-                {item.expirationDate && (
-                    <CustomText style={styles.itemDetails}>
-                        Parasta ennen:{' '}
-                        {new Date(item.expirationDate).toLocaleDateString(
-                            'fi-FI'
-                        )}
-                    </CustomText>
-                )}
             </View>
             <View style={styles.itemActions}>
                 <TouchableOpacity
@@ -271,7 +319,7 @@ const PantryScreen = ({}) => {
                     <AntDesign name="delete" size={20} color="#666" />
                 </TouchableOpacity>
             </View>
-        </View>
+        </TouchableOpacity>
     )
 
     console.log('Current pantryItems state:', pantryItems)
@@ -341,6 +389,15 @@ const PantryScreen = ({}) => {
                         </CustomText>
                     )
                 }
+            />
+            <PantryItemDetails
+                item={selectedItem}
+                visible={detailsVisible}
+                onClose={() => {
+                    setDetailsVisible(false)
+                    setSelectedItem(null)
+                }}
+                onUpdate={handleUpdateItem}
             />
         </View>
     )
