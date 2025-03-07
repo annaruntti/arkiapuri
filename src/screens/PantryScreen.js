@@ -6,6 +6,7 @@ import {
     View,
     FlatList,
     Pressable,
+    TouchableOpacity,
 } from 'react-native'
 import Button from '../components/Button'
 import FormFoodItem from '../components/FormFoodItem'
@@ -182,6 +183,70 @@ const PantryScreen = ({}) => {
         }
     }
 
+    const handleRemoveItem = async (itemId) => {
+        try {
+            const token = await storage.getItem('userToken')
+
+            // Show confirmation dialog
+            Alert.alert(
+                'Poista tuote',
+                'Haluatko varmasti poistaa tuotteen pentteristä?',
+                [
+                    {
+                        text: 'Peruuta',
+                        style: 'cancel',
+                    },
+                    {
+                        text: 'Poista',
+                        onPress: async () => {
+                            try {
+                                setLoading(true) // Show loading state
+                                const response = await axios.delete(
+                                    getServerUrl(`/pantry/items/${itemId}`),
+                                    {
+                                        headers: {
+                                            Authorization: `Bearer ${token}`,
+                                        },
+                                    }
+                                )
+
+                                if (response.data.success) {
+                                    // Update local state to remove the item
+                                    setPantryItems((prevItems) =>
+                                        prevItems.filter(
+                                            (item) => item._id !== itemId
+                                        )
+                                    )
+                                    // Fetch updated list to ensure sync with server
+                                    await fetchPantryItems()
+                                } else {
+                                    Alert.alert(
+                                        'Virhe',
+                                        'Tuotteen poisto epäonnistui'
+                                    )
+                                }
+                            } catch (error) {
+                                console.error('Error removing item:', error)
+                                Alert.alert(
+                                    'Virhe',
+                                    'Tuotteen poisto epäonnistui: ' +
+                                        (error.response?.data?.message ||
+                                            error.message)
+                                )
+                            } finally {
+                                setLoading(false) // Hide loading state
+                            }
+                        },
+                        style: 'destructive',
+                    },
+                ]
+            )
+        } catch (error) {
+            console.error('Error in handleRemoveItem:', error)
+            Alert.alert('Virhe', 'Tuotteen poisto epäonnistui')
+        }
+    }
+
     const renderItem = ({ item }) => (
         <View style={styles.itemContainer}>
             <View style={styles.itemInfo}>
@@ -199,11 +264,12 @@ const PantryScreen = ({}) => {
                 )}
             </View>
             <View style={styles.itemActions}>
-                <Button
-                    title="Poista"
-                    onPress={() => handleDeleteItem(item._id)}
-                    style={styles.tertiaryButton}
-                />
+                <TouchableOpacity
+                    style={styles.deleteButton}
+                    onPress={() => handleRemoveItem(item._id)}
+                >
+                    <AntDesign name="delete" size={20} color="#666" />
+                </TouchableOpacity>
             </View>
         </View>
     )
@@ -265,6 +331,7 @@ const PantryScreen = ({}) => {
                 data={pantryItems}
                 renderItem={renderItem}
                 keyExtractor={(item) => item._id}
+                extraData={pantryItems}
                 style={styles.list}
                 contentContainerStyle={styles.listContent}
                 ListEmptyComponent={
@@ -394,7 +461,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     itemInfo: {
+        flex: 1,
         flexDirection: 'column',
+        marginRight: 10,
     },
     itemName: {
         fontSize: 18,
@@ -406,12 +475,23 @@ const styles = StyleSheet.create({
     },
     itemActions: {
         flexDirection: 'row',
-        gap: 5,
+        alignItems: 'center',
     },
     deleteButton: {
-        backgroundColor: '#ff3b30',
-        padding: 5,
-        borderRadius: 5,
+        backgroundColor: '#e0e0e0',
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        justifyContent: 'center',
+        alignItems: 'center',
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.2,
+        shadowRadius: 1.41,
     },
     list: {
         width: '100%',
