@@ -6,6 +6,7 @@ import {
     TextInput,
     TouchableOpacity,
     Alert,
+    Platform,
 } from 'react-native'
 import { Controller, useForm } from 'react-hook-form'
 import SectionedMultiSelect from 'react-native-sectioned-multi-select'
@@ -15,6 +16,8 @@ import DateTimePicker from '@react-native-community/datetimepicker'
 import { RadioButton } from 'react-native-paper'
 import axios from 'axios'
 import storage from '../utils/storage'
+import { format } from 'date-fns'
+import { fi } from 'date-fns/locale'
 
 import categories from '../data/categories'
 import CustomText from './CustomText'
@@ -31,6 +34,7 @@ const FoodItemForm = ({
     onSubmit,
     location = 'meal',
     showLocationSelector = false,
+    initialValues = {},
 }) => {
     const [date, setDate] = useState(new Date())
     const [show, setShow] = useState(false)
@@ -41,6 +45,24 @@ const FoodItemForm = ({
         'shopping-list': '',
         pantry: '',
     })
+    const [name, setName] = useState(initialValues.name || '')
+    const [quantity, setQuantity] = useState(
+        initialValues.quantity ? String(initialValues.quantity) : '1'
+    )
+    const [unit, setUnit] = useState(initialValues.unit || 'kpl')
+    const [calories, setCalories] = useState(
+        initialValues.calories ? String(initialValues.calories) : '0'
+    )
+    const [price, setPrice] = useState(
+        initialValues.price ? String(initialValues.price) : '0'
+    )
+    const [category, setCategory] = useState(initialValues.category || [])
+    const [expirationDate, setExpirationDate] = useState(
+        initialValues.expirationDate
+            ? new Date(initialValues.expirationDate)
+            : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    )
+    const [showDatePicker, setShowDatePicker] = useState(false)
 
     const {
         control,
@@ -64,8 +86,13 @@ const FoodItemForm = ({
 
     const currentUnit = watch('unit')
 
-    const showDatepicker = () => {
-        setShow(true)
+    const showMode = () => {
+        if (Platform.OS === 'android') {
+            setShow(true)
+        } else {
+            // For iOS, we'll show the picker immediately
+            setShow(true)
+        }
         setMode('date')
     }
 
@@ -136,6 +163,15 @@ const FoodItemForm = ({
         } catch (error) {
             console.error('Error creating food item:', error)
             Alert.alert('Virhe', 'Raaka-aineen lisääminen epäonnistui')
+        }
+    }
+
+    const formatDate = (date) => {
+        try {
+            return format(date, 'dd.MM.yyyy', { locale: fi })
+        } catch (error) {
+            console.error('Error formatting date:', error)
+            return date.toLocaleDateString('fi-FI')
         }
     }
 
@@ -367,47 +403,37 @@ const FoodItemForm = ({
             )}
 
             <CustomText style={styles.label}>Viimeinen käyttöpäivä</CustomText>
-            <Controller
-                control={control}
-                render={({ field: { onChange, value } }) => (
-                    <View style={styles.inputAndIcon}>
-                        <TouchableOpacity onPress={showDatepicker}>
-                            <TextInput
-                                style={[styles.formInput, styles.dateInput]}
-                                value={date.toLocaleDateString()}
-                                editable={false}
-                            />
-                        </TouchableOpacity>
-                        <CustomText style={styles.inputMetric}>
-                            <Fontisto name="date" size={24} color="black" />
-                        </CustomText>
-                        {show && (
-                            <DateTimePicker
-                                testID="dateTimePicker"
-                                value={date}
-                                mode={mode}
-                                display="default"
-                                onChange={(event, selectedDate) => {
-                                    if (selectedDate) {
-                                        onChange(selectedDate)
-                                        setDate(selectedDate)
-                                    }
-                                    setShow(false)
-                                }}
-                            />
-                        )}
-                    </View>
-                )}
-                name="expirationDate"
-                {...register('expirationDate')}
-            />
-            {errors.expirationDate && (
-                <View style={styles.messageSection}>
-                    <Icon name="error" color="red" size={14} />
-                    <CustomText style={styles.errorMsg}>
-                        Tämä on pakollinen tieto
-                    </CustomText>
-                </View>
+            <View style={styles.inputAndIcon}>
+                <TouchableOpacity
+                    style={styles.dateInputContainer}
+                    onPress={showMode}
+                >
+                    <TextInput
+                        style={styles.dateInput}
+                        value={formatDate(date)}
+                        editable={false}
+                        placeholder="Valitse päivämäärä"
+                        placeholderTextColor="#999"
+                    />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={showMode} style={styles.dateIcon}>
+                    <Fontisto name="date" size={24} color="#666" />
+                </TouchableOpacity>
+            </View>
+            {show && (
+                <DateTimePicker
+                    testID="dateTimePicker"
+                    value={date}
+                    mode={mode}
+                    display="default"
+                    onChange={(event, selectedDate) => {
+                        if (selectedDate) {
+                            setDate(selectedDate)
+                        }
+                        setShow(Platform.OS === 'ios')
+                    }}
+                    minimumDate={new Date()}
+                />
             )}
 
             {showLocationSelector && (
@@ -465,7 +491,6 @@ const FoodItemForm = ({
                     </View>
                 </View>
             )}
-
             <Button
                 style={styles.primaryButton}
                 title="Tallenna tuote"
@@ -557,6 +582,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         width: 'auto',
+        marginTop: 20,
     },
     secondaryButton: {
         borderRadius: 25,
@@ -660,7 +686,26 @@ const styles = StyleSheet.create({
         marginLeft: 8,
         fontSize: 14,
     },
+    dateInputContainer: {
+        flex: 1,
+        marginRight: 10,
+    },
     dateInput: {
-        width: '90%',
+        backgroundColor: 'white',
+        borderColor: '#bbb',
+        borderWidth: 1,
+        height: 40,
+        padding: 10,
+        borderRadius: 4,
+    },
+    dateIcon: {
+        padding: 5,
+    },
+    iosDatePicker: {
+        backgroundColor: 'white',
+        width: '100%',
+        height: 120,
+        marginTop: 10,
+        marginBottom: 10,
     },
 })
