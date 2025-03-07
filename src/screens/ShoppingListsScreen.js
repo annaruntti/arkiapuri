@@ -113,7 +113,7 @@ const ShoppingListScreen = () => {
                 if (detectedProduct.length > 0) {
                     // Open add item form with pre-filled data
                     setModalVisible(true)
-                    // Pass the detected product to your form component
+                    // Pass the detected product to form component
                     setScannedProduct(detectedProduct[0])
                 } else {
                     Alert.alert('Virhe', 'Tuotetta ei tunnistettu')

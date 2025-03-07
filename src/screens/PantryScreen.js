@@ -4,7 +4,6 @@ import {
     Modal,
     StyleSheet,
     View,
-    Text,
     FlatList,
     Pressable,
 } from 'react-native'
@@ -14,11 +13,8 @@ import CustomText from '../components/CustomText'
 import axios from 'axios'
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
-import categories from '../data/categories'
 import { AntDesign } from '@expo/vector-icons'
-import * as ImagePicker from 'expo-image-picker'
-import * as FileSystem from 'expo-file-system'
-import { analyzeImage } from '../utils/googleVision'
+import { scanItems } from '../utils/scanItems'
 
 const PantryScreen = ({}) => {
     const [modalVisible, setModalVisible] = useState(false)
@@ -33,6 +29,7 @@ const PantryScreen = ({}) => {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
+                timeout: 10000,
             })
 
             console.log('Pantry response:', response.data)
@@ -44,11 +41,19 @@ const PantryScreen = ({}) => {
                 console.log('Set pantry items:', items.length)
             } else {
                 console.error('Failed to fetch pantry items:', response.data)
-                Alert.alert('Virhe', 'Pentterin tietojen haku epäonnistui')
+                Alert.alert('Virhe', 'Pentterin sisältöä ei voitu hakea')
+                setPantryItems([]) // Clear items on error
             }
         } catch (error) {
             console.error('Error fetching pantry items:', error)
-            Alert.alert('Virhe', 'Pentterin tietojen haku epäonnistui')
+            Alert.alert(
+                'Virhe',
+                'Pentterin tietojen haku epäonnistui: ' +
+                    (error.message === 'timeout exceeded'
+                        ? 'Yhteys aikakatkaistiin'
+                        : error.message || 'Tuntematon virhe')
+            )
+            setPantryItems([]) // Clear items on error
         } finally {
             setLoading(false)
         }
@@ -62,196 +67,118 @@ const PantryScreen = ({}) => {
         try {
             const token = await storage.getItem('userToken')
 
-            console.log('Item data before formatting:', itemData)
-
-            if (
-                !Array.isArray(itemData.category) ||
-                itemData.category.length === 0
-            ) {
-                Alert.alert('Virhe', 'Valitse vähintään yksi kategoria')
+            // Validate required fields
+            if (!itemData.name || !itemData.unit) {
+                Alert.alert('Virhe', 'Nimi ja yksikkö ovat pakollisia tietoja')
                 return
             }
 
-            const formattedItem = {
-                name: itemData.name,
-                category: itemData.category.map((id) => {
-                    const category = categories.find((cat) => cat.id === id)
-                    if (!category) {
-                        console.error('Category not found for id:', id)
-                        return id
-                    }
-                    return category.name
-                }),
-                quantity: Number(itemData.quantity),
+            // First create the FoodItem
+            const foodItemData = {
+                name: itemData.name.trim(),
+                category: itemData.category || [],
                 unit: itemData.unit,
-                price: itemData.price ? Number(itemData.price) : 0,
-                calories: itemData.calories ? Number(itemData.calories) : 0,
-                expirationDate: itemData.expirationDate,
+                price: Number(itemData.price) || 0,
+                calories: Number(itemData.calories) || 0,
+                locations: ['pantry'],
+                quantities: {
+                    meal: 0,
+                    'shopping-list': 0,
+                    pantry: Number(itemData.quantity) || 1,
+                },
+                expirationDate:
+                    itemData.expirationDate ||
+                    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
             }
 
-            console.log('Formatted item:', formattedItem)
+            console.log('Creating FoodItem:', foodItemData)
 
-            if (!formattedItem.unit) {
-                Alert.alert('Virhe', 'Yksikkö on pakollinen tieto')
-                return
-            }
-
-            const response = await axios.post(
+            const foodItemResponse = await axios.post(
                 getServerUrl('/food-items'),
-                formattedItem,
+                foodItemData,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json',
                     },
                 }
             )
 
-            if (response.data.success) {
-                setModalVisible(false)
-                setTimeout(async () => {
-                    try {
-                        await fetchPantryItems()
-                    } catch (error) {
-                        console.error('Error refreshing list:', error)
+            if (foodItemResponse.data.success) {
+                // Then create the pantry item
+                const pantryItemData = {
+                    name: itemData.name.trim(),
+                    quantity: Number(itemData.quantity) || 1,
+                    unit: itemData.unit,
+                    expirationDate:
+                        itemData.expirationDate ||
+                        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                    foodId: foodItemResponse.data.foodItem._id,
+                    category: itemData.category || [],
+                    calories: Number(itemData.calories) || 0,
+                    price: Number(itemData.price) || 0,
+                    addedFrom: 'pantry',
+                }
+
+                console.log('Creating Pantry item:', pantryItemData)
+
+                const pantryResponse = await axios.post(
+                    getServerUrl('/pantry/items'),
+                    pantryItemData,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                        },
                     }
-                }, 100)
+                )
+
+                if (pantryResponse.data.success) {
+                    setModalVisible(false)
+                    await fetchPantryItems()
+                    Alert.alert(
+                        'Onnistui',
+                        `Tuote "${itemData.name}" lisätty pentteriin`
+                    )
+                } else {
+                    throw new Error('Failed to add item to pantry')
+                }
             } else {
-                Alert.alert('Virhe', 'Tuotteen lisääminen epäonnistui')
+                throw new Error('Failed to create food item')
             }
         } catch (error) {
             console.error('Error adding item:', error?.response?.data || error)
-            Alert.alert('Virhe', 'Tuotteen lisääminen epäonnistui')
+            Alert.alert(
+                'Virhe',
+                'Tuotteen lisääminen epäonnistui: ' +
+                    (error.message || 'Tuntematon virhe')
+            )
         }
     }
 
     const handleScanPantry = async () => {
         try {
-            // Request camera permission
-            const { status } = await ImagePicker.requestCameraPermissionsAsync()
-            if (status !== 'granted') {
-                Alert.alert(
-                    'Virhe',
-                    'Tarvitsemme kameran käyttöoikeuden skannataksemme tuotteita'
-                )
-                return
-            }
+            setLoading(true)
+            const response = await scanItems('pantry')
 
-            // Take a photo
-            const result = await ImagePicker.launchCameraAsync({
-                mediaTypes: 'images',
-                quality: 0.8,
-                base64: true,
-            })
-
-            if (!result.canceled) {
-                setLoading(true)
-
-                // Analyze the image
-                const visionResponse = await analyzeImage(
-                    result.assets[0].base64
-                )
-
-                // Process the results
-                const detectedProducts = processVisionResults(visionResponse)
-
-                // Update pantry
-                await updatePantryWithDetectedItems(detectedProducts)
-
+            if (response?.success) {
+                await fetchPantryItems()
                 Alert.alert('Onnistui', 'Pentterin tiedot päivitetty')
+            } else {
+                throw new Error('Skannaus epäonnistui')
             }
         } catch (error) {
             console.error('Error scanning pantry:', error)
-            Alert.alert('Virhe', 'Skannaus epäonnistui')
+            Alert.alert(
+                'Virhe',
+                'Skannaus epäonnistui: ' +
+                    (error.message === 'timeout exceeded'
+                        ? 'Yhteys aikakatkaistiin'
+                        : error.message || 'Tuntematon virhe')
+            )
+            await fetchPantryItems() // Try to restore pantry items
         } finally {
             setLoading(false)
-        }
-    }
-
-    const processVisionResults = (visionResponse) => {
-        const products = []
-
-        // Process text detection (for product names, quantities, etc.)
-        if (visionResponse.textAnnotations) {
-            const text = visionResponse.textAnnotations[0]?.description || ''
-            // Add logic to extract product information from text
-        }
-
-        // Process object detection
-        if (visionResponse.localizedObjectAnnotations) {
-            visionResponse.localizedObjectAnnotations.forEach((obj) => {
-                if (
-                    obj.name.toLowerCase().includes('food') ||
-                    obj.name.toLowerCase().includes('package')
-                ) {
-                    products.push({
-                        name: obj.name,
-                        confidence: obj.score,
-                    })
-                }
-            })
-        }
-
-        // Process labels
-        if (visionResponse.labelAnnotations) {
-            visionResponse.labelAnnotations.forEach((label) => {
-                if (label.score > 0.7) {
-                    // Confidence threshold
-                    products.push({
-                        name: label.description,
-                        confidence: label.score,
-                    })
-                }
-            })
-        }
-
-        return products
-    }
-
-    const updatePantryWithDetectedItems = async (detectedProducts) => {
-        try {
-            const token = await storage.getItem('userToken')
-
-            // Map detected products to match your food item schema
-            const formattedItems = detectedProducts.map((product) => ({
-                name: product.name,
-                category: ['other'], // Default category
-                unit: 'kpl', // Default unit
-                price: 0, // Default price
-                calories: 0, // Default calories
-                locations: ['pantry'], // Set location
-                quantities: {
-                    meal: 0,
-                    'shopping-list': 0,
-                    pantry: 1, // Set quantity for pantry
-                },
-                expirationDate: null, // Optional
-                expireDay: null, // Optional
-            }))
-
-            const response = await axios.post(
-                getServerUrl('/food-items'),
-                formattedItems[0], // Send first detected item
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            )
-
-            if (response.data.success) {
-                await fetchPantryItems()
-                Alert.alert(
-                    'Onnistui',
-                    `Tuote "${formattedItems[0].name}" lisätty pentteriin`
-                )
-            } else {
-                console.error('Failed to add detected item:', response.data)
-                Alert.alert('Virhe', 'Tuotteen lisääminen epäonnistui')
-            }
-        } catch (error) {
-            console.error('Error adding detected item:', error)
-            console.error('Error response:', error.response?.data)
-            Alert.alert('Virhe', 'Tuotteen lisääminen epäonnistui')
         }
     }
 
@@ -314,15 +241,13 @@ const PantryScreen = ({}) => {
                 </View>
             </Modal>
             <CustomText style={styles.introText}>
-                Selaa pentteriäsi eli ruokakomeroasi joita kotoasi jo löytyy ja
-                käytä niitä avuksi ateriasuunnittelussa ja ostoslistan
-                luonnissa.
+                Selaa pentteriäsi eli ruokakomeroasi ja käytä kotoasi jo
+                löytyviä elintarvikkeita avuksi ateriasuunnittelussa ja
+                ostoslistan luonnissa.
             </CustomText>
             <CustomText style={styles.infoText}>
                 Voit lisätä uusia elintarvikkeita pentteriisi manuaalisesti
-                lomakkeen avulla tai skannata ne kameran avulla. Ostoslistan
-                tuotteet lisätään automaattisesti pentteriin kun ne merkitään
-                ostetuiksi.
+                lomakkeen avulla tai skannata ne kameran avulla.
             </CustomText>
             <View style={styles.buttonContainer}>
                 <Button

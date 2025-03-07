@@ -5,32 +5,95 @@ import * as ImageManipulator from 'expo-image-manipulator'
 
 export const analyzeImage = async (base64Image) => {
     try {
-        // Compress and resize the image more aggressively
+        if (!base64Image) {
+            throw new Error('No image data provided')
+        }
+
+        // Compress and resize the image
         const manipulatedImage = await ImageManipulator.manipulateAsync(
             `data:image/jpeg;base64,${base64Image}`,
-            [
-                { resize: { width: 500 } }, // Reduced from 800 to 500
-            ],
+            [{ resize: { width: 600 } }],
             {
-                compress: 0.3, // Increased compression (reduced from 0.5 to 0.3)
+                compress: 0.5,
                 format: ImageManipulator.SaveFormat.JPEG,
                 base64: true,
             }
         )
 
         const token = await storage.getItem('userToken')
-        const response = await axios.post(
-            getServerUrl('/analyze-image'),
-            { image: manipulatedImage.base64 },
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-                maxBodyLength: Infinity, // Add this to handle larger payloads
-            }
+
+        if (!token) {
+            throw new Error('Authentication token not found')
+        }
+
+        console.log('Sending image analysis request...')
+
+        // Remove data URI prefix from base64
+        const imageData = manipulatedImage.base64.replace(
+            /^data:image\/\w+;base64,/,
+            ''
         )
-        return response.data
+
+        console.log('Image size (bytes):', imageData.length)
+
+        try {
+            const response = await axios.post(
+                getServerUrl('/analyze-image'),
+                {
+                    image: imageData,
+                    detectBarcodes: true,
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    maxBodyLength: Infinity,
+                    timeout: 15000,
+                }
+            )
+
+            console.log(
+                'Raw Vision API response:',
+                JSON.stringify(response.data, null, 2)
+            )
+
+            if (!response.data || !response.data.success) {
+                throw new Error('Vision API request failed')
+            }
+
+            // Extract text from textAnnotations
+            const textAnnotations = response.data.textAnnotations || []
+            let text = ''
+
+            if (textAnnotations.length > 0) {
+                // First annotation contains the entire text
+                text = textAnnotations[0].description || ''
+            }
+
+            // Format response to match what the app expects
+            return {
+                text: text,
+                success: true,
+                responses: [
+                    {
+                        textAnnotations,
+                        labelAnnotations: response.data.labelAnnotations || [],
+                        localizedObjectAnnotations:
+                            response.data.localizedObjectAnnotations || [],
+                    },
+                ],
+                textAnnotations: textAnnotations,
+            }
+        } catch (axiosError) {
+            console.error('Axios error details:', {
+                status: axiosError.response?.status,
+                statusText: axiosError.response?.statusText,
+                data: axiosError.response?.data,
+                headers: axiosError.response?.headers,
+            })
+            throw axiosError
+        }
     } catch (error) {
         console.error('Error analyzing image:', error)
         throw error
