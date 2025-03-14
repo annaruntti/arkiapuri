@@ -253,23 +253,13 @@ const PantryScreen = ({}) => {
     const handleUpdateItem = async (itemId, updatedData) => {
         try {
             const token = await storage.getItem('userToken')
-            setLoading(true) // Show loading state while updating
+            setLoading(true)
 
-            // Prepare the data to match your backend expectations
-            const updatePayload = {
-                name: updatedData.name,
-                quantity: Number(updatedData.quantity),
-                unit: updatedData.unit,
-                calories: Number(updatedData.calories),
-                category: updatedData.category,
-                expirationDate: updatedData.expirationDate,
-            }
-
-            console.log('Updating item with data:', updatePayload)
+            console.log('Sending update to backend:', updatedData)
 
             const response = await axios.put(
                 getServerUrl(`/pantry/items/${itemId}`),
-                updatePayload,
+                updatedData,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -278,8 +268,18 @@ const PantryScreen = ({}) => {
             )
 
             if (response.data.success) {
-                // Fetch the updated list immediately
-                await fetchPantryItems()
+                // Update the local state with the response data
+                setPantryItems((prevItems) =>
+                    prevItems.map((item) =>
+                        item._id === itemId
+                            ? {
+                                  ...item,
+                                  ...updatedData, // Use the updatedData directly
+                                  category: updatedData.category, // check is category is updated
+                              }
+                            : item
+                    )
+                )
                 setDetailsVisible(false)
                 Alert.alert('Onnistui', 'Tuotteen tiedot päivitetty')
             } else {
@@ -293,7 +293,7 @@ const PantryScreen = ({}) => {
                     (error.response?.data?.message || error.message)
             )
         } finally {
-            setLoading(false) // Hide loading state
+            setLoading(false)
         }
     }
 
@@ -385,7 +385,7 @@ const PantryScreen = ({}) => {
                 ListEmptyComponent={
                     !loading && (
                         <CustomText style={styles.emptyText}>
-                            Pentteri on tyhjä
+                            Pentterissäsi ei ole vielä lisätty elintarvikkeita.
                         </CustomText>
                     )
                 }
