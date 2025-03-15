@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import {
     View,
     StyleSheet,
@@ -7,6 +7,7 @@ import {
     Pressable,
     Alert,
     ScrollView,
+    ActivityIndicator,
 } from 'react-native'
 import CustomText from '../components/CustomText'
 import Button from '../components/Button'
@@ -22,6 +23,7 @@ const MealsScreen = () => {
     const [loading, setLoading] = useState(true)
     const [selectedMeal, setSelectedMeal] = useState(null)
     const [detailModalVisible, setDetailModalVisible] = useState(false)
+    const [refreshing, setRefreshing] = useState(false)
 
     const fetchMeals = async () => {
         try {
@@ -74,6 +76,26 @@ const MealsScreen = () => {
             <CustomText>Valmistusaika: {item.cookingTime} min</CustomText>
         </Pressable>
     )
+
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true)
+        await fetchMeals()
+        setRefreshing(false)
+    }, [])
+
+    const renderFoodItem = useCallback(
+        ({ item }) => (
+            <View style={styles.foodItemRow}>
+                <CustomText>
+                    {item.name} - {item.quantities?.meal || item.quantity}{' '}
+                    {item.unit}
+                </CustomText>
+            </View>
+        ),
+        []
+    )
+
+    console.log(selectedMeal?.foodItems, 'fooditems')
 
     return (
         <View style={styles.container}>
@@ -160,17 +182,13 @@ const MealsScreen = () => {
                                     <CustomText style={styles.sectionTitle}>
                                         Raaka-aineet:
                                     </CustomText>
-                                    {selectedMeal?.foodItems?.map(
-                                        (item, index) => (
-                                            <CustomText
-                                                key={index}
-                                                style={styles.ingredientItem}
-                                            >
-                                                • {item.name} ({item.quantity}{' '}
-                                                {item.unit})
-                                            </CustomText>
-                                        )
-                                    )}
+                                    <FlatList
+                                        data={selectedMeal?.foodItems}
+                                        renderItem={renderFoodItem}
+                                        keyExtractor={(item, index) =>
+                                            item._id || index.toString()
+                                        }
+                                    />
                                 </View>
                                 <View style={styles.detailSection}>
                                     <CustomText style={styles.sectionTitle}>
@@ -202,18 +220,20 @@ const MealsScreen = () => {
             />
 
             {loading ? (
-                <CustomText>Ladataan...</CustomText>
-            ) : meals.length > 0 ? (
+                <ActivityIndicator size="large" color="#9C86FC" />
+            ) : meals.length === 0 ? (
+                <CustomText style={styles.emptyText}>
+                    Ei vielä aterioita. Lisää ensimmäinen ateriasi!
+                </CustomText>
+            ) : (
                 <FlatList
                     data={meals}
                     renderItem={renderMealItem}
                     keyExtractor={(item) => item._id}
                     style={styles.list}
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
                 />
-            ) : (
-                <CustomText style={styles.emptyText}>
-                    Ei vielä aterioita. Lisää ensimmäinen ateriasi!
-                </CustomText>
             )}
         </View>
     )
@@ -258,13 +278,13 @@ const styles = StyleSheet.create({
     },
     modalHeader: {
         width: '100%',
-        marginTop: 30,
         marginBottom: 20,
     },
     modalTitle: {
         fontSize: 20,
         fontWeight: 'bold',
         textAlign: 'center',
+        paddingTop: 25,
     },
     primaryButton: {
         borderRadius: 25,
@@ -341,7 +361,7 @@ const styles = StyleSheet.create({
     recipeText: {
         lineHeight: 24,
     },
-    ingredientItem: {
+    foodItemRow: {
         paddingVertical: 4,
     },
 })

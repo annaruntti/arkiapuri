@@ -120,45 +120,55 @@ const FoodItemForm = ({
         try {
             // Filter out locations with empty quantities
             const activeLocations = selectedLocations.filter(
-                (loc) => quantities[loc] !== ''
+                (loc) =>
+                    quantities[loc] !== '' || (loc === 'meal' && data.quantity)
             )
 
             const formData = {
                 ...data,
-                // Format the main quantity
                 quantity: formatNumber(data.quantity),
-                // Format quantities for each location
-                quantities: activeLocations.reduce(
-                    (acc, loc) => ({
-                        ...acc,
-                        [loc]: parseFloat(formatNumber(quantities[loc])) || 0,
-                    }),
-                    {}
-                ),
                 locations: activeLocations,
+                quantities: {
+                    meal:
+                        location === 'meal'
+                            ? parseFloat(formatNumber(data.quantity)) || 0
+                            : 0,
+                    'shopping-list':
+                        parseFloat(formatNumber(quantities['shopping-list'])) ||
+                        0,
+                    pantry: parseFloat(formatNumber(quantities.pantry)) || 0,
+                },
             }
 
             console.log('Form data before submit:', formData)
 
-            const token = await storage.getItem('userToken')
-            const response = await axios.post(
-                getServerUrl('/food-items'),
-                formData,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            )
-
-            if (response.data.success) {
-                onSubmit(response.data.foodItem)
+            if (location === 'meal') {
+                onSubmit(formData)
                 reset()
-                // Reset quantities and locations except 'meal'
                 setQuantities({ meal: '', 'shopping-list': '', pantry: '' })
                 setSelectedLocations(['meal'])
             } else {
-                Alert.alert('Virhe', 'Raaka-aineen lisääminen epäonnistui')
+                // Normal food item creation flow
+                const token = await storage.getItem('userToken')
+                const response = await axios.post(
+                    getServerUrl('/food-items'),
+                    formData,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                )
+
+                if (response.data.success) {
+                    onSubmit(response.data.foodItem)
+                    reset()
+                    // Reset quantities and locations except 'meal'
+                    setQuantities({ meal: '', 'shopping-list': '', pantry: '' })
+                    setSelectedLocations(['meal'])
+                } else {
+                    Alert.alert('Virhe', 'Raaka-aineen lisääminen epäonnistui')
+                }
             }
         } catch (error) {
             console.error('Error creating food item:', error)

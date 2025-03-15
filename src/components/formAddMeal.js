@@ -19,8 +19,10 @@ import Button from './Button'
 import FormFoodItem from './FormFoodItem'
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
+import { useLogin } from '../context/LoginProvider'
 
 const AddMealForm = ({ onSubmit, onClose }) => {
+    const { profile } = useLogin()
     const [name, setName] = useState('')
     const [recipe, setRecipe] = useState('')
     const [difficultyLevel, setDifficultyLevel] = useState('')
@@ -41,6 +43,13 @@ const AddMealForm = ({ onSubmit, onClose }) => {
         snack: 'Välipala',
         dinner: 'Päivällinen',
         supper: 'Iltapala',
+    }
+
+    const getDifficultyEnum = (level) => {
+        const numLevel = parseInt(level)
+        if (numLevel <= 2) return 'helppo'
+        if (numLevel <= 4) return 'keskivaikea'
+        return 'vaikea'
     }
 
     const fetchPantryItems = async () => {
@@ -85,9 +94,9 @@ const AddMealForm = ({ onSubmit, onClose }) => {
     }
 
     const addSelectedPantryItems = () => {
-        console.log('Adding selected pantry items:', selectedPantryItems) // Debug log
+        console.log('Adding selected pantry items:', selectedPantryItems)
         const newFoodItems = [...foodItems, ...selectedPantryItems]
-        console.log('Updated food items:', newFoodItems) // Debug log
+        console.log('Updated food items:', newFoodItems)
         setFoodItems(newFoodItems)
         setSelectedPantryItems([])
         setPantryModalVisible(false)
@@ -131,51 +140,102 @@ const AddMealForm = ({ onSubmit, onClose }) => {
         )
     }
 
-    const handleSubmit = async () => {
-        // Validate required fields
-        if (!name) {
-            Alert.alert('Virhe', 'Aterian nimi on pakollinen')
-            return
-        }
-
-        // Map difficulty level to enum values
-        const getDifficultyEnum = (level) => {
-            const numLevel = parseInt(level)
-            if (numLevel <= 2) return 'easy'
-            if (numLevel <= 4) return 'medium'
-            return 'hard'
-        }
-
-        // Get food item IDs and filter out any null or undefined values
-        const foodItemIds = foodItems
-            .filter((item) => item && item._id) // Only include valid items
-            .map((item) => item._id)
-
-        console.log('Food items before submission:', foodItems)
-        console.log('Food item IDs to submit:', foodItemIds)
-
-        // Validate that have at least one food item
-        if (foodItemIds.length === 0) {
-            Alert.alert('Virhe', 'Lisää vähintään yksi raaka-aine')
-            return
-        }
-
-        const mealData = {
-            id: Date.now().toString(),
-            name,
-            recipe: recipe || '',
-            difficultyLevel: getDifficultyEnum(difficultyLevel),
-            cookingTime: parseInt(cookingTime) || 0,
-            defaultRoles: selectedRoles,
-            plannedCookingDate: plannedCookingDate.toISOString(),
-            foodItems: foodItemIds,
-        }
-
-        console.log('Submitting meal data with roles:', mealData.defaultRoles)
-
+    const handleFormSubmit = async () => {
         try {
+            // Validate all required fields
+            if (!name) {
+                Alert.alert('Virhe', 'Aterian nimi on pakollinen')
+                return
+            }
+
+            if (!foodItems || foodItems.length === 0) {
+                Alert.alert('Virhe', 'Lisää vähintään yksi raaka-aine')
+                return
+            }
+
+            if (!difficultyLevel) {
+                Alert.alert('Virhe', 'Vaikeustaso on pakollinen')
+                return
+            }
+
             const token = await storage.getItem('userToken')
-            console.log('Using token:', token)
+
+            // First, create food items and store their IDs
+            const createdFoodItems = []
+            for (const item of foodItems) {
+                if (!item._id) {
+                    // Only create if it doesn't have an _id already
+                    const foodItemData = {
+                        name: item.name.trim(),
+                        unit: item.unit || 'kpl',
+                        category: Array.isArray(item.category)
+                            ? item.category
+                            : [],
+                        calories: parseInt(item.calories) || 0,
+                        price: parseFloat(item.price) || 0,
+                        locations: ['meal'],
+                        quantities: {
+                            meal: parseFloat(item.quantities.meal) || 0,
+                            'shopping-list':
+                                parseFloat(item.quantities['shopping-list']) ||
+                                0,
+                            pantry: parseFloat(item.quantities.pantry) || 0,
+                        },
+                        expirationDate: item.expirationDate || null,
+                    }
+
+                    try {
+                        const response = await axios.post(
+                            getServerUrl('/food-items'),
+                            foodItemData,
+                            {
+                                headers: {
+                                    Authorization: `Bearer ${token}`,
+                                },
+                            }
+                        )
+                        if (response.data.success) {
+                            createdFoodItems.push(response.data.foodItem)
+                        }
+                    } catch (error) {
+                        console.error('Error creating food item:', error)
+                        throw error
+                    }
+                } else {
+                    createdFoodItems.push(item) // Use existing item if it has an _id
+                }
+            }
+
+            // Now create the meal with the created food items
+            const mealData = {
+                id: `meal_${Date.now()}`,
+                name,
+                recipe,
+                difficultyLevel: getDifficultyEnum(difficultyLevel),
+                cookingTime: parseInt(cookingTime) || 0,
+                foodItems: createdFoodItems.map((item) => ({
+                    _id: item._id, // Use the _id from created food item
+                    name: item.name,
+                    quantity: parseFloat(item.quantities.meal) || 0,
+                    unit: item.unit,
+                    category: item.category,
+                    calories: item.calories,
+                    price: item.price,
+                    locations: ['meal'],
+                    quantities: {
+                        meal: parseFloat(item.quantities.meal) || 0,
+                        'shopping-list':
+                            parseFloat(item.quantities['shopping-list']) || 0,
+                        pantry: parseFloat(item.quantities.pantry) || 0,
+                    },
+                })),
+                defaultRoles: selectedRoles,
+                plannedCookingDate,
+                user: profile._id,
+                createdAt: new Date().toISOString(),
+            }
+
+            console.log('Sending meal data:', JSON.stringify(mealData, null, 2))
 
             const response = await axios.post(
                 getServerUrl('/meals'),
@@ -189,70 +249,39 @@ const AddMealForm = ({ onSubmit, onClose }) => {
 
             if (response.data.success) {
                 onSubmit(response.data.meal)
-            } else {
-                console.error('Server response:', response.data)
-                Alert.alert(
-                    'Virhe',
-                    response.data.message || 'Aterian luonti epäonnistui'
-                )
             }
         } catch (error) {
             console.error('Full error:', error)
             console.error('Error response:', error.response?.data)
-            Alert.alert('Virhe', 'Aterian luonti epäonnistui')
+            console.error('Error status:', error.response?.status)
+            console.error('Error config:', error.config)
+            Alert.alert('Virhe', 'Aterian lisääminen epäonnistui')
         }
     }
 
-    const handleAddFoodItem = async (foodItem) => {
-        try {
-            // Create the food item
-            const token = await storage.getItem('userToken')
-            const response = await axios.post(
-                getServerUrl('/food-items'),
-                foodItem,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            )
-
-            if (response.data.success) {
-                // Add the created food item to the meal's food items
-                const createdFoodItem = response.data.foodItem
-                setFoodItems([...foodItems, createdFoodItem])
-
-                // If user selected to add to shopping list or pantry, make additional request
-                if (foodItem.addTo === 'shopping-list') {
-                    await axios.post(
-                        getServerUrl('/shopping-lists/items'),
-                        { items: [createdFoodItem] },
-                        {
-                            headers: {
-                                Authorization: `Bearer ${token}`,
-                            },
-                        }
-                    )
-                } else if (foodItem.addTo === 'pantry') {
-                    await axios.post(
-                        getServerUrl('/pantry/items'),
-                        { items: [createdFoodItem] },
-                        {
-                            headers: {
-                                Authorization: `Bearer ${token}`,
-                            },
-                        }
-                    )
-                }
-
-                setFoodItemModalVisible(false)
-            } else {
-                Alert.alert('Virhe', 'Raaka-aineen lisääminen epäonnistui')
-            }
-        } catch (error) {
-            console.error('Error creating food item:', error)
-            Alert.alert('Virhe', 'Raaka-aineen lisääminen epäonnistui')
+    const handleAddFoodItem = (foodItemData) => {
+        console.log('Adding food item:', foodItemData)
+        const newFoodItem = {
+            name: foodItemData.name.trim(),
+            unit: foodItemData.unit || 'kpl',
+            category: Array.isArray(foodItemData.category)
+                ? foodItemData.category
+                : [],
+            calories: parseInt(foodItemData.calories) || 0,
+            price: parseFloat(foodItemData.price) || 0,
+            locations: ['meal'],
+            quantities: {
+                meal: parseFloat(foodItemData.quantity) || 0,
+                'shopping-list':
+                    parseFloat(foodItemData.quantities?.['shopping-list']) || 0,
+                pantry: parseFloat(foodItemData.quantities?.pantry) || 0,
+            },
+            expirationDate: foodItemData.expirationDate || null,
         }
+
+        console.log('Creating food item with data:', newFoodItem)
+        setFoodItems([...foodItems, newFoodItem])
+        setFoodItemModalVisible(false)
     }
 
     const handleDateChange = (event, selectedDate) => {
@@ -394,7 +423,7 @@ const AddMealForm = ({ onSubmit, onClose }) => {
 
                     <Button
                         title="Tallenna ateria"
-                        onPress={handleSubmit}
+                        onPress={handleFormSubmit}
                         style={styles.primaryButton}
                     />
                 </View>
@@ -425,7 +454,16 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                             <FormFoodItem
                                 onSubmit={handleAddFoodItem}
                                 onClose={() => setFoodItemModalVisible(false)}
+                                location="meal"
                                 showLocationSelector={true}
+                                initialValues={{
+                                    quantities: {
+                                        meal: '',
+                                        'shopping-list': '',
+                                        pantry: '',
+                                    },
+                                    locations: ['meal'],
+                                }}
                             />
                         </View>
                     </View>
@@ -501,6 +539,7 @@ const styles = StyleSheet.create({
         paddingTop: 10,
         fontWeight: 'bold',
         textAlign: 'center',
+        marginBottom: 15,
     },
     formInput: {
         backgroundColor: 'white',
@@ -531,7 +570,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
-        marginTop: 50, // Give some space from top
+        marginTop: 50,
         paddingHorizontal: 20,
     },
     closeButton: {
@@ -550,6 +589,7 @@ const styles = StyleSheet.create({
     modalTitle: {
         fontSize: 20,
         fontWeight: 'bold',
+        paddingTop: 10,
     },
     modalBody: {
         flex: 1,
