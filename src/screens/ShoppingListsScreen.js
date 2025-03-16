@@ -19,7 +19,7 @@ import ShoppingListDetail from '../components/ShoppingListDetail'
 import * as ImagePicker from 'expo-image-picker'
 import { analyzeImage } from '../utils/googleVision'
 
-const ShoppingListScreen = () => {
+const ShoppingListsScreen = () => {
     const [modalVisible, setModalVisible] = useState(false)
     const [shoppingLists, setShoppingLists] = useState([])
     const [selectedList, setSelectedList] = useState(null)
@@ -53,6 +53,29 @@ const ShoppingListScreen = () => {
                 error?.response?.data || error
             )
             Alert.alert('Virhe', 'Ostoslistojen haku epäonnistui')
+        }
+    }
+
+    const fetchPantryItems = async () => {
+        try {
+            const token = await storage.getItem('userToken')
+            const response = await axios.get(getServerUrl('/pantry'), {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            })
+
+            if (response.data.success) {
+                return response.data.pantry.items
+            } else {
+                console.error('Failed to fetch pantry items:', response.data)
+                Alert.alert('Virhe', 'Pentterin sisältöä ei voitu hakea')
+                return []
+            }
+        } catch (error) {
+            console.error('Error fetching pantry items:', error)
+            Alert.alert('Virhe', 'Pentterin tietojen haku epäonnistui')
+            return []
         }
     }
 
@@ -133,7 +156,7 @@ const ShoppingListScreen = () => {
         // Process text detection
         if (visionResponse.textAnnotations) {
             const text = visionResponse.textAnnotations[0]?.description || ''
-            // Add logic to extract product information from text
+            // logic to extract product information from text
         }
 
         // Process object detection
@@ -251,6 +274,8 @@ const ShoppingListScreen = () => {
                                 shoppingList={selectedList}
                                 onClose={() => setSelectedList(null)}
                                 onUpdate={handleListUpdate}
+                                fetchShoppingLists={fetchShoppingLists}
+                                fetchPantryItems={fetchPantryItems}
                             />
                         )}
                     </View>
@@ -297,7 +322,7 @@ const ShoppingListScreen = () => {
     )
 }
 
-export default ShoppingListScreen
+export default ShoppingListsScreen
 
 const styles = StyleSheet.create({
     container: {

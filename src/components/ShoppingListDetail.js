@@ -15,7 +15,12 @@ import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
 import FormFoodItem from './FormFoodItem'
 
-const ShoppingListDetail = ({ shoppingList, onClose, onUpdate }) => {
+const ShoppingListDetail = ({
+    shoppingList,
+    onUpdate,
+    fetchShoppingLists,
+    fetchPantryItems,
+}) => {
     const [checkedItems, setCheckedItems] = useState([])
     const [showItemForm, setShowItemForm] = useState(false)
 
@@ -27,17 +32,45 @@ const ShoppingListDetail = ({ shoppingList, onClose, onUpdate }) => {
         )
     }
 
-    const moveCheckedToPantry = async () => {
+    const moveCheckedToPantry = async (checkedItemIds) => {
         try {
             const token = await storage.getItem('userToken')
-            const itemsToMove = shoppingList.items.filter((item) =>
-                checkedItems.includes(item._id)
-            )
+            console.log('Moving items:', checkedItemIds)
+            console.log('Shopping list ID:', shoppingList._id)
 
-            // Move items to pantry
-            const response = await axios.post(
-                getServerUrl('/food-items/move'),
-                { items: itemsToMove },
+            // Process each checked item
+            for (const itemId of checkedItemIds) {
+                console.log(`Processing item ${itemId}`)
+                try {
+                    const response = await axios.post(
+                        getServerUrl(
+                            `/shopping-lists/${shoppingList._id}/items/${itemId}/bought`
+                        ),
+                        {},
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                            },
+                        }
+                    )
+                    console.log('Response for item:', response.data)
+                } catch (itemError) {
+                    console.error(`Error processing item ${itemId}:`, itemError)
+                    throw itemError
+                }
+            }
+            Alert.alert('Onnistui', 'Tuotteet siirretty ruokavarastoon')
+
+            // Remove moved items from the shopping list
+            const updatedItems = shoppingList.items.filter(
+                (item) => !checkedItemIds.includes(item._id)
+            )
+            const updatedList = { ...shoppingList, items: updatedItems }
+
+            // Update the shopping list
+            await axios.put(
+                getServerUrl(`/shopping-lists/${shoppingList._id}`),
+                updatedList,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -45,33 +78,18 @@ const ShoppingListDetail = ({ shoppingList, onClose, onUpdate }) => {
                 }
             )
 
-            if (response.data.success) {
-                // Remove items from shopping list
-                const updatedList = {
-                    ...shoppingList,
-                    items: shoppingList.items.filter(
-                        (item) => !checkedItems.includes(item._id)
-                    ),
-                }
+            // Clear checked items
+            setCheckedItems([])
 
-                await axios.put(
-                    getServerUrl(`/shopping-lists/${shoppingList._id}`),
-                    updatedList,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                    }
-                )
-
-                // Reset checked items
-                setCheckedItems([])
-                // Update item list
-                if (onUpdate) onUpdate(updatedList)
-            }
+            // Refresh the shopping lists and pantry items
+            await fetchShoppingLists()
+            await fetchPantryItems()
+            onUpdate(updatedList)
         } catch (error) {
             console.error('Error moving items to pantry:', error)
-            Alert.alert('Virhe', 'Tuotteiden siirto ruokakomeroon epäonnistui')
+            console.error('Error response:', error.response?.data)
+            console.error('Error status:', error.response?.status)
+            Alert.alert('Virhe', 'Tuotteiden siirto ruokavarastoon epäonnistui')
         }
     }
 
@@ -102,7 +120,6 @@ const ShoppingListDetail = ({ shoppingList, onClose, onUpdate }) => {
                 onUpdate(updatedList)
                 setShowItemForm(false)
 
-                // Log to verify the update
                 console.log('Updated shopping list:', updatedList)
             }
         } catch (error) {
@@ -201,7 +218,7 @@ const ShoppingListDetail = ({ shoppingList, onClose, onUpdate }) => {
                 {checkedItems.length > 0 && (
                     <Button
                         title={`Siirrä ${checkedItems.length} tuotetta ruokavarastoon`}
-                        onPress={moveCheckedToPantry}
+                        onPress={() => moveCheckedToPantry(checkedItems)}
                         style={styles.secondaryButton}
                     />
                 )}
