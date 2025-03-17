@@ -6,8 +6,8 @@ import {
     FlatList,
     Pressable,
     Alert,
-    ScrollView,
-    ActivityIndicator,
+    TouchableOpacity,
+    Platform,
 } from 'react-native'
 import CustomText from '../components/CustomText'
 import Button from '../components/Button'
@@ -16,6 +16,9 @@ import { AntDesign } from '@expo/vector-icons'
 import axios from 'axios'
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
+import MealItemDetail from '../components/MealItemDetail'
+import { MaterialIcons } from '@expo/vector-icons'
+import { getDifficultyText } from '../utils/mealUtils'
 
 const MealsScreen = () => {
     const [modalVisible, setModalVisible] = useState(false)
@@ -23,7 +26,6 @@ const MealsScreen = () => {
     const [loading, setLoading] = useState(true)
     const [selectedMeal, setSelectedMeal] = useState(null)
     const [detailModalVisible, setDetailModalVisible] = useState(false)
-    const [refreshing, setRefreshing] = useState(false)
 
     const fetchMeals = async () => {
         try {
@@ -53,7 +55,6 @@ const MealsScreen = () => {
         try {
             // Add the new meal to the existing meals array
             setMeals((prevMeals) => [...prevMeals, newMeal])
-            // Close the modal
             setModalVisible(false)
         } catch (error) {
             console.error('Error updating meals list:', error)
@@ -61,41 +62,149 @@ const MealsScreen = () => {
         }
     }
 
+    const handleDeleteMeal = async (mealId) => {
+        console.log('handleDeleteMeal called with ID:', mealId)
+        const token = await storage.getItem('userToken')
+        console.log('Got token:', token ? 'yes' : 'no')
+
+        if (Platform.OS === 'web') {
+            // For web, skipping the Alert and directly make the API call
+            try {
+                setLoading(true)
+                const response = await axios.delete(
+                    getServerUrl(`/meals/${mealId}`),
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                )
+                console.log('Delete API response:', response.data)
+
+                if (response.data.success) {
+                    setMeals((prevMeals) =>
+                        prevMeals.filter((meal) => meal._id !== mealId)
+                    )
+                    alert('Ateria poistettu') // window.alert for web
+                } else {
+                    alert('Aterian poistaminen epäonnistui')
+                }
+            } catch (error) {
+                console.error('Error in delete API call:', error)
+                alert(
+                    'Aterian poistaminen epäonnistui: ' +
+                        (error.response?.data?.message || error.message)
+                )
+            } finally {
+                setLoading(false)
+            }
+        } else {
+            // For mobile, Alert.alert
+            Alert.alert(
+                'Poista ateria',
+                'Haluatko varmasti poistaa tämän aterian?',
+                [
+                    {
+                        text: 'Peruuta',
+                        style: 'cancel',
+                    },
+                    {
+                        text: 'Poista',
+                        style: 'destructive',
+                        onPress: async () => {
+                            try {
+                                setLoading(true)
+                                const response = await axios.delete(
+                                    getServerUrl(`/meals/${mealId}`),
+                                    {
+                                        headers: {
+                                            Authorization: `Bearer ${token}`,
+                                        },
+                                    }
+                                )
+                                if (response.data.success) {
+                                    setMeals((prevMeals) =>
+                                        prevMeals.filter(
+                                            (meal) => meal._id !== mealId
+                                        )
+                                    )
+                                    Alert.alert('Onnistui', 'Ateria poistettu')
+                                } else {
+                                    Alert.alert(
+                                        'Virhe',
+                                        'Aterian poistaminen epäonnistui'
+                                    )
+                                }
+                            } catch (error) {
+                                console.error(
+                                    'Error in delete API call:',
+                                    error
+                                )
+                                Alert.alert(
+                                    'Virhe',
+                                    'Aterian poistaminen epäonnistui: ' +
+                                        (error.response?.data?.message ||
+                                            error.message)
+                                )
+                            } finally {
+                                setLoading(false)
+                            }
+                        },
+                    },
+                ]
+            )
+        }
+    }
+
+    const DeleteButton = ({ onPress }) => (
+        <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={onPress}
+            activeOpacity={0.7}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+            <AntDesign name="delete" size={20} color="#666" />
+        </TouchableOpacity>
+    )
+
+    const renderItem = ({ item }) => (
+        <View style={styles.itemContainer}>
+            <TouchableOpacity
+                style={styles.itemInfo}
+                onPress={() => handleMealPress(item)}
+            >
+                <CustomText style={styles.itemName}>{item.name}</CustomText>
+                <CustomText style={styles.itemDetails}>
+                    {getDifficultyText(item.difficultyLevel)} •{' '}
+                    {item.cookingTime} min
+                </CustomText>
+            </TouchableOpacity>
+            <View style={styles.itemActions}>
+                <DeleteButton
+                    onPress={() => {
+                        console.log('Delete button pressed for meal:', item._id)
+                        handleDeleteMeal(item._id)
+                    }}
+                />
+            </View>
+        </View>
+    )
+
+    useEffect(() => {
+        if (selectedMeal) {
+            console.log(selectedMeal.foodItems, 'fooditems')
+        }
+    }, [selectedMeal])
+
     const handleMealPress = (meal) => {
         setSelectedMeal(meal)
         setDetailModalVisible(true)
     }
 
-    const renderMealItem = ({ item }) => (
-        <Pressable
-            style={styles.mealItem}
-            onPress={() => handleMealPress(item)}
-        >
-            <CustomText style={styles.mealTitle}>{item.name}</CustomText>
-            <CustomText>Vaikeustaso: {item.difficultyLevel}</CustomText>
-            <CustomText>Valmistusaika: {item.cookingTime} min</CustomText>
-        </Pressable>
-    )
-
-    const onRefresh = useCallback(async () => {
-        setRefreshing(true)
-        await fetchMeals()
-        setRefreshing(false)
-    }, [])
-
-    const renderFoodItem = useCallback(
-        ({ item }) => (
-            <View style={styles.foodItemRow}>
-                <CustomText>
-                    {item.name} - {item.quantities?.meal || item.quantity}{' '}
-                    {item.unit}
-                </CustomText>
-            </View>
-        ),
-        []
-    )
-
-    console.log(selectedMeal?.foodItems, 'fooditems')
+    const handleCloseDetail = () => {
+        setDetailModalVisible(false)
+        setSelectedMeal(null)
+    }
 
     return (
         <View style={styles.container}>
@@ -125,116 +234,42 @@ const MealsScreen = () => {
                     </View>
                 </View>
             </Modal>
-            <Modal
-                animationType="slide"
-                transparent={true}
-                visible={detailModalVisible}
-                onRequestClose={() => setDetailModalVisible(false)}
-            >
-                <View style={styles.modalContainer}>
-                    <View style={styles.modalContent}>
-                        <Pressable
-                            onPress={() => setDetailModalVisible(false)}
-                            style={styles.closeButton}
-                        >
-                            <AntDesign name="close" size={24} color="black" />
-                        </Pressable>
-                        <ScrollView style={styles.detailScroll}>
-                            <View style={styles.modalHeader}>
-                                <CustomText style={styles.modalTitle}>
-                                    {selectedMeal?.name}
-                                </CustomText>
-                            </View>
-                            <View style={styles.mealDetails}>
-                                <View style={styles.detailRow}>
-                                    <CustomText style={styles.detailLabel}>
-                                        Vaikeustaso:
-                                    </CustomText>
-                                    <CustomText style={styles.detailValue}>
-                                        {selectedMeal?.difficultyLevel}
-                                    </CustomText>
-                                </View>
-                                <View style={styles.detailRow}>
-                                    <CustomText style={styles.detailLabel}>
-                                        Valmistusaika:
-                                    </CustomText>
-                                    <CustomText style={styles.detailValue}>
-                                        {selectedMeal?.cookingTime} min
-                                    </CustomText>
-                                </View>
-                                <View style={styles.detailRow}>
-                                    <CustomText style={styles.detailLabel}>
-                                        Aterian tyyppi:
-                                    </CustomText>
-                                    <CustomText style={styles.detailValue}>
-                                        {selectedMeal?.defaultRole}
-                                    </CustomText>
-                                </View>
-                                <View style={styles.detailSection}>
-                                    <CustomText style={styles.sectionTitle}>
-                                        Resepti:
-                                    </CustomText>
-                                    <CustomText style={styles.recipeText}>
-                                        {selectedMeal?.recipe || 'Ei reseptiä'}
-                                    </CustomText>
-                                </View>
-                                <View style={styles.detailSection}>
-                                    <CustomText style={styles.sectionTitle}>
-                                        Raaka-aineet:
-                                    </CustomText>
-                                    <FlatList
-                                        data={selectedMeal?.foodItems}
-                                        renderItem={renderFoodItem}
-                                        keyExtractor={(item, index) =>
-                                            item._id || index.toString()
-                                        }
-                                    />
-                                </View>
-                                <View style={styles.detailSection}>
-                                    <CustomText style={styles.sectionTitle}>
-                                        Suunniteltu valmistuspäivä:
-                                    </CustomText>
-                                    <CustomText>
-                                        {selectedMeal?.plannedCookingDate
-                                            ? new Date(
-                                                  selectedMeal.plannedCookingDate
-                                              ).toLocaleDateString('fi-FI')
-                                            : 'Ei määritetty'}
-                                    </CustomText>
-                                </View>
-                            </View>
-                        </ScrollView>
-                    </View>
-                </View>
-            </Modal>
             <CustomText style={styles.introText}>
-                Selaa tallennettuja aterioita ja luo uusia aterioita. Voit
-                lisätä atrerioihin tarvittavat ainesosat aterian luonnin
-                yhteydessä ostoslistallesi. Näet myös aterian luonnin
-                yhteydessä, löytyykö tuote pentteristäsi.
+                Selaa ja hallinnoi aterioitasi. Voit lisätä uusia aterioita ja
+                muokata olemassa olevia.
             </CustomText>
-            <Button
-                title="Lisää ateria"
-                onPress={() => setModalVisible(true)}
-                style={styles.primaryButton}
+
+            <View style={styles.buttonContainer}>
+                <Button
+                    title="Lisää ateria"
+                    onPress={() => setModalVisible(true)}
+                    style={styles.primaryButton}
+                />
+            </View>
+
+            <FlatList
+                data={meals}
+                renderItem={renderItem}
+                keyExtractor={(item) => item._id}
+                style={styles.list}
+                contentContainerStyle={styles.listContent}
+                refreshing={loading}
+                onRefresh={fetchMeals}
+                ListEmptyComponent={
+                    !loading && (
+                        <CustomText style={styles.emptyText}>
+                            Ei vielä aterioita. Lisää ensimmäinen ateria
+                            painamalla "Lisää ateria" -nappia.
+                        </CustomText>
+                    )
+                }
             />
 
-            {loading ? (
-                <ActivityIndicator size="large" color="#9C86FC" />
-            ) : meals.length === 0 ? (
-                <CustomText style={styles.emptyText}>
-                    Ei vielä aterioita. Lisää ensimmäinen ateriasi!
-                </CustomText>
-            ) : (
-                <FlatList
-                    data={meals}
-                    renderItem={renderMealItem}
-                    keyExtractor={(item) => item._id}
-                    style={styles.list}
-                    refreshing={refreshing}
-                    onRefresh={onRefresh}
-                />
-            )}
+            <MealItemDetail
+                meal={selectedMeal}
+                visible={detailModalVisible}
+                onClose={handleCloseDetail}
+            />
         </View>
     )
 }
@@ -251,40 +286,63 @@ const styles = StyleSheet.create({
         fontSize: 17,
         textAlign: 'center',
         padding: 20,
-        marginBottom: 10,
     },
-    modalContainer: {
+    itemContainer: {
+        backgroundColor: '#f8f8f8',
+        padding: 15,
+        borderRadius: 10,
+        marginBottom: 10,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    itemInfo: {
         flex: 1,
+        flexDirection: 'column',
+        marginRight: 10,
+    },
+    itemName: {
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    itemDetails: {
+        color: '#666',
+        fontSize: 14,
+    },
+    itemActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    deleteButton: {
+        backgroundColor: '#e0e0e0',
+        width: 36,
+        height: 36,
+        borderRadius: 18,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        paddingVertical: 20,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.2,
+        shadowRadius: 1.41,
     },
-    modalContent: {
-        backgroundColor: 'white',
-        borderRadius: 10,
-        width: '90%',
-        maxWidth: 400,
-        maxHeight: '95%',
-        position: 'relative',
-        flex: 1,
-    },
-    closeButton: {
-        position: 'absolute',
-        right: 10,
-        top: 10,
-        padding: 5,
-        zIndex: 1,
-    },
-    modalHeader: {
+    list: {
         width: '100%',
-        marginBottom: 20,
     },
-    modalTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
+    listContent: {
+        paddingBottom: 20,
+    },
+    emptyText: {
         textAlign: 'center',
-        paddingTop: 25,
+        marginTop: 20,
+        color: '#666',
+    },
+    buttonContainer: {
+        flexDirection: 'row',
+        gap: 10,
     },
     primaryButton: {
         borderRadius: 25,
@@ -300,69 +358,35 @@ const styles = StyleSheet.create({
         width: 'auto',
         marginBottom: 20,
     },
-    mealItem: {
-        backgroundColor: '#f8f8f8',
-        padding: 15,
-        borderRadius: 10,
-        marginBottom: 10,
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-    },
-    mealTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
-    list: {
-        width: '100%',
-    },
-    emptyText: {
-        textAlign: 'center',
-        marginTop: 20,
-        color: '#666',
-    },
-    formContainer: {
-        padding: 20,
-    },
-    detailScroll: {
-        padding: 20,
-        paddingTop: 50,
-    },
-    mealDetails: {
-        paddingTop: 10,
-    },
-    detailRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingVertical: 8,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-    },
-    detailLabel: {
-        fontWeight: 'bold',
+    modalContainer: {
         flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'flex-end',
     },
-    detailValue: {
-        flex: 2,
+    modalContent: {
+        backgroundColor: 'white',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        paddingHorizontal: 20,
+        paddingBottom: 20,
+        maxHeight: '90%',
     },
-    detailSection: {
-        marginTop: 20,
+    closeButton: {
+        position: 'absolute',
+        right: 10,
+        top: 10,
+        padding: 5,
+        zIndex: 1,
     },
-    sectionTitle: {
-        fontSize: 18,
+    modalHeader: {
+        width: '100%',
+        paddingTop: 20,
+        paddingBottom: 10,
+        alignItems: 'center',
+    },
+    modalTitle: {
+        fontSize: 20,
         fontWeight: 'bold',
-        marginBottom: 10,
-    },
-    recipeText: {
-        lineHeight: 24,
-    },
-    foodItemRow: {
-        paddingVertical: 4,
     },
 })
 

@@ -7,6 +7,7 @@ import {
     TouchableOpacity,
     Alert,
     Platform,
+    Picker,
 } from 'react-native'
 import { Controller, useForm } from 'react-hook-form'
 import SectionedMultiSelect from 'react-native-sectioned-multi-select'
@@ -35,6 +36,9 @@ const FoodItemForm = ({
     location = 'meal',
     showLocationSelector = false,
     initialValues = {},
+    shoppingLists = [],
+    selectedShoppingListId = null,
+    onShoppingListSelect = () => {},
 }) => {
     const [date, setDate] = useState(new Date())
     const [show, setShow] = useState(false)
@@ -45,24 +49,6 @@ const FoodItemForm = ({
         'shopping-list': '',
         pantry: '',
     })
-    const [name, setName] = useState(initialValues.name || '')
-    const [quantity, setQuantity] = useState(
-        initialValues.quantity ? String(initialValues.quantity) : '1'
-    )
-    const [unit, setUnit] = useState(initialValues.unit || 'kpl')
-    const [calories, setCalories] = useState(
-        initialValues.calories ? String(initialValues.calories) : '0'
-    )
-    const [price, setPrice] = useState(
-        initialValues.price ? String(initialValues.price) : '0'
-    )
-    const [category, setCategory] = useState(initialValues.category || [])
-    const [expirationDate, setExpirationDate] = useState(
-        initialValues.expirationDate
-            ? new Date(initialValues.expirationDate)
-            : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-    )
-    const [showDatePicker, setShowDatePicker] = useState(false)
 
     const {
         control,
@@ -73,14 +59,20 @@ const FoodItemForm = ({
         watch,
     } = useForm({
         defaultValues: {
-            name: '',
-            category: [],
-            quantity: '',
-            price: '',
-            expirationDate: new Date(),
+            name: initialValues.name || '',
+            category: initialValues.category || [],
+            quantity: initialValues.quantity
+                ? String(initialValues.quantity)
+                : '1',
+            price: initialValues.price ? String(initialValues.price) : '0',
+            expirationDate: initialValues.expirationDate
+                ? new Date(initialValues.expirationDate)
+                : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
             location: location,
-            unit: '',
-            calories: '',
+            unit: initialValues.unit || 'kpl',
+            calories: initialValues.calories
+                ? String(initialValues.calories)
+                : '0',
         },
     })
 
@@ -90,7 +82,7 @@ const FoodItemForm = ({
         if (Platform.OS === 'android') {
             setShow(true)
         } else {
-            // For iOS, we'll show the picker immediately
+            // For iOS, show the picker immediately
             setShow(true)
         }
         setMode('date')
@@ -183,6 +175,30 @@ const FoodItemForm = ({
             console.error('Error formatting date:', error)
             return date.toLocaleDateString('fi-FI')
         }
+    }
+
+    const ShoppingListSelector = ({ shoppingLists, selectedId, onSelect }) => {
+        if (!shoppingLists || shoppingLists.length === 0) return null
+
+        return (
+            <View style={styles.selectorContainer}>
+                <CustomText style={styles.label}>Valitse ostoslista</CustomText>
+                <Picker
+                    selectedValue={selectedId}
+                    onValueChange={(itemValue) => onSelect(itemValue)}
+                    style={styles.picker}
+                >
+                    <Picker.Item label="Valitse ostoslista..." value={null} />
+                    {shoppingLists.map((list) => (
+                        <Picker.Item
+                            key={list._id}
+                            label={list.name}
+                            value={list._id}
+                        />
+                    ))}
+                </Picker>
+            </View>
+        )
     }
 
     return (
@@ -453,49 +469,77 @@ const FoodItemForm = ({
                     </CustomText>
                     <View style={styles.radioGroup}>
                         {['meal', 'shopping-list', 'pantry'].map((loc) => (
-                            <View key={loc} style={styles.locationRow}>
-                                <TouchableOpacity
-                                    style={styles.radioOption}
-                                    onPress={() => handleLocationToggle(loc)}
-                                >
-                                    <RadioButton
-                                        value={loc}
-                                        status={
-                                            selectedLocations.includes(loc)
-                                                ? 'checked'
-                                                : 'unchecked'
-                                        }
+                            <View key={loc}>
+                                <View style={styles.locationRow}>
+                                    <TouchableOpacity
+                                        style={styles.radioOption}
                                         onPress={() =>
                                             handleLocationToggle(loc)
                                         }
-                                        color="#9C86FC"
-                                        disabled={loc === 'meal'} // Meal is always required
-                                    />
-                                    <CustomText style={styles.radioLabel}>
-                                        {loc === 'meal'
-                                            ? 'Vain ateriaan'
-                                            : loc === 'shopping-list'
-                                              ? 'Ostoslistalle'
-                                              : 'Pentteriin'}
-                                    </CustomText>
-                                </TouchableOpacity>
-                                {selectedLocations.includes(loc) && (
-                                    <View style={styles.quantityInput}>
-                                        <TextInput
-                                            style={styles.unitFormInput}
-                                            value={quantities[loc]}
-                                            onChangeText={(value) =>
-                                                handleQuantityChange(loc, value)
+                                    >
+                                        <RadioButton
+                                            value={loc}
+                                            status={
+                                                selectedLocations.includes(loc)
+                                                    ? 'checked'
+                                                    : 'unchecked'
                                             }
-                                            placeholder="Määrä"
-                                            placeholderTextColor="#999"
-                                            keyboardType="numeric"
+                                            onPress={() =>
+                                                handleLocationToggle(loc)
+                                            }
+                                            color="#9C86FC"
+                                            disabled={loc === 'meal'} // Meal is always required
                                         />
-                                        <CustomText style={styles.unitLabel}>
-                                            {currentUnit || 'kpl'}
+                                        <CustomText style={styles.radioLabel}>
+                                            {loc === 'meal'
+                                                ? 'Vain ateriaan'
+                                                : loc === 'shopping-list'
+                                                  ? 'Ostoslistalle'
+                                                  : 'Pentteriin'}
                                         </CustomText>
-                                    </View>
-                                )}
+                                    </TouchableOpacity>
+                                    {selectedLocations.includes(loc) && (
+                                        <View style={styles.quantityInput}>
+                                            <TextInput
+                                                style={styles.unitFormInput}
+                                                value={quantities[loc]}
+                                                onChangeText={(value) =>
+                                                    handleQuantityChange(
+                                                        loc,
+                                                        value
+                                                    )
+                                                }
+                                                placeholder="Määrä"
+                                                placeholderTextColor="#999"
+                                                keyboardType="numeric"
+                                            />
+                                            <CustomText
+                                                style={styles.unitLabel}
+                                            >
+                                                {currentUnit || 'kpl'}
+                                            </CustomText>
+                                        </View>
+                                    )}
+                                </View>
+                                {/* Show shopping list selector when shopping-list is selected */}
+                                {loc === 'shopping-list' &&
+                                    selectedLocations.includes(
+                                        'shopping-list'
+                                    ) && (
+                                        <View
+                                            style={
+                                                styles.shoppingListSelectorContainer
+                                            }
+                                        >
+                                            <ShoppingListSelector
+                                                shoppingLists={shoppingLists}
+                                                selectedId={
+                                                    selectedShoppingListId
+                                                }
+                                                onSelect={onShoppingListSelect}
+                                            />
+                                        </View>
+                                    )}
                             </View>
                         ))}
                     </View>
@@ -592,7 +636,6 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         width: 'auto',
-        marginTop: 20,
     },
     secondaryButton: {
         borderRadius: 25,
@@ -716,6 +759,19 @@ const styles = StyleSheet.create({
         width: '100%',
         height: 120,
         marginTop: 10,
+        marginBottom: 10,
+    },
+    selectorContainer: {
+        backgroundColor: 'white',
+        padding: 5,
+    },
+    picker: {
+        width: '100%',
+        height: 40,
+        padding: 5,
+    },
+    shoppingListSelectorContainer: {
+        marginLeft: 40,
         marginBottom: 10,
     },
 })
