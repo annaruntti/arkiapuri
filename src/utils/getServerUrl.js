@@ -1,16 +1,8 @@
 import { Platform } from 'react-native'
 import * as Updates from 'expo-updates'
+import getEnvVars from '../../environment'
 
-export const getServerUrl = (endpoint) => {
-    if (Platform.OS === 'web') {
-        return `http://localhost:3001${endpoint}`
-    }
-
-    const { manifest } = Updates
-    let debuggerHost = '192.168.250.14' // Default IP for mobile
-    // let debuggerHost = '192.168.50.179' // Default IP for mobile
-    if (manifest && manifest.debuggerHost) {
-        debuggerHost = manifest.debuggerHost.split(':').shift()
-    }
-    return `http://${debuggerHost}:3001${endpoint}`
+export const getServerUrl = (path) => {
+    const env = getEnvVars()
+    return `${env.apiUrl}${path}`
 }

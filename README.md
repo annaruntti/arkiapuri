@@ -43,13 +43,13 @@ To run the application locally, follow these steps:
     For web development:
 
     ```env
-    API_URL=http://localhost:3001
+    API_URL=http://localhost:3000
     ```
 
     For mobile development, you need to set your IP address:
 
     ```env
-    API_URL=http://<your-ip-address>:3001
+    API_URL=http://<your-ip-address>:3000
     ```
 
     Replace `<your-ip-address>` with your actual IP address. You can find your IP address by running `ipconfig` on Windows or `ifconfig` on macOS/Linux in the terminal.
