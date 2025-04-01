@@ -9,9 +9,9 @@ const ENV = {
 
 const getEnvVars = (env = process.env.NODE_ENV || 'development') => {
     // Temporarily force production environment
-    return ENV['production']
-    // Return to this when want testing with local backend:
-    // return ENV[env]
+    // return ENV['production']
+    // Use this when want testing with local backend:
+    return ENV[env]
 }
 
 export default getEnvVars

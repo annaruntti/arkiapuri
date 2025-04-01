@@ -1,20 +1,53 @@
 [
-    { "name": "Kasviproteiinit", "id": 1 },
-    { "name": "Kala", "id": 2 },
-    { "name": "Liha", "id": 3 },
-    { "name": "Kasvikset", "id": 4 },
-    { "name": "Maitotuotteet", "id": 5 },
-    { "name": "Kuiva-aineet", "id": 6 },
-    { "name": "Valmisateriat", "id": 7 },
-    { "name": "Pakasteet", "id": 8 },
-    { "name": "Ruoanlaittovälineet", "id": 9 },
-    { "name": "Tarvikkeet", "id": 10 },
-    { "name": "Gluteeniton", "id": 11 },
-    { "name": "Maidoton", "id": 12 },
-    { "name": "Laktoositon", "id": 13 },
-    { "name": "Munaton", "id": 14 },
-    { "name": "Kasvisruoka", "id": 15 },
-    { "name": "Vegaaninen", "id": 16 },
-    { "name": "Vähähiilihydraattinen", "id": 17 },
-    { "name": "Juomat", "id": 18 }
+    {
+        "name": "Raaka-aineet",
+        "id": "ingredients",
+        "children": [
+            { "name": "Kasviproteiinit", "id": 1 },
+            { "name": "Kala", "id": 2 },
+            { "name": "Liha", "id": 3 },
+            { "name": "Kasvikset", "id": 4 },
+            { "name": "Maitotuotteet", "id": 5 },
+            { "name": "Kuiva-aineet", "id": 6 }
+        ]
+    },
+    {
+        "name": "Ruokavaliot",
+        "id": "diets",
+        "children": [
+            { "name": "Gluteeniton", "id": 11 },
+            { "name": "Maidoton", "id": 12 },
+            { "name": "Laktoositon", "id": 13 },
+            { "name": "Munaton", "id": 14 },
+            { "name": "Kasvisruoka", "id": 15 },
+            { "name": "Vegaaninen", "id": 16 },
+            { "name": "Vähähiilihydraattinen", "id": 17 },
+            { "name": "Karppaajan", "id": 18 },
+            { "name": "Ketogeeninen", "id": 19 },
+            { "name": "Soijaton", "id": 20 },
+            { "name": "Pähkinätön", "id": 21 }
+        ]
+    },
+    {
+        "name": "Säilytys",
+        "id": "storage",
+        "children": [
+            { "name": "Pakasteet", "id": 8 },
+            { "name": "Kuivatuotteet", "id": 22 },
+            { "name": "Säilykkeet", "id": 23 },
+            { "name": "Jääkaappituotteet", "id": 24 }
+        ]
+    },
+    {
+        "name": "Muut",
+        "id": "others",
+        "children": [
+            { "name": "Valmisateriat", "id": 7 },
+            { "name": "Ruoanlaittovälineet", "id": 9 },
+            { "name": "Tarvikkeet", "id": 10 },
+            { "name": "Juomat", "id": 25 },
+            { "name": "Mausteet", "id": 26 },
+            { "name": "Leivontatarvikkeet", "id": 27 }
+        ]
+    }
 ]

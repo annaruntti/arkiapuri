@@ -241,17 +241,50 @@ const FoodItemForm = ({
                 render={({ field: { value, onChange } }) => (
                     <SectionedMultiSelect
                         styles={{
-                            backdrop: styles.multiSelectBackdrop,
+                            backdrop: {
+                                position: 'absolute',
+                                inset: 0,
+                                zIndex: 0,
+                                backgroundColor: '#fff',
+                                flex: 1,
+                            },
+                            modalWrapper: {
+                                height: '81%',
+                                position: 'relative',
+                                top: '10%',
+                                backgroundColor: '#fff',
+                                borderTopLeftRadius: 20,
+                                borderTopRightRadius: 20,
+                                overflow: 'hidden',
+                                display: 'flex',
+                                flexDirection: 'column',
+                            },
+                            container: {
+                                flex: 1,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                position: 'relative',
+                                height: '100%',
+                                paddingBottom: 80,
+                            },
+                            scrollView: {
+                                maxHeight: 'calc(100% - 120px)',
+                                overflow: 'auto',
+                                paddingLeft: 20,
+                                paddingRight: 20,
+                                paddingTop: 10,
+                            },
+                            listContainer: {
+                                paddingBottom: 20,
+                            },
                             selectToggle: styles.multiSelectBox,
                             button: {
-                                borderRadius: 25,
-                                paddingTop: 7,
-                                paddingBottom: 7,
-                                paddingLeft: 10,
-                                paddingRight: 10,
-                                elevation: 2,
+                                ...styles.primaryButton,
+                                position: 'absolute',
+                                top: 20,
+                                left: 20,
+                                right: 20,
                                 backgroundColor: '#9C86FC',
-                                marginTop: 10,
                             },
                             confirmText: {
                                 color: 'black',
@@ -259,42 +292,99 @@ const FoodItemForm = ({
                                 textAlign: 'center',
                                 fontSize: 16,
                             },
-                            cancelButton: styles.cancelButton,
-                            cancelButtonText: styles.cancelButtonText,
-                            modalWrapper: {
-                                padding: 20,
-                                paddingTop: 45,
+                            cancelButton: {
+                                position: 'absolute',
+                                top: 10,
+                                right: 10,
+                                zIndex: 999,
+                                width: 40,
+                                height: 40,
+                                backgroundColor: 'transparent',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                padding: 8,
                             },
-                            container: {
-                                padding: 15,
+                            searchBar: {
+                                backgroundColor: '#fff',
+                                padding: 10,
+                                borderWidth: 1,
+                                borderColor: '#bbb',
+                                borderRadius: 4,
+                                marginHorizontal: 20,
+                                marginTop: 10,
                             },
                             itemText: {
                                 fontSize: 16,
-                                paddingVertical: 10,
-                                paddingHorizontal: 15,
+                                color: '#000',
+                                paddingHorizontal: 8,
+                                paddingVertical: 0,
                             },
                             subItemText: {
                                 fontSize: 15,
-                                paddingVertical: 8,
-                                paddingHorizontal: 30,
+                                color: '#000',
+                                paddingLeft: 24,
+                                paddingHorizontal: 8,
+                                paddingVertical: 2,
                             },
-                            searchBar: {
-                                padding: 15,
-                                marginBottom: 10,
+                            searchTextInput: {
+                                color: '#000',
+                            },
+                            selectedItemText: {
+                                color: '#000',
+                            },
+                            selectedSubItemText: {
+                                color: '#000',
+                            },
+                            chipContainer: {
+                                backgroundColor: '#fff',
+                                marginRight: 5,
+                                marginBottom: 5,
+                                padding: 5,
+                                borderRadius: 4,
+                                borderWidth: 1,
+                                borderColor: '#ddd',
+                            },
+                            chipText: {
+                                color: '#000',
+                            },
+                            separator: {
+                                display: 'none',
+                            },
+                            subSeparator: {
+                                display: 'none',
+                            },
+                            itemContainer: {
+                                paddingVertical: 0,
+                            },
+                            subItemContainer: {
+                                paddingVertical: 0,
                             },
                         }}
                         items={categories}
                         IconRenderer={Icon}
                         uniqueKey="id"
+                        subKey="children"
                         displayKey="name"
+                        showDropDowns={true}
+                        expandDropDowns={true}
+                        showRemoveAll={true}
                         onSelectedItemsChange={onChange}
                         selectedItems={value}
                         removeAllText="Poista kaikki"
                         showCancelButton={true}
-                        showRemoveAll={true}
                         searchPlaceholderText="Etsi kategoriaa"
                         confirmText="Tallenna kategoriat"
                         selectText="Valitse yksi tai useampi kategoria"
+                        modalWithSafeAreaView={false}
+                        modalAnimationType="slide"
+                        onToggleSelector={() => {}}
+                        onConfirm={() => {}}
+                        onCancel={() => {}}
+                        cancelIconComponent={
+                            <TouchableOpacity>
+                                <Icon name="close" size={28} color="#000" />
+                            </TouchableOpacity>
+                        }
                     />
                 )}
                 name="category"
@@ -688,7 +778,7 @@ const styles = StyleSheet.create({
         marginLeft: 5,
     },
     multiSelectBackdrop: {
-        backgroundColor: 'rgba(255, 183, 0, 0.2)',
+        backgroundColor: 'rgba(0, 0, 0, 0.1)',
     },
     multiSelectBox: {
         borderWidth: 1,
@@ -696,6 +786,8 @@ const styles = StyleSheet.create({
         borderColor: '#bbb',
         padding: 10,
         marginBottom: 8,
+        backgroundColor: 'white',
+        minHeight: 40,
     },
     quantityContainer: {
         flexDirection: 'row',
