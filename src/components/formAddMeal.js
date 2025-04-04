@@ -46,6 +46,8 @@ const AddMealForm = ({ onSubmit, onClose }) => {
         snack: 'Välipala',
         dinner: 'Päivällinen',
         supper: 'Iltapala',
+        dessert: 'Jälkiruoka',
+        other: 'Muu',
     }
 
     const getDifficultyEnum = (level) => {
@@ -188,6 +190,12 @@ const AddMealForm = ({ onSubmit, onClose }) => {
 
     const handleFormSubmit = async () => {
         try {
+            // Add validation to ensure selectedRoles is not empty
+            if (!selectedRoles || selectedRoles.length === 0) {
+                Alert.alert('Virhe', 'Valitse vähintään yksi ateriatyyppi')
+                return
+            }
+
             // Validation for all required fields
             if (!foodItems || foodItems.length === 0) {
                 Alert.alert('Virhe', 'Lisää vähintään yksi raaka-aine')
@@ -319,6 +327,9 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                 })
             )
 
+            // Log the selected role right after user selection
+            console.log('Initially selected role:', selectedRoles)
+
             // Create the meal with the food item IDs
             const mealData = {
                 id: `meal_${Date.now()}`,
@@ -327,24 +338,59 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                 difficultyLevel: getDifficultyEnum(difficultyLevel),
                 cookingTime: parseInt(cookingTime) || 0,
                 foodItems: createdFoodItemIds,
-                defaultRoles: selectedRoles,
+                defaultRoles: [...selectedRoles], // Create a new array to ensure no reference issues
                 plannedCookingDate,
                 user: profile._id,
             }
+
+            // Log the exact structure being sent
+            console.log(
+                'Meal data structure:',
+                JSON.stringify(mealData, null, 2)
+            )
+            console.log('defaultRoles type:', typeof mealData.defaultRoles)
+            console.log(
+                'defaultRoles isArray:',
+                Array.isArray(mealData.defaultRoles)
+            )
 
             const response = await axios.post(
                 getServerUrl('/meals'),
                 mealData,
                 {
-                    headers: { Authorization: `Bearer ${token}` },
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
                 }
             )
 
+            // Add this log to see the exact request configuration
+            console.log('Request config:', {
+                url: response.config.url,
+                method: response.config.method,
+                headers: response.config.headers,
+                data: JSON.parse(response.config.data), // Parse the stringified data back to an object
+            })
+
+            // Log the exact response structure
+            console.log(
+                'Full server response:',
+                JSON.stringify(response.data, null, 2)
+            )
+
             if (response.data.success) {
+                if (response.data.meal.defaultRoles[0] !== selectedRoles[0]) {
+                    console.error('Role mismatch detected:', {
+                        originalSelection: selectedRoles[0],
+                        sentInPayload: mealData.defaultRoles[0],
+                        receivedFromServer: response.data.meal.defaultRoles[0],
+                    })
+                }
                 onSubmit(response.data.meal)
             }
         } catch (error) {
-            console.error('Full error:', error)
+            console.error('Error creating meal:', error)
             console.error('Error response:', error.response?.data)
             Alert.alert(
                 'Virhe',
