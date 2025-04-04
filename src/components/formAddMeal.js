@@ -20,6 +20,7 @@ import FormFoodItem from './FormFoodItem'
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
 import { useLogin } from '../context/LoginProvider'
+import FoodItemSelector from './FoodItemSelector'
 
 const AddMealForm = ({ onSubmit, onClose }) => {
     const { profile } = useLogin()
@@ -504,33 +505,20 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                         />
                     )}
 
-                    <CustomText style={styles.labelTitle}>
-                        Raaka-aineet:
-                    </CustomText>
-                    {foodItems.map((item, index) => (
-                        <View key={index} style={styles.foodItem}>
-                            <CustomText>{item.name}</CustomText>
-                        </View>
-                    ))}
-
+                    <FoodItemSelector
+                        foodItems={foodItems}
+                        onOpenFoodItemModal={() =>
+                            setFoodItemModalVisible(true)
+                        }
+                        onOpenPantryModal={handleOpenPantryModal}
+                    />
                     <View style={styles.buttonGroup}>
                         <Button
-                            title="Lisää raaka-aine"
-                            onPress={() => setFoodItemModalVisible(true)}
-                            style={styles.secondaryButton}
-                        />
-                        <Button
-                            title="Valitse pentteristä"
-                            onPress={handleOpenPantryModal}
-                            style={styles.secondaryButton}
+                            title="Tallenna ateria"
+                            onPress={handleFormSubmit}
+                            style={styles.primaryButton}
                         />
                     </View>
-
-                    <Button
-                        title="Tallenna ateria"
-                        onPress={handleFormSubmit}
-                        style={styles.primaryButton}
-                    />
                 </View>
             </ScrollView>
 
@@ -719,7 +707,7 @@ const styles = StyleSheet.create({
         color: 'black',
         fontWeight: 'bold',
         textAlign: 'center',
-        width: 'auto',
+        width: '100%',
         marginBottom: 10,
     },
     secondaryButton: {
