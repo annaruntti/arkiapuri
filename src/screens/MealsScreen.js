@@ -381,12 +381,12 @@ const styles = StyleSheet.create({
     modalHeader: {
         width: '100%',
         paddingTop: 20,
-        paddingBottom: 10,
         alignItems: 'center',
     },
     modalTitle: {
         fontSize: 20,
         fontWeight: 'bold',
+        paddingTop: 10,
     },
 })
 

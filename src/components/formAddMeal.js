@@ -507,6 +507,9 @@ const AddMealForm = ({ onSubmit, onClose }) => {
 
                     <FoodItemSelector
                         foodItems={foodItems}
+                        onSelectItem={(item) => {
+                            setFoodItems([...foodItems, item])
+                        }}
                         onOpenFoodItemModal={() =>
                             setFoodItemModalVisible(true)
                         }

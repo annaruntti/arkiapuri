@@ -8,6 +8,7 @@ const FoodItemSelector = ({
     foodItems = [],
     onOpenFoodItemModal,
     onOpenPantryModal,
+    onSelectItem,
 }) => {
     const [activeMode, setActiveMode] = useState(null)
 
@@ -24,7 +25,7 @@ const FoodItemSelector = ({
 
             <SearchFoodItems
                 onSelect={(item) => {
-                    // Handle search selection
+                    onSelectItem(item)
                 }}
             />
 
@@ -48,6 +49,7 @@ const FoodItemSelector = ({
                     textStyle={styles.secondaryButtonText}
                 />
             </View>
+
             {foodItems.length > 0 ? (
                 <>
                     <CustomText style={styles.infoTitle}>
