@@ -24,6 +24,8 @@ import categories from '../data/categories'
 import CustomText from './CustomText'
 import Button from './Button'
 import { getServerUrl } from '../utils/getServerUrl'
+import ModalHeader from './ModalHeader'
+import CategorySelect from './CategorySelect'
 
 const formatNumber = (value) => {
     if (!value) return value
@@ -49,6 +51,7 @@ const FoodItemForm = ({
         'shopping-list': '',
         pantry: '',
     })
+    const [isModalVisible, setIsModalVisible] = useState(false)
 
     const {
         control,
@@ -201,6 +204,10 @@ const FoodItemForm = ({
         )
     }
 
+    const toggleModal = () => {
+        setIsModalVisible(!isModalVisible)
+    }
+
     return (
         <ScrollView style={styles.form}>
             <CustomText style={styles.label}>Elintarvikkeen nimi</CustomText>
@@ -239,152 +246,13 @@ const FoodItemForm = ({
                     required: true,
                 }}
                 render={({ field: { value, onChange } }) => (
-                    <SectionedMultiSelect
-                        styles={{
-                            backdrop: {
-                                position: 'absolute',
-                                inset: 0,
-                                zIndex: 0,
-                                backgroundColor: '#fff',
-                                flex: 1,
-                            },
-                            modalWrapper: {
-                                height: '81%',
-                                position: 'relative',
-                                top: '10%',
-                                backgroundColor: '#fff',
-                                borderTopLeftRadius: 20,
-                                borderTopRightRadius: 20,
-                                overflow: 'hidden',
-                                display: 'flex',
-                                flexDirection: 'column',
-                            },
-                            container: {
-                                flex: 1,
-                                display: 'flex',
-                                flexDirection: 'column',
-                                position: 'relative',
-                                height: '100%',
-                                paddingBottom: 80,
-                            },
-                            scrollView: {
-                                maxHeight: 'calc(100% - 120px)',
-                                overflow: 'auto',
-                                paddingLeft: 20,
-                                paddingRight: 20,
-                                paddingTop: 10,
-                            },
-                            listContainer: {
-                                paddingBottom: 20,
-                            },
-                            selectToggle: styles.multiSelectBox,
-                            button: {
-                                ...styles.primaryButton,
-                                position: 'absolute',
-                                top: 20,
-                                left: 20,
-                                right: 20,
-                                backgroundColor: '#9C86FC',
-                            },
-                            confirmText: {
-                                color: 'black',
-                                fontWeight: 'bold',
-                                textAlign: 'center',
-                                fontSize: 16,
-                            },
-                            cancelButton: {
-                                position: 'absolute',
-                                top: 10,
-                                right: 10,
-                                zIndex: 999,
-                                width: 40,
-                                height: 40,
-                                backgroundColor: 'transparent',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                padding: 8,
-                            },
-                            searchBar: {
-                                backgroundColor: '#fff',
-                                padding: 10,
-                                borderWidth: 1,
-                                borderColor: '#bbb',
-                                borderRadius: 4,
-                                marginHorizontal: 20,
-                                marginTop: 10,
-                            },
-                            itemText: {
-                                fontSize: 16,
-                                color: '#000',
-                                paddingHorizontal: 8,
-                                paddingVertical: 0,
-                            },
-                            subItemText: {
-                                fontSize: 15,
-                                color: '#000',
-                                paddingLeft: 24,
-                                paddingHorizontal: 8,
-                                paddingVertical: 2,
-                            },
-                            searchTextInput: {
-                                color: '#000',
-                            },
-                            selectedItemText: {
-                                color: '#000',
-                            },
-                            selectedSubItemText: {
-                                color: '#000',
-                            },
-                            chipContainer: {
-                                backgroundColor: '#fff',
-                                marginRight: 5,
-                                marginBottom: 5,
-                                padding: 5,
-                                borderRadius: 4,
-                                borderWidth: 1,
-                                borderColor: '#ddd',
-                            },
-                            chipText: {
-                                color: '#000',
-                            },
-                            separator: {
-                                display: 'none',
-                            },
-                            subSeparator: {
-                                display: 'none',
-                            },
-                            itemContainer: {
-                                paddingVertical: 0,
-                            },
-                            subItemContainer: {
-                                paddingVertical: 0,
-                            },
-                        }}
-                        items={categories}
-                        IconRenderer={Icon}
-                        uniqueKey="id"
-                        subKey="children"
-                        displayKey="name"
-                        showDropDowns={true}
-                        expandDropDowns={true}
-                        showRemoveAll={true}
-                        onSelectedItemsChange={onChange}
-                        selectedItems={value}
-                        removeAllText="Poista kaikki"
-                        showCancelButton={true}
-                        searchPlaceholderText="Etsi kategoriaa"
-                        confirmText="Tallenna kategoriat"
-                        selectText="Valitse yksi tai useampi kategoria"
-                        modalWithSafeAreaView={false}
-                        modalAnimationType="slide"
-                        onToggleSelector={() => {}}
-                        onConfirm={() => {}}
-                        onCancel={() => {}}
-                        cancelIconComponent={
-                            <TouchableOpacity>
-                                <Icon name="close" size={28} color="#000" />
-                            </TouchableOpacity>
-                        }
+                    <CategorySelect
+                        value={value}
+                        onChange={onChange}
+                        isModalVisible={isModalVisible}
+                        setIsModalVisible={setIsModalVisible}
+                        toggleModal={toggleModal}
+                        categories={categories}
                     />
                 )}
                 name="category"
@@ -761,8 +629,7 @@ const styles = StyleSheet.create({
     },
     cancelButton: {
         position: 'absolute',
-        top: 10,
-        right: 10,
+        right: 20,
         backgroundColor: 'transparent',
     },
     cancelButtonText: {
