@@ -23,12 +23,10 @@ import categories from '../data/categories'
 import CustomText from './CustomText'
 import Button from './Button'
 import { getServerUrl } from '../utils/getServerUrl'
-import ModalHeader from './ModalHeader'
 import CategorySelect from './CategorySelect'
 
 const formatNumber = (value) => {
     if (!value) return value
-    // Replace comma with period for decimal numbers
     return value.toString().replace(',', '.')
 }
 

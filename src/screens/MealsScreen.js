@@ -17,7 +17,6 @@ import axios from 'axios'
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
 import MealItemDetail from '../components/MealItemDetail'
-import { MaterialIcons } from '@expo/vector-icons'
 import { getDifficultyText } from '../utils/mealUtils'
 
 const MealsScreen = () => {
