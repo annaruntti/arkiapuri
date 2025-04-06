@@ -171,7 +171,7 @@ const ShoppingListDetail = ({
                 onRequestClose={() => setShowItemForm(false)}
             >
                 <View style={styles.modalView}>
-                    <View style={styles.modalContent}>
+                    <View style={styles.modalContentView}>
                         <TouchableOpacity
                             style={styles.closeButton}
                             onPress={() => setShowItemForm(false)}
@@ -182,13 +182,17 @@ const ShoppingListDetail = ({
                                 color="black"
                             />
                         </TouchableOpacity>
-                        <CustomText style={styles.modalTitle}>
-                            Lisää tuote ostoslistaan
-                        </CustomText>
-                        <FormFoodItem
-                            onSubmit={handleAddItem}
-                            location="shopping-list"
-                        />
+                        <View style={styles.modalHeader}>
+                            <CustomText style={styles.modalTitle}>
+                                Lisää tuote ostoslistaan
+                            </CustomText>
+                        </View>
+                        <View style={styles.formContainer}>
+                            <FormFoodItem
+                                onSubmit={handleAddItem}
+                                location="shopping-list"
+                            />
+                        </View>
                     </View>
                 </View>
             </Modal>
@@ -212,7 +216,8 @@ const ShoppingListDetail = ({
                 data={shoppingList.items}
                 renderItem={renderItem}
                 keyExtractor={(item) => item._id}
-                style={styles.list}
+                contentContainerStyle={styles.listContent}
+                showsVerticalScrollIndicator={true}
             />
             <View style={styles.buttonContainer}>
                 {checkedItems.length > 0 && (
@@ -234,19 +239,19 @@ const ShoppingListDetail = ({
 
 const styles = StyleSheet.create({
     container: {
-        width: '100%',
+        flex: 1,
     },
     header: {
         marginBottom: 10,
     },
     title: {
-        fontSize: 24,
+        fontSize: 20,
         fontWeight: 'bold',
-        marginBottom: 5,
+        marginBottom: 10,
     },
     description: {
+        marginBottom: 20,
         color: '#666',
-        fontSize: 16,
     },
     stats: {
         flexDirection: 'row',
@@ -256,9 +261,8 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
     },
-    list: {
-        width: '100%',
-        marginBottom: 10,
+    listContent: {
+        paddingBottom: 20,
     },
     itemRow: {
         backgroundColor: '#f8f8f8',
@@ -307,7 +311,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         width: 'auto',
-        marginBottom: 10,
+        marginBottom: 20,
     },
     secondaryButton: {
         borderRadius: 25,
@@ -340,24 +344,32 @@ const styles = StyleSheet.create({
         borderColor: '#9C86FC',
     },
     modalView: {
-        flex: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'center',
+        flex: 1,
+        justifyContent: 'flex-end',
+    },
+    modalContentView: {
+        backgroundColor: 'white',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        height: '90%',
+        width: '100%',
+        paddingTop: 45,
+    },
+    modalHeader: {
+        width: '100%',
+        paddingTop: 20,
+        paddingHorizontal: 20,
         alignItems: 'center',
     },
-    modalContent: {
-        backgroundColor: 'white',
-        padding: 20,
-        borderRadius: 10,
-        width: '90%',
-        minHeight: 200,
-        maxHeight: '80%',
-    },
     modalTitle: {
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: 'bold',
-        marginBottom: 15,
-        textAlign: 'center',
+        marginBottom: 20,
+    },
+    formContainer: {
+        flex: 1,
+        paddingHorizontal: 20,
     },
     closeButton: {
         position: 'absolute',
@@ -369,9 +381,6 @@ const styles = StyleSheet.create({
     buttonContainer: {
         width: '100%',
         marginTop: 10,
-    },
-    formContainer: {
-        width: '100%',
     },
 })
 

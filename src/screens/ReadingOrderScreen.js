@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { StyleSheet, View, ScrollView } from 'react-native'
-import TableOne from '../components/Table'
+import TableWeek from '../components/TableWeek'
 import CustomText from '../components/CustomText'
 
 const ReadingOrderScreen = ({}) => {
@@ -15,7 +15,7 @@ const ReadingOrderScreen = ({}) => {
                     Lisää ateriat lukujärjestykseen helpottaaksesi arkea.
                 </CustomText>
                 <View style={styles.tableContainer}>
-                    <TableOne />
+                    <TableWeek />
                 </View>
             </View>
         </ScrollView>
@@ -47,6 +47,7 @@ const styles = StyleSheet.create({
         fontSize: 17,
         textAlign: 'center',
         marginBottom: 20,
+        paddingHorizontal: 10,
     },
     tableContainer: {
         width: '100%',

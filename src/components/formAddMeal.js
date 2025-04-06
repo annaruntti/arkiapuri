@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react'
 import {
     View,
     StyleSheet,
-    ScrollView,
     TextInput,
     Pressable,
     Modal,
@@ -442,134 +441,137 @@ const AddMealForm = ({ onSubmit, onClose }) => {
 
     return (
         <View style={styles.container}>
-            <ScrollView style={styles.formScroll}>
-                <View style={styles.form}>
-                    <CustomText style={styles.label}>Aterian nimi</CustomText>
-                    <TextInput
-                        style={styles.formInput}
-                        value={name}
-                        onChangeText={setName}
-                    />
-
-                    <CustomText style={styles.label}>Resepti</CustomText>
-                    <TextInput
-                        style={[styles.formInput, styles.multilineInput]}
-                        value={recipe}
-                        onChangeText={setRecipe}
-                        multiline
-                        numberOfLines={4}
-                    />
-
-                    <CustomText style={styles.label}>
-                        Vaikeustaso (1-5)
-                    </CustomText>
-                    <TextInput
-                        style={styles.formInput}
-                        value={difficultyLevel}
-                        onChangeText={(text) => {
-                            // Only allow numbers 1-5
-                            if (text === '' || /^[1-5]$/.test(text)) {
-                                setDifficultyLevel(text)
-                            }
-                        }}
-                        keyboardType="numeric"
-                        maxLength={1}
-                        placeholder="1-5 (1-2 helppo, 3-4 keskivaikea, 5 vaikea)"
-                    />
-
-                    <CustomText style={styles.label}>
-                        Valmistusaika (min)
-                    </CustomText>
-                    <TextInput
-                        style={styles.formInput}
-                        value={cookingTime}
-                        onChangeText={setCookingTime}
-                        keyboardType="numeric"
-                    />
-
-                    <CustomText style={styles.label}>Aterian tyyppi</CustomText>
-                    <View style={styles.checkboxGroup}>
-                        {Object.entries(mealRoles).map(([value, label]) => (
-                            <Pressable
-                                key={value}
-                                style={styles.checkboxRow}
-                                onPress={() => {
-                                    setSelectedRoles((prev) => {
-                                        if (prev.includes(value)) {
-                                            // Remove if already selected
-                                            return prev.filter(
-                                                (role) => role !== value
-                                            )
-                                        } else {
-                                            // Replace the current selection instead of adding to it
-                                            return [value]
-                                        }
-                                    })
-                                }}
-                            >
-                                <View
-                                    style={[
-                                        styles.checkbox,
-                                        selectedRoles.includes(value) &&
-                                            styles.checkboxChecked,
-                                    ]}
-                                >
-                                    {selectedRoles.includes(value) && (
-                                        <MaterialIcons
-                                            name="check"
-                                            size={16}
-                                            color="white"
-                                        />
-                                    )}
-                                </View>
-                                <CustomText style={styles.checkboxLabel}>
-                                    {label}
-                                </CustomText>
-                            </Pressable>
-                        ))}
-                    </View>
-
-                    <CustomText style={styles.label}>
-                        Suunniteltu valmistuspäivä
-                    </CustomText>
-                    <Pressable
-                        style={styles.dateButton}
-                        onPress={() => setShowDatePicker(true)}
-                    >
-                        <CustomText>
-                            {formatDate(plannedCookingDate)}
+            <FlatList
+                data={[{ key: 'form' }]}
+                renderItem={() => (
+                    <View style={styles.formContainer}>
+                        <CustomText style={styles.label}>
+                            Aterian nimi
                         </CustomText>
-                    </Pressable>
-
-                    {showDatePicker && (
-                        <DateTimePicker
-                            value={plannedCookingDate}
-                            mode="date"
-                            display="default"
-                            onChange={handleDateChange}
-                            minimumDate={new Date()}
+                        <TextInput
+                            style={styles.formInput}
+                            value={name}
+                            onChangeText={setName}
                         />
-                    )}
 
-                    <FoodItemSelector
-                        foodItems={foodItems}
-                        onSelectItem={(item) => {
-                            setFoodItems([...foodItems, item])
-                        }}
-                        onOpenFoodItemModal={() =>
-                            setFoodItemModalVisible(true)
-                        }
-                        onOpenPantryModal={handleOpenPantryModal}
-                    />
-                    <View style={styles.buttonGroup}>
-                        <Button
-                            title="Tallenna ateria"
-                            onPress={handleFormSubmit}
-                            style={styles.primaryButton}
+                        <CustomText style={styles.label}>Resepti</CustomText>
+                        <TextInput
+                            style={[styles.formInput, styles.multilineInput]}
+                            value={recipe}
+                            onChangeText={setRecipe}
+                            multiline
+                            numberOfLines={4}
                         />
+
+                        <CustomText style={styles.label}>
+                            Vaikeustaso (1-5)
+                        </CustomText>
+                        <TextInput
+                            style={styles.formInput}
+                            value={difficultyLevel}
+                            onChangeText={(text) => {
+                                if (text === '' || /^[1-5]$/.test(text)) {
+                                    setDifficultyLevel(text)
+                                }
+                            }}
+                            keyboardType="numeric"
+                            maxLength={1}
+                            placeholder="1-5 (1-2 helppo, 3-4 keskivaikea, 5 vaikea)"
+                        />
+
+                        <CustomText style={styles.label}>
+                            Valmistusaika (min)
+                        </CustomText>
+                        <TextInput
+                            style={styles.formInput}
+                            value={cookingTime}
+                            onChangeText={setCookingTime}
+                            keyboardType="numeric"
+                        />
+
+                        <CustomText style={styles.label}>
+                            Aterian tyyppi
+                        </CustomText>
+                        <View style={styles.checkboxGroup}>
+                            {Object.entries(mealRoles).map(([value, label]) => (
+                                <Pressable
+                                    key={value}
+                                    style={styles.checkboxRow}
+                                    onPress={() => {
+                                        setSelectedRoles([value])
+                                    }}
+                                >
+                                    <View
+                                        style={[
+                                            styles.checkbox,
+                                            selectedRoles.includes(value) &&
+                                                styles.checkboxChecked,
+                                        ]}
+                                    >
+                                        {selectedRoles.includes(value) && (
+                                            <MaterialIcons
+                                                name="check"
+                                                size={16}
+                                                color="white"
+                                            />
+                                        )}
+                                    </View>
+                                    <CustomText style={styles.checkboxLabel}>
+                                        {label}
+                                    </CustomText>
+                                </Pressable>
+                            ))}
+                        </View>
+
+                        <CustomText style={styles.label}>
+                            Suunniteltu valmistuspäivä
+                        </CustomText>
+                        <Pressable
+                            style={styles.dateButton}
+                            onPress={() => setShowDatePicker(true)}
+                        >
+                            <CustomText>
+                                {formatDate(plannedCookingDate)}
+                            </CustomText>
+                        </Pressable>
+
+                        {showDatePicker && (
+                            <DateTimePicker
+                                value={plannedCookingDate}
+                                mode="date"
+                                display="default"
+                                onChange={handleDateChange}
+                                minimumDate={new Date()}
+                            />
+                        )}
+
+                        <View style={styles.foodItemSelectorContainer}>
+                            <FoodItemSelector
+                                foodItems={foodItems}
+                                onSelectItem={(item) => {
+                                    setFoodItems([...foodItems, item])
+                                }}
+                                onOpenFoodItemModal={() =>
+                                    setFoodItemModalVisible(true)
+                                }
+                                onOpenPantryModal={handleOpenPantryModal}
+                            />
+                        </View>
+
+                        <View style={styles.buttonGroup}>
+                            <Button
+                                title="Tallenna ateria"
+                                onPress={handleFormSubmit}
+                                style={styles.primaryButton}
+                            />
+                        </View>
                     </View>
-                </View>
-            </ScrollView>
+                )}
+                keyExtractor={() => 'form'}
+                contentContainerStyle={styles.formScroll}
+                showsVerticalScrollIndicator={true}
+                bounces={false}
+            />
 
             <Modal
                 animationType="slide"
@@ -577,21 +579,19 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                 visible={foodItemModalVisible}
                 onRequestClose={() => setFoodItemModalVisible(false)}
             >
-                <View style={styles.modalContainer}>
-                    <View style={styles.modalContent}>
+                <View style={styles.modalView}>
+                    <View style={styles.modalContentView}>
                         <Pressable
                             onPress={() => setFoodItemModalVisible(false)}
                             style={styles.closeButton}
                         >
                             <AntDesign name="close" size={24} color="black" />
                         </Pressable>
-
                         <View style={styles.modalHeader}>
                             <CustomText style={styles.modalTitle}>
-                                Lisää raaka-aine
+                                Lisää uusi raaka-aine
                             </CustomText>
                         </View>
-
                         <View style={styles.modalBody}>
                             <FormFoodItem
                                 onSubmit={handleAddFoodItem}
@@ -621,8 +621,8 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                 visible={pantryModalVisible}
                 onRequestClose={() => setPantryModalVisible(false)}
             >
-                <View style={styles.modalContainer}>
-                    <View style={styles.modalContent}>
+                <View style={styles.modalView}>
+                    <View style={styles.modalContentView}>
                         <Pressable
                             onPress={() => setPantryModalVisible(false)}
                             style={styles.closeButton}
@@ -634,33 +634,36 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                                 Valitse pentteristä
                             </CustomText>
                         </View>
-                        {isLoading ? (
-                            <CustomText style={styles.loadingText}>
-                                Ladataan...
-                            </CustomText>
-                        ) : (
-                            <View style={styles.modalScrollContainer}>
-                                <CustomText style={styles.foundItemsText}>
-                                    {pantryItems.length} elintarviketta löydetty
+                        <View style={styles.modalBody}>
+                            {isLoading ? (
+                                <CustomText style={styles.loadingText}>
+                                    Ladataan...
                                 </CustomText>
-                                <FlatList
-                                    data={pantryItems}
-                                    renderItem={renderPantryItem}
-                                    keyExtractor={(item) => item._id}
-                                    style={styles.pantryList}
-                                />
-                                <View style={styles.modalButtonGroup}>
-                                    <Button
-                                        title="Lisää valitut"
-                                        onPress={addSelectedPantryItems}
-                                        style={[
-                                            styles.primaryButton,
-                                            styles.fullWidthButton,
-                                        ]}
+                            ) : (
+                                <View style={styles.modalScrollContainer}>
+                                    <CustomText style={styles.foundItemsText}>
+                                        {pantryItems.length} elintarviketta
+                                        löydetty
+                                    </CustomText>
+                                    <FlatList
+                                        data={pantryItems}
+                                        renderItem={renderPantryItem}
+                                        keyExtractor={(item) => item._id}
+                                        style={styles.pantryList}
                                     />
+                                    <View style={styles.modalButtonGroup}>
+                                        <Button
+                                            title="Lisää valitut"
+                                            onPress={addSelectedPantryItems}
+                                            style={[
+                                                styles.primaryButton,
+                                                styles.fullWidthButton,
+                                            ]}
+                                        />
+                                    </View>
                                 </View>
-                            </View>
-                        )}
+                            )}
+                        </View>
                     </View>
                 </View>
             </Modal>
@@ -673,13 +676,12 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#fff',
     },
-    formScroll: {
-        flex: 1,
+    formContainer: {
         padding: 20,
+        paddingBottom: 100,
     },
-    form: {
-        width: '100%',
-        paddingBottom: 40,
+    formScroll: {
+        flexGrow: 1,
     },
     label: {
         marginTop: 10,
@@ -720,9 +722,8 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
-        paddingHorizontal: 20,
         paddingBottom: 20,
-        maxHeight: '90%',
+        width: '100%',
     },
     closeButton: {
         position: 'absolute',
@@ -734,7 +735,7 @@ const styles = StyleSheet.create({
     modalHeader: {
         width: '100%',
         paddingTop: 20,
-        paddingBottom: 10,
+        paddingHorizontal: 20,
         alignItems: 'center',
     },
     modalTitle: {
@@ -873,6 +874,46 @@ const styles = StyleSheet.create({
     },
     fullWidthButton: {
         width: '100%',
+    },
+    foodItemSelectorContainer: {
+        marginTop: 10,
+        marginBottom: 10,
+    },
+    modalView: {
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        flex: 1,
+        justifyContent: 'flex-end',
+    },
+    modalContentView: {
+        backgroundColor: 'white',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        height: '90%',
+        width: '100%',
+        paddingTop: 35,
+    },
+    modalHeader: {
+        width: '100%',
+        paddingTop: 10,
+        paddingHorizontal: 20,
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginBottom: 10,
+    },
+    modalBody: {
+        flex: 1,
+        paddingHorizontal: 20,
+    },
+    closeButton: {
+        position: 'absolute',
+        right: 10,
+        top: 10,
+        zIndex: 1,
+        padding: 5,
     },
 })
 

@@ -454,6 +454,7 @@ const styles = StyleSheet.create({
     modalTitle: {
         fontSize: 20,
         fontWeight: 'bold',
+        paddingTop: 20,
     },
     modalBody: {
         flex: 1,

@@ -1,258 +1,367 @@
-import React from 'react'
-import SectionedMultiSelect from 'react-native-sectioned-multi-select'
-import { View, TouchableOpacity } from 'react-native'
+import React, { forwardRef } from 'react'
+import {
+    View,
+    TouchableOpacity,
+    StyleSheet,
+    Modal,
+    ScrollView,
+} from 'react-native'
 import { MaterialIcons as Icon } from '@expo/vector-icons'
 import CustomText from './CustomText'
 
-const CategorySelect = ({
-    value,
-    onChange,
-    isModalVisible,
-    setIsModalVisible,
-    toggleModal,
-    categories,
-}) => {
-    return (
-        <SectionedMultiSelect
-            styles={{
-                backdrop: {
-                    position: 'absolute',
-                    inset: 0,
-                    zIndex: 0,
-                    backgroundColor: '#fff',
-                    flex: 1,
-                },
-                modalWrapper: {
-                    height: '81%',
-                    position: 'relative',
-                    top: '10%',
-                    backgroundColor: '#fff',
-                    borderTopLeftRadius: 20,
-                    borderTopRightRadius: 20,
-                    overflow: 'hidden',
-                    paddingTop: 0,
-                    margin: 0,
-                    marginVertical: 0,
-                    marginHorizontal: 0,
-                    flex: 1,
-                    alignSelf: 'stretch',
-                    borderRadius: 6,
-                    paddingTop: 10,
-                    paddingLeft: 5,
-                    paddingRight: 5,
-                    paddingBottom: 5,
-                },
-                container: {
-                    marginTop: 0,
-                    marginHorizontal: 0,
-                    overflow: 'hidden',
-                    borderRadius: 6,
-                    alignSelf: 'stretch',
-                    backgroundColor: '#fff',
-                    flex: 1,
-                    position: 'relative',
-                    height: '100%',
-                    paddingBottom: 80,
-                },
-                scrollView: {
-                    maxHeight: 'calc(100% - 120px)',
-                    overflow: 'auto',
-                    paddingLeft: 20,
-                    paddingRight: 20,
-                    paddingTop: 10,
-                },
-                listContainer: {
-                    paddingBottom: 20,
-                },
-                selectToggle: {
-                    borderWidth: 1,
-                    borderRadius: 4,
-                    borderColor: '#bbb',
-                    padding: 10,
-                    marginBottom: 8,
-                    backgroundColor: 'white',
-                    minHeight: 40,
-                },
-                button: {
-                    borderRadius: 25,
-                    paddingVertical: 7,
-                    paddingHorizontal: 10,
-                    elevation: 2,
-                    backgroundColor: '#9C86FC',
-                    position: 'absolute',
-                    top: 20,
-                    left: 20,
-                    right: 20,
-                },
-                confirmText: {
-                    color: 'black',
-                    fontWeight: 'bold',
-                    textAlign: 'center',
-                    fontSize: 16,
-                },
-                searchBar: {
-                    backgroundColor: '#fff',
-                    borderWidth: 1,
-                    borderColor: '#bbb',
-                    borderRadius: 4,
-                    marginRight: 30,
-                    marginLeft: 20,
-                    marginTop: 40,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                },
-                searchIconContainer: {
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                },
-                searchIcon: {
-                    fontSize: 24,
-                    marginRight: 5,
-                    marginLeft: 5,
-                    fontFamily: 'material',
-                    fontWeight: 'normal',
-                    fontStyle: 'normal',
-                },
-                searchTextInput: {
-                    fontSize: 17,
-                    paddingTop: 3,
-                    paddingBottom: 3,
-                    fontFamily: 'Avenir',
-                    fontWeight: '200',
-                    color: '#000',
-                    flex: '1 1 0%',
-                    paddingLeft: 0,
-                },
-                itemText: {
-                    fontSize: 16,
-                    color: '#000',
-                    paddingHorizontal: 8,
-                    paddingVertical: 0,
-                },
-                subItemText: {
-                    fontSize: 15,
-                    color: '#000',
-                    paddingLeft: 24,
-                    paddingHorizontal: 8,
-                    paddingVertical: 2,
-                },
-                selectedItemText: {
-                    color: '#000',
-                },
-                selectedSubItemText: {
-                    color: '#000',
-                },
-                chipContainer: {
-                    backgroundColor: '#fff',
-                    marginRight: 5,
-                    marginBottom: 5,
-                    padding: 5,
-                    borderRadius: 4,
-                    borderWidth: 1,
-                    borderColor: '#ddd',
-                },
-                chipText: {
-                    color: '#000',
-                },
-                separator: {
-                    display: 'none',
-                },
-                subSeparator: {
-                    display: 'none',
-                },
-                itemContainer: {
-                    paddingVertical: 0,
-                },
-                subItemContainer: {
-                    paddingVertical: 0,
-                    marginRight: 10,
-                },
-                headerComponent: {
-                    position: 'absolute',
-                    top: -5,
-                    right: -5,
-                    zIndex: 9999,
-                },
-            }}
-            headerComponent={
-                <View
-                    style={{
-                        position: 'absolute',
-                        top: 0,
-                        right: 0,
-                        zIndex: 9999,
-                    }}
-                >
-                    <TouchableOpacity
-                        onPress={() => setIsModalVisible(false)}
-                        style={{
-                            width: 40,
-                            height: 40,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}
-                        accessibilityLabel="Sulje kategorian valinta"
-                    >
-                        <Icon name="close" size={28} color="#000" />
-                    </TouchableOpacity>
-                </View>
+const CategorySelect = forwardRef(
+    (
+        {
+            value,
+            onChange,
+            isModalVisible,
+            setIsModalVisible,
+            toggleModal,
+            categories,
+        },
+        ref
+    ) => {
+        const selectedCategories = value || []
+
+        const getCategory = (id) => {
+            for (const category of categories) {
+                if (category.id === id) return category
+                if (category.children) {
+                    const subCategory = category.children.find(
+                        (sub) => sub.id === id
+                    )
+                    if (subCategory) return subCategory
+                }
             }
-            onCancel={() => setIsModalVisible(false)}
-            onToggleSelector={(isOpen) => setIsModalVisible(isOpen)}
-            showCancelButton={false}
-            visible={isModalVisible}
-            selectToggleComponent={
+            return null
+        }
+
+        const handleRemoveCategory = (categoryId) => {
+            const newSelected = selectedCategories.filter(
+                (id) => id !== categoryId
+            )
+            onChange(newSelected)
+        }
+
+        const getCategoryNames = () => {
+            return selectedCategories
+                .map((id) => {
+                    const category = categories.find((cat) => cat.id === id)
+                    return category ? category.name : ''
+                })
+                .filter((name) => name)
+                .join(', ')
+        }
+
+        const handleCategorySelect = (selectedItems) => {
+            onChange(selectedItems)
+        }
+
+        return (
+            <View style={styles.container}>
                 <TouchableOpacity
-                    style={{
-                        borderWidth: 1,
-                        borderRadius: 4,
-                        borderColor: '#bbb',
-                        padding: 10,
-                        marginBottom: 8,
-                        backgroundColor: 'white',
-                        minHeight: 40,
-                    }}
+                    style={styles.selectButton}
                     onPress={toggleModal}
                 >
                     <CustomText>
-                        {value && value.length > 0
-                            ? `${value.length} kategoriaa valittu`
-                            : 'Valitse yksi tai useampi kategoria'}
+                        {selectedCategories.length > 0
+                            ? 'Valitut kategoriat'
+                            : 'Valitse kategoriat'}
                     </CustomText>
                 </TouchableOpacity>
-            }
-            items={categories}
-            IconRenderer={Icon}
-            uniqueKey="id"
-            subKey="children"
-            displayKey="name"
-            showDropDowns={true}
-            expandDropDowns={true}
-            showRemoveAll={true}
-            onSelectedItemsChange={onChange}
-            selectedItems={value}
-            removeAllText="Poista kaikki"
-            searchPlaceholderText="Etsi kategoriaa"
-            confirmText="Tallenna kategoriat"
-            selectText="Valitse yksi tai useampi kategoria"
-            modalWithSafeAreaView={false}
-            modalAnimationType="slide"
-            selectedIconComponent={
-                <Icon
-                    name="check"
-                    style={{
-                        fontSize: 16,
-                        color: 'rgb(76, 175, 80)',
-                        paddingLeft: 10,
-                        marginRight: 10,
-                        fontFamily: 'material',
-                        fontWeight: 'normal',
-                        fontStyle: 'normal',
-                    }}
-                />
-            }
-        />
-    )
-}
+
+                {/* Selected Categories Tags */}
+                {selectedCategories.length > 0 && (
+                    <View style={styles.selectedTagsContainer}>
+                        {selectedCategories.map((categoryId) => {
+                            const category = getCategory(categoryId)
+                            if (!category) return null
+
+                            return (
+                                <View
+                                    key={categoryId}
+                                    style={styles.tagContainer}
+                                >
+                                    <CustomText style={styles.tagText}>
+                                        {category.name}
+                                    </CustomText>
+                                    <TouchableOpacity
+                                        onPress={() =>
+                                            handleRemoveCategory(categoryId)
+                                        }
+                                        style={styles.tagRemoveButton}
+                                    >
+                                        <Icon
+                                            name="close"
+                                            size={18}
+                                            color="#666"
+                                        />
+                                    </TouchableOpacity>
+                                </View>
+                            )
+                        })}
+                    </View>
+                )}
+
+                <Modal
+                    visible={isModalVisible}
+                    animationType="slide"
+                    transparent={true}
+                    onRequestClose={() => setIsModalVisible(false)}
+                >
+                    <View style={styles.modalView}>
+                        <View style={styles.modalContent}>
+                            <View style={styles.modalHeader}>
+                                <TouchableOpacity
+                                    style={styles.closeButton}
+                                    onPress={() => setIsModalVisible(false)}
+                                >
+                                    <Icon
+                                        name="close"
+                                        size={24}
+                                        color="black"
+                                    />
+                                </TouchableOpacity>
+                                <CustomText style={styles.modalTitle}>
+                                    Valitse kategoriat
+                                </CustomText>
+                            </View>
+
+                            <View style={styles.categoriesContainer}>
+                                <ScrollView>
+                                    {categories.map((category) => (
+                                        <View key={category.id}>
+                                            <TouchableOpacity
+                                                style={styles.categoryItem}
+                                                onPress={() => {
+                                                    const isSelected =
+                                                        selectedCategories.includes(
+                                                            category.id
+                                                        )
+                                                    const newSelected =
+                                                        isSelected
+                                                            ? selectedCategories.filter(
+                                                                  (id) =>
+                                                                      id !==
+                                                                      category.id
+                                                              )
+                                                            : [
+                                                                  ...selectedCategories,
+                                                                  category.id,
+                                                              ]
+                                                    handleCategorySelect(
+                                                        newSelected
+                                                    )
+                                                }}
+                                            >
+                                                <CustomText
+                                                    style={[
+                                                        styles.itemText,
+                                                        selectedCategories.includes(
+                                                            category.id
+                                                        ) &&
+                                                            styles.selectedItemText,
+                                                    ]}
+                                                >
+                                                    {category.name}
+                                                </CustomText>
+                                                {selectedCategories.includes(
+                                                    category.id
+                                                ) && (
+                                                    <Icon
+                                                        name="check"
+                                                        size={24}
+                                                        color="#9C86FC"
+                                                    />
+                                                )}
+                                            </TouchableOpacity>
+
+                                            {category.children?.map(
+                                                (subCategory) => (
+                                                    <TouchableOpacity
+                                                        key={subCategory.id}
+                                                        style={
+                                                            styles.subCategoryItem
+                                                        }
+                                                        onPress={() => {
+                                                            const isSelected =
+                                                                selectedCategories.includes(
+                                                                    subCategory.id
+                                                                )
+                                                            const newSelected =
+                                                                isSelected
+                                                                    ? selectedCategories.filter(
+                                                                          (
+                                                                              id
+                                                                          ) =>
+                                                                              id !==
+                                                                              subCategory.id
+                                                                      )
+                                                                    : [
+                                                                          ...selectedCategories,
+                                                                          subCategory.id,
+                                                                      ]
+                                                            handleCategorySelect(
+                                                                newSelected
+                                                            )
+                                                        }}
+                                                    >
+                                                        <CustomText
+                                                            style={[
+                                                                styles.subItemText,
+                                                                selectedCategories.includes(
+                                                                    subCategory.id
+                                                                ) &&
+                                                                    styles.selectedItemText,
+                                                            ]}
+                                                        >
+                                                            {subCategory.name}
+                                                        </CustomText>
+                                                        {selectedCategories.includes(
+                                                            subCategory.id
+                                                        ) && (
+                                                            <Icon
+                                                                name="check"
+                                                                size={24}
+                                                                color="#9C86FC"
+                                                            />
+                                                        )}
+                                                    </TouchableOpacity>
+                                                )
+                                            )}
+                                        </View>
+                                    ))}
+                                </ScrollView>
+                            </View>
+
+                            <TouchableOpacity
+                                style={styles.confirmButton}
+                                onPress={() => setIsModalVisible(false)}
+                            >
+                                <CustomText style={styles.confirmButtonText}>
+                                    Vahvista
+                                </CustomText>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </Modal>
+            </View>
+        )
+    }
+)
+
+CategorySelect.displayName = 'CategorySelect'
+
+const styles = StyleSheet.create({
+    container: {
+        width: '100%',
+    },
+    selectButton: {
+        backgroundColor: 'white',
+        borderColor: '#bbb',
+        borderWidth: 1,
+        borderRadius: 4,
+        padding: 10,
+        minHeight: 40,
+        justifyContent: 'center',
+    },
+    modalView: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'flex-end',
+    },
+    modalContent: {
+        backgroundColor: 'white',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        height: '90%',
+        width: '100%',
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+    },
+    closeButton: {
+        position: 'absolute',
+        right: 10,
+        top: 10,
+        padding: 10,
+    },
+    categoriesContainer: {
+        flex: 1,
+        paddingHorizontal: 20,
+    },
+    categoryItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+    subCategoryItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: 12,
+        paddingLeft: 30,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+    itemText: {
+        fontSize: 16,
+        color: '#000000',
+    },
+    subItemText: {
+        fontSize: 14,
+        color: '#000000',
+    },
+    selectedItemText: {
+        color: '#9C86FC',
+        fontWeight: 'bold',
+    },
+    confirmButton: {
+        backgroundColor: '#9C86FC',
+        padding: 15,
+        margin: 20,
+        borderRadius: 25,
+        alignItems: 'center',
+    },
+    confirmButtonText: {
+        color: 'black',
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
+    selectedTagsContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        padding: 5,
+        marginTop: 5,
+    },
+    tagContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#f0f0f0',
+        borderRadius: 15,
+        padding: 8,
+        margin: 3,
+    },
+    tagText: {
+        fontSize: 14,
+        marginRight: 5,
+    },
+    tagRemoveButton: {
+        padding: 2,
+    },
+})
 
 export default CategorySelect

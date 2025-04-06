@@ -258,7 +258,7 @@ const ShoppingListsScreen = () => {
                 onRequestClose={() => setSelectedList(null)}
             >
                 <View style={styles.layerView}>
-                    <View style={styles.modalView}>
+                    <View style={styles.detailModalView}>
                         <TouchableOpacity
                             style={styles.closeButton}
                             onPress={() => setSelectedList(null)}
@@ -270,13 +270,15 @@ const ShoppingListsScreen = () => {
                             />
                         </TouchableOpacity>
                         {selectedList && (
-                            <ShoppingListDetail
-                                shoppingList={selectedList}
-                                onClose={() => setSelectedList(null)}
-                                onUpdate={handleListUpdate}
-                                fetchShoppingLists={fetchShoppingLists}
-                                fetchPantryItems={fetchPantryItems}
-                            />
+                            <View style={styles.detailContentContainer}>
+                                <ShoppingListDetail
+                                    shoppingList={selectedList}
+                                    onClose={() => setSelectedList(null)}
+                                    onUpdate={handleListUpdate}
+                                    fetchShoppingLists={fetchShoppingLists}
+                                    fetchPantryItems={fetchPantryItems}
+                                />
+                            </View>
                         )}
                     </View>
                 </View>
@@ -342,10 +344,9 @@ const styles = StyleSheet.create({
         color: '#666',
     },
     layerView: {
-        backgroundColor: 'rgba(0, 0, 0, 0.75)',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
         flex: 1,
-        justifyContent: 'center',
-        paddingVertical: 20,
+        justifyContent: 'flex-end',
     },
     modalView: {
         margin: 20,
@@ -469,5 +470,17 @@ const styles = StyleSheet.create({
     loadingText: {
         marginTop: 10,
         fontSize: 16,
+    },
+    detailModalView: {
+        backgroundColor: 'white',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        height: '90%',
+        width: '100%',
+        paddingTop: 45,
+    },
+    detailContentContainer: {
+        flex: 1,
+        paddingHorizontal: 20,
     },
 })

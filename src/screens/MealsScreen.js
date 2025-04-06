@@ -214,8 +214,8 @@ const MealsScreen = () => {
                 visible={modalVisible}
                 onRequestClose={() => setModalVisible(false)}
             >
-                <View style={styles.modalContainer}>
-                    <View style={styles.modalContent}>
+                <View style={styles.modalView}>
+                    <View style={styles.modalContentView}>
                         <Pressable
                             onPress={() => setModalVisible(false)}
                             style={styles.closeButton}
@@ -227,10 +227,12 @@ const MealsScreen = () => {
                                 Lisää uusi ateria
                             </CustomText>
                         </View>
-                        <AddMealForm
-                            onSubmit={handleAddMeal}
-                            onClose={() => setModalVisible(false)}
-                        />
+                        <View style={styles.modalBody}>
+                            <AddMealForm
+                                onSubmit={handleAddMeal}
+                                onClose={() => setModalVisible(false)}
+                            />
+                        </View>
                     </View>
                 </View>
             </Modal>
@@ -358,18 +360,34 @@ const styles = StyleSheet.create({
         width: 'auto',
         marginBottom: 20,
     },
-    modalContainer: {
-        flex: 1,
+    modalView: {
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        flex: 1,
         justifyContent: 'flex-end',
     },
-    modalContent: {
+    modalContentView: {
         backgroundColor: 'white',
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
+        height: '90%',
+        width: '100%',
+        paddingTop: 35,
+    },
+    modalHeader: {
+        width: '100%',
+        paddingTop: 10,
         paddingHorizontal: 20,
-        paddingBottom: 20,
-        maxHeight: '90%',
+        alignItems: 'center',
+        marginBottom: 5,
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginBottom: 10,
+    },
+    modalBody: {
+        flex: 1,
+        paddingHorizontal: 15,
     },
     closeButton: {
         position: 'absolute',
@@ -377,16 +395,6 @@ const styles = StyleSheet.create({
         top: 10,
         padding: 5,
         zIndex: 1,
-    },
-    modalHeader: {
-        width: '100%',
-        paddingTop: 20,
-        alignItems: 'center',
-    },
-    modalTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        paddingTop: 10,
     },
 })
 
