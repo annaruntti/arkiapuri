@@ -135,6 +135,12 @@ const SearchFoodItems = ({ onSelect }) => {
         )
     }
 
+    const handleCloseList = () => {
+        setIsListVisible(false)
+        setSearchQuery('')
+        setAddedItems(new Set())
+    }
+
     return (
         <View style={styles.container}>
             <View ref={searchContainerRef} style={styles.searchContainer}>
@@ -143,15 +149,27 @@ const SearchFoodItems = ({ onSelect }) => {
                     <TextInput
                         style={styles.input}
                         placeholder="Hae raaka-aineita..."
+                        placeholderTextColor="#666"
                         value={searchQuery}
                         onChangeText={handleSearchQueryChange}
                         onFocus={() =>
                             setIsListVisible(searchQuery.trim() !== '')
                         }
                     />
+                    {searchQuery.trim() !== '' && (
+                        <TouchableOpacity
+                            onPress={handleCloseList}
+                            style={styles.clearButton}
+                        >
+                            <MaterialIcons
+                                name="close"
+                                size={24}
+                                color="#666"
+                            />
+                        </TouchableOpacity>
+                    )}
                 </View>
 
-                {/* Results container */}
                 {isListVisible && searchQuery.trim() !== '' && !loading && (
                     <View style={styles.resultsContainer}>
                         <View style={styles.scrollWrapper}>
@@ -211,6 +229,16 @@ const styles = StyleSheet.create({
         borderColor: '#bbb',
         borderRadius: 4,
         marginBottom: 10,
+        ...(Platform.OS !== 'web' && {
+            shadowColor: '#000',
+            shadowOffset: {
+                width: 0,
+                height: 2,
+            },
+            shadowOpacity: 0.25,
+            shadowRadius: 3.84,
+            elevation: 5,
+        }),
     },
     scrollWrapper: {
         maxHeight: 300,
@@ -251,6 +279,10 @@ const styles = StyleSheet.create({
     },
     addedText: {
         color: '#666',
+    },
+    clearButton: {
+        padding: 5,
+        marginLeft: 5,
     },
 })
 
