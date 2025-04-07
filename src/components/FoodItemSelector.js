@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import { View, StyleSheet } from 'react-native'
+import { View, StyleSheet, Pressable } from 'react-native'
+import { MaterialIcons } from '@expo/vector-icons'
 import CustomText from './CustomText'
 import Button from './Button'
 import SearchFoodItems from './SearchFoodItems'
@@ -9,8 +10,23 @@ const FoodItemSelector = ({
     onOpenFoodItemModal,
     onOpenPantryModal,
     onSelectItem,
+    onUpdateQuantity,
+    onRemoveItem,
 }) => {
     const [activeMode, setActiveMode] = useState(null)
+
+    const incrementQuantity = (index, currentQuantity) => {
+        onUpdateQuantity(index, parseFloat((currentQuantity + 1).toFixed(2)))
+    }
+
+    const decrementQuantity = (index, currentQuantity) => {
+        if (currentQuantity > 0) {
+            onUpdateQuantity(
+                index,
+                parseFloat((currentQuantity - 1).toFixed(2))
+            )
+        }
+    }
 
     return (
         <View style={styles.container}>
@@ -22,13 +38,9 @@ const FoodItemSelector = ({
                 lisäämiäsi elintarvikkeita hakemalla niitä nimellä, luomalla
                 uusia raaka-aineita tai valitsemalla ne pentteristäsi.
             </CustomText>
-
-            <SearchFoodItems
-                onSelect={(item) => {
-                    onSelectItem(item)
-                }}
-            />
-
+            <View style={styles.searchContainer}>
+                <SearchFoodItems onSelectItem={onSelectItem} />
+            </View>
             <View style={styles.buttonGroup}>
                 <Button
                     title="Lisää uusi raaka-aine"
@@ -55,11 +67,90 @@ const FoodItemSelector = ({
                     <CustomText style={styles.infoTitle}>
                         Raaka-aineet:
                     </CustomText>
-                    {foodItems.map((item, index) => (
-                        <View key={index} style={styles.foodItem}>
-                            <CustomText>{item.name}</CustomText>
-                        </View>
-                    ))}
+
+                    <View style={styles.foodItemsList}>
+                        {foodItems.map((item, index) => (
+                            <View key={index} style={styles.foodItemRow}>
+                                <View style={styles.foodItemInfo}>
+                                    <CustomText style={styles.foodItemName}>
+                                        {item.name}
+                                    </CustomText>
+                                    <View style={styles.controlsContainer}>
+                                        <View
+                                            style={
+                                                styles.quantityControlContainer
+                                            }
+                                        >
+                                            <Pressable
+                                                onPress={() =>
+                                                    decrementQuantity(
+                                                        index,
+                                                        item.quantities.meal
+                                                    )
+                                                }
+                                                style={styles.quantityButton}
+                                            >
+                                                <MaterialIcons
+                                                    name="remove"
+                                                    size={20}
+                                                    color="#666"
+                                                />
+                                            </Pressable>
+
+                                            <View
+                                                style={
+                                                    styles.quantityValueContainer
+                                                }
+                                            >
+                                                <CustomText
+                                                    style={styles.quantityValue}
+                                                >
+                                                    {item.quantities.meal}
+                                                </CustomText>
+                                                <CustomText
+                                                    style={styles.unitText}
+                                                >
+                                                    {item.unit}
+                                                </CustomText>
+                                            </View>
+
+                                            <Pressable
+                                                onPress={() =>
+                                                    incrementQuantity(
+                                                        index,
+                                                        item.quantities.meal
+                                                    )
+                                                }
+                                                style={styles.quantityButton}
+                                            >
+                                                <MaterialIcons
+                                                    name="add"
+                                                    size={20}
+                                                    color="#666"
+                                                />
+                                            </Pressable>
+                                        </View>
+                                        <Pressable
+                                            onPress={() => onRemoveItem(index)}
+                                            style={styles.removeButton}
+                                        >
+                                            <View
+                                                style={
+                                                    styles.removeButtonContainer
+                                                }
+                                            >
+                                                <MaterialIcons
+                                                    name="delete"
+                                                    size={20}
+                                                    color="#666"
+                                                />
+                                            </View>
+                                        </Pressable>
+                                    </View>
+                                </View>
+                            </View>
+                        ))}
+                    </View>
                 </>
             ) : (
                 <CustomText style={styles.infoTitle}>
@@ -80,7 +171,7 @@ const styles = StyleSheet.create({
     },
     infoText: {
         paddingTop: 10,
-        marginBottom: 15,
+        marginBottom: 20,
         fontSize: 14,
         textAlign: 'center',
     },
@@ -102,17 +193,88 @@ const styles = StyleSheet.create({
     activeButton: {
         backgroundColor: '#9C86FC',
     },
-    foodItem: {
+    foodItemsList: {
+        marginBottom: 10,
+    },
+    foodItemRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#f8f8f8',
         padding: 10,
-        backgroundColor: '#f5f5f5',
-        borderRadius: 4,
-        marginBottom: 5,
+        borderRadius: 8,
+        marginBottom: 8,
+    },
+    foodItemInfo: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    foodItemName: {
+        flex: 1,
+        fontSize: 14,
+    },
+    quantityControlContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'transparent',
+        borderRadius: 25,
+        overflow: 'hidden',
+        height: 36,
+        borderWidth: 2,
+        borderColor: '#9C86FC',
+    },
+    quantityButton: {
+        padding: 8,
+        backgroundColor: 'transparent',
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: 36,
+        height: '100%',
+    },
+    quantityValueContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minWidth: 30,
+        backgroundColor: 'transparent',
+    },
+    quantityValue: {
+        fontSize: 16,
+        marginRight: 5,
+        textAlign: 'center',
+        color: '#333',
+    },
+    unitText: {
+        fontSize: 14,
+        color: '#666',
+    },
+    controlsContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+    },
+    removeButton: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    removeButtonContainer: {
+        backgroundColor: '#E8E8E8',
+        borderRadius: 25,
+        padding: 8,
+        height: 36,
+        width: 36,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     secondaryButtonText: {
         fontSize: 13,
         fontWeight: 'bold',
         color: 'black',
         textAlign: 'center',
+    },
+    searchContainer: {
+        marginBottom: 15,
     },
 })
 

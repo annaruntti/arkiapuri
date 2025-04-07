@@ -12,7 +12,7 @@ import {
 import CustomText from '../components/CustomText'
 import Button from '../components/Button'
 import AddMealForm from '../components/FormAddMeal'
-import { AntDesign } from '@expo/vector-icons'
+import { AntDesign, MaterialIcons } from '@expo/vector-icons'
 import axios from 'axios'
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
@@ -162,7 +162,7 @@ const MealsScreen = () => {
             activeOpacity={0.7}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-            <AntDesign name="delete" size={20} color="#666" />
+            <MaterialIcons name="delete" size={20} color="#666" />
         </TouchableOpacity>
     )
 

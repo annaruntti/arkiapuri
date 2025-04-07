@@ -13,7 +13,7 @@ import axios from 'axios'
 import storage from '../utils/storage'
 import { getServerUrl } from '../utils/getServerUrl'
 
-const SearchFoodItems = ({ onSelect }) => {
+const SearchFoodItems = ({ onSelectItem }) => {
     const [searchQuery, setSearchQuery] = useState('')
     const [allFoodItems, setAllFoodItems] = useState([])
     const [filteredItems, setFilteredItems] = useState([])
@@ -111,7 +111,7 @@ const SearchFoodItems = ({ onSelect }) => {
 
     const handleItemSelect = (item) => {
         setAddedItems((prev) => new Set(prev).add(item._id))
-        onSelect(item)
+        onSelectItem(item)
     }
 
     const renderItem = ({ item }) => {
@@ -126,11 +126,11 @@ const SearchFoodItems = ({ onSelect }) => {
                 <CustomText style={isAdded ? styles.addedText : null}>
                     {item.name}
                 </CustomText>
-                {isAdded ? (
-                    <MaterialIcons name="check" size={24} color="#4CAF50" />
-                ) : (
-                    <MaterialIcons name="add" size={24} color="#9C86FC" />
-                )}
+                <MaterialIcons
+                    name={isAdded ? 'check-box' : 'check-box-outline-blank'}
+                    size={24}
+                    color={isAdded ? '#38E4D9' : '#666'}
+                />
             </TouchableOpacity>
         )
     }
@@ -215,7 +215,6 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderRadius: 4,
         padding: 5,
-        marginBottom: 5,
     },
     input: {
         flex: 1,
@@ -269,8 +268,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
     },
     resultItemAdded: {
-        backgroundColor: '#F5F5F5',
-        opacity: 0.8,
+        backgroundColor: '#f8f8f8',
     },
     infoText: {
         textAlign: 'center',
@@ -278,7 +276,7 @@ const styles = StyleSheet.create({
         color: '#666',
     },
     addedText: {
-        color: '#666',
+        color: '#333',
     },
     clearButton: {
         padding: 5,

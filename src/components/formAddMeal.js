@@ -38,6 +38,7 @@ const AddMealForm = ({ onSubmit, onClose }) => {
     const [showDatePicker, setShowDatePicker] = useState(false)
     const [shoppingLists, setShoppingLists] = useState([])
     const [selectedShoppingListId, setSelectedShoppingListId] = useState(null)
+    const [pantryItemQuantities, setPantryItemQuantities] = useState({})
 
     const mealRoles = {
         breakfast: 'Aamiainen',
@@ -83,6 +84,11 @@ const AddMealForm = ({ onSubmit, onClose }) => {
     const handleOpenPantryModal = async () => {
         setPantryModalVisible(true)
         await fetchPantryItems()
+        const initialQuantities = {}
+        pantryItems.forEach((item) => {
+            initialQuantities[item._id] = item.quantity || 0
+        })
+        setPantryItemQuantities(initialQuantities)
     }
 
     const togglePantryItemSelection = (item) => {
@@ -106,16 +112,16 @@ const AddMealForm = ({ onSubmit, onClose }) => {
         const formattedPantryItems = selectedPantryItems.map((item) => ({
             name: item.name,
             unit: item.unit || 'kpl',
-            // Use the foodId's category if it exists, otherwise use item's category
             category: item.foodId?.category || item.category || [],
             calories: parseInt(item.calories) || 0,
             price: parseFloat(item.price) || 0,
             locations: ['meal'],
             quantities: {
-                meal: parseFloat(item.quantity) || 0,
+                meal: parseFloat(pantryItemQuantities[item._id]) || 0,
                 'shopping-list': 0,
                 pantry: 0,
             },
+            quantity: parseFloat(pantryItemQuantities[item._id]) || 0,
             foodId: item.foodId?._id || item.foodId,
             expirationDate: item.expirationDate,
         }))
@@ -128,25 +134,27 @@ const AddMealForm = ({ onSubmit, onClose }) => {
     }
 
     const renderPantryItem = ({ item }) => {
-        console.log('Rendering item:', item)
         const isSelected = selectedPantryItems.some(
             (selected) => selected._id === item._id
         )
+
         return (
-            <Pressable
+            <View
                 style={[
                     styles.pantryItem,
                     isSelected && styles.selectedPantryItem,
                 ]}
-                onPress={() => togglePantryItemSelection(item)}
             >
-                <View style={styles.itemRow}>
+                <Pressable
+                    style={styles.itemRow}
+                    onPress={() => togglePantryItemSelection(item)}
+                >
                     <View style={styles.itemContent}>
                         <CustomText style={styles.itemName}>
                             {item.name}
                         </CustomText>
                         <CustomText style={styles.itemDetails}>
-                            {item.quantity} {item.unit}
+                            Saatavilla: {item.quantity} {item.unit}
                         </CustomText>
                     </View>
                     <View style={styles.checkboxContainer}>
@@ -160,8 +168,35 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                             color={isSelected ? '#38E4D9' : '#666'}
                         />
                     </View>
-                </View>
-            </Pressable>
+                </Pressable>
+
+                {isSelected && (
+                    <View style={styles.quantityContainer}>
+                        <CustomText style={styles.quantityLabel}>
+                            Määrä:
+                        </CustomText>
+                        <TextInput
+                            style={styles.quantityInput}
+                            value={pantryItemQuantities[item._id]?.toString()}
+                            onChangeText={(text) => {
+                                // Allow empty string or numbers with optional decimal point
+                                if (text === '' || /^\d*\.?\d*$/.test(text)) {
+                                    setPantryItemQuantities({
+                                        ...pantryItemQuantities,
+                                        [item._id]: text,
+                                    })
+                                }
+                            }}
+                            keyboardType="numeric"
+                            placeholder="0"
+                            selectTextOnFocus={true} // Selects all text when focused
+                        />
+                        <CustomText style={styles.unitText}>
+                            {item.unit}
+                        </CustomText>
+                    </View>
+                )}
+            </View>
         )
     }
 
@@ -435,6 +470,24 @@ const AddMealForm = ({ onSubmit, onClose }) => {
         return date.toLocaleDateString('fi-FI')
     }
 
+    const handleUpdateQuantity = (index, newQuantity) => {
+        const updatedFoodItems = [...foodItems]
+        updatedFoodItems[index] = {
+            ...updatedFoodItems[index],
+            quantities: {
+                ...updatedFoodItems[index].quantities,
+                meal: newQuantity,
+            },
+            quantity: newQuantity, // Keep this for backward compatibility
+        }
+        setFoodItems(updatedFoodItems)
+    }
+
+    const handleRemoveFoodItem = (index) => {
+        const updatedFoodItems = foodItems.filter((_, i) => i !== index)
+        setFoodItems(updatedFoodItems)
+    }
+
     useEffect(() => {
         fetchShoppingLists()
     }, [])
@@ -555,6 +608,8 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                                     setFoodItemModalVisible(true)
                                 }
                                 onOpenPantryModal={handleOpenPantryModal}
+                                onUpdateQuantity={handleUpdateQuantity}
+                                onRemoveItem={handleRemoveFoodItem}
                             />
                         </View>
 
@@ -914,6 +969,34 @@ const styles = StyleSheet.create({
         top: 10,
         zIndex: 1,
         padding: 5,
+    },
+    quantityContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 8,
+        padding: 5,
+        borderTopWidth: 1,
+        borderTopColor: '#eee',
+        paddingTop: 10,
+    },
+    quantityLabel: {
+        fontSize: 14,
+        marginRight: 10,
+    },
+    quantityInput: {
+        backgroundColor: 'white',
+        borderColor: '#bbb',
+        borderWidth: 1,
+        borderRadius: 4,
+        padding: 5,
+        width: 70,
+        textAlign: 'center',
+        height: 36,
+    },
+    unitText: {
+        marginLeft: 8,
+        fontSize: 14,
+        color: '#666',
     },
 })
 
