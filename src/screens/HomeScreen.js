@@ -191,6 +191,7 @@ const styles = StyleSheet.create({
     },
     linkAreaContent: {
         backgroundColor: 'transparent',
+        paddingHorizontal: 15,
     },
     container: {
         alignItems: 'center',
@@ -220,7 +221,8 @@ const styles = StyleSheet.create({
     box: {
         flex: 1,
         marginHorizontal: 5,
-        padding: 15,
+        paddingVertical: 15,
+        paddingHorizontal: 5,
         height: 160,
         backgroundColor: '#fff',
         borderRadius: 15,

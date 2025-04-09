@@ -188,6 +188,21 @@ function ProfileStackScreen() {
 
 const Tab = createBottomTabNavigator()
 
+const tabBarItemStyle = {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 7,
+    paddingbottom: 5,
+    paddingHorizontal: 10,
+}
+
+const tabBarLabelStyle = {
+    fontSize: 10,
+    color: '#000',
+    marginTop: 2,
+    textAlign: 'center',
+}
+
 function TabNavigator() {
     return (
         <Tab.Navigator screenOptions={screenOptions}>
@@ -197,14 +212,10 @@ function TabNavigator() {
                 options={{
                     title: 'Arkiapuri',
                     tabBarIcon: ({ focused }) => (
-                        <View
-                            style={{
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}
-                        >
+                        // Apply common style
+                        <View style={tabBarItemStyle}>
                             <Feather name="home" size={24} color="black" />
-                            <CustomText style={{ fontSize: 12, color: '#000' }}>
+                            <CustomText style={tabBarLabelStyle}>
                                 Arkiapuri
                             </CustomText>
                         </View>
@@ -217,18 +228,14 @@ function TabNavigator() {
                 options={{
                     title: 'Ateriat',
                     tabBarIcon: ({ focused }) => (
-                        <View
-                            style={{
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}
-                        >
+                        // Apply common style
+                        <View style={tabBarItemStyle}>
                             <FontAwesome6
                                 name="bowl-food"
                                 size={24}
                                 color="black"
                             />
-                            <CustomText style={{ fontSize: 12, color: '#000' }}>
+                            <CustomText style={tabBarLabelStyle}>
                                 Ateriat
                             </CustomText>
                         </View>
@@ -241,18 +248,14 @@ function TabNavigator() {
                 options={{
                     title: 'Pentteri',
                     tabBarIcon: ({ focused }) => (
-                        <View
-                            style={{
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}
-                        >
+                        // Apply common style
+                        <View style={tabBarItemStyle}>
                             <AntDesign
                                 name="database"
                                 size={24}
                                 color="black"
                             />
-                            <CustomText style={{ fontSize: 12, color: '#000' }}>
+                            <CustomText style={tabBarLabelStyle}>
                                 Pentteri
                             </CustomText>
                         </View>
@@ -265,18 +268,14 @@ function TabNavigator() {
                 options={{
                     title: 'Ostoslista',
                     tabBarIcon: ({ focused }) => (
-                        <View
-                            style={{
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}
-                        >
+                        // Apply common style
+                        <View style={tabBarItemStyle}>
                             <Feather
                                 name="shopping-cart"
                                 size={24}
                                 color="black"
                             />
-                            <CustomText style={{ fontSize: 12, color: '#000' }}>
+                            <CustomText style={tabBarLabelStyle}>
                                 Ostoslista
                             </CustomText>
                         </View>
@@ -289,24 +288,21 @@ function TabNavigator() {
                 options={{
                     title: 'Lukujärjestys',
                     tabBarIcon: ({ focused }) => (
-                        <View
-                            style={{
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}
-                        >
+                        // Apply common style
+                        <View style={tabBarItemStyle}>
                             <AntDesign
                                 name="calendar"
                                 size={24}
                                 color="black"
                             />
-                            <CustomText style={{ fontSize: 12, color: '#000' }}>
+                            <CustomText style={tabBarLabelStyle}>
                                 Lukujärjestys
                             </CustomText>
                         </View>
                     ),
                 }}
             />
+            {/* ProfileStack remains hidden */}
             <Tab.Screen
                 name="ProfileStack"
                 component={ProfileStackScreen}

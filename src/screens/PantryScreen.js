@@ -14,7 +14,7 @@ import CustomText from '../components/CustomText'
 import axios from 'axios'
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
-import { AntDesign } from '@expo/vector-icons'
+import { AntDesign, MaterialIcons } from '@expo/vector-icons'
 import { scanItems } from '../utils/scanItems'
 import PantryItemDetails from '../components/PantryItemDetails'
 
@@ -314,9 +314,12 @@ const PantryScreen = ({}) => {
             <View style={styles.itemActions}>
                 <TouchableOpacity
                     style={styles.deleteButton}
-                    onPress={() => handleRemoveItem(item._id)}
+                    onPress={(e) => {
+                        handleRemoveItem(item._id)
+                    }}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                    <AntDesign name="delete" size={20} color="#666" />
+                    <MaterialIcons name="delete" size={20} color="#666" />
                 </TouchableOpacity>
             </View>
         </TouchableOpacity>
