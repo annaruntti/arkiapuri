@@ -1,7 +1,6 @@
-import * as React from 'react'
+import React from 'react'
 import {
     StyleSheet,
-    Text,
     View,
     Image,
     ScrollView,
@@ -11,6 +10,7 @@ import {
 import { useNavigation } from '@react-navigation/native'
 import Svg, { Path } from 'react-native-svg'
 import CustomText from '../components/CustomText'
+import { LinearGradient } from 'expo-linear-gradient'
 
 const mealImage = {
     uri: 'https://images.ctfassets.net/hef5a6s5axrs/1fvToRJqesGgl6dJCFyyJl/0f484ccfe293cca2a0a4ab57d3324c34/undraw_breakfast_rgx5.png',
@@ -28,10 +28,18 @@ const readingOrderImage = {
     uri: 'https://images.ctfassets.net/hef5a6s5axrs/5s04BoMG8Blt6H2mvimgUK/ec13e9499e1d6e280ad8ae44c13e674b/undraw_diet_zdwe.png',
 }
 
+const staticWavePathData =
+    'M0,96L40,112C80,128,160,160,240,186.7C320,213,400,235,480,208C560,181,640,107,720,69.3C800,32,880,32,960,74.7C1040,117,1120,203,1200,229.3C1280,256,1360,224,1400,208L1440,192L1440,320L1400,320C1360,320,1280,320,1200,320C1120,320,1040,320,960,320C880,320,800,320,720,320C640,320,560,320,480,320C400,320,320,320,240,320C160,320,80,320,40,320L0,320Z'
+
 const HomeScreen = () => {
     const navigation = useNavigation()
+
     return (
-        <ScrollView style={styles.scrollView}>
+        <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollContentContainer}
+        >
+            {/* Top Section */}
             <View style={styles.homeViewTop}>
                 <View style={styles.header}>
                     <CustomText style={styles.introTitle}>
@@ -44,21 +52,25 @@ const HomeScreen = () => {
                     </CustomText>
                 </View>
             </View>
-            <View style={styles.homeViewBottom}>
+
+            {/* Static SVG Wave */}
+            <View style={styles.svgContainer}>
                 <Svg
-                    height={90}
-                    width={Dimensions.get('screen').width}
-                    style={styles.bottomWavy}
-                    xmlns="http://www.w3.org/2000/svg"
+                    height={80}
+                    width={Dimensions.get('window').width}
                     viewBox="0 0 1440 280"
+                    preserveAspectRatio="xMidYMax slice"
                 >
-                    <Path
-                        fill="#9C86FC"
-                        fillOpacity="1"
-                        d="M0,96L40,112C80,128,160,160,240,186.7C320,213,400,235,480,208C560,181,640,107,720,69.3C800,32,880,32,960,74.7C1040,117,1120,203,1200,229.3C1280,256,1360,224,1400,208L1440,192L1440,320L1400,320C1360,320,1280,320,1200,320C1120,320,1040,320,960,320C880,320,800,320,720,320C640,320,560,320,480,320C400,320,320,320,240,320C160,320,80,320,40,320L0,320Z"
-                    />
+                    <Path d={staticWavePathData} fill="#9C86FC" />
                 </Svg>
-                <View style={styles.linkArea}>
+            </View>
+
+            {/* Gradient Area Below Static Wave */}
+            <LinearGradient
+                colors={['#9C86FC', '#7B61F8']}
+                style={styles.linkAreaGradient}
+            >
+                <View style={styles.linkAreaContent}>
                     <View style={styles.container}>
                         <View style={styles.boxRow}>
                             <TouchableOpacity
@@ -138,7 +150,7 @@ const HomeScreen = () => {
                         </View>
                     </View>
                 </View>
-            </View>
+            </LinearGradient>
         </ScrollView>
     )
 }
@@ -146,94 +158,91 @@ const HomeScreen = () => {
 export default HomeScreen
 
 const styles = StyleSheet.create({
+    scrollView: {
+        backgroundColor: '#fff',
+        flex: 1,
+    },
+    scrollContentContainer: {
+        flexGrow: 1,
+    },
     homeViewTop: {
         backgroundColor: '#fff',
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: '100%',
         paddingHorizontal: 20,
         paddingTop: 20,
+        paddingBottom: 0,
     },
-    homeViewBottom: {
-        backgroundColor: '#fff',
+    header: {
+        alignItems: 'center',
+        paddingBottom: 20,
+    },
+    svgContainer: {
+        width: '100%',
+        aspectRatio: 1440 / (280 - 96),
+        minHeight: 100,
+        backgroundColor: 'transparent',
+        zIndex: 1,
+    },
+    linkAreaGradient: {
+        flex: 1,
+        justifyContent: 'flex-start',
+        paddingTop: 25,
+        paddingBottom: 30,
+        marginTop: -25,
+    },
+    linkAreaContent: {
+        backgroundColor: 'transparent',
     },
     container: {
-        flex: 1,
         alignItems: 'center',
-        justifyContent: 'center',
         width: '100%',
-        marginBottom: 15,
     },
     introTitle: {
         textAlign: 'center',
-        fontSize: 24,
+        fontSize: 25,
+        fontWeight: 'bold',
+        color: '#333',
         paddingTop: 15,
     },
     introText: {
-        fontSize: 17,
+        fontSize: 18,
         textAlign: 'center',
+        color: '#555',
         paddingTop: 20,
-    },
-    backgroundImage: {
-        flex: 1,
-        width: '100%',
-        position: 'relative',
-    },
-    layer: {
-        backgroundColor: 'rgba(248, 247, 216, 0.7)',
-        width: '100%',
-        height: '100%',
-    },
-    headerImage: {
-        width: 250,
-        height: 190,
-        marginLeft: 'auto',
-        marginRight: 'auto',
-    },
-    linkArea: {
-        flex: 1,
-        backgroundColor: '#9C86FC',
-        justifyContent: 'center',
-        minHeight: 460,
-        paddingVertical: 10,
+        paddingHorizontal: 10,
     },
     boxRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 5,
+        marginBottom: 15,
+        paddingHorizontal: 10,
+        width: '100%',
     },
     box: {
         flex: 1,
-        margin: 10,
+        marginHorizontal: 5,
         padding: 15,
         height: 160,
         backgroundColor: '#fff',
-        borderRadius: 10,
+        borderRadius: 15,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
-        shadowRadius: 5,
-        elevation: 3,
+        shadowRadius: 6,
+        elevation: 4,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     boxImage: {
-        width: 100,
-        height: 80,
-        marginBottom: 20,
-        marginHorizontal: 'auto',
+        width: 85,
+        height: 68,
+        marginBottom: 15,
     },
     boxTextContent: {
-        flex: 'auto',
         alignItems: 'center',
     },
     boxTextTitle: {
-        fontSize: 17,
-        color: '#000',
-    },
-    boxText: {
-        fontSize: 12,
-        color: '#000',
-        textAlign: 'center',
-        marginBottom: 5,
+        fontSize: 16,
+        color: '#333',
+        fontWeight: 'bold',
     },
 })
