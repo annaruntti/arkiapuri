@@ -264,6 +264,7 @@ const styles = StyleSheet.create({
         padding: 10,
         minHeight: 40,
         justifyContent: 'center',
+        marginBottom: 5,
     },
     modalView: {
         flex: 1,

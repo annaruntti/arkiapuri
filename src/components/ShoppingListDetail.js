@@ -6,6 +6,7 @@ import {
     TouchableOpacity,
     Modal,
     Alert,
+    Text,
 } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
 import axios from 'axios'
@@ -129,11 +130,26 @@ const ShoppingListDetail = ({
     }
 
     const renderItem = ({ item }) => (
-        <TouchableOpacity
-            style={styles.itemRow}
-            onPress={() => handleCheckItem(item)}
-        >
-            <View style={styles.itemContainer}>
+        <View style={styles.itemRow}>
+            <TouchableOpacity
+                style={styles.itemContainer}
+                onPress={() => handleCheckItem(item)}
+            >
+                <View style={styles.itemContent}>
+                    <CustomText style={styles.itemName}>{item.name}</CustomText>
+                    <CustomText style={styles.itemDetails}>
+                        {item.quantity} {item.unit}
+                    </CustomText>
+                    {item.categories && item.categories.length > 0 && (
+                        <View style={styles.itemCategories}>
+                            {item.categories.map((category, index) => (
+                                <CustomText key={index} style={styles.category}>
+                                    {category}
+                                </CustomText>
+                            ))}
+                        </View>
+                    )}
+                </View>
                 <View style={styles.checkboxContainer}>
                     <MaterialIcons
                         name={
@@ -142,24 +158,13 @@ const ShoppingListDetail = ({
                                 : 'check-box-outline-blank'
                         }
                         size={24}
-                        color="#9C86FC"
+                        color={
+                            checkedItems.includes(item._id) ? '#38E4D9' : '#666'
+                        }
                     />
                 </View>
-                <View style={styles.itemInfo}>
-                    <CustomText style={styles.itemName}>{item.name}</CustomText>
-                    <CustomText style={styles.itemDetails}>
-                        {item.quantity} {item.unit} • {item.estimatedPrice}€
-                    </CustomText>
-                    <View style={styles.itemCategories}>
-                        {item.categories?.map((category, index) => (
-                            <CustomText key={index} style={styles.category}>
-                                {category}
-                            </CustomText>
-                        ))}
-                    </View>
-                </View>
-            </View>
-        </TouchableOpacity>
+            </TouchableOpacity>
+        </View>
     )
 
     return (
@@ -267,30 +272,34 @@ const styles = StyleSheet.create({
     itemRow: {
         backgroundColor: '#f8f8f8',
         padding: 15,
-        borderRadius: 8,
+        borderRadius: 10,
         marginBottom: 10,
     },
     itemContainer: {
         flexDirection: 'row',
+        justifyContent: 'space-between',
         alignItems: 'center',
     },
-    checkboxContainer: {
-        marginRight: 10,
+    itemContent: {
+        flex: 1,
     },
-    itemInfo: {
-        marginBottom: 5,
+    checkboxContainer: {
+        marginLeft: 10,
     },
     itemName: {
         fontSize: 16,
         fontWeight: 'bold',
+        marginBottom: 4,
     },
     itemDetails: {
+        fontSize: 14,
         color: '#666',
     },
     itemCategories: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: 5,
+        marginTop: 5,
     },
     category: {
         backgroundColor: '#e0e0e0',
@@ -358,14 +367,14 @@ const styles = StyleSheet.create({
     },
     modalHeader: {
         width: '100%',
-        paddingTop: 20,
         paddingHorizontal: 20,
         alignItems: 'center',
     },
     modalTitle: {
         fontSize: 20,
         fontWeight: 'bold',
-        marginBottom: 20,
+        textAlign: 'center',
+        marginBottom: 10,
     },
     formContainer: {
         flex: 1,

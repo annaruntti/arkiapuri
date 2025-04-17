@@ -28,10 +28,14 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
     })
 
     const handleAddItem = (itemData) => {
+        console.log('Item data received in handleAddItem:', itemData)
         const newItem = {
             ...itemData,
             location: 'shopping-list',
+            quantity: itemData.quantity, // Keep the original quantity string
+            unit: itemData.unit || 'kpl',
         }
+        console.log('New item being added:', newItem)
         setItems([...items, newItem])
         setShowItemForm(false)
     }
@@ -47,14 +51,31 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
                 return
             }
 
+            console.log('Items before processing:', items)
+
+            // Process items to ensure quantities are properly formatted
+            const processedItems = items.map((item) => {
+                console.log('Processing item:', item)
+                const processedItem = {
+                    ...item,
+                    quantity: parseFloat(item.quantity),
+                    price: parseFloat(item.price) || 0,
+                    calories: parseInt(item.calories) || 0,
+                }
+                console.log('Processed item:', processedItem)
+                return processedItem
+            })
+
             const shoppingListData = {
                 ...data,
-                items,
+                items: processedItems,
                 totalEstimatedPrice: data.totalEstimatedPrice || 0,
             }
 
-            console.log('Sending request with token:', token)
-            console.log('Shopping list data:', shoppingListData)
+            console.log(
+                'Final shopping list data being sent:',
+                shoppingListData
+            )
 
             const response = await axios.post(
                 getServerUrl('/shopping-lists'),

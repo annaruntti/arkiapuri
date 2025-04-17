@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     },
     box: {
         flex: 1,
-        marginHorizontal: 5,
+        marginHorizontal: 7,
         paddingVertical: 15,
         paddingHorizontal: 5,
         height: 160,

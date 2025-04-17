@@ -7,13 +7,13 @@ import {
     TouchableOpacity,
     Alert,
     Platform,
-    Picker,
 } from 'react-native'
 import { Controller, useForm } from 'react-hook-form'
 import { MaterialIcons as Icon } from '@expo/vector-icons'
 import Fontisto from '@expo/vector-icons/Fontisto'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { RadioButton } from 'react-native-paper'
+import { Picker } from '@react-native-picker/picker'
 import axios from 'axios'
 import storage from '../utils/storage'
 import { format } from 'date-fns'
@@ -66,18 +66,14 @@ const FormFoodItem = forwardRef(
             defaultValues: {
                 name: initialValues.name || '',
                 category: initialValues.category || [],
-                quantity: initialValues.quantity
-                    ? String(initialValues.quantity)
-                    : '1',
-                price: initialValues.price ? String(initialValues.price) : '0',
+                quantity: initialValues.quantity || '',
+                price: initialValues.price || '0',
                 expirationDate: initialValues.expirationDate
                     ? new Date(initialValues.expirationDate)
                     : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
                 location: location,
                 unit: initialValues.unit || 'kpl',
-                calories: initialValues.calories
-                    ? String(initialValues.calories)
-                    : '0',
+                calories: initialValues.calories || '0',
             },
         })
 
@@ -115,32 +111,37 @@ const FormFoodItem = forwardRef(
 
         const handleFormSubmit = async (data) => {
             try {
-                // Filter out locations with empty quantities
-                const activeLocations = selectedLocations.filter(
-                    (loc) =>
-                        quantities[loc] !== '' ||
-                        (loc === 'meal' && data.quantity)
-                )
+                console.log('Form data received:', data)
+
+                const quantity = parseFloat(data.quantity) || 0
 
                 const formData = {
-                    ...data,
-                    quantity: formatNumber(data.quantity),
-                    locations: activeLocations,
+                    name: data.name,
+                    category: data.category,
+                    unit: data.unit,
+                    price: parseFloat(data.price) || 0,
+                    calories: parseInt(data.calories) || 0,
+                    expirationDate: data.expirationDate,
+                    location: location,
+                    locations: [location],
+                    quantity: quantity, // Send as number
                     quantities: {
-                        meal:
-                            location === 'meal'
-                                ? parseFloat(formatNumber(data.quantity)) || 0
-                                : 0,
-                        'shopping-list':
-                            parseFloat(
-                                formatNumber(quantities['shopping-list'])
-                            ) || 0,
-                        pantry:
-                            parseFloat(formatNumber(quantities.pantry)) || 0,
+                        meal: 0,
+                        'shopping-list': 0,
+                        pantry: 0,
                     },
                 }
 
-                console.log('Form data before submit:', formData)
+                // Set the quantity for the selected location
+                if (location === 'pantry') {
+                    formData.quantities.pantry = quantity
+                } else if (location === 'shopping-list') {
+                    formData.quantities['shopping-list'] = quantity
+                } else if (location === 'meal') {
+                    formData.quantities.meal = quantity
+                }
+
+                console.log('Form data being submitted:', formData)
 
                 if (location === 'meal') {
                     onSubmit(formData)
@@ -204,23 +205,28 @@ const FormFoodItem = forwardRef(
                     <CustomText style={styles.label}>
                         Valitse ostoslista
                     </CustomText>
-                    <Picker
-                        selectedValue={selectedId}
-                        onValueChange={(itemValue) => onSelect(itemValue)}
-                        style={styles.picker}
-                    >
-                        <Picker.Item
-                            label="Valitse ostoslista..."
-                            value={null}
-                        />
-                        {shoppingLists.map((list) => (
+                    <View style={styles.pickerContainer}>
+                        <Picker
+                            selectedValue={selectedId}
+                            onValueChange={onSelect}
+                            style={styles.picker}
+                            itemStyle={styles.pickerItem}
+                        >
                             <Picker.Item
-                                key={list._id}
-                                label={list.name}
-                                value={list._id}
+                                label="Valitse ostoslista..."
+                                value=""
+                                color="#666"
                             />
-                        ))}
-                    </Picker>
+                            {shoppingLists.map((list) => (
+                                <Picker.Item
+                                    key={list._id}
+                                    label={list.name}
+                                    value={list._id}
+                                    color="#000"
+                                />
+                            ))}
+                        </Picker>
+                    </View>
                 </View>
             )
         }
@@ -308,7 +314,15 @@ const FormFoodItem = forwardRef(
                                 style={styles.quantityFormInput}
                                 placeholder="Esim. 0,5"
                                 placeholderTextColor="#999"
-                                onChangeText={(text) => onChange(text)}
+                                onChangeText={(text) => {
+                                    // Allow empty string or numbers with optional decimal point
+                                    if (
+                                        text === '' ||
+                                        /^(0|[1-9]\d*)([.,]\d+)?$/.test(text)
+                                    ) {
+                                        onChange(text)
+                                    }
+                                }}
                                 onBlur={onBlur}
                                 value={value}
                                 keyboardType="numeric"
@@ -605,7 +619,7 @@ const styles = StyleSheet.create({
         height: 36,
         padding: 8,
         borderRadius: 4,
-        marginBottom: 3,
+        marginBottom: 5,
         width: '100%',
     },
     quantityFormInput: {
@@ -616,7 +630,7 @@ const styles = StyleSheet.create({
         height: 36,
         padding: 8,
         borderRadius: 4,
-        marginBottom: 3,
+        marginBottom: 5,
         width: '60%',
     },
     unitFormInput: {
@@ -627,7 +641,7 @@ const styles = StyleSheet.create({
         height: 36,
         padding: 8,
         borderRadius: 4,
-        marginBottom: 3,
+        marginBottom: 5,
         width: '35%',
         marginLeft: 10,
     },
@@ -739,10 +753,12 @@ const styles = StyleSheet.create({
     },
     radioGroup: {
         marginTop: 5,
+        marginBottom: 10,
     },
     radioOption: {
         flexDirection: 'row',
         alignItems: 'center',
+        marginBottom: 5,
     },
     radioLabel: {
         marginLeft: 8,
@@ -752,6 +768,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
+        marginBottom: 10,
     },
     quantityInput: {
         flexDirection: 'row',
@@ -759,7 +776,6 @@ const styles = StyleSheet.create({
         flex: 1,
         marginLeft: 10,
         marginRight: 10,
-        width: '50%',
     },
     unitLabel: {
         marginLeft: 8,
@@ -788,13 +804,24 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     selectorContainer: {
+        marginBottom: 25,
+        overflow: 'hidden',
+        height: 160,
+        position: 'relative',
+        top: 0,
+    },
+    pickerContainer: {
         backgroundColor: 'white',
-        padding: 5,
+        marginTop: 10,
     },
     picker: {
         width: '100%',
+        height: 60,
+        backgroundColor: 'white',
+    },
+    pickerItem: {
         height: 40,
-        padding: 5,
+        fontSize: 16,
     },
     shoppingListSelectorContainer: {
         marginLeft: 30,
