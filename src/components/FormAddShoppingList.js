@@ -17,7 +17,6 @@ import { getServerUrl } from '../utils/getServerUrl'
 import CustomModal from './CustomModal'
 
 const FormAddShoppingList = ({ onSubmit, onClose }) => {
-    const [showItemForm, setShowItemForm] = useState(true)
     const [items, setItems] = useState([])
     const [foodItemModalVisible, setFoodItemModalVisible] = useState(false)
     const [pantryModalVisible, setPantryModalVisible] = useState(false)
@@ -43,12 +42,11 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
         const newItem = {
             ...itemData,
             location: 'shopping-list',
-            quantity: itemData.quantity, // Keep the original quantity string
+            quantity: itemData.quantity,
             unit: itemData.unit || 'kpl',
         }
         console.log('New item being added:', newItem)
         setItems([...items, newItem])
-        setShowItemForm(false)
     }
 
     const handleSubmitForm = async (data) => {
@@ -120,19 +118,6 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
         }
     }
 
-    const handleAddFoodItem = (itemData) => {
-        console.log('Item data received in handleAddFoodItem:', itemData)
-        const newItem = {
-            ...itemData,
-            location: 'shopping-list',
-            quantity: itemData.quantity, // Keep the original quantity string
-            unit: itemData.unit || 'kpl',
-        }
-        console.log('New item being added:', newItem)
-        setItems([...items, newItem])
-        setFoodItemModalVisible(false)
-    }
-
     const handlePantryItemSelect = async (itemId) => {
         try {
             setIsLoading(true)
@@ -156,7 +141,7 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
     }
 
     const addSelectedPantryItems = () => {
-        // Implementation of adding selected pantry items to the shopping list
+        // Add selected pantry items to the shopping list
         console.log('Adding selected pantry items to shopping list')
         setPantryModalVisible(false)
     }
@@ -188,76 +173,59 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
 
     return (
         <View style={styles.container}>
-            <CustomModal
-                visible={showItemForm}
-                onClose={() => {
-                    setShowItemForm(false)
-                    onClose()
-                }}
-                title="Luo uusi ostoslista"
-            >
-                <View style={styles.modalBody}>
-                    <View style={styles.formContainer}>
-                        <CustomInput
-                            label="Ostoslistan nimi"
-                            name="name"
-                            placeholder="Kirjoita ostoslistan nimi"
-                            control={control}
-                            rules={{
-                                required: 'Ostoslistan nimi on pakollinen',
-                            }}
-                        />
-                        {errors.name && (
-                            <CustomText style={styles.errorMsg}>
-                                {errors.name.message}
-                            </CustomText>
-                        )}
+            <View style={styles.formContainer}>
+                <CustomInput
+                    label="Ostoslistan nimi"
+                    name="name"
+                    placeholder="Kirjoita ostoslistan nimi"
+                    control={control}
+                    rules={{
+                        required: 'Ostoslistan nimi on pakollinen',
+                    }}
+                />
+                <CustomInput
+                    label="Kuvaus"
+                    name="description"
+                    placeholder="Kirjoita kuvaus"
+                    control={control}
+                />
 
-                        <CustomInput
-                            label="Kuvaus"
-                            name="description"
-                            placeholder="Kirjoita kuvaus"
-                            control={control}
-                        />
+                <CustomInput
+                    label="Arvioitu kokonaishinta"
+                    name="totalEstimatedPrice"
+                    placeholder="Syötä arvioitu kokonaishinta"
+                    control={control}
+                    keyboardType="numeric"
+                />
 
-                        <CustomInput
-                            label="Arvioitu kokonaishinta"
-                            name="totalEstimatedPrice"
-                            placeholder="Syötä arvioitu kokonaishinta"
-                            control={control}
-                            keyboardType="numeric"
-                        />
+                <Button
+                    style={styles.secondaryButton}
+                    title="Lisää ostoslistalle tuote"
+                    onPress={() => setFoodItemModalVisible(true)}
+                />
 
-                        <Button
-                            style={styles.secondaryButton}
-                            title="Lisää ostoslistalle tuote"
-                            onPress={() => setFoodItemModalVisible(true)}
-                        />
-
-                        {items.length > 0 && (
-                            <View style={styles.itemsList}>
-                                <CustomText style={styles.subtitle}>
-                                    Lisätyt tuotteet:
+                {items.length > 0 && (
+                    <View style={styles.itemsList}>
+                        <CustomText style={styles.subtitle}>
+                            Lisätyt tuotteet:
+                        </CustomText>
+                        {items.map((item, index) => (
+                            <View key={index} style={styles.itemRow}>
+                                <CustomText>
+                                    {item.name} - {item.quantity} {item.unit} -{' '}
+                                    {item.estimatedPrice}€
                                 </CustomText>
-                                {items.map((item, index) => (
-                                    <View key={index} style={styles.itemRow}>
-                                        <CustomText>
-                                            {item.name} - {item.quantity}{' '}
-                                            {item.unit} - {item.estimatedPrice}€
-                                        </CustomText>
-                                    </View>
-                                ))}
                             </View>
-                        )}
-
-                        <Button
-                            style={styles.primaryButton}
-                            title="Tallenna ostoslista"
-                            onPress={handleSubmit(handleSubmitForm)}
-                        />
+                        ))}
                     </View>
-                </View>
-            </CustomModal>
+                )}
+
+                <Button
+                    style={styles.primaryButton}
+                    title="Tallenna ostoslista"
+                    onPress={handleSubmit(handleSubmitForm)}
+                />
+            </View>
 
             <CustomModal
                 visible={foodItemModalVisible}
@@ -266,7 +234,7 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
             >
                 <View style={styles.modalBody}>
                     <FormFoodItem
-                        onSubmit={handleAddFoodItem}
+                        onSubmit={handleAddItem}
                         onClose={() => setFoodItemModalVisible(false)}
                         location="shopping-list"
                         showLocationSelector={true}
