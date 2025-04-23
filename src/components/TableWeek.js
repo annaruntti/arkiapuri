@@ -17,6 +17,17 @@ import storage from '../utils/storage'
 import { getServerUrl } from '../utils/getServerUrl'
 import Button from './Button'
 import { MaterialIcons } from '@expo/vector-icons'
+import MealItemDetail from './MealItemDetail'
+
+const mealTypeTranslations = {
+    breakfast: 'Aamiainen',
+    lunch: 'Lounas',
+    snack: 'Välipala',
+    dinner: 'Päivällinen',
+    supper: 'Iltapala',
+    dessert: 'Jälkiruoka',
+    other: 'Muu',
+}
 
 const Table = () => {
     const navigation = useNavigation()
@@ -26,6 +37,8 @@ const Table = () => {
     const [isModalVisible, setIsModalVisible] = useState(false)
     const [selectedDate, setSelectedDate] = useState(null)
     const [availableMeals, setAvailableMeals] = useState([])
+    const [selectedMeal, setSelectedMeal] = useState(null)
+    const [detailModalVisible, setDetailModalVisible] = useState(false)
 
     // Generate 7 days starting from today
     useEffect(() => {
@@ -195,16 +208,27 @@ const Table = () => {
         }
     }
 
+    const handleMealPress = (meal) => {
+        setSelectedMeal(meal)
+        setDetailModalVisible(true)
+    }
+
+    const handleCloseDetail = () => {
+        setDetailModalVisible(false)
+        setSelectedMeal(null)
+    }
+
     const renderMealItem = ({ item }) => (
         <TouchableOpacity
-            onPress={() =>
-                navigation.navigate('MealDetail', { mealId: item._id })
-            }
+            onPress={() => handleMealPress(item)}
             style={styles.mealItem}
         >
             <CustomText style={styles.mealName}>{item.name}</CustomText>
             <CustomText style={styles.mealType}>
-                {item.defaultRoles?.[0] || 'Ateria'}
+                {item.defaultRoles?.[0]
+                    ? mealTypeTranslations[item.defaultRoles[0]] ||
+                      item.defaultRoles[0]
+                    : 'Ateria'}
             </CustomText>
         </TouchableOpacity>
     )
@@ -214,11 +238,16 @@ const Table = () => {
         const isToday =
             format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
 
+        // Format the date with capitalized day name
+        const formattedDate = format(date, 'EEEE d.M.yyyy', { locale: fi })
+        const capitalizedDate =
+            formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1)
+
         return (
             <View style={styles.dateSection}>
                 <View style={styles.dateHeaderContainer}>
                     <CustomText style={styles.dateHeader}>
-                        {format(date, 'EEEE d.M.yyyy', { locale: fi })}
+                        {capitalizedDate}
                         {isToday ? ' (Tänään)' : ''}
                     </CustomText>
                     <Button
@@ -292,7 +321,11 @@ const Table = () => {
                                         {item.name}
                                     </CustomText>
                                     <CustomText style={styles.modalMealType}>
-                                        {item.defaultRoles?.[0] || 'Ateria'}
+                                        {item.defaultRoles?.[0]
+                                            ? mealTypeTranslations[
+                                                  item.defaultRoles[0]
+                                              ] || item.defaultRoles[0]
+                                            : 'Ateria'}
                                     </CustomText>
                                 </TouchableOpacity>
                             )}
@@ -314,6 +347,11 @@ const Table = () => {
                 contentContainerStyle={styles.contentContainer}
             />
             {renderMealSelectModal()}
+            <MealItemDetail
+                meal={selectedMeal}
+                visible={detailModalVisible}
+                onClose={handleCloseDetail}
+            />
         </View>
     )
 }
@@ -331,12 +369,11 @@ const styles = StyleSheet.create({
     dateSection: {
         marginBottom: 20,
         width: '100%',
-        paddingHorizontal: 4,
         borderWidth: 1,
         borderColor: '#ccc',
         borderRadius: 10,
-        paddingHorizontal: 10,
-        paddingVertical: 10,
+        paddingHorizontal: 15,
+        paddingVertical: 15,
     },
     dateHeaderContainer: {
         flexDirection: 'row',
@@ -353,11 +390,10 @@ const styles = StyleSheet.create({
     },
     addMealButton: {
         backgroundColor: '#9C86FC',
-        paddingHorizontal: 15,
-        paddingVertical: 8,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
         borderRadius: 25,
         marginLeft: 10,
-        minWidth: 100,
         alignItems: 'center',
     },
     addMealButtonText: {
