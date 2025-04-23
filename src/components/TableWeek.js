@@ -3,7 +3,6 @@ import {
     FlatList,
     View,
     TouchableOpacity,
-    Modal,
     Platform,
     Alert,
 } from 'react-native'
@@ -16,8 +15,8 @@ import axios from 'axios'
 import storage from '../utils/storage'
 import { getServerUrl } from '../utils/getServerUrl'
 import Button from './Button'
-import { MaterialIcons } from '@expo/vector-icons'
 import MealItemDetail from './MealItemDetail'
+import CustomModal from './CustomModal'
 
 const mealTypeTranslations = {
     breakfast: 'Aamiainen',
@@ -277,65 +276,42 @@ const Table = () => {
     }
 
     const renderMealSelectModal = () => (
-        <Modal
+        <CustomModal
             visible={isModalVisible}
-            animationType="slide"
-            transparent={true}
-            onRequestClose={() => setIsModalVisible(false)}
+            onClose={() => setIsModalVisible(false)}
+            title={`Valitse ateria päivälle ${selectedDate ? format(selectedDate, 'd.M.yyyy') : ''}`}
         >
-            <View style={styles.modalView}>
-                <View style={styles.modalContent}>
-                    <View style={styles.modalHeader}>
-                        <CustomText style={styles.modalTitle}>
-                            Valitse ateria päivälle{' '}
-                            {selectedDate
-                                ? format(selectedDate, 'd.M.yyyy')
-                                : ''}
-                        </CustomText>
-                        <TouchableOpacity
-                            style={styles.closeButton}
-                            onPress={() => setIsModalVisible(false)}
-                        >
-                            <MaterialIcons
-                                name="close"
-                                size={24}
-                                color="black"
-                            />
-                        </TouchableOpacity>
-                    </View>
-                    {availableMeals.length === 0 ? (
-                        <View style={styles.noMealsContainer}>
-                            <CustomText style={styles.noMealsText}>
-                                Ei vapaita aterioita
-                            </CustomText>
-                        </View>
-                    ) : (
-                        <FlatList
-                            data={availableMeals}
-                            renderItem={({ item }) => (
-                                <TouchableOpacity
-                                    style={styles.modalMealItem}
-                                    onPress={() => handleSelectMeal(item)}
-                                >
-                                    <CustomText style={styles.modalMealName}>
-                                        {item.name}
-                                    </CustomText>
-                                    <CustomText style={styles.modalMealType}>
-                                        {item.defaultRoles?.[0]
-                                            ? mealTypeTranslations[
-                                                  item.defaultRoles[0]
-                                              ] || item.defaultRoles[0]
-                                            : 'Ateria'}
-                                    </CustomText>
-                                </TouchableOpacity>
-                            )}
-                            keyExtractor={(item) => item._id}
-                            contentContainerStyle={styles.modalList}
-                        />
-                    )}
+            {availableMeals.length === 0 ? (
+                <View style={styles.noMealsContainer}>
+                    <CustomText style={styles.noMealsText}>
+                        Ei vapaita aterioita
+                    </CustomText>
                 </View>
-            </View>
-        </Modal>
+            ) : (
+                <FlatList
+                    data={availableMeals}
+                    renderItem={({ item }) => (
+                        <TouchableOpacity
+                            style={styles.modalMealItem}
+                            onPress={() => handleSelectMeal(item)}
+                        >
+                            <CustomText style={styles.modalMealName}>
+                                {item.name}
+                            </CustomText>
+                            <CustomText style={styles.modalMealType}>
+                                {item.defaultRoles?.[0]
+                                    ? mealTypeTranslations[
+                                          item.defaultRoles[0]
+                                      ] || item.defaultRoles[0]
+                                    : 'Ateria'}
+                            </CustomText>
+                        </TouchableOpacity>
+                    )}
+                    keyExtractor={(item) => item._id}
+                    contentContainerStyle={styles.modalList}
+                />
+            )}
+        </CustomModal>
     )
 
     return (

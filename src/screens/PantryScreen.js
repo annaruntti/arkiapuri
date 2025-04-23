@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import {
     Alert,
-    Modal,
     StyleSheet,
     View,
     FlatList,
@@ -17,9 +16,10 @@ import storage from '../utils/storage'
 import { AntDesign, MaterialIcons } from '@expo/vector-icons'
 import { scanItems } from '../utils/scanItems'
 import PantryItemDetails from '../components/PantryItemDetails'
+import CustomModal from '../components/CustomModal'
 
 const PantryScreen = ({}) => {
-    const [modalVisible, setModalVisible] = useState(false)
+    const [showItemForm, setShowItemForm] = useState(false)
     const [pantryItems, setPantryItems] = useState([])
     const [loading, setLoading] = useState(true)
     const [selectedItem, setSelectedItem] = useState(null)
@@ -138,7 +138,7 @@ const PantryScreen = ({}) => {
                 )
 
                 if (pantryResponse.data.success) {
-                    setModalVisible(false)
+                    setShowItemForm(false)
                     await fetchPantryItems()
                     Alert.alert(
                         'Onnistui',
@@ -329,34 +329,15 @@ const PantryScreen = ({}) => {
 
     return (
         <View style={styles.container}>
-            <Modal
-                animationType="slide"
-                transparent={true}
-                visible={modalVisible}
-                onRequestClose={() => setModalVisible(false)}
+            <CustomModal
+                visible={showItemForm}
+                onClose={() => setShowItemForm(false)}
+                title="Lisää tuote pantteriin"
             >
-                <View style={styles.modalContainer}>
-                    <View style={styles.modalContent}>
-                        <Pressable
-                            onPress={() => setModalVisible(false)}
-                            style={styles.closeButton}
-                        >
-                            <AntDesign name="close" size={24} color="black" />
-                        </Pressable>
-                        <View style={styles.modalHeader}>
-                            <CustomText style={styles.modalTitle}>
-                                Lisää tuote ruokakomeroon
-                            </CustomText>
-                        </View>
-                        <View style={styles.modalBody}>
-                            <FormFoodItem
-                                onSubmit={handleAddItem}
-                                location="pantry"
-                            />
-                        </View>
-                    </View>
+                <View style={styles.formContainer}>
+                    <FormFoodItem onSubmit={handleAddItem} location="pantry" />
                 </View>
-            </Modal>
+            </CustomModal>
             <CustomText style={styles.introText}>
                 Selaa pentteriäsi eli ruokakomeroasi ja käytä kotoasi jo
                 löytyviä elintarvikkeita avuksi ateriasuunnittelussa ja
@@ -368,8 +349,8 @@ const PantryScreen = ({}) => {
             </CustomText>
             <View style={styles.buttonContainer}>
                 <Button
-                    title="Lisää elintarvike"
-                    onPress={() => setModalVisible(true)}
+                    title="Lisää tuote"
+                    onPress={() => setShowItemForm(true)}
                     style={styles.primaryButton}
                 />
                 <Button
@@ -429,38 +410,24 @@ const styles = StyleSheet.create({
         paddingHorizontal: 15,
         marginBottom: 10,
     },
-    modalContainer: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    },
-    modalContent: {
-        flex: 1,
-        backgroundColor: 'white',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        marginTop: 50,
-        paddingHorizontal: 20,
-    },
-    closeButton: {
-        position: 'absolute',
-        right: 10,
-        top: 10,
-        padding: 5,
-        zIndex: 1,
-    },
-    modalHeader: {
-        width: '100%',
-        paddingTop: 20,
-        paddingBottom: 10,
+    header: {
+        flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'space-between',
+        width: '100%',
+        padding: 10,
+        marginBottom: 10,
     },
-    modalTitle: {
+    title: {
         fontSize: 20,
         fontWeight: 'bold',
-        paddingTop: 20,
     },
-    modalBody: {
-        flex: 1,
+    buttonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+        paddingHorizontal: 10,
+        marginBottom: 20,
     },
     primaryButton: {
         borderRadius: 25,
@@ -473,8 +440,7 @@ const styles = StyleSheet.create({
         color: 'black',
         fontWeight: 'bold',
         textAlign: 'center',
-        width: 'auto',
-        marginBottom: 20,
+        width: '48%',
     },
     secondaryButton: {
         borderRadius: 25,
@@ -487,30 +453,7 @@ const styles = StyleSheet.create({
         color: 'black',
         fontWeight: 'bold',
         textAlign: 'center',
-        width: 'auto',
-        marginBottom: 20,
-    },
-    tertiaryButton: {
-        borderRadius: 25,
-        paddingTop: 7,
-        paddingBottom: 7,
-        paddingLeft: 10,
-        paddingRight: 10,
-        elevation: 2,
-        backgroundColor: '#fff',
-        color: 'black',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        marginBottom: 10,
-        borderWidth: 3,
-        borderColor: '#9C86FC',
-    },
-    modalText: {
-        marginBottom: 15,
-        textAlign: 'center',
-    },
-    errorMsg: {
-        color: 'red',
+        width: '48%',
     },
     itemContainer: {
         backgroundColor: '#f8f8f8',
@@ -566,10 +509,6 @@ const styles = StyleSheet.create({
         color: '#666',
     },
     formContainer: {
-        padding: 20,
-    },
-    buttonContainer: {
-        flexDirection: 'row',
-        gap: 10,
+        padding: 15,
     },
 })

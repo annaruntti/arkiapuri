@@ -4,14 +4,13 @@ import {
     StyleSheet,
     TextInput,
     Pressable,
-    Modal,
     FlatList,
     Alert,
     Platform,
 } from 'react-native'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { Picker } from '@react-native-picker/picker'
-import { AntDesign, MaterialIcons } from '@expo/vector-icons'
+import { MaterialIcons } from '@expo/vector-icons'
 import axios from 'axios'
 import CustomText from './CustomText'
 import Button from './Button'
@@ -20,6 +19,7 @@ import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
 import { useLogin } from '../context/LoginProvider'
 import FoodItemSelector from './FoodItemSelector'
+import CustomModal from './CustomModal'
 
 const AddMealForm = ({ onSubmit, onClose }) => {
     const { profile } = useLogin()
@@ -246,7 +246,9 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                             name: item.name,
                             unit: item.unit || 'kpl',
                             category: Array.isArray(item.category)
-                                ? item.category
+                                ? item.category.map((cat) =>
+                                      typeof cat === 'object' ? cat.name : cat
+                                  )
                                 : [],
                             calories: parseInt(item.calories) || 0,
                             price: parseFloat(item.price) || 0,
@@ -330,7 +332,13 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                                         item.quantities['shopping-list']
                                     ) || 0,
                                 unit: item.unit || 'kpl',
-                                category: item.category || [],
+                                category: Array.isArray(item.category)
+                                    ? item.category.map((cat) =>
+                                          typeof cat === 'object'
+                                              ? cat.name
+                                              : cat
+                                      )
+                                    : [],
                                 calories: parseInt(item.calories) || 0,
                                 price: parseFloat(item.price) || 0,
                             }
@@ -361,9 +369,6 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                 })
             )
 
-            // Log the selected role right after user selection
-            console.log('Initially selected role:', selectedRoles)
-
             // Create the meal with the food item IDs
             const mealData = {
                 id: `meal_${Date.now()}`,
@@ -372,21 +377,10 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                 difficultyLevel: getDifficultyEnum(difficultyLevel),
                 cookingTime: parseInt(cookingTime) || 0,
                 foodItems: createdFoodItemIds,
-                defaultRoles: [...selectedRoles], // Create a new array to ensure no reference issues
+                defaultRoles: [...selectedRoles],
                 plannedCookingDate,
                 user: profile._id,
             }
-
-            // Log the exact structure being sent
-            console.log(
-                'Meal data structure:',
-                JSON.stringify(mealData, null, 2)
-            )
-            console.log('defaultRoles type:', typeof mealData.defaultRoles)
-            console.log(
-                'defaultRoles isArray:',
-                Array.isArray(mealData.defaultRoles)
-            )
 
             const response = await axios.post(
                 getServerUrl('/meals'),
@@ -399,28 +393,7 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                 }
             )
 
-            // Add this log to see the exact request configuration
-            console.log('Request config:', {
-                url: response.config.url,
-                method: response.config.method,
-                headers: response.config.headers,
-                data: JSON.parse(response.config.data), // Parse the stringified data back to an object
-            })
-
-            // Log the exact response structure
-            console.log(
-                'Full server response:',
-                JSON.stringify(response.data, null, 2)
-            )
-
             if (response.data.success) {
-                if (response.data.meal.defaultRoles[0] !== selectedRoles[0]) {
-                    console.error('Role mismatch detected:', {
-                        originalSelection: selectedRoles[0],
-                        sentInPayload: mealData.defaultRoles[0],
-                        receivedFromServer: response.data.meal.defaultRoles[0],
-                    })
-                }
                 onSubmit(response.data.meal)
             }
         } catch (error) {
@@ -628,100 +601,67 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                 bounces={false}
             />
 
-            <Modal
-                animationType="slide"
-                transparent={true}
+            <CustomModal
                 visible={foodItemModalVisible}
-                onRequestClose={() => setFoodItemModalVisible(false)}
+                onClose={() => setFoodItemModalVisible(false)}
+                title="Lisää uusi raaka-aine"
             >
-                <View style={styles.modalView}>
-                    <View style={styles.modalContentView}>
-                        <Pressable
-                            onPress={() => setFoodItemModalVisible(false)}
-                            style={styles.closeButton}
-                        >
-                            <AntDesign name="close" size={24} color="black" />
-                        </Pressable>
-                        <View style={styles.modalHeader}>
-                            <CustomText style={styles.modalTitle}>
-                                Lisää uusi raaka-aine
-                            </CustomText>
-                        </View>
-                        <View style={styles.modalBody}>
-                            <FormFoodItem
-                                onSubmit={handleAddFoodItem}
-                                onClose={() => setFoodItemModalVisible(false)}
-                                location="meal"
-                                showLocationSelector={true}
-                                shoppingLists={shoppingLists}
-                                selectedShoppingListId={selectedShoppingListId}
-                                onShoppingListSelect={setSelectedShoppingListId}
-                                initialValues={{
-                                    quantities: {
-                                        meal: '',
-                                        'shopping-list': '',
-                                        pantry: '',
-                                    },
-                                    locations: ['meal'],
-                                }}
-                            />
-                        </View>
-                    </View>
+                <View style={styles.modalBody}>
+                    <FormFoodItem
+                        onSubmit={handleAddFoodItem}
+                        onClose={() => setFoodItemModalVisible(false)}
+                        location="meal"
+                        showLocationSelector={true}
+                        shoppingLists={shoppingLists}
+                        selectedShoppingListId={selectedShoppingListId}
+                        onShoppingListSelect={setSelectedShoppingListId}
+                        initialValues={{
+                            quantities: {
+                                meal: '',
+                                'shopping-list': '',
+                                pantry: '',
+                            },
+                            locations: ['meal'],
+                        }}
+                    />
                 </View>
-            </Modal>
+            </CustomModal>
 
-            <Modal
-                animationType="slide"
-                transparent={true}
+            <CustomModal
                 visible={pantryModalVisible}
-                onRequestClose={() => setPantryModalVisible(false)}
+                onClose={() => setPantryModalVisible(false)}
+                title="Valitse pentteristä"
             >
-                <View style={styles.modalView}>
-                    <View style={styles.modalContentView}>
-                        <Pressable
-                            onPress={() => setPantryModalVisible(false)}
-                            style={styles.closeButton}
-                        >
-                            <AntDesign name="close" size={24} color="black" />
-                        </Pressable>
-                        <View style={styles.modalHeader}>
-                            <CustomText style={styles.modalTitle}>
-                                Valitse pentteristä
+                <View style={styles.modalBody}>
+                    {isLoading ? (
+                        <CustomText style={styles.loadingText}>
+                            Ladataan...
+                        </CustomText>
+                    ) : (
+                        <View style={styles.modalScrollContainer}>
+                            <CustomText style={styles.foundItemsText}>
+                                {pantryItems.length} elintarviketta löydetty
                             </CustomText>
+                            <FlatList
+                                data={pantryItems}
+                                renderItem={renderPantryItem}
+                                keyExtractor={(item) => item._id}
+                                style={styles.pantryList}
+                            />
+                            <View style={styles.modalButtonGroup}>
+                                <Button
+                                    title="Lisää valitut"
+                                    onPress={addSelectedPantryItems}
+                                    style={[
+                                        styles.primaryButton,
+                                        styles.fullWidthButton,
+                                    ]}
+                                />
+                            </View>
                         </View>
-                        <View style={styles.modalBody}>
-                            {isLoading ? (
-                                <CustomText style={styles.loadingText}>
-                                    Ladataan...
-                                </CustomText>
-                            ) : (
-                                <View style={styles.modalScrollContainer}>
-                                    <CustomText style={styles.foundItemsText}>
-                                        {pantryItems.length} elintarviketta
-                                        löydetty
-                                    </CustomText>
-                                    <FlatList
-                                        data={pantryItems}
-                                        renderItem={renderPantryItem}
-                                        keyExtractor={(item) => item._id}
-                                        style={styles.pantryList}
-                                    />
-                                    <View style={styles.modalButtonGroup}>
-                                        <Button
-                                            title="Lisää valitut"
-                                            onPress={addSelectedPantryItems}
-                                            style={[
-                                                styles.primaryButton,
-                                                styles.fullWidthButton,
-                                            ]}
-                                        />
-                                    </View>
-                                </View>
-                            )}
-                        </View>
-                    </View>
+                    )}
                 </View>
-            </Modal>
+            </CustomModal>
         </View>
     )
 }
@@ -732,8 +672,8 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
     },
     formContainer: {
-        padding: 20,
-        paddingBottom: 100,
+        paddingVertical: 5,
+        paddingHorizontal: 10,
     },
     formScroll: {
         flexGrow: 1,
@@ -800,6 +740,7 @@ const styles = StyleSheet.create({
     },
     modalBody: {
         flex: 1,
+        paddingHorizontal: 15,
     },
     primaryButton: {
         borderRadius: 25,
@@ -876,10 +817,7 @@ const styles = StyleSheet.create({
     },
     checkboxGroup: {
         backgroundColor: 'white',
-        borderColor: '#bbb',
-        borderWidth: 1,
-        borderRadius: 4,
-        padding: 10,
+        padding: 5,
         marginBottom: 15,
     },
     checkboxRow: {
@@ -933,70 +871,6 @@ const styles = StyleSheet.create({
     foodItemSelectorContainer: {
         marginTop: 10,
         marginBottom: 10,
-    },
-    modalView: {
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        flex: 1,
-        justifyContent: 'flex-end',
-    },
-    modalContentView: {
-        backgroundColor: 'white',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        height: '90%',
-        width: '100%',
-        paddingTop: 35,
-    },
-    modalHeader: {
-        width: '100%',
-        paddingTop: 10,
-        paddingHorizontal: 20,
-        alignItems: 'center',
-        marginBottom: 10,
-    },
-    modalTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        marginBottom: 10,
-    },
-    modalBody: {
-        flex: 1,
-        paddingHorizontal: 20,
-    },
-    closeButton: {
-        position: 'absolute',
-        right: 10,
-        top: 10,
-        zIndex: 1,
-        padding: 5,
-    },
-    quantityContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginTop: 8,
-        padding: 5,
-        borderTopWidth: 1,
-        borderTopColor: '#eee',
-        paddingTop: 10,
-    },
-    quantityLabel: {
-        fontSize: 14,
-        marginRight: 10,
-    },
-    quantityInput: {
-        backgroundColor: 'white',
-        borderColor: '#bbb',
-        borderWidth: 1,
-        borderRadius: 4,
-        padding: 5,
-        width: 70,
-        textAlign: 'center',
-        height: 36,
-    },
-    unitText: {
-        marginLeft: 8,
-        fontSize: 14,
-        color: '#666',
     },
 })
 

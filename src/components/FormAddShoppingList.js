@@ -1,18 +1,29 @@
 import React, { useState } from 'react'
-import { StyleSheet, View, Modal, Alert, TouchableOpacity } from 'react-native'
+import {
+    StyleSheet,
+    View,
+    Alert,
+    TouchableOpacity,
+    FlatList,
+} from 'react-native'
 import { useForm } from 'react-hook-form'
 import axios from 'axios'
 import CustomInput from './CustomInput'
 import CustomText from './CustomText'
 import Button from './Button'
-import FoodItemForm from './FormFoodItem'
+import FormFoodItem from './FormFoodItem'
 import storage from '../utils/storage'
 import { getServerUrl } from '../utils/getServerUrl'
-import { MaterialIcons } from '@expo/vector-icons'
+import CustomModal from './CustomModal'
 
 const FormAddShoppingList = ({ onSubmit, onClose }) => {
-    const [showItemForm, setShowItemForm] = useState(false)
+    const [showItemForm, setShowItemForm] = useState(true)
     const [items, setItems] = useState([])
+    const [foodItemModalVisible, setFoodItemModalVisible] = useState(false)
+    const [pantryModalVisible, setPantryModalVisible] = useState(false)
+    const [pantryItems, setPantryItems] = useState([])
+    const [selectedShoppingListId, setSelectedShoppingListId] = useState(null)
+    const [isLoading, setIsLoading] = useState(false)
 
     const {
         control,
@@ -109,99 +120,218 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
         }
     }
 
-    return (
-        <View style={styles.form}>
-            <CustomInput
-                label="Ostoslistan nimi"
-                name="name"
-                placeholder="Kirjoita ostoslistan nimi"
-                control={control}
-                rules={{ required: 'Ostoslistan nimi on pakollinen' }}
-            />
-            {errors.name && (
-                <CustomText style={styles.errorMsg}>
-                    {errors.name.message}
-                </CustomText>
-            )}
+    const handleAddFoodItem = (itemData) => {
+        console.log('Item data received in handleAddFoodItem:', itemData)
+        const newItem = {
+            ...itemData,
+            location: 'shopping-list',
+            quantity: itemData.quantity, // Keep the original quantity string
+            unit: itemData.unit || 'kpl',
+        }
+        console.log('New item being added:', newItem)
+        setItems([...items, newItem])
+        setFoodItemModalVisible(false)
+    }
 
-            <CustomInput
-                label="Kuvaus"
-                name="description"
-                placeholder="Kirjoita kuvaus"
-                control={control}
-            />
+    const handlePantryItemSelect = async (itemId) => {
+        try {
+            setIsLoading(true)
+            const response = await axios.get(
+                getServerUrl(`/pantry-items/${itemId}`),
+                {
+                    headers: {
+                        Authorization: `Bearer ${await storage.getItem('userToken')}`,
+                    },
+                }
+            )
+            if (response.data) {
+                setPantryItems([response.data])
+                setPantryModalVisible(true)
+            }
+        } catch (error) {
+            console.error('Error fetching pantry item:', error)
+        } finally {
+            setIsLoading(false)
+        }
+    }
 
-            <CustomInput
-                label="Arvioitu kokonaishinta"
-                name="totalEstimatedPrice"
-                placeholder="Syötä arvioitu kokonaishinta"
-                control={control}
-                keyboardType="numeric"
-            />
+    const addSelectedPantryItems = () => {
+        // Implementation of adding selected pantry items to the shopping list
+        console.log('Adding selected pantry items to shopping list')
+        setPantryModalVisible(false)
+    }
 
-            <Button
-                style={styles.secondaryButton}
-                title="Lisää tuote"
-                onPress={() => setShowItemForm(true)}
-            />
-
-            {items.length > 0 && (
-                <View style={styles.itemsList}>
-                    <CustomText style={styles.subtitle}>
-                        Lisätyt tuotteet:
-                    </CustomText>
-                    {items.map((item, index) => (
-                        <View key={index} style={styles.itemRow}>
-                            <CustomText>
-                                {item.name} - {item.quantity} {item.unit} -{' '}
-                                {item.estimatedPrice}€
-                            </CustomText>
-                        </View>
-                    ))}
-                </View>
-            )}
-
-            <Modal
-                animationType="slide"
-                transparent={true}
-                visible={showItemForm}
-                onRequestClose={() => setShowItemForm(false)}
+    const renderPantryItem = ({ item }) => (
+        <View style={styles.itemRow}>
+            <TouchableOpacity
+                style={styles.itemContainer}
+                onPress={() => handlePantryItemSelect(item._id)}
             >
-                <View style={styles.modalView}>
-                    <View style={styles.modalContent}>
-                        <TouchableOpacity
-                            style={styles.closeButton}
-                            onPress={() => setShowItemForm(false)}
-                        >
-                            <MaterialIcons
-                                name="close"
-                                size={24}
-                                color="black"
-                            />
-                        </TouchableOpacity>
-                        <CustomText style={styles.modalTitle}>
-                            Lisää tuote ostoslistaan
-                        </CustomText>
-                        <FoodItemForm
-                            onSubmit={handleAddItem}
-                            location="shopping-list"
+                <View style={styles.itemContent}>
+                    <CustomText style={styles.itemName}>{item.name}</CustomText>
+                    <CustomText style={styles.itemDetails}>
+                        {item.quantity} {item.unit}
+                    </CustomText>
+                    {item.categories && item.categories.length > 0 && (
+                        <View style={styles.itemCategories}>
+                            {item.categories.map((category, index) => (
+                                <CustomText key={index} style={styles.category}>
+                                    {category}
+                                </CustomText>
+                            ))}
+                        </View>
+                    )}
+                </View>
+            </TouchableOpacity>
+        </View>
+    )
+
+    return (
+        <View style={styles.container}>
+            <CustomModal
+                visible={showItemForm}
+                onClose={() => {
+                    setShowItemForm(false)
+                    onClose()
+                }}
+                title="Luo uusi ostoslista"
+            >
+                <View style={styles.modalBody}>
+                    <View style={styles.formContainer}>
+                        <CustomInput
+                            label="Ostoslistan nimi"
+                            name="name"
+                            placeholder="Kirjoita ostoslistan nimi"
+                            control={control}
+                            rules={{
+                                required: 'Ostoslistan nimi on pakollinen',
+                            }}
+                        />
+                        {errors.name && (
+                            <CustomText style={styles.errorMsg}>
+                                {errors.name.message}
+                            </CustomText>
+                        )}
+
+                        <CustomInput
+                            label="Kuvaus"
+                            name="description"
+                            placeholder="Kirjoita kuvaus"
+                            control={control}
+                        />
+
+                        <CustomInput
+                            label="Arvioitu kokonaishinta"
+                            name="totalEstimatedPrice"
+                            placeholder="Syötä arvioitu kokonaishinta"
+                            control={control}
+                            keyboardType="numeric"
+                        />
+
+                        <Button
+                            style={styles.secondaryButton}
+                            title="Lisää ostoslistalle tuote"
+                            onPress={() => setFoodItemModalVisible(true)}
+                        />
+
+                        {items.length > 0 && (
+                            <View style={styles.itemsList}>
+                                <CustomText style={styles.subtitle}>
+                                    Lisätyt tuotteet:
+                                </CustomText>
+                                {items.map((item, index) => (
+                                    <View key={index} style={styles.itemRow}>
+                                        <CustomText>
+                                            {item.name} - {item.quantity}{' '}
+                                            {item.unit} - {item.estimatedPrice}€
+                                        </CustomText>
+                                    </View>
+                                ))}
+                            </View>
+                        )}
+
+                        <Button
+                            style={styles.primaryButton}
+                            title="Tallenna ostoslista"
+                            onPress={handleSubmit(handleSubmitForm)}
                         />
                     </View>
                 </View>
-            </Modal>
+            </CustomModal>
 
-            <Button
-                style={styles.primaryButton}
-                title="Tallenna lista"
-                onPress={handleSubmit(handleSubmitForm)}
-            />
+            <CustomModal
+                visible={foodItemModalVisible}
+                onClose={() => setFoodItemModalVisible(false)}
+                title="Lisää uusi raaka-aine"
+            >
+                <View style={styles.modalBody}>
+                    <FormFoodItem
+                        onSubmit={handleAddFoodItem}
+                        onClose={() => setFoodItemModalVisible(false)}
+                        location="shopping-list"
+                        showLocationSelector={true}
+                        selectedShoppingListId={selectedShoppingListId}
+                        onShoppingListSelect={setSelectedShoppingListId}
+                        initialValues={{
+                            quantities: {
+                                meal: '',
+                                'shopping-list': '',
+                                pantry: '',
+                            },
+                            locations: ['shopping-list'],
+                        }}
+                    />
+                </View>
+            </CustomModal>
+
+            <CustomModal
+                visible={pantryModalVisible}
+                onClose={() => setPantryModalVisible(false)}
+                title="Valitse pentteristä"
+            >
+                {isLoading ? (
+                    <CustomText style={styles.loadingText}>
+                        Ladataan...
+                    </CustomText>
+                ) : (
+                    <View style={styles.modalScrollContainer}>
+                        <CustomText style={styles.foundItemsText}>
+                            {pantryItems.length} elintarviketta löydetty
+                        </CustomText>
+                        <FlatList
+                            data={pantryItems}
+                            renderItem={renderPantryItem}
+                            keyExtractor={(item) => item._id}
+                            style={styles.pantryList}
+                        />
+                        <View style={styles.modalButtonGroup}>
+                            <Button
+                                title="Lisää valitut"
+                                onPress={addSelectedPantryItems}
+                                style={[
+                                    styles.primaryButton,
+                                    styles.fullWidthButton,
+                                ]}
+                            />
+                        </View>
+                    </View>
+                )}
+            </CustomModal>
         </View>
     )
 }
 
 const styles = StyleSheet.create({
-    form: {
-        width: '100%',
+    container: {
+        flex: 1,
+    },
+    modalBody: {
+        flex: 1,
+        padding: 15,
+    },
+    formContainer: {
+        flex: 1,
+        padding: 15,
     },
     itemsList: {
         marginTop: 10,
@@ -212,30 +342,57 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         marginBottom: 5,
     },
+    itemContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    itemContent: {
+        flex: 1,
+    },
+    itemName: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginBottom: 4,
+    },
+    itemDetails: {
+        fontSize: 14,
+        color: '#666',
+    },
+    itemCategories: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 5,
+        marginTop: 5,
+    },
+    category: {
+        backgroundColor: '#e0e0e0',
+        paddingVertical: 2,
+        paddingHorizontal: 8,
+        borderRadius: 12,
+        fontSize: 12,
+    },
     subtitle: {
         fontSize: 16,
         fontWeight: 'bold',
         marginBottom: 10,
     },
-    modalView: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    modalContent: {
-        backgroundColor: 'white',
-        padding: 20,
-        borderRadius: 10,
-        width: '90%',
-        maxHeight: '80%',
-        paddingTop: 30,
-    },
-    modalTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 15,
+    loadingText: {
         textAlign: 'center',
+        marginTop: 20,
+    },
+    foundItemsText: {
+        marginBottom: 10,
+    },
+    modalScrollContainer: {
+        flex: 1,
+    },
+    modalButtonGroup: {
+        width: '100%',
+        paddingTop: 15,
+    },
+    fullWidthButton: {
+        width: '100%',
     },
     primaryButton: {
         borderRadius: 25,
@@ -249,6 +406,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         width: 'auto',
+        marginTop: 10,
     },
     secondaryButton: {
         borderRadius: 25,
@@ -264,31 +422,9 @@ const styles = StyleSheet.create({
         width: 'auto',
         marginBottom: 10,
     },
-    tertiaryButton: {
-        borderRadius: 25,
-        paddingTop: 7,
-        paddingBottom: 7,
-        paddingLeft: 10,
-        paddingRight: 10,
-        elevation: 2,
-        backgroundColor: '#fff',
-        color: 'black',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        width: 'auto',
-        borderWidth: 3,
-        borderColor: '#9C86FC',
-    },
     errorMsg: {
         color: 'red',
         marginTop: -5,
-    },
-    closeButton: {
-        position: 'absolute',
-        right: 10,
-        top: 10,
-        zIndex: 1,
-        padding: 5,
     },
 })
 

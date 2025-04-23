@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import {
     Alert,
-    Modal,
     StyleSheet,
     View,
     FlatList,
-    TouchableOpacity,
     ActivityIndicator,
 } from 'react-native'
 import axios from 'axios'
@@ -14,10 +12,10 @@ import FormAddShoppingList from '../components/FormAddShoppingList'
 import CustomText from '../components/CustomText'
 import storage from '../utils/storage'
 import { getServerUrl } from '../utils/getServerUrl'
-import { MaterialIcons } from '@expo/vector-icons'
 import ShoppingListDetail from '../components/ShoppingListDetail'
 import * as ImagePicker from 'expo-image-picker'
 import { analyzeImage } from '../utils/googleVision'
+import CustomModal from '../components/CustomModal'
 
 const ShoppingListsScreen = () => {
     const [modalVisible, setModalVisible] = useState(false)
@@ -221,68 +219,37 @@ const ShoppingListsScreen = () => {
                     </CustomText>
                 </View>
             )}
-            <Modal
-                animationType="slide"
-                transparent={true}
+            <CustomModal
                 visible={modalVisible}
-                onRequestClose={() => setModalVisible(false)}
+                onClose={() => setModalVisible(false)}
+                title="Luo uusi ostoslista"
             >
-                <View style={styles.layerView}>
-                    <View style={styles.modalView}>
-                        <TouchableOpacity
-                            style={styles.closeButton}
-                            onPress={() => setModalVisible(false)}
-                        >
-                            <MaterialIcons
-                                name="close"
-                                size={24}
-                                color="black"
-                            />
-                        </TouchableOpacity>
-                        <CustomText style={styles.modalTitle}>
-                            Luo uusi ostoslista
-                        </CustomText>
-                        <FormAddShoppingList
-                            onSubmit={handleCreateList}
-                            onClose={() => setModalVisible(false)}
-                            scannedProduct={scannedProduct}
-                        />
-                    </View>
+                <View style={styles.modalBody}>
+                    <FormAddShoppingList
+                        onSubmit={handleCreateList}
+                        onClose={() => setModalVisible(false)}
+                        scannedProduct={scannedProduct}
+                    />
                 </View>
-            </Modal>
+            </CustomModal>
 
-            <Modal
-                animationType="slide"
-                transparent={true}
+            <CustomModal
                 visible={!!selectedList}
-                onRequestClose={() => setSelectedList(null)}
+                onClose={() => setSelectedList(null)}
+                title="Ostoslistan tiedot"
             >
-                <View style={styles.layerView}>
-                    <View style={styles.detailModalView}>
-                        <TouchableOpacity
-                            style={styles.closeButton}
-                            onPress={() => setSelectedList(null)}
-                        >
-                            <MaterialIcons
-                                name="close"
-                                size={24}
-                                color="black"
-                            />
-                        </TouchableOpacity>
-                        {selectedList && (
-                            <View style={styles.detailContentContainer}>
-                                <ShoppingListDetail
-                                    shoppingList={selectedList}
-                                    onClose={() => setSelectedList(null)}
-                                    onUpdate={handleListUpdate}
-                                    fetchShoppingLists={fetchShoppingLists}
-                                    fetchPantryItems={fetchPantryItems}
-                                />
-                            </View>
-                        )}
-                    </View>
+                <View style={styles.modalBody}>
+                    {selectedList && (
+                        <ShoppingListDetail
+                            shoppingList={selectedList}
+                            onClose={() => setSelectedList(null)}
+                            onUpdate={handleListUpdate}
+                            fetchShoppingLists={fetchShoppingLists}
+                            fetchPantryItems={fetchPantryItems}
+                        />
+                    )}
                 </View>
-            </Modal>
+            </CustomModal>
 
             <View style={styles.content}>
                 <CustomText style={styles.introText}>
@@ -482,5 +449,9 @@ const styles = StyleSheet.create({
     detailContentContainer: {
         flex: 1,
         paddingHorizontal: 20,
+    },
+    modalBody: {
+        flex: 1,
+        padding: 15,
     },
 })

@@ -1,4 +1,4 @@
-import React, { useState, forwardRef } from 'react'
+import React, { useState, forwardRef, useEffect } from 'react'
 import {
     StyleSheet,
     ScrollView,
@@ -9,7 +9,7 @@ import {
     Platform,
 } from 'react-native'
 import { Controller, useForm } from 'react-hook-form'
-import { MaterialIcons as Icon } from '@expo/vector-icons'
+import { MaterialIcons } from '@expo/vector-icons'
 import Fontisto from '@expo/vector-icons/Fontisto'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { RadioButton } from 'react-native-paper'
@@ -23,6 +23,7 @@ import categories from '../data/categories'
 import CustomText from './CustomText'
 import Button from './Button'
 import { getServerUrl } from '../utils/getServerUrl'
+import CustomModal from './CustomModal'
 import CategorySelect from './CategorySelect'
 
 const formatNumber = (value) => {
@@ -54,6 +55,8 @@ const FormFoodItem = forwardRef(
             pantry: '',
         })
         const [isModalVisible, setIsModalVisible] = useState(false)
+        const [isCategoryModalVisible, setIsCategoryModalVisible] =
+            useState(false)
 
         const {
             control,
@@ -211,6 +214,17 @@ const FormFoodItem = forwardRef(
                             onValueChange={onSelect}
                             style={styles.picker}
                             itemStyle={styles.pickerItem}
+                            dropdownIcon={
+                                <MaterialIcons
+                                    name="arrow-drop-down"
+                                    size={24}
+                                    color="#666"
+                                    style={{
+                                        marginRight: 15,
+                                        paddingRight: 10,
+                                    }}
+                                />
+                            }
                         >
                             <Picker.Item
                                 label="Valitse ostoslista..."
@@ -260,7 +274,7 @@ const FormFoodItem = forwardRef(
                 />
                 {errors.name && (
                     <View style={styles.messageSection}>
-                        <Icon name="error" color="red" size={14} />
+                        <MaterialIcons name="error" color="red" size={14} />
                         <CustomText style={styles.errorMsg}>
                             Tämä on pakollinen tieto
                         </CustomText>
@@ -280,9 +294,9 @@ const FormFoodItem = forwardRef(
                         <CategorySelect
                             value={value}
                             onChange={onChange}
-                            isModalVisible={isModalVisible}
-                            setIsModalVisible={setIsModalVisible}
-                            toggleModal={toggleModal}
+                            isModalVisible={isCategoryModalVisible}
+                            setIsModalVisible={setIsCategoryModalVisible}
+                            toggleModal={() => setIsCategoryModalVisible(true)}
                             categories={categories}
                         />
                     )}
@@ -291,7 +305,7 @@ const FormFoodItem = forwardRef(
                 />
                 {errors.category && (
                     <View style={styles.messageSection}>
-                        <Icon name="error" color="red" size={14} />
+                        <MaterialIcons name="error" color="red" size={14} />
                         <CustomText style={styles.errorMsg}>
                             Tämä on pakollinen tieto
                         </CustomText>
@@ -353,7 +367,7 @@ const FormFoodItem = forwardRef(
                 </View>
                 {(errors.quantity || errors.unit) && (
                     <View style={styles.messageSection}>
-                        <Icon name="error" color="red" size={14} />
+                        <MaterialIcons name="error" color="red" size={14} />
                         <CustomText style={styles.errorMsg}>
                             Määrä ja yksikkö ovat pakollisia tietoja
                         </CustomText>
@@ -421,7 +435,11 @@ const FormFoodItem = forwardRef(
                         />
                         {errors.price && (
                             <View style={styles.messageSection}>
-                                <Icon name="error" color="red" size={14} />
+                                <MaterialIcons
+                                    name="error"
+                                    color="red"
+                                    size={14}
+                                />
                                 <CustomText style={styles.errorMsg}>
                                     Täytä arvioitu hinta numerona. Syötä
                                     vähintään 1 ja maksimissaan 4 lukua.
@@ -470,10 +488,11 @@ const FormFoodItem = forwardRef(
                     />
                 )}
 
-                {showLocationSelector && (
+                {showLocationSelector && location === 'meal' && (
                     <View style={styles.locationSelector}>
                         <CustomText style={styles.labelTitle}>
-                            Lisää raaka-aine myös:
+                            Valitse minne haluat samalla lisätä raaka-aineen ja
+                            määrät
                         </CustomText>
                         <View style={styles.radioGroup}>
                             {['meal', 'shopping-list', 'pantry'].map((loc) => (
@@ -504,7 +523,7 @@ const FormFoodItem = forwardRef(
                                                 style={styles.radioLabel}
                                             >
                                                 {loc === 'meal'
-                                                    ? 'Vain ateriaan'
+                                                    ? 'Ateriaan kätettävä määrä'
                                                     : loc === 'shopping-list'
                                                       ? 'Ostoslistalle'
                                                       : 'Pentteriin'}
@@ -585,8 +604,6 @@ const FormFoodItem = forwardRef(
 // Added a display name for better debugging
 FormFoodItem.displayName = 'FormFoodItem'
 
-export default FormFoodItem
-
 const styles = StyleSheet.create({
     formContainer: {
         padding: 10,
@@ -605,8 +622,8 @@ const styles = StyleSheet.create({
         marginBottom: 3,
     },
     labelTitle: {
-        paddingTop: 5,
-        marginBottom: 5,
+        paddingTop: 15,
+        marginBottom: 15,
         fontWeight: 'bold',
         textAlign: 'center',
         fontSize: 16,
@@ -631,7 +648,7 @@ const styles = StyleSheet.create({
         padding: 8,
         borderRadius: 4,
         marginBottom: 5,
-        width: '60%',
+        width: '77%',
     },
     unitFormInput: {
         backgroundColor: 'white',
@@ -642,8 +659,8 @@ const styles = StyleSheet.create({
         padding: 8,
         borderRadius: 4,
         marginBottom: 5,
-        width: '35%',
-        marginLeft: 10,
+        width: 65,
+        marginLeft: 'auto',
     },
     inputAndIcon: {
         flexDirection: 'row',
@@ -768,11 +785,11 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: 10,
+        marginBottom: 5,
     },
     quantityInput: {
         flexDirection: 'row',
-        alignItems: 'center',
+        alignItems: 'right',
         flex: 1,
         marginLeft: 10,
         marginRight: 10,
@@ -780,10 +797,12 @@ const styles = StyleSheet.create({
     unitLabel: {
         marginLeft: 8,
         fontSize: 14,
+        alignSelf: 'center',
     },
     dateInputContainer: {
         flex: 1,
-        marginRight: 10,
+        marginRight: 5,
+        width: '90%',
     },
     dateInput: {
         backgroundColor: 'white',
@@ -792,9 +811,11 @@ const styles = StyleSheet.create({
         height: 36,
         padding: 8,
         borderRadius: 4,
+        width: '100%',
     },
     dateIcon: {
         padding: 5,
+        marginLeft: 5,
     },
     iosDatePicker: {
         backgroundColor: 'white',
@@ -804,20 +825,24 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     selectorContainer: {
-        marginBottom: 25,
+        marginBottom: 15,
         overflow: 'hidden',
-        height: 160,
         position: 'relative',
         top: 0,
+        marginRight: 30,
     },
     pickerContainer: {
         backgroundColor: 'white',
-        marginTop: 10,
+        marginTop: 5,
+        marginBottom: 5,
     },
     picker: {
         width: '100%',
-        height: 60,
+        height: 50,
         backgroundColor: 'white',
+        borderRadius: 4,
+        borderColor: '#bbb',
+        padding: 5,
     },
     pickerItem: {
         height: 40,
@@ -827,4 +852,10 @@ const styles = StyleSheet.create({
         marginLeft: 30,
         marginBottom: 5,
     },
+    modalBody: {
+        flex: 1,
+        padding: 15,
+    },
 })
+
+export default FormFoodItem

@@ -4,7 +4,6 @@ import {
     View,
     FlatList,
     TouchableOpacity,
-    Modal,
     Alert,
     Text,
 } from 'react-native'
@@ -15,6 +14,7 @@ import Button from './Button'
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
 import FormFoodItem from './FormFoodItem'
+import CustomModal from './CustomModal'
 
 const ShoppingListDetail = ({
     shoppingList,
@@ -169,38 +169,18 @@ const ShoppingListDetail = ({
 
     return (
         <View style={styles.container}>
-            <Modal
-                animationType="slide"
-                transparent={true}
+            <CustomModal
                 visible={showItemForm}
-                onRequestClose={() => setShowItemForm(false)}
+                onClose={() => setShowItemForm(false)}
+                title="Lisää tuote ostoslistaan"
             >
-                <View style={styles.modalView}>
-                    <View style={styles.modalContentView}>
-                        <TouchableOpacity
-                            style={styles.closeButton}
-                            onPress={() => setShowItemForm(false)}
-                        >
-                            <MaterialIcons
-                                name="close"
-                                size={24}
-                                color="black"
-                            />
-                        </TouchableOpacity>
-                        <View style={styles.modalHeader}>
-                            <CustomText style={styles.modalTitle}>
-                                Lisää tuote ostoslistaan
-                            </CustomText>
-                        </View>
-                        <View style={styles.formContainer}>
-                            <FormFoodItem
-                                onSubmit={handleAddItem}
-                                location="shopping-list"
-                            />
-                        </View>
-                    </View>
+                <View style={styles.formContainer}>
+                    <FormFoodItem
+                        onSubmit={handleAddItem}
+                        location="shopping-list"
+                    />
                 </View>
-            </Modal>
+            </CustomModal>
             <View style={styles.header}>
                 <CustomText style={styles.title}>
                     {shoppingList.name}
@@ -352,40 +332,8 @@ const styles = StyleSheet.create({
         borderWidth: 3,
         borderColor: '#9C86FC',
     },
-    modalView: {
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        flex: 1,
-        justifyContent: 'flex-end',
-    },
-    modalContentView: {
-        backgroundColor: 'white',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        height: '90%',
-        width: '100%',
-        paddingTop: 45,
-    },
-    modalHeader: {
-        width: '100%',
-        paddingHorizontal: 20,
-        alignItems: 'center',
-    },
-    modalTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        marginBottom: 10,
-    },
     formContainer: {
-        flex: 1,
-        paddingHorizontal: 20,
-    },
-    closeButton: {
-        position: 'absolute',
-        right: 10,
-        top: 10,
-        zIndex: 1,
-        padding: 5,
+        padding: 15,
     },
     buttonContainer: {
         width: '100%',

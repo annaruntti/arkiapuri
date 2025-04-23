@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import {
     View,
-    Modal,
     StyleSheet,
     TouchableOpacity,
     ScrollView,
@@ -9,13 +8,14 @@ import {
 } from 'react-native'
 import CustomText from './CustomText'
 import Button from './Button'
-import { AntDesign, Feather } from '@expo/vector-icons'
+import { Feather } from '@expo/vector-icons'
 import { MaterialIcons } from '@expo/vector-icons'
 import { format } from 'date-fns'
 import { fi } from 'date-fns/locale'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import SectionedMultiSelect from 'react-native-sectioned-multi-select'
 import categories from '../data/categories' // Import the categories data
+import CustomModal from './CustomModal'
 
 const PantryItemDetails = ({ item, visible, onClose, onUpdate }) => {
     const [editableFields, setEditableFields] = useState({})
@@ -191,233 +191,192 @@ const PantryItemDetails = ({ item, visible, onClose, onUpdate }) => {
     }
 
     return (
-        <Modal
-            animationType="slide"
-            transparent={true}
+        <CustomModal
             visible={visible}
-            onRequestClose={onClose}
+            onClose={onClose}
+            title="Elintarvikkeen tiedot"
         >
-            <View style={styles.centeredView}>
-                <View style={styles.modalView}>
-                    <TouchableOpacity
-                        style={styles.closeButton}
-                        onPress={onClose}
-                    >
-                        <AntDesign name="close" size={24} color="black" />
-                    </TouchableOpacity>
+            <View style={styles.modalBody}>
+                <ScrollView style={styles.detailsContainer}>
+                    {renderEditableField('name', 'Nimi', item.name)}
+                    {renderEditableField(
+                        'quantity',
+                        'Määrä',
+                        item.quantity,
+                        'number'
+                    )}
+                    {renderEditableField('unit', 'Yksikkö', item.unit)}
+                    {renderEditableField(
+                        'calories',
+                        'Kalorit',
+                        item.calories || '0',
+                        'number'
+                    )}
 
-                    <ScrollView style={styles.detailsContainer}>
-                        {renderEditableField('name', 'Nimi', item.name)}
-                        {renderEditableField(
-                            'quantity',
-                            'Määrä',
-                            item.quantity,
-                            'number'
-                        )}
-                        {renderEditableField('unit', 'Yksikkö', item.unit)}
-                        {renderEditableField(
-                            'calories',
-                            'Kalorit',
-                            item.calories || '0',
-                            'number'
-                        )}
-
-                        <View>
-                            <View style={styles.detailRow}>
-                                <CustomText style={styles.label}>
-                                    Kategoriat:
-                                </CustomText>
-                                <View style={styles.valueContainer}>
-                                    <TouchableOpacity
-                                        style={styles.categoryTouchable}
-                                        onPress={() =>
-                                            setShowCategorySelect(
-                                                !showCategorySelect
-                                            )
-                                        }
-                                    >
-                                        <View style={styles.categoryContent}>
-                                            <CustomText
-                                                style={styles.categoryText}
-                                            >
-                                                {(
-                                                    editedValues.category ||
-                                                    item.category ||
-                                                    []
-                                                ).join(', ') ||
-                                                    'Ei kategorioita'}
-                                            </CustomText>
-                                            <Feather
-                                                name="edit-2"
-                                                size={18}
-                                                color="#666"
-                                                style={styles.editIcon}
-                                            />
-                                        </View>
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-
-                            {showCategorySelect && (
-                                <View style={styles.categorySelectContainer}>
-                                    <SectionedMultiSelect
-                                        styles={{
-                                            backdrop:
-                                                styles.multiSelectBackdrop,
-                                            selectToggle: styles.multiSelectBox,
-                                            button: {
-                                                borderRadius: 25,
-                                                paddingTop: 7,
-                                                paddingBottom: 7,
-                                                paddingLeft: 10,
-                                                paddingRight: 10,
-                                                elevation: 2,
-                                                backgroundColor: '#9C86FC',
-                                                marginTop: 10,
-                                            },
-                                            confirmText: {
-                                                color: 'black',
-                                                fontWeight: 'bold',
-                                                textAlign: 'center',
-                                                fontSize: 16,
-                                            },
-                                            cancelButton: styles.cancelButton,
-                                            cancelButtonText:
-                                                styles.cancelButtonText,
-                                            modalWrapper: {
-                                                padding: 20,
-                                                paddingTop: 45,
-                                            },
-                                            container: {
-                                                padding: 15,
-                                            },
-                                            itemText: {
-                                                fontSize: 16,
-                                                paddingVertical: 10,
-                                                paddingHorizontal: 15,
-                                            },
-                                            subItemText: {
-                                                fontSize: 15,
-                                                paddingVertical: 8,
-                                                paddingHorizontal: 30,
-                                            },
-                                            searchBar: {
-                                                padding: 15,
-                                                marginBottom: 10,
-                                            },
-                                        }}
-                                        items={categories}
-                                        IconRenderer={MaterialIcons}
-                                        uniqueKey="id"
-                                        displayKey="name"
-                                        onSelectedItemsChange={
-                                            handleCategoryChange
-                                        }
-                                        selectedItems={selectedCategories}
-                                        removeAllText="Poista kaikki"
-                                        showCancelButton={true}
-                                        showRemoveAll={true}
-                                        searchPlaceholderText="Etsi kategoriaa"
-                                        confirmText="Tallenna kategoriat"
-                                        selectText="Valitse yksi tai useampi kategoria"
-                                    />
-                                </View>
-                            )}
-                        </View>
-
+                    <View>
                         <View style={styles.detailRow}>
                             <CustomText style={styles.label}>
-                                Viimeinen käyttöpäivä:
+                                Kategoriat:
                             </CustomText>
                             <View style={styles.valueContainer}>
                                 <TouchableOpacity
-                                    onPress={() => setShowDatePicker(true)}
+                                    style={styles.categoryTouchable}
+                                    onPress={() =>
+                                        setShowCategorySelect(
+                                            !showCategorySelect
+                                        )
+                                    }
                                 >
-                                    <CustomText>
-                                        {formatDate(
-                                            editedValues.expirationDate ||
-                                                item.expirationDate
-                                        )}
-                                    </CustomText>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={styles.editIcon}
-                                    onPress={() => setShowDatePicker(true)}
-                                >
-                                    <Feather
-                                        name="calendar"
-                                        size={18}
-                                        color="#666"
-                                    />
+                                    <View style={styles.categoryContent}>
+                                        <CustomText style={styles.categoryText}>
+                                            {(
+                                                editedValues.category ||
+                                                item.category ||
+                                                []
+                                            ).join(', ') || 'Ei kategorioita'}
+                                        </CustomText>
+                                        <Feather
+                                            name="edit-2"
+                                            size={18}
+                                            color="#666"
+                                            style={styles.editIcon}
+                                        />
+                                    </View>
                                 </TouchableOpacity>
                             </View>
                         </View>
 
-                        {showDatePicker && (
-                            <DateTimePicker
-                                value={
-                                    new Date(
+                        {showCategorySelect && (
+                            <View style={styles.categorySelectContainer}>
+                                <SectionedMultiSelect
+                                    styles={{
+                                        backdrop: styles.multiSelectBackdrop,
+                                        selectToggle: styles.multiSelectBox,
+                                        button: {
+                                            borderRadius: 25,
+                                            paddingTop: 7,
+                                            paddingBottom: 7,
+                                            paddingLeft: 10,
+                                            paddingRight: 10,
+                                            elevation: 2,
+                                            backgroundColor: '#9C86FC',
+                                            marginTop: 10,
+                                        },
+                                        confirmText: {
+                                            color: 'black',
+                                            fontWeight: 'bold',
+                                            textAlign: 'center',
+                                            fontSize: 16,
+                                        },
+                                        cancelButton: styles.cancelButton,
+                                        cancelButtonText:
+                                            styles.cancelButtonText,
+                                        modalWrapper: {
+                                            padding: 20,
+                                            paddingTop: 45,
+                                        },
+                                        container: {
+                                            padding: 15,
+                                        },
+                                        itemText: {
+                                            fontSize: 16,
+                                            paddingVertical: 10,
+                                            paddingHorizontal: 15,
+                                        },
+                                        subItemText: {
+                                            fontSize: 15,
+                                            paddingVertical: 8,
+                                            paddingHorizontal: 30,
+                                        },
+                                        searchBar: {
+                                            padding: 15,
+                                            marginBottom: 10,
+                                        },
+                                    }}
+                                    items={categories}
+                                    IconRenderer={MaterialIcons}
+                                    uniqueKey="id"
+                                    displayKey="name"
+                                    onSelectedItemsChange={handleCategoryChange}
+                                    selectedItems={selectedCategories}
+                                    removeAllText="Poista kaikki"
+                                    showCancelButton={true}
+                                    showRemoveAll={true}
+                                    searchPlaceholderText="Etsi kategoriaa"
+                                    confirmText="Tallenna kategoriat"
+                                    selectText="Valitse yksi tai useampi kategoria"
+                                />
+                            </View>
+                        )}
+                    </View>
+
+                    <View style={styles.detailRow}>
+                        <CustomText style={styles.label}>
+                            Viimeinen käyttöpäivä:
+                        </CustomText>
+                        <View style={styles.valueContainer}>
+                            <TouchableOpacity
+                                onPress={() => setShowDatePicker(true)}
+                            >
+                                <CustomText>
+                                    {formatDate(
                                         editedValues.expirationDate ||
                                             item.expirationDate
-                                    )
-                                }
-                                mode="date"
-                                display="default"
-                                onChange={(event, selectedDate) => {
-                                    setShowDatePicker(false)
-                                    if (selectedDate) {
-                                        handleChange(
-                                            'expirationDate',
-                                            selectedDate
-                                        )
-                                    }
-                                }}
-                            />
-                        )}
+                                    )}
+                                </CustomText>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.editIcon}
+                                onPress={() => setShowDatePicker(true)}
+                            >
+                                <Feather
+                                    name="calendar"
+                                    size={18}
+                                    color="#666"
+                                />
+                            </TouchableOpacity>
+                        </View>
+                    </View>
 
-                        {Object.keys(editedValues).length > 0 && (
-                            <Button
-                                title="Tallenna muutokset"
-                                onPress={handleSave}
-                                style={styles.saveButton}
-                            />
-                        )}
-                    </ScrollView>
-                </View>
+                    {showDatePicker && (
+                        <DateTimePicker
+                            value={
+                                new Date(
+                                    editedValues.expirationDate ||
+                                        item.expirationDate
+                                )
+                            }
+                            mode="date"
+                            display="default"
+                            onChange={(event, selectedDate) => {
+                                setShowDatePicker(false)
+                                if (selectedDate) {
+                                    handleChange('expirationDate', selectedDate)
+                                }
+                            }}
+                        />
+                    )}
+
+                    {Object.keys(editedValues).length > 0 && (
+                        <Button
+                            title="Tallenna muutokset"
+                            onPress={handleSave}
+                            style={styles.saveButton}
+                        />
+                    )}
+                </ScrollView>
             </View>
-        </Modal>
+        </CustomModal>
     )
 }
 
 const styles = StyleSheet.create({
-    centeredView: {
+    modalBody: {
         flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    },
-    modalView: {
-        backgroundColor: 'white',
-        borderRadius: 20,
-        padding: 20,
-        width: '90%',
-        maxHeight: '80%',
-        elevation: 5,
-    },
-    closeButton: {
-        position: 'absolute',
-        right: 20,
-        top: 20,
-        zIndex: 1,
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 20,
-        marginTop: 10,
+        padding: 15,
     },
     detailsContainer: {
-        marginTop: 30,
+        marginTop: 10,
     },
     detailRow: {
         flexDirection: 'row',
@@ -486,29 +445,6 @@ const styles = StyleSheet.create({
         flex: 1,
         textAlign: 'right',
         marginRight: 10,
-    },
-    modalOverlay: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    },
-    categoryModalContent: {
-        backgroundColor: 'white',
-        borderRadius: 20,
-        padding: 20,
-        width: '90%',
-        maxHeight: '80%',
-    },
-    chipContainer: {
-        backgroundColor: '#9C86FC',
-    },
-    chipText: {
-        color: 'white',
-    },
-    selectContainer: {
-        marginTop: 0,
-        paddingTop: 0,
     },
     categorySelectContainer: {
         marginTop: -10,

@@ -1,13 +1,9 @@
-import React, { forwardRef } from 'react'
-import {
-    View,
-    TouchableOpacity,
-    StyleSheet,
-    Modal,
-    ScrollView,
-} from 'react-native'
-import { MaterialIcons as Icon } from '@expo/vector-icons'
+import React, { forwardRef, useState, useEffect } from 'react'
+import { View, TouchableOpacity, StyleSheet, ScrollView } from 'react-native'
+import { MaterialIcons } from '@expo/vector-icons'
 import CustomText from './CustomText'
+import CustomModal from './CustomModal'
+import Button from './Button'
 
 const CategorySelect = forwardRef(
     (
@@ -21,230 +17,149 @@ const CategorySelect = forwardRef(
         },
         ref
     ) => {
-        const selectedCategories = value || []
+        const [selectedCategories, setSelectedCategories] = useState([])
 
-        const getCategory = (id) => {
-            for (const category of categories) {
-                if (category.id === id) return category
-                if (category.children) {
-                    const subCategory = category.children.find(
-                        (sub) => sub.id === id
-                    )
-                    if (subCategory) return subCategory
-                }
-            }
-            return null
-        }
-
-        const handleRemoveCategory = (categoryId) => {
-            const newSelected = selectedCategories.filter(
-                (id) => id !== categoryId
-            )
-            onChange(newSelected)
-        }
-
-        const getCategoryNames = () => {
-            return selectedCategories
-                .map((id) => {
-                    const category = categories.find((cat) => cat.id === id)
-                    return category ? category.name : ''
+        useEffect(() => {
+            // Initialize selected categories from the current value
+            if (value && value.length > 0) {
+                const cats = value.map((cat) => {
+                    if (typeof cat === 'object') return cat.id
+                    return cat
                 })
-                .filter((name) => name)
-                .join(', ')
+                setSelectedCategories(cats)
+            }
+        }, [value])
+
+        const handleCategoryToggle = (category) => {
+            setSelectedCategories((prev) => {
+                if (prev.includes(category.id)) {
+                    return prev.filter((id) => id !== category.id)
+                } else {
+                    return [...prev, category.id]
+                }
+            })
         }
 
-        const handleCategorySelect = (selectedItems) => {
+        const handleSubcategoryToggle = (subcategory) => {
+            setSelectedCategories((prev) => {
+                if (prev.includes(subcategory.id)) {
+                    return prev.filter((id) => id !== subcategory.id)
+                } else {
+                    return [...prev, subcategory.id]
+                }
+            })
+        }
+
+        const handleSave = () => {
+            const selectedItems = selectedCategories.map((id) => {
+                // Find the subcategory in any category's children
+                for (const category of categories) {
+                    const subcat = category.children.find((c) => c.id === id)
+                    if (subcat) return subcat
+                }
+                return id
+            })
             onChange(selectedItems)
+            setIsModalVisible(false)
         }
 
         return (
-            <View style={styles.container}>
+            <View style={styles.multiSelectBox}>
                 <TouchableOpacity
-                    style={styles.selectButton}
                     onPress={toggleModal}
+                    style={styles.multiSelectButton}
                 >
                     <CustomText>
-                        {selectedCategories.length > 0
-                            ? 'Valitut kategoriat'
+                        {value && value.length > 0
+                            ? value
+                                  .map((cat) =>
+                                      typeof cat === 'object' ? cat.name : cat
+                                  )
+                                  .join(', ')
                             : 'Valitse kategoriat'}
                     </CustomText>
                 </TouchableOpacity>
 
-                {/* Selected Categories Tags */}
-                {selectedCategories.length > 0 && (
-                    <View style={styles.selectedTagsContainer}>
-                        {selectedCategories.map((categoryId) => {
-                            const category = getCategory(categoryId)
-                            if (!category) return null
-
-                            return (
-                                <View
-                                    key={categoryId}
-                                    style={styles.tagContainer}
-                                >
-                                    <CustomText style={styles.tagText}>
-                                        {category.name}
-                                    </CustomText>
-                                    <TouchableOpacity
-                                        onPress={() =>
-                                            handleRemoveCategory(categoryId)
-                                        }
-                                        style={styles.tagRemoveButton}
-                                    >
-                                        <Icon
-                                            name="close"
-                                            size={18}
-                                            color="#666"
-                                        />
-                                    </TouchableOpacity>
-                                </View>
-                            )
-                        })}
-                    </View>
-                )}
-
-                <Modal
+                <CustomModal
                     visible={isModalVisible}
-                    animationType="slide"
-                    transparent={true}
-                    onRequestClose={() => setIsModalVisible(false)}
+                    onClose={() => setIsModalVisible(false)}
+                    title="Valitse kategoriat"
                 >
-                    <View style={styles.modalView}>
-                        <View style={styles.modalContent}>
-                            <View style={styles.modalHeader}>
-                                <TouchableOpacity
-                                    style={styles.closeButton}
-                                    onPress={() => setIsModalVisible(false)}
+                    <View style={styles.modalBody}>
+                        <ScrollView style={styles.categoryContainer}>
+                            {categories.map((category) => (
+                                <View
+                                    key={category.id}
+                                    style={styles.categoryGroup}
                                 >
-                                    <Icon
-                                        name="close"
-                                        size={24}
-                                        color="black"
-                                    />
-                                </TouchableOpacity>
-                                <CustomText style={styles.modalTitle}>
-                                    Valitse kategoriat
-                                </CustomText>
-                            </View>
-
-                            <View style={styles.categoriesContainer}>
-                                <ScrollView>
-                                    {categories.map((category) => (
-                                        <View key={category.id}>
-                                            <TouchableOpacity
-                                                style={styles.categoryItem}
-                                                onPress={() => {
-                                                    const isSelected =
-                                                        selectedCategories.includes(
-                                                            category.id
+                                    <TouchableOpacity
+                                        style={styles.categoryHeader}
+                                        onPress={() =>
+                                            handleCategoryToggle(category)
+                                        }
+                                    >
+                                        <CustomText
+                                            style={styles.categoryTitle}
+                                        >
+                                            {category.name}
+                                        </CustomText>
+                                    </TouchableOpacity>
+                                    <View style={styles.subcategoryList}>
+                                        {category.children.map(
+                                            (subcategory) => (
+                                                <TouchableOpacity
+                                                    key={subcategory.id}
+                                                    style={
+                                                        styles.subcategoryItem
+                                                    }
+                                                    onPress={() =>
+                                                        handleSubcategoryToggle(
+                                                            subcategory
                                                         )
-                                                    const newSelected =
-                                                        isSelected
-                                                            ? selectedCategories.filter(
-                                                                  (id) =>
-                                                                      id !==
-                                                                      category.id
-                                                              )
-                                                            : [
-                                                                  ...selectedCategories,
-                                                                  category.id,
-                                                              ]
-                                                    handleCategorySelect(
-                                                        newSelected
-                                                    )
-                                                }}
-                                            >
-                                                <CustomText
-                                                    style={[
-                                                        styles.itemText,
-                                                        selectedCategories.includes(
-                                                            category.id
-                                                        ) &&
-                                                            styles.selectedItemText,
-                                                    ]}
+                                                    }
                                                 >
-                                                    {category.name}
-                                                </CustomText>
-                                                {selectedCategories.includes(
-                                                    category.id
-                                                ) && (
-                                                    <Icon
-                                                        name="check"
-                                                        size={24}
-                                                        color="#9C86FC"
-                                                    />
-                                                )}
-                                            </TouchableOpacity>
-
-                                            {category.children?.map(
-                                                (subCategory) => (
-                                                    <TouchableOpacity
-                                                        key={subCategory.id}
-                                                        style={
-                                                            styles.subCategoryItem
-                                                        }
-                                                        onPress={() => {
-                                                            const isSelected =
-                                                                selectedCategories.includes(
-                                                                    subCategory.id
-                                                                )
-                                                            const newSelected =
-                                                                isSelected
-                                                                    ? selectedCategories.filter(
-                                                                          (
-                                                                              id
-                                                                          ) =>
-                                                                              id !==
-                                                                              subCategory.id
-                                                                      )
-                                                                    : [
-                                                                          ...selectedCategories,
-                                                                          subCategory.id,
-                                                                      ]
-                                                            handleCategorySelect(
-                                                                newSelected
-                                                            )
-                                                        }}
+                                                    <View
+                                                        style={[
+                                                            styles.checkbox,
+                                                            selectedCategories.includes(
+                                                                subcategory.id
+                                                            ) &&
+                                                                styles.checkboxChecked,
+                                                        ]}
                                                     >
-                                                        <CustomText
-                                                            style={[
-                                                                styles.subItemText,
-                                                                selectedCategories.includes(
-                                                                    subCategory.id
-                                                                ) &&
-                                                                    styles.selectedItemText,
-                                                            ]}
-                                                        >
-                                                            {subCategory.name}
-                                                        </CustomText>
                                                         {selectedCategories.includes(
-                                                            subCategory.id
+                                                            subcategory.id
                                                         ) && (
-                                                            <Icon
+                                                            <MaterialIcons
                                                                 name="check"
-                                                                size={24}
-                                                                color="#9C86FC"
+                                                                size={16}
+                                                                color="white"
                                                             />
                                                         )}
-                                                    </TouchableOpacity>
-                                                )
-                                            )}
-                                        </View>
-                                    ))}
-                                </ScrollView>
-                            </View>
-
-                            <TouchableOpacity
-                                style={styles.confirmButton}
-                                onPress={() => setIsModalVisible(false)}
-                            >
-                                <CustomText style={styles.confirmButtonText}>
-                                    Vahvista
-                                </CustomText>
-                            </TouchableOpacity>
+                                                    </View>
+                                                    <CustomText
+                                                        style={
+                                                            styles.subcategoryText
+                                                        }
+                                                    >
+                                                        {subcategory.name}
+                                                    </CustomText>
+                                                </TouchableOpacity>
+                                            )
+                                        )}
+                                    </View>
+                                </View>
+                            ))}
+                        </ScrollView>
+                        <View style={styles.modalButtonGroup}>
+                            <Button
+                                title="Tallenna"
+                                onPress={handleSave}
+                                style={styles.primaryButton}
+                            />
                         </View>
                     </View>
-                </Modal>
+                </CustomModal>
             </View>
         )
     }
@@ -253,115 +168,80 @@ const CategorySelect = forwardRef(
 CategorySelect.displayName = 'CategorySelect'
 
 const styles = StyleSheet.create({
-    container: {
-        width: '100%',
+    multiSelectBox: {
+        marginBottom: 8,
     },
-    selectButton: {
-        backgroundColor: 'white',
-        borderColor: '#bbb',
+    multiSelectButton: {
+        padding: 10,
         borderWidth: 1,
+        borderColor: '#bbb',
+        borderStyle: 'solid',
         borderRadius: 4,
-        padding: 10,
-        minHeight: 40,
-        justifyContent: 'center',
-        marginBottom: 5,
-    },
-    modalView: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'flex-end',
-    },
-    modalContent: {
         backgroundColor: 'white',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        height: '90%',
-        width: '100%',
     },
-    modalHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: 20,
-        paddingVertical: 20,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-    },
-    modalTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-    },
-    closeButton: {
-        position: 'absolute',
-        right: 10,
-        top: 10,
-        padding: 10,
-    },
-    categoriesContainer: {
+    modalBody: {
         flex: 1,
-        paddingHorizontal: 20,
+        padding: 15,
     },
-    categoryItem: {
+    categoryContainer: {
+        flex: 1,
+    },
+    categoryGroup: {
+        marginBottom: 15,
+    },
+    categoryHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingVertical: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
+        marginBottom: 5,
+        paddingVertical: 8,
     },
-    subCategoryItem: {
+    categoryTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#000000',
+    },
+    subcategoryList: {
+        marginLeft: 10,
+    },
+    subcategoryItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingVertical: 12,
-        paddingLeft: 30,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
+        paddingVertical: 8,
     },
-    itemText: {
+    checkbox: {
+        width: 24,
+        height: 24,
+        borderRadius: 4,
+        borderWidth: 2,
+        borderColor: '#9C86FC',
+        marginRight: 10,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    checkboxChecked: {
+        backgroundColor: '#9C86FC',
+    },
+    subcategoryText: {
         fontSize: 16,
         color: '#000000',
     },
-    subItemText: {
-        fontSize: 14,
-        color: '#000000',
+    modalButtonGroup: {
+        width: '100%',
+        paddingTop: 15,
     },
-    selectedItemText: {
-        color: '#9C86FC',
-        fontWeight: 'bold',
-    },
-    confirmButton: {
-        backgroundColor: '#9C86FC',
-        padding: 15,
-        margin: 20,
+    primaryButton: {
         borderRadius: 25,
-        alignItems: 'center',
-    },
-    confirmButtonText: {
+        paddingTop: 7,
+        paddingBottom: 7,
+        paddingLeft: 10,
+        paddingRight: 10,
+        elevation: 2,
+        backgroundColor: '#9C86FC',
         color: 'black',
         fontWeight: 'bold',
-        fontSize: 16,
-    },
-    selectedTagsContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        padding: 5,
-        marginTop: 5,
-    },
-    tagContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#f0f0f0',
-        borderRadius: 15,
-        padding: 8,
-        margin: 3,
-    },
-    tagText: {
-        fontSize: 14,
-        marginRight: 5,
-    },
-    tagRemoveButton: {
-        padding: 2,
+        textAlign: 'center',
+        width: 'auto',
+        marginVertical: 10,
     },
 })
 

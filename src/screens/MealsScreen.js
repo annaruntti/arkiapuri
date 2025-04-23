@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react'
 import {
     View,
     StyleSheet,
-    Modal,
     FlatList,
     Pressable,
     Alert,
@@ -18,6 +17,7 @@ import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
 import MealItemDetail from '../components/MealItemDetail'
 import { getDifficultyText } from '../utils/mealUtils'
+import CustomModal from '../components/CustomModal'
 
 const MealsScreen = () => {
     const [modalVisible, setModalVisible] = useState(false)
@@ -207,34 +207,19 @@ const MealsScreen = () => {
 
     return (
         <View style={styles.container}>
-            <Modal
-                animationType="slide"
-                transparent={true}
+            <CustomModal
                 visible={modalVisible}
-                onRequestClose={() => setModalVisible(false)}
+                onClose={() => setModalVisible(false)}
+                title="Lisää uusi ateria"
             >
-                <View style={styles.modalView}>
-                    <View style={styles.modalContentView}>
-                        <Pressable
-                            onPress={() => setModalVisible(false)}
-                            style={styles.closeButton}
-                        >
-                            <AntDesign name="close" size={24} color="black" />
-                        </Pressable>
-                        <View style={styles.modalHeader}>
-                            <CustomText style={styles.modalTitle}>
-                                Lisää uusi ateria
-                            </CustomText>
-                        </View>
-                        <View style={styles.modalBody}>
-                            <AddMealForm
-                                onSubmit={handleAddMeal}
-                                onClose={() => setModalVisible(false)}
-                            />
-                        </View>
-                    </View>
+                <View style={styles.modalBody}>
+                    <AddMealForm
+                        onSubmit={handleAddMeal}
+                        onClose={() => setModalVisible(false)}
+                    />
                 </View>
-            </Modal>
+            </CustomModal>
+
             <CustomText style={styles.introText}>
                 Selaa ja hallinnoi aterioitasi. Voit lisätä uusia aterioita ja
                 muokata olemassa olevia.
@@ -359,41 +344,9 @@ const styles = StyleSheet.create({
         width: 'auto',
         marginBottom: 20,
     },
-    modalView: {
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        flex: 1,
-        justifyContent: 'flex-end',
-    },
-    modalContentView: {
-        backgroundColor: 'white',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        height: '90%',
-        width: '100%',
-        paddingTop: 35,
-    },
-    modalHeader: {
-        width: '100%',
-        paddingTop: 10,
-        paddingHorizontal: 20,
-        alignItems: 'center',
-        marginBottom: 5,
-    },
-    modalTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        marginBottom: 10,
-    },
     modalBody: {
         flex: 1,
-        paddingHorizontal: 15,
-    },
-    closeButton: {
-        position: 'absolute',
-        right: 10,
-        top: 10,
-        padding: 5,
-        zIndex: 1,
+        padding: 15,
     },
 })
 
