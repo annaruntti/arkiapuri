@@ -20,11 +20,6 @@ import ShoppingListScreen from '../screens/ShoppingListsScreen'
 import ProfileScreen from '../screens/ProfileScreen'
 import CustomText from '../components/CustomText'
 
-const screenOptions = {
-    tabBarShowLabel: false,
-    headerShown: false,
-}
-
 const HomeStack = createNativeStackNavigator()
 
 function LogoTitle() {
@@ -52,18 +47,26 @@ function LogoTitle() {
     )
 }
 
-const UserProfile = () => {
+const UserProfile = ({ isActive = false }) => {
     const navigation = useNavigation()
 
     const handlePress = () => {
         navigation.navigate('ProfileStack', {
             screen: 'Omat tiedot',
+            params: {
+                from: navigation.getState().routes[navigation.getState().index]
+                    .name,
+            },
         })
     }
 
     return (
         <TouchableOpacity onPress={handlePress} style={styles.iconButton}>
-            <FontAwesome6 name="circle-user" size={24} color="black" />
+            <FontAwesome6
+                name="circle-user"
+                size={24}
+                color={isActive ? '#9C86FC' : 'black'}
+            />
         </TouchableOpacity>
     )
 }
@@ -71,6 +74,10 @@ const UserProfile = () => {
 const styles = StyleSheet.create({
     iconButton: {
         paddingRight: 10,
+    },
+    backButton: {
+        marginLeft: 10,
+        paddingRight: 0,
     },
 })
 
@@ -171,15 +178,28 @@ function ReadingOrderStackScreen() {
 const ProfileStack = createNativeStackNavigator()
 
 function ProfileStackScreen() {
+    const navigation = useNavigation()
+
     return (
         <ProfileStack.Navigator
-            screenOptions={{
+            screenOptions={({ route }) => ({
                 headerStyle: {
                     backgroundColor: '#fff',
                 },
                 headerTitle: (props) => <LogoTitle {...props} />,
-                headerRight: () => <UserProfile />,
-            }}
+                headerLeft: () => (
+                    <TouchableOpacity
+                        onPress={() => {
+                            const fromScreen = route.params?.from || 'HomeStack'
+                            navigation.navigate(fromScreen)
+                        }}
+                        style={[styles.iconButton, styles.backButton]}
+                    >
+                        <Feather name="arrow-left" size={24} color="black" />
+                    </TouchableOpacity>
+                ),
+                headerRight: () => <UserProfile isActive={true} />,
+            })}
         >
             <ProfileStack.Screen name="Omat tiedot" component={ProfileScreen} />
         </ProfileStack.Navigator>
@@ -191,9 +211,11 @@ const Tab = createBottomTabNavigator()
 const tabBarItemStyle = {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 7,
-    paddingbottom: 5,
+    paddingTop: 3,
+    paddingBottom: 5,
     paddingHorizontal: 10,
+    borderTopWidth: 0,
+    marginTop: -3,
 }
 
 const tabBarLabelStyle = {
@@ -205,21 +227,76 @@ const tabBarLabelStyle = {
 
 function TabNavigator() {
     return (
-        <Tab.Navigator screenOptions={screenOptions}>
+        <Tab.Navigator
+            screenOptions={({ route }) => ({
+                tabBarShowLabel: false,
+                headerShown: false,
+                tabBarStyle: {
+                    height: 60,
+                    paddingBottom: 5,
+                    paddingTop: 0,
+                },
+                tabBarIcon: ({ focused }) => {
+                    let iconName
+                    let iconColor = focused ? '#9C86FC' : 'black'
+                    let IconComponent
+
+                    switch (route.name) {
+                        case 'HomeStack':
+                            IconComponent = Feather
+                            iconName = 'home'
+                            break
+                        case 'MealsStack':
+                            IconComponent = FontAwesome6
+                            iconName = 'bowl-food'
+                            break
+                        case 'PantryStack':
+                            IconComponent = AntDesign
+                            iconName = 'database'
+                            break
+                        case 'ShoppingListStack':
+                            IconComponent = Feather
+                            iconName = 'shopping-cart'
+                            break
+                        case 'ReadingOrderStack':
+                            IconComponent = AntDesign
+                            iconName = 'calendar'
+                            break
+                    }
+
+                    return (
+                        <View
+                            style={[
+                                tabBarItemStyle,
+                                focused && {
+                                    borderTopWidth: 3,
+                                    borderTopColor: '#9C86FC',
+                                },
+                            ]}
+                        >
+                            <IconComponent
+                                name={iconName}
+                                size={24}
+                                color={iconColor}
+                            />
+                            <CustomText
+                                style={[
+                                    tabBarLabelStyle,
+                                    focused && { color: '#9C86FC' },
+                                ]}
+                            >
+                                {route.name.replace('Stack', '')}
+                            </CustomText>
+                        </View>
+                    )
+                },
+            })}
+        >
             <Tab.Screen
                 name="HomeStack"
                 component={HomeStackScreen}
                 options={{
                     title: 'Arkiapuri',
-                    tabBarIcon: ({ focused }) => (
-                        // Apply common style
-                        <View style={tabBarItemStyle}>
-                            <Feather name="home" size={24} color="black" />
-                            <CustomText style={tabBarLabelStyle}>
-                                Arkiapuri
-                            </CustomText>
-                        </View>
-                    ),
                 }}
             />
             <Tab.Screen
@@ -227,19 +304,6 @@ function TabNavigator() {
                 component={MealsStackScreen}
                 options={{
                     title: 'Ateriat',
-                    tabBarIcon: ({ focused }) => (
-                        // Apply common style
-                        <View style={tabBarItemStyle}>
-                            <FontAwesome6
-                                name="bowl-food"
-                                size={24}
-                                color="black"
-                            />
-                            <CustomText style={tabBarLabelStyle}>
-                                Ateriat
-                            </CustomText>
-                        </View>
-                    ),
                 }}
             />
             <Tab.Screen
@@ -247,19 +311,6 @@ function TabNavigator() {
                 component={PantryStackScreen}
                 options={{
                     title: 'Pentteri',
-                    tabBarIcon: ({ focused }) => (
-                        // Apply common style
-                        <View style={tabBarItemStyle}>
-                            <AntDesign
-                                name="database"
-                                size={24}
-                                color="black"
-                            />
-                            <CustomText style={tabBarLabelStyle}>
-                                Pentteri
-                            </CustomText>
-                        </View>
-                    ),
                 }}
             />
             <Tab.Screen
@@ -267,19 +318,6 @@ function TabNavigator() {
                 component={ShoppingListStackScreen}
                 options={{
                     title: 'Ostoslista',
-                    tabBarIcon: ({ focused }) => (
-                        // Apply common style
-                        <View style={tabBarItemStyle}>
-                            <Feather
-                                name="shopping-cart"
-                                size={24}
-                                color="black"
-                            />
-                            <CustomText style={tabBarLabelStyle}>
-                                Ostoslista
-                            </CustomText>
-                        </View>
-                    ),
                 }}
             />
             <Tab.Screen
@@ -287,28 +325,22 @@ function TabNavigator() {
                 component={ReadingOrderStackScreen}
                 options={{
                     title: 'Lukujärjestys',
-                    tabBarIcon: ({ focused }) => (
-                        // Apply common style
-                        <View style={tabBarItemStyle}>
-                            <AntDesign
-                                name="calendar"
-                                size={24}
-                                color="black"
-                            />
-                            <CustomText style={tabBarLabelStyle}>
-                                Lukujärjestys
-                            </CustomText>
-                        </View>
-                    ),
                 }}
             />
-            {/* ProfileStack remains hidden */}
             <Tab.Screen
                 name="ProfileStack"
                 component={ProfileStackScreen}
                 options={{
                     tabBarButton: () => null,
                 }}
+                listeners={({ navigation }) => ({
+                    tabPress: (e) => {
+                        e.preventDefault()
+                        navigation.navigate('ProfileStack', {
+                            screen: 'Omat tiedot',
+                        })
+                    },
+                })}
             />
         </Tab.Navigator>
     )
