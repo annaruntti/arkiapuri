@@ -211,11 +211,11 @@ const Tab = createBottomTabNavigator()
 const tabBarItemStyle = {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 3,
-    paddingBottom: 5,
-    paddingHorizontal: 10,
+    paddingTop: 5,
+    paddingBottom: 15,
+    paddingHorizontal: 0,
     borderTopWidth: 0,
-    marginTop: -3,
+    flex: 1,
 }
 
 const tabBarLabelStyle = {
@@ -232,36 +232,48 @@ function TabNavigator() {
                 tabBarShowLabel: false,
                 headerShown: false,
                 tabBarStyle: {
-                    height: 60,
-                    paddingBottom: 5,
+                    height: 80,
+                    paddingHorizontal: 0,
+                    paddingBottom: 10,
                     paddingTop: 0,
+                    flexDirection: 'row',
                 },
                 tabBarIcon: ({ focused }) => {
                     let iconName
                     let iconColor = focused ? '#9C86FC' : 'black'
                     let IconComponent
+                    let finnishLabel = ''
 
                     switch (route.name) {
                         case 'HomeStack':
                             IconComponent = Feather
                             iconName = 'home'
+                            finnishLabel = 'Arkiapuri'
                             break
                         case 'MealsStack':
                             IconComponent = FontAwesome6
                             iconName = 'bowl-food'
+                            finnishLabel = 'Ateriat'
                             break
                         case 'PantryStack':
                             IconComponent = AntDesign
                             iconName = 'database'
+                            finnishLabel = 'Pentteri'
                             break
                         case 'ShoppingListStack':
                             IconComponent = Feather
                             iconName = 'shopping-cart'
+                            finnishLabel = 'Ostoslista'
                             break
                         case 'ReadingOrderStack':
                             IconComponent = AntDesign
                             iconName = 'calendar'
+                            finnishLabel = 'Lukujärjestys'
                             break
+                        default:
+                            IconComponent = Feather
+                            iconName = 'alert-circle'
+                            finnishLabel = route.name.replace('Stack', '')
                     }
 
                     return (
@@ -285,47 +297,23 @@ function TabNavigator() {
                                     focused && { color: '#9C86FC' },
                                 ]}
                             >
-                                {route.name.replace('Stack', '')}
+                                {finnishLabel}
                             </CustomText>
                         </View>
                     )
                 },
             })}
         >
-            <Tab.Screen
-                name="HomeStack"
-                component={HomeStackScreen}
-                options={{
-                    title: 'Arkiapuri',
-                }}
-            />
-            <Tab.Screen
-                name="MealsStack"
-                component={MealsStackScreen}
-                options={{
-                    title: 'Ateriat',
-                }}
-            />
-            <Tab.Screen
-                name="PantryStack"
-                component={PantryStackScreen}
-                options={{
-                    title: 'Pentteri',
-                }}
-            />
+            <Tab.Screen name="HomeStack" component={HomeStackScreen} />
+            <Tab.Screen name="MealsStack" component={MealsStackScreen} />
+            <Tab.Screen name="PantryStack" component={PantryStackScreen} />
             <Tab.Screen
                 name="ShoppingListStack"
                 component={ShoppingListStackScreen}
-                options={{
-                    title: 'Ostoslista',
-                }}
             />
             <Tab.Screen
                 name="ReadingOrderStack"
                 component={ReadingOrderStackScreen}
-                options={{
-                    title: 'Lukujärjestys',
-                }}
             />
             <Tab.Screen
                 name="ProfileStack"
