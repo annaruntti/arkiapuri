@@ -194,7 +194,17 @@ const ShoppingListDetail = ({
                     Tuotteita: {shoppingList.items?.length || 0}
                 </CustomText>
                 <CustomText>
-                    Kokonaishinta: {shoppingList.totalEstimatedPrice}€
+                    Kokonaishinta:{' '}
+                    {shoppingList.items && shoppingList.items.length > 0
+                        ? shoppingList.items
+                              .reduce(
+                                  (sum, item) =>
+                                      sum + (parseFloat(item.price) || 0),
+                                  0
+                              )
+                              .toFixed(2)
+                        : shoppingList.totalEstimatedPrice || 0}
+                    €
                 </CustomText>
             </View>
             <FlatList

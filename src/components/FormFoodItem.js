@@ -120,7 +120,11 @@ const FormFoodItem = forwardRef(
 
                 const formData = {
                     name: data.name,
-                    category: data.category,
+                    category: Array.isArray(data.category)
+                        ? data.category.map((cat) =>
+                              typeof cat === 'object' ? cat.name : cat
+                          )
+                        : [],
                     unit: data.unit,
                     price: parseFloat(data.price) || 0,
                     calories: parseInt(data.calories) || 0,

@@ -198,7 +198,17 @@ const ShoppingListsScreen = () => {
             <View style={styles.listStats}>
                 <CustomText>Tuotteita: {item.items?.length || 0}</CustomText>
                 <CustomText>
-                    Arvioitu hinta: {item.totalEstimatedPrice}€
+                    Arvioitu hinta:{' '}
+                    {item.items && item.items.length > 0
+                        ? item.items
+                              .reduce(
+                                  (sum, listItem) =>
+                                      sum + (parseFloat(listItem.price) || 0),
+                                  0
+                              )
+                              .toFixed(2)
+                        : item.totalEstimatedPrice || 0}
+                    €
                 </CustomText>
             </View>
             <Button

@@ -39,11 +39,19 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
 
     const handleAddItem = (itemData) => {
         console.log('Item data received in handleAddItem:', itemData)
+        // Transform categories into an array of strings
+        const transformedCategories = Array.isArray(itemData.categories)
+            ? itemData.categories.map((cat) =>
+                  typeof cat === 'object' ? cat.name : cat
+              )
+            : []
+
         const newItem = {
             ...itemData,
             location: 'shopping-list',
             quantity: itemData.quantity,
             unit: itemData.unit || 'kpl',
+            categories: transformedCategories,
         }
         console.log('New item being added:', newItem)
         setItems([...items, newItem])
@@ -62,7 +70,7 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
 
             console.log('Items before processing:', items)
 
-            // Process items to ensure quantities are properly formatted
+            // Process items to ensure quantities and categories are properly formatted
             const processedItems = items.map((item) => {
                 console.log('Processing item:', item)
                 const processedItem = {
@@ -70,6 +78,11 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
                     quantity: parseFloat(item.quantity),
                     price: parseFloat(item.price) || 0,
                     calories: parseInt(item.calories) || 0,
+                    categories: item.categories
+                        ? item.categories.map((cat) =>
+                              typeof cat === 'object' ? cat.name : cat
+                          )
+                        : [],
                 }
                 console.log('Processed item:', processedItem)
                 return processedItem
