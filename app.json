@@ -1,17 +1,17 @@
 {
     "expo": {
-        "name": "arkiapuri",
+        "name": "Arkiapuri",
         "slug": "arkiapuri",
         "version": "1.0.0",
         "orientation": "portrait",
-        "icon": "./assets/icon.png",
+        "icon": "./assets/arkiapuri-logo.png",
         "userInterfaceStyle": "light",
         "newArchEnabled": true,
         "host": "your-ip-address",
         "splash": {
-            "image": "./assets/splash.png",
+            "image": "./assets/arkiapuri-logo.png",
             "resizeMode": "contain",
-            "backgroundColor": "#ffffff"
+            "backgroundColor": "#DCD4FC"
         },
         "assetBundlePatterns": ["**/*"],
         "plugins": [
@@ -24,17 +24,17 @@
         ],
         "ios": {
             "supportsTablet": true,
-            "bundleIdentifier": "com.ios.arkiapuri"
+            "bundleIdentifier": "com.arkiapuri.app"
         },
         "android": {
             "adaptiveIcon": {
-                "foregroundImage": "./assets/adaptive-icon.png",
-                "backgroundColor": "#6E32BC"
+                "foregroundImage": "./assets/arkiapuri-logo.png",
+                "backgroundColor": "#DCD4FC"
             },
-            "package": "com.android.arkiapuri"
+            "package": "com.arkiapuri.app"
         },
         "web": {
-            "favicon": "./assets/favicon.png"
+            "favicon": "./assets/arkiapuri-logo.png"
         }
     }
 }
