@@ -1,4 +1,4 @@
-import React, { useState, forwardRef, useEffect } from 'react'
+import React, { useState, forwardRef } from 'react'
 import {
     StyleSheet,
     ScrollView,
@@ -23,19 +23,12 @@ import categories from '../data/categories'
 import CustomText from './CustomText'
 import Button from './Button'
 import { getServerUrl } from '../utils/getServerUrl'
-import CustomModal from './CustomModal'
 import CategorySelect from './CategorySelect'
-
-const formatNumber = (value) => {
-    if (!value) return value
-    return value.toString().replace(',', '.')
-}
 
 const FormFoodItem = forwardRef(
     (
         {
             onSubmit,
-            onClose,
             location = 'meal',
             showLocationSelector = false,
             shoppingLists = [],
@@ -118,12 +111,22 @@ const FormFoodItem = forwardRef(
 
                 const quantity = parseFloat(data.quantity) || 0
 
+                // Get category names from IDs
+                const getCategoryName = (id) => {
+                    for (const category of categories) {
+                        if (category.id === id) return category.name
+                        const subcategory = category.children.find(
+                            (c) => c.id === id
+                        )
+                        if (subcategory) return subcategory.name
+                    }
+                    return id
+                }
+
                 const formData = {
                     name: data.name,
                     category: Array.isArray(data.category)
-                        ? data.category.map((cat) =>
-                              typeof cat === 'object' ? cat.name : cat
-                          )
+                        ? data.category.map((id) => getCategoryName(id))
                         : [],
                     unit: data.unit,
                     price: parseFloat(data.price) || 0,
@@ -131,7 +134,7 @@ const FormFoodItem = forwardRef(
                     expirationDate: data.expirationDate,
                     location: location,
                     locations: [location],
-                    quantity: quantity, // Send as number
+                    quantity: quantity,
                     quantities: {
                         meal: 0,
                         'shopping-list': 0,
@@ -186,7 +189,7 @@ const FormFoodItem = forwardRef(
                     }
                 }
             } catch (error) {
-                console.error('Error creating food item:', error)
+                console.error('Error submitting form:', error)
                 Alert.alert('Virhe', 'Raaka-aineen lisääminen epäonnistui')
             }
         }
@@ -247,10 +250,6 @@ const FormFoodItem = forwardRef(
                     </View>
                 </View>
             )
-        }
-
-        const toggleModal = () => {
-            setIsModalVisible(!isModalVisible)
         }
 
         const renderForm = () => (
@@ -605,7 +604,7 @@ const FormFoodItem = forwardRef(
     }
 )
 
-// Added a display name for better debugging
+// Display name for better debugging
 FormFoodItem.displayName = 'FormFoodItem'
 
 const styles = StyleSheet.create({

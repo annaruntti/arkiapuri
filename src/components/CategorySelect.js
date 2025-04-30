@@ -1,175 +1,158 @@
-import React, { forwardRef, useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { View, TouchableOpacity, StyleSheet, ScrollView } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
 import CustomText from './CustomText'
 import CustomModal from './CustomModal'
 import Button from './Button'
 
-const CategorySelect = forwardRef(
-    (
-        {
-            value,
-            onChange,
-            isModalVisible,
-            setIsModalVisible,
-            toggleModal,
-            categories,
-        },
-        ref
-    ) => {
-        const [selectedCategories, setSelectedCategories] = useState([])
+const CategorySelect = ({
+    value,
+    onChange,
+    isModalVisible,
+    setIsModalVisible,
+    toggleModal,
+    categories,
+}) => {
+    const [selectedCategories, setSelectedCategories] = useState([])
 
-        useEffect(() => {
-            // Initialize selected categories from the current value
-            if (value && value.length > 0) {
-                const cats = value.map((cat) => {
-                    if (typeof cat === 'object') return cat.id
-                    return cat
-                })
-                setSelectedCategories(cats)
-            }
-        }, [value])
-
-        const handleCategoryToggle = (category) => {
-            setSelectedCategories((prev) => {
-                if (prev.includes(category.id)) {
-                    return prev.filter((id) => id !== category.id)
-                } else {
-                    return [...prev, category.id]
-                }
+    useEffect(() => {
+        console.log('CategorySelect value changed:', value)
+        // Initialize selected categories from the current value
+        if (value && value.length > 0) {
+            const cats = value.map((cat) => {
+                if (typeof cat === 'object') return cat.id
+                return cat
             })
+            console.log('Setting selected categories:', cats)
+            setSelectedCategories(cats)
+        } else {
+            console.log('No categories to set')
+            setSelectedCategories([])
         }
+    }, [value])
 
-        const handleSubcategoryToggle = (subcategory) => {
-            setSelectedCategories((prev) => {
-                if (prev.includes(subcategory.id)) {
-                    return prev.filter((id) => id !== subcategory.id)
-                } else {
-                    return [...prev, subcategory.id]
-                }
-            })
+    const getCategoryName = (id) => {
+        // Search through all categories and their children to find the matching name
+        for (const category of categories) {
+            if (category.id === id) return category.name
+            const subcategory = category.children.find((c) => c.id === id)
+            if (subcategory) return subcategory.name
         }
-
-        const handleSave = () => {
-            const selectedItems = selectedCategories.map((id) => {
-                // Find the subcategory in any category's children
-                for (const category of categories) {
-                    const subcat = category.children.find((c) => c.id === id)
-                    if (subcat) return subcat
-                }
-                return id
-            })
-            onChange(selectedItems)
-            setIsModalVisible(false)
-        }
-
-        return (
-            <View style={styles.multiSelectBox}>
-                <TouchableOpacity
-                    onPress={toggleModal}
-                    style={styles.multiSelectButton}
-                >
-                    <CustomText>
-                        {value && value.length > 0
-                            ? value
-                                  .map((cat) =>
-                                      typeof cat === 'object' ? cat.name : cat
-                                  )
-                                  .join(', ')
-                            : 'Valitse kategoriat'}
-                    </CustomText>
-                </TouchableOpacity>
-
-                <CustomModal
-                    visible={isModalVisible}
-                    onClose={() => setIsModalVisible(false)}
-                    title="Valitse kategoriat"
-                >
-                    <View style={styles.modalBody}>
-                        <ScrollView style={styles.categoryContainer}>
-                            {categories.map((category) => (
-                                <View
-                                    key={category.id}
-                                    style={styles.categoryGroup}
-                                >
-                                    <TouchableOpacity
-                                        style={styles.categoryHeader}
-                                        onPress={() =>
-                                            handleCategoryToggle(category)
-                                        }
-                                    >
-                                        <CustomText
-                                            style={styles.categoryTitle}
-                                        >
-                                            {category.name}
-                                        </CustomText>
-                                    </TouchableOpacity>
-                                    <View style={styles.subcategoryList}>
-                                        {category.children.map(
-                                            (subcategory) => (
-                                                <TouchableOpacity
-                                                    key={subcategory.id}
-                                                    style={
-                                                        styles.subcategoryItem
-                                                    }
-                                                    onPress={() =>
-                                                        handleSubcategoryToggle(
-                                                            subcategory
-                                                        )
-                                                    }
-                                                >
-                                                    <View
-                                                        style={[
-                                                            styles.checkbox,
-                                                            selectedCategories.includes(
-                                                                subcategory.id
-                                                            ) &&
-                                                                styles.checkboxChecked,
-                                                        ]}
-                                                    >
-                                                        {selectedCategories.includes(
-                                                            subcategory.id
-                                                        ) && (
-                                                            <MaterialIcons
-                                                                name="check"
-                                                                size={16}
-                                                                color="white"
-                                                            />
-                                                        )}
-                                                    </View>
-                                                    <CustomText
-                                                        style={
-                                                            styles.subcategoryText
-                                                        }
-                                                    >
-                                                        {subcategory.name}
-                                                    </CustomText>
-                                                </TouchableOpacity>
-                                            )
-                                        )}
-                                    </View>
-                                </View>
-                            ))}
-                        </ScrollView>
-                        <View style={styles.modalButtonGroup}>
-                            <Button
-                                title="Tallenna"
-                                onPress={handleSave}
-                                style={styles.primaryButton}
-                            />
-                        </View>
-                    </View>
-                </CustomModal>
-            </View>
-        )
+        return id // Fallback to ID if name not found
     }
-)
 
-CategorySelect.displayName = 'CategorySelect'
+    const handleSubcategoryToggle = (subcategory) => {
+        setSelectedCategories((prev) => {
+            if (prev.includes(subcategory.id)) {
+                return prev.filter((id) => id !== subcategory.id)
+            } else {
+                return [...prev, subcategory.id]
+            }
+        })
+    }
+
+    const handleSave = () => {
+        console.log('Saving categories:', selectedCategories)
+        // Return just the IDs of selected categories
+        onChange(selectedCategories)
+        setIsModalVisible(false)
+    }
+
+    return (
+        <View style={styles.multiSelectBox}>
+            <TouchableOpacity
+                onPress={toggleModal}
+                style={styles.multiSelectButton}
+            >
+                <View style={styles.selectedCategoriesContainer}>
+                    {selectedCategories.length > 0 ? (
+                        selectedCategories.map((id, index) => (
+                            <View key={id} style={styles.categoryChip}>
+                                <CustomText style={styles.categoryChipText}>
+                                    {getCategoryName(id)}
+                                </CustomText>
+                            </View>
+                        ))
+                    ) : (
+                        <CustomText>Valitse kategoriat</CustomText>
+                    )}
+                </View>
+            </TouchableOpacity>
+
+            <CustomModal
+                visible={isModalVisible}
+                onClose={() => setIsModalVisible(false)}
+                title="Valitse kategoriat"
+            >
+                <View style={styles.modalBody}>
+                    <ScrollView style={styles.categoryContainer}>
+                        {categories.map((category) => (
+                            <View
+                                key={category.id}
+                                style={styles.categoryGroup}
+                            >
+                                <View style={styles.categoryHeader}>
+                                    <CustomText style={styles.categoryTitle}>
+                                        {category.name}
+                                    </CustomText>
+                                </View>
+                                <View style={styles.subcategoryList}>
+                                    {category.children.map((subcategory) => (
+                                        <TouchableOpacity
+                                            key={subcategory.id}
+                                            style={styles.subcategoryItem}
+                                            onPress={() =>
+                                                handleSubcategoryToggle(
+                                                    subcategory
+                                                )
+                                            }
+                                        >
+                                            <View
+                                                style={[
+                                                    styles.checkbox,
+                                                    selectedCategories.includes(
+                                                        subcategory.id
+                                                    ) && styles.checkboxChecked,
+                                                ]}
+                                            >
+                                                {selectedCategories.includes(
+                                                    subcategory.id
+                                                ) && (
+                                                    <MaterialIcons
+                                                        name="check"
+                                                        size={16}
+                                                        color="white"
+                                                    />
+                                                )}
+                                            </View>
+                                            <CustomText
+                                                style={styles.subcategoryText}
+                                            >
+                                                {subcategory.name}
+                                            </CustomText>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            </View>
+                        ))}
+                    </ScrollView>
+                    <View style={styles.modalButtonGroup}>
+                        <Button
+                            title="Tallenna"
+                            onPress={handleSave}
+                            style={styles.primaryButton}
+                        />
+                    </View>
+                </View>
+            </CustomModal>
+        </View>
+    )
+}
 
 const styles = StyleSheet.create({
     multiSelectBox: {
         marginBottom: 8,
+        flex: 1,
     },
     multiSelectButton: {
         padding: 10,
@@ -178,6 +161,24 @@ const styles = StyleSheet.create({
         borderStyle: 'solid',
         borderRadius: 4,
         backgroundColor: 'white',
+        minHeight: 40,
+    },
+    selectedCategoriesContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 5,
+    },
+    categoryChip: {
+        backgroundColor: '#9C86FC',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+        marginRight: 4,
+        marginBottom: 4,
+    },
+    categoryChipText: {
+        color: 'white',
+        fontSize: 14,
     },
     modalBody: {
         flex: 1,

@@ -9,47 +9,36 @@ import {
 import CustomText from './CustomText'
 import Button from './Button'
 import { Feather } from '@expo/vector-icons'
-import { MaterialIcons } from '@expo/vector-icons'
 import { format } from 'date-fns'
 import { fi } from 'date-fns/locale'
 import DateTimePicker from '@react-native-community/datetimepicker'
-import SectionedMultiSelect from 'react-native-sectioned-multi-select'
-import categories from '../data/categories' // Import the categories data
 import CustomModal from './CustomModal'
+import CategorySelect from './CategorySelect'
+import categories from '../data/categories'
 
 const PantryItemDetails = ({ item, visible, onClose, onUpdate }) => {
     const [editableFields, setEditableFields] = useState({})
     const [editedValues, setEditedValues] = useState({})
     const [showDatePicker, setShowDatePicker] = useState(false)
     const [showCategorySelect, setShowCategorySelect] = useState(false)
-    const [selectedCategories, setSelectedCategories] = useState([])
+
+    const getCategoryName = (id) => {
+        // Search through all categories and their children to find the matching name
+        for (const category of categories) {
+            if (category.id === id) return category.name
+            const subcategory = category.children.find((c) => c.id === id)
+            if (subcategory) return subcategory.name
+        }
+        return id // Fallback to ID if name not found
+    }
 
     useEffect(() => {
-        if (item && item.category) {
-            // Convert category names to IDs if needed
-            const categoryIds = item.category
-                .map((cat) => {
-                    if (typeof cat === 'string') {
-                        // Find the ID for this category name
-                        const findCategoryId = (cats) => {
-                            for (const category of cats) {
-                                if (category.name === cat) return category.id
-                                if (category.children) {
-                                    const found = findCategoryId(
-                                        category.children
-                                    )
-                                    if (found) return found
-                                }
-                            }
-                            return null
-                        }
-                        return findCategoryId(categories)
-                    }
-                    return cat.id || cat
-                })
-                .filter(Boolean)
-
-            setSelectedCategories(categoryIds)
+        if (item) {
+            console.log('Item categories:', item.category)
+            setEditedValues({
+                ...item,
+                category: item.category || [],
+            })
         }
     }, [item])
 
@@ -84,75 +73,18 @@ const PantryItemDetails = ({ item, visible, onClose, onUpdate }) => {
     }
 
     const handleCategoryChange = (selectedItems) => {
-        console.log('Selected items:', selectedItems)
-        setSelectedCategories(selectedItems)
-
-        // Convert IDs back to category names for storage
-        const categoryNames = selectedItems
-            .map((id) => {
-                const findCategoryName = (cats) => {
-                    for (const cat of cats) {
-                        if (cat.id === id) return cat.name
-                        if (cat.children) {
-                            const found = findCategoryName(cat.children)
-                            if (found) return found
-                        }
-                    }
-                    return null
-                }
-                return findCategoryName(categories)
-            })
-            .filter(Boolean)
-
-        console.log('Category names to save:', categoryNames)
-
-        // Update editedValues with the new categories
-        setEditedValues((prev) => {
-            const newValues = {
-                ...prev,
-                category: categoryNames,
-            }
-            console.log('New editedValues:', newValues)
-            return newValues
-        })
+        console.log('Selected categories:', selectedItems)
+        setEditedValues((prev) => ({
+            ...prev,
+            category: selectedItems,
+        }))
     }
 
     const handleSave = async () => {
-        // Include both edited values and selected categories in the update
-        const updatedData = {
-            ...item,
-            ...editedValues,
-        }
-
-        // Check that categories are included and not empty
-        if (selectedCategories.length > 0) {
-            const categoryNames = selectedCategories
-                .map((id) => {
-                    const findCategoryName = (cats) => {
-                        for (const cat of cats) {
-                            if (cat.id === id) return cat.name
-                            if (cat.children) {
-                                const found = findCategoryName(cat.children)
-                                if (found) return found
-                            }
-                        }
-                        return null
-                    }
-                    return findCategoryName(categories)
-                })
-                .filter(Boolean)
-
-            updatedData.category = categoryNames
-        }
-
-        console.log('Saving updated data:', updatedData)
-
         try {
-            await onUpdate(item._id, updatedData)
+            await onUpdate(item._id, editedValues)
             setEditableFields({})
-            setEditedValues({})
             setShowCategorySelect(false)
-            setSelectedCategories([])
         } catch (error) {
             console.error('Error saving updates:', error)
         }
@@ -213,101 +145,28 @@ const PantryItemDetails = ({ item, visible, onClose, onUpdate }) => {
                         'number'
                     )}
 
-                    <View>
-                        <View style={styles.detailRow}>
-                            <CustomText style={styles.label}>
-                                Kategoriat:
-                            </CustomText>
-                            <View style={styles.valueContainer}>
-                                <TouchableOpacity
-                                    style={styles.categoryTouchable}
-                                    onPress={() =>
-                                        setShowCategorySelect(
-                                            !showCategorySelect
-                                        )
-                                    }
-                                >
-                                    <View style={styles.categoryContent}>
-                                        <CustomText style={styles.categoryText}>
-                                            {(
-                                                editedValues.category ||
-                                                item.category ||
-                                                []
-                                            ).join(', ') || 'Ei kategorioita'}
-                                        </CustomText>
-                                        <Feather
-                                            name="edit-2"
-                                            size={18}
-                                            color="#666"
-                                            style={styles.editIcon}
-                                        />
-                                    </View>
-                                </TouchableOpacity>
-                            </View>
+                    <View style={styles.detailRow}>
+                        <CustomText style={styles.label}>
+                            Kategoriat:
+                        </CustomText>
+                        <View style={styles.valueContainer}>
+                            <CategorySelect
+                                value={editedValues.category || []}
+                                onChange={handleCategoryChange}
+                                isModalVisible={showCategorySelect}
+                                setIsModalVisible={setShowCategorySelect}
+                                toggleModal={() =>
+                                    setShowCategorySelect(!showCategorySelect)
+                                }
+                                categories={categories}
+                            />
+                            <TouchableOpacity
+                                style={styles.editIcon}
+                                onPress={() => setShowCategorySelect(true)}
+                            >
+                                <Feather name="edit-2" size={18} color="#666" />
+                            </TouchableOpacity>
                         </View>
-
-                        {showCategorySelect && (
-                            <View style={styles.categorySelectContainer}>
-                                <SectionedMultiSelect
-                                    styles={{
-                                        backdrop: styles.multiSelectBackdrop,
-                                        selectToggle: styles.multiSelectBox,
-                                        button: {
-                                            borderRadius: 25,
-                                            paddingTop: 7,
-                                            paddingBottom: 7,
-                                            paddingLeft: 10,
-                                            paddingRight: 10,
-                                            elevation: 2,
-                                            backgroundColor: '#9C86FC',
-                                            marginTop: 10,
-                                        },
-                                        confirmText: {
-                                            color: 'black',
-                                            fontWeight: 'bold',
-                                            textAlign: 'center',
-                                            fontSize: 16,
-                                        },
-                                        cancelButton: styles.cancelButton,
-                                        cancelButtonText:
-                                            styles.cancelButtonText,
-                                        modalWrapper: {
-                                            padding: 20,
-                                            paddingTop: 45,
-                                        },
-                                        container: {
-                                            padding: 15,
-                                        },
-                                        itemText: {
-                                            fontSize: 16,
-                                            paddingVertical: 10,
-                                            paddingHorizontal: 15,
-                                        },
-                                        subItemText: {
-                                            fontSize: 15,
-                                            paddingVertical: 8,
-                                            paddingHorizontal: 30,
-                                        },
-                                        searchBar: {
-                                            padding: 15,
-                                            marginBottom: 10,
-                                        },
-                                    }}
-                                    items={categories}
-                                    IconRenderer={MaterialIcons}
-                                    uniqueKey="id"
-                                    displayKey="name"
-                                    onSelectedItemsChange={handleCategoryChange}
-                                    selectedItems={selectedCategories}
-                                    removeAllText="Poista kaikki"
-                                    showCancelButton={true}
-                                    showRemoveAll={true}
-                                    searchPlaceholderText="Etsi kategoriaa"
-                                    confirmText="Tallenna kategoriat"
-                                    selectText="Valitse yksi tai useampi kategoria"
-                                />
-                            </View>
-                        )}
                     </View>
 
                     <View style={styles.detailRow}>
@@ -388,6 +247,7 @@ const styles = StyleSheet.create({
     },
     label: {
         fontWeight: 'bold',
+        marginRight: 10,
     },
     valueContainer: {
         flexDirection: 'row',
@@ -411,47 +271,14 @@ const styles = StyleSheet.create({
         backgroundColor: '#9C86FC',
         borderRadius: 25,
     },
-    categorySelector: {
+    categoryButton: {
         flex: 1,
-        alignItems: 'flex-end',
-    },
-    multiSelectBackdrop: {
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    },
-    multiSelectBox: {
-        borderWidth: 1,
-        borderRadius: 4,
-        borderColor: '#bbb',
         padding: 10,
-        marginBottom: 8,
-    },
-    cancelButton: {
-        marginTop: 10,
-    },
-    cancelButtonText: {
-        color: '#666',
-    },
-    categoryTouchable: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'flex-end',
-    },
-    categoryContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    categoryText: {
-        flex: 1,
-        textAlign: 'right',
-        marginRight: 10,
-    },
-    categorySelectContainer: {
-        marginTop: -10,
-        marginBottom: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-        paddingBottom: 10,
+        borderWidth: 1,
+        borderColor: '#bbb',
+        borderStyle: 'solid',
+        borderRadius: 4,
+        backgroundColor: 'white',
     },
 })
 
