@@ -25,19 +25,31 @@ const PantryItemDetails = ({ item, visible, onClose, onUpdate }) => {
     const getCategoryName = (id) => {
         // Search through all categories and their children to find the matching name
         for (const category of categories) {
-            if (category.id === id) return category.name
-            const subcategory = category.children.find((c) => c.id === id)
+            const subcategory = category.children.find(
+                (c) => String(c.id) === String(id)
+            )
             if (subcategory) return subcategory.name
         }
         return id // Fallback to ID if name not found
     }
 
+    const getCategoryId = (name) => {
+        // Search through all categories and their children to find the matching ID
+        for (const category of categories) {
+            const subcategory = category.children.find((c) => c.name === name)
+            if (subcategory) return subcategory.id
+        }
+        return name // Fallback to name if ID not found
+    }
+
     useEffect(() => {
         if (item) {
             console.log('Item categories:', item.category)
+            // Convert category IDs to names when loading
+            const categoryNames = item.category.map((id) => getCategoryName(id))
             setEditedValues({
                 ...item,
-                category: item.category || [],
+                category: categoryNames,
             })
         }
     }, [item])
@@ -74,15 +86,28 @@ const PantryItemDetails = ({ item, visible, onClose, onUpdate }) => {
 
     const handleCategoryChange = (selectedItems) => {
         console.log('Selected categories:', selectedItems)
+        // selectedItems are IDs, convert them to names for display
+        const categoryNames = selectedItems.map((id) => getCategoryName(id))
         setEditedValues((prev) => ({
             ...prev,
-            category: selectedItems,
+            category: categoryNames,
         }))
     }
 
     const handleSave = async () => {
         try {
-            await onUpdate(item._id, editedValues)
+            // Convert category names back to IDs before saving
+            const categoryIds = editedValues.category.map((name) =>
+                getCategoryId(name)
+            )
+
+            const updatedValues = {
+                ...editedValues,
+                category: categoryIds,
+            }
+
+            console.log('Saving with values:', updatedValues)
+            await onUpdate(item._id, updatedValues)
             setEditableFields({})
             setShowCategorySelect(false)
         } catch (error) {

@@ -15,13 +15,35 @@ const CategorySelect = ({
 }) => {
     const [selectedCategories, setSelectedCategories] = useState([])
 
+    const getCategoryName = (id) => {
+        // Search through all categories and their children to find the matching name
+        for (const category of categories) {
+            const subcategory = category.children.find(
+                (c) => String(c.id) === String(id)
+            )
+            if (subcategory) return subcategory.name
+        }
+        return id // Fallback to ID if name not found
+    }
+
+    const getCategoryId = (name) => {
+        // Search through all categories and their children to find the matching ID
+        for (const category of categories) {
+            const subcategory = category.children.find((c) => c.name === name)
+            if (subcategory) return subcategory.id
+        }
+        return name // Fallback to name if ID not found
+    }
+
     useEffect(() => {
         console.log('CategorySelect value changed:', value)
         // Initialize selected categories from the current value
         if (value && value.length > 0) {
+            // Convert names to IDs if needed
             const cats = value.map((cat) => {
                 if (typeof cat === 'object') return cat.id
-                return cat
+                if (typeof cat === 'string' && !isNaN(cat)) return cat // It's already an ID
+                return getCategoryId(cat) // It's a name, convert to ID
             })
             console.log('Setting selected categories:', cats)
             setSelectedCategories(cats)
@@ -30,16 +52,6 @@ const CategorySelect = ({
             setSelectedCategories([])
         }
     }, [value])
-
-    const getCategoryName = (id) => {
-        // Search through all categories and their children to find the matching name
-        for (const category of categories) {
-            if (category.id === id) return category.name
-            const subcategory = category.children.find((c) => c.id === id)
-            if (subcategory) return subcategory.name
-        }
-        return id // Fallback to ID if name not found
-    }
 
     const handleSubcategoryToggle = (subcategory) => {
         setSelectedCategories((prev) => {
@@ -177,7 +189,6 @@ const styles = StyleSheet.create({
         minHeight: 40,
         flexDirection: 'row',
         alignItems: 'flex-start',
-        justifyContent: 'space-between',
     },
     selectedCategoriesContainer: {
         flexDirection: 'row',
@@ -185,7 +196,7 @@ const styles = StyleSheet.create({
         gap: 5,
         alignItems: 'center',
         flex: 1,
-        marginRight: 8,
+        marginRight: 40,
     },
     categoryChip: {
         backgroundColor: '#9C86FC',
@@ -203,7 +214,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#e0e0e0',
         width: 30,
         height: 30,
-        borderRadius: 18,
+        borderRadius: 15,
         justifyContent: 'center',
         alignItems: 'center',
         elevation: 2,
