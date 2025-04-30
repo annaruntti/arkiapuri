@@ -51,6 +51,11 @@ const CategorySelect = ({
         })
     }
 
+    const handleClearAll = () => {
+        setSelectedCategories([])
+        onChange([])
+    }
+
     const handleSave = () => {
         console.log('Saving categories:', selectedCategories)
         // Return just the IDs of selected categories
@@ -66,7 +71,7 @@ const CategorySelect = ({
             >
                 <View style={styles.selectedCategoriesContainer}>
                     {selectedCategories.length > 0 ? (
-                        selectedCategories.map((id, index) => (
+                        selectedCategories.map((id) => (
                             <View key={id} style={styles.categoryChip}>
                                 <CustomText style={styles.categoryChipText}>
                                     {getCategoryName(id)}
@@ -77,6 +82,14 @@ const CategorySelect = ({
                         <CustomText>Valitse kategoriat</CustomText>
                     )}
                 </View>
+                {selectedCategories.length > 0 && (
+                    <TouchableOpacity
+                        style={styles.clearButton}
+                        onPress={handleClearAll}
+                    >
+                        <MaterialIcons name="clear" size={20} color="#666" />
+                    </TouchableOpacity>
+                )}
             </TouchableOpacity>
 
             <CustomModal
@@ -162,11 +175,17 @@ const styles = StyleSheet.create({
         borderRadius: 4,
         backgroundColor: 'white',
         minHeight: 40,
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
     },
     selectedCategoriesContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: 5,
+        alignItems: 'center',
+        flex: 1,
+        marginRight: 8,
     },
     categoryChip: {
         backgroundColor: '#9C86FC',
@@ -177,8 +196,27 @@ const styles = StyleSheet.create({
         marginBottom: 4,
     },
     categoryChipText: {
-        color: 'white',
+        color: '#000',
         fontSize: 14,
+    },
+    clearButton: {
+        backgroundColor: '#e0e0e0',
+        width: 30,
+        height: 30,
+        borderRadius: 18,
+        justifyContent: 'center',
+        alignItems: 'center',
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.2,
+        shadowRadius: 1.41,
+        position: 'absolute',
+        right: 8,
+        top: 8,
     },
     modalBody: {
         flex: 1,
