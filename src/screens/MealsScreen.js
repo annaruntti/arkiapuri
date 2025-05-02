@@ -3,7 +3,6 @@ import {
     View,
     StyleSheet,
     FlatList,
-    Pressable,
     Alert,
     TouchableOpacity,
     Platform,
@@ -11,7 +10,7 @@ import {
 import CustomText from '../components/CustomText'
 import Button from '../components/Button'
 import AddMealForm from '../components/FormAddMeal'
-import { AntDesign, MaterialIcons } from '@expo/vector-icons'
+import { MaterialIcons } from '@expo/vector-icons'
 import axios from 'axios'
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
@@ -25,6 +24,7 @@ const MealsScreen = () => {
     const [loading, setLoading] = useState(true)
     const [selectedMeal, setSelectedMeal] = useState(null)
     const [detailModalVisible, setDetailModalVisible] = useState(false)
+    const [categories, setCategories] = useState([])
 
     const fetchMeals = async () => {
         try {
@@ -155,6 +155,156 @@ const MealsScreen = () => {
         }
     }
 
+    const handleCloseDetail = () => {
+        setDetailModalVisible(false)
+        setSelectedMeal(null)
+    }
+
+    const handleUpdateMeal = async (mealId, updatedMeal) => {
+        try {
+            const token = await storage.getItem('userToken')
+            console.log('Token:', token ? 'Token exists' : 'No token found')
+
+            // First, handle each food item
+            const processedFoodItems = await Promise.all(
+                updatedMeal.foodItems.map(async (item) => {
+                    // Convert category names to IDs if needed
+                    const categoryIds = Array.isArray(item.category)
+                        ? item.category
+                              .map((cat) => {
+                                  if (typeof cat === 'string') {
+                                      // If it's a category name, convert to ID
+                                      const category = categories.find(
+                                          (c) =>
+                                              c.name === cat ||
+                                              c.children.some(
+                                                  (child) => child.name === cat
+                                              )
+                                      )
+                                      if (!category) {
+                                          console.warn(
+                                              'Category not found:',
+                                              cat
+                                          )
+                                          return null
+                                      }
+                                      return category.id
+                                  }
+                                  return cat
+                              })
+                              .filter((id) => id !== null) // Remove any null values
+                        : []
+
+                    console.log('Processed category IDs:', categoryIds)
+
+                    // Clean the food item data
+                    const cleanedItem = {
+                        name: item.name,
+                        quantity: parseFloat(item.quantity) || 0,
+                        unit: item.unit || 'kpl',
+                        calories: parseInt(item.calories) || 0,
+                        price: parseFloat(item.price) || 0,
+                        expirationDate: item.expirationDate,
+                        category: categoryIds,
+                        locations: Array.isArray(item.locations)
+                            ? item.locations
+                            : ['meal'],
+                        quantities: {
+                            meal: parseFloat(item.quantities?.meal) || 0,
+                            'shopping-list':
+                                parseFloat(
+                                    item.quantities?.['shopping-list']
+                                ) || 0,
+                            pantry: parseFloat(item.quantities?.pantry) || 0,
+                        },
+                    }
+
+                    // If the item has an _id, it's an existing food item
+                    if (item._id) {
+                        // Update existing food item
+                        const response = await axios.put(
+                            getServerUrl(`/food-items/${item._id}`),
+                            cleanedItem,
+                            {
+                                headers: {
+                                    Authorization: `Bearer ${token}`,
+                                },
+                            }
+                        )
+                        return response.data.foodItem
+                    } else {
+                        // Create new food item
+                        const response = await axios.post(
+                            getServerUrl('/food-items'),
+                            cleanedItem,
+                            {
+                                headers: {
+                                    Authorization: `Bearer ${token}`,
+                                },
+                            }
+                        )
+                        return response.data.foodItem
+                    }
+                })
+            )
+
+            // Now update the meal with only the necessary fields
+            const cleanedMeal = {
+                name: updatedMeal.name,
+                cookingTime: parseInt(updatedMeal.cookingTime) || 0,
+                difficultyLevel:
+                    updatedMeal.difficultyLevel?.toString() || 'easy',
+                defaultRoles: Array.isArray(updatedMeal.defaultRoles)
+                    ? updatedMeal.defaultRoles
+                    : [updatedMeal.defaultRoles?.toString() || 'dinner'],
+                plannedCookingDate: updatedMeal.plannedCookingDate,
+                recipe: updatedMeal.recipe || '',
+                foodItems: processedFoodItems.map((item) => item._id), // Only send the IDs
+            }
+
+            console.log('Updating meal with ID:', mealId)
+            console.log('Cleaned meal data:', cleanedMeal)
+            console.log('Request URL:', getServerUrl(`/meals/${mealId}`))
+            console.log('Request headers:', {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            })
+
+            const response = await axios.put(
+                getServerUrl(`/meals/${mealId}`),
+                cleanedMeal,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+            )
+
+            if (response.data.success) {
+                setMeals((prevMeals) =>
+                    prevMeals.map((meal) =>
+                        meal._id === mealId ? response.data.meal : meal
+                    )
+                )
+                setDetailModalVisible(false)
+            } else {
+                console.error('Failed to update meal:', response.data.message)
+            }
+        } catch (error) {
+            console.error('Error updating meal:', error)
+            if (error.response?.status === 404) {
+                console.error(
+                    'Meal not found or unauthorized. Meal ID:',
+                    mealId
+                )
+                console.error('Error response:', error.response?.data)
+                console.error('Request config:', error.config)
+                console.error('Full error:', error)
+            }
+        }
+    }
+
     const DeleteButton = ({ onPress }) => (
         <TouchableOpacity
             style={styles.deleteButton}
@@ -198,11 +348,6 @@ const MealsScreen = () => {
     const handleMealPress = (meal) => {
         setSelectedMeal(meal)
         setDetailModalVisible(true)
-    }
-
-    const handleCloseDetail = () => {
-        setDetailModalVisible(false)
-        setSelectedMeal(null)
     }
 
     return (
@@ -255,6 +400,7 @@ const MealsScreen = () => {
                 meal={selectedMeal}
                 visible={detailModalVisible}
                 onClose={handleCloseDetail}
+                onUpdate={handleUpdateMeal}
             />
         </View>
     )

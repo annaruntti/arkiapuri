@@ -160,14 +160,14 @@ const Table = () => {
             const formattedDate = new Date(selectedDate).toISOString()
 
             console.log('Updating meal:', {
-                mealId: meal.id,
+                mealId: meal._id,
                 formattedDate,
-                url: getServerUrl(`/meals/${meal.id}`),
+                url: getServerUrl(`/meals/${meal._id}`),
             })
 
-            // Use PUT with the meal.id
+            // Use PUT with the meal._id
             const response = await axios.put(
-                getServerUrl(`/meals/${meal.id}`),
+                getServerUrl(`/meals/${meal._id}`),
                 {
                     plannedCookingDate: formattedDate,
                 },
