@@ -20,6 +20,21 @@ import { format } from 'date-fns'
 import { fi } from 'date-fns/locale'
 import FormFoodItem from './FormFoodItem'
 import FoodItemRow from './FoodItemRow'
+import { Picker } from '@react-native-picker/picker'
+
+const difficultyLevels = [
+    { value: 'easy', label: 'Helppo' },
+    { value: 'medium', label: 'Keskitaso' },
+    { value: 'hard', label: 'Vaikea' },
+]
+
+const mealTypes = [
+    { value: 'breakfast', label: 'Aamiainen' },
+    { value: 'lunch', label: 'Lounas' },
+    { value: 'snack', label: 'Välipala' },
+    { value: 'dinner', label: 'Päivällinen' },
+    { value: 'dessert', label: 'Jälkiruoka' },
+]
 
 const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
     const [editableFields, setEditableFields] = useState({})
@@ -43,19 +58,31 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
     }
 
     const toggleEdit = (field) => {
+        if (editableFields[field]) {
+            // We're saving the edit, so keep the current edited value
+            setEditedValues((prev) => ({
+                ...prev,
+                [field]: prev[field],
+            }))
+        } else {
+            // We're starting to edit, so initialize with current value
+            setEditedValues((prev) => ({
+                ...prev,
+                [field]:
+                    field === 'difficultyLevel'
+                        ? meal.difficultyLevel || 'MEDIUM'
+                        : meal[field],
+            }))
+        }
+
         setEditableFields((prev) => ({
             ...prev,
             [field]: !prev[field],
         }))
-        if (!editedValues[field]) {
-            setEditedValues((prev) => ({
-                ...prev,
-                [field]: meal[field],
-            }))
-        }
     }
 
     const handleChange = (field, value) => {
+        console.log('Changing field:', field, 'to value:', value)
         setEditedValues((prev) => ({
             ...prev,
             [field]: value,
@@ -117,13 +144,20 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                 ...editedValues,
                 foodItems: updatedFoodItems,
                 cookingTime: parseInt(editedValues.cookingTime) || 0,
-                difficultyLevel: parseInt(editedValues.difficultyLevel) || 0,
-                defaultRoles: parseInt(editedValues.defaultRoles) || 0,
+                difficultyLevel:
+                    editedValues.difficultyLevel || meal.difficultyLevel,
+                defaultRoles: editedValues.defaultRoles
+                    ? [editedValues.defaultRoles]
+                    : meal.defaultRoles,
                 _id: undefined,
                 id: undefined,
                 __v: undefined,
             }
 
+            console.log(
+                'Saving meal with difficulty level:',
+                updatedMeal.difficultyLevel
+            )
             await onUpdate(meal._id, updatedMeal)
             setEditableFields({})
             setEditingFoodItem(null)
@@ -133,6 +167,76 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
     }
 
     const renderEditableField = (field, label, value, type = 'text') => {
+        if (field === 'difficultyLevel' && editableFields[field]) {
+            return (
+                <View style={styles.detailRow}>
+                    <CustomText style={styles.detailLabel}>{label}:</CustomText>
+                    <View style={styles.valueContainer}>
+                        <View style={styles.pickerContainer}>
+                            <Picker
+                                selectedValue={editedValues[field] || 'MEDIUM'}
+                                onValueChange={(itemValue) => {
+                                    console.log(
+                                        'Selected difficulty level:',
+                                        itemValue
+                                    )
+                                    handleChange(field, itemValue)
+                                }}
+                                style={styles.picker}
+                            >
+                                {difficultyLevels.map((level) => (
+                                    <Picker.Item
+                                        key={level.value}
+                                        label={level.label}
+                                        value={level.value}
+                                    />
+                                ))}
+                            </Picker>
+                        </View>
+                        <TouchableOpacity
+                            style={styles.editIcon}
+                            onPress={() => toggleEdit(field)}
+                        >
+                            <Feather name="check" size={18} color="#666" />
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            )
+        }
+
+        if (field === 'defaultRoles' && editableFields[field]) {
+            return (
+                <View style={styles.detailRow}>
+                    <CustomText style={styles.detailLabel}>{label}:</CustomText>
+                    <View style={styles.valueContainer}>
+                        <View style={styles.pickerContainer}>
+                            <Picker
+                                selectedValue={editedValues[field] || value}
+                                onValueChange={(itemValue) =>
+                                    handleChange(field, itemValue)
+                                }
+                                style={styles.picker}
+                            >
+                                {mealTypes.map((type) => (
+                                    <Picker.Item
+                                        key={type.value}
+                                        label={type.label}
+                                        value={type.value}
+                                    />
+                                ))}
+                            </Picker>
+                        </View>
+                        <TouchableOpacity
+                            style={styles.editIcon}
+                            onPress={() => toggleEdit(field)}
+                        >
+                            <Feather name="check" size={18} color="#666" />
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            )
+        }
+
         return (
             <View style={styles.detailRow}>
                 <CustomText style={styles.detailLabel}>{label}:</CustomText>
@@ -140,14 +244,31 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                     {editableFields[field] ? (
                         <TextInput
                             style={styles.input}
-                            value={String(editedValues[field] || value)}
+                            value={
+                                editedValues[field] !== undefined
+                                    ? String(editedValues[field])
+                                    : String(value)
+                            }
                             onChangeText={(text) => handleChange(field, text)}
                             keyboardType={
                                 type === 'number' ? 'numeric' : 'default'
                             }
+                            placeholder={label}
                         />
                     ) : (
-                        <CustomText>{value}</CustomText>
+                        <CustomText>
+                            {type === 'number' && field === 'cookingTime'
+                                ? `${editedValues[field] || value} min`
+                                : field === 'difficultyLevel'
+                                  ? getDifficultyText(
+                                        editedValues[field] || value
+                                    )
+                                  : field === 'defaultRoles'
+                                    ? getMealTypeText(
+                                          editedValues[field] || value
+                                      )
+                                    : editedValues[field] || value}
+                        </CustomText>
                     )}
                     <TouchableOpacity
                         style={styles.editIcon}
@@ -227,11 +348,7 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                             numberOfLines={4}
                         />
                     ) : (
-                        <CustomText
-                            style={styles.recipeText}
-                            numberOfLines={10}
-                            ellipsizeMode="tail"
-                        >
+                        <CustomText style={styles.recipeText}>
                             {editedValues.recipe || 'Ei valmistusohjetta'}
                         </CustomText>
                     )}
@@ -521,6 +638,14 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 10,
+    },
+    pickerContainer: {
+        flex: 1,
+        marginRight: 10,
+    },
+    picker: {
+        width: '100%',
+        height: 40,
     },
 })
 

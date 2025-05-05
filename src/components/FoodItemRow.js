@@ -25,9 +25,12 @@ const FoodItemRow = ({
                     />
                     <TextInput
                         style={[styles.input, styles.foodItemInput]}
-                        value={item.quantity}
+                        value={String(item.quantities?.meal || 0)}
                         onChangeText={(text) =>
-                            onItemChange(index, 'quantity', text)
+                            onItemChange(index, 'quantities', {
+                                ...item.quantities,
+                                meal: parseFloat(text) || 0,
+                            })
                         }
                         placeholder="Määrä"
                         keyboardType="numeric"

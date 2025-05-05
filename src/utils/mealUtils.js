@@ -1,39 +1,55 @@
 export const getDifficultyText = (level) => {
     if (!level) return 'Ei määritelty'
 
-    switch (level.toUpperCase()) {
-        case 'EASY':
+    // Convert to lowercase for consistent comparison
+    const lowerLevel = String(level).toLowerCase()
+
+    switch (lowerLevel) {
+        case 'easy':
             return 'Helppo'
-        case 'MEDIUM':
+        case 'medium':
             return 'Keskitaso'
-        case 'HARD':
+        case 'hard':
             return 'Vaikea'
         default:
+            console.log('Unknown difficulty level:', level)
             return 'Ei määritelty'
     }
 }
 
-export const getMealTypeText = (roles) => {
-    if (!roles || roles.length === 0) return 'Ei määritelty'
+export const getDifficultyEnum = (level) => {
+    const numLevel = parseInt(level)
+    if (isNaN(numLevel) || numLevel < 1 || numLevel > 5) {
+        return 'medium' // default value if invalid
+    }
+    if (numLevel <= 2) return 'easy'
+    if (numLevel <= 4) return 'medium'
+    return 'hard'
+}
 
-    return roles
-        .map((role) => {
-            switch (role.toLowerCase()) {
-                case 'dinner':
-                    return 'Päivällinen'
-                case 'lunch':
-                    return 'Lounas'
-                case 'breakfast':
-                    return 'Aamupala'
-                case 'snack':
-                    return 'Välipala'
-                case 'dessert':
-                    return 'Jälkiruoka'
-                default:
-                    return role
-            }
-        })
-        .join(', ')
+export const mealRoles = {
+    breakfast: 'Aamiainen',
+    lunch: 'Lounas',
+    snack: 'Välipala',
+    dinner: 'Päivällinen',
+    supper: 'Iltapala',
+    dessert: 'Jälkiruoka',
+    other: 'Muu',
+}
+
+export const getMealRoleText = (role) => {
+    if (!role) return 'Ei määritelty'
+    return mealRoles[role.toLowerCase()] || role
+}
+
+export const getMealTypeText = (roles) => {
+    if (!roles) return 'Ei määritelty'
+
+    // Handle both single value and array
+    const roleArray = Array.isArray(roles) ? roles : [roles]
+    if (roleArray.length === 0) return 'Ei määritelty'
+
+    return roleArray.map((role) => getMealRoleText(role)).join(', ')
 }
 
 export const formatDate = (dateString) => {
