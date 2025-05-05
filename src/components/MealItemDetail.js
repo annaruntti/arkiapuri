@@ -19,6 +19,7 @@ import DateTimePicker from '@react-native-community/datetimepicker'
 import { format } from 'date-fns'
 import { fi } from 'date-fns/locale'
 import FormFoodItem from './FormFoodItem'
+import FoodItemRow from './FoodItemRow'
 
 const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
     const [editableFields, setEditableFields] = useState({})
@@ -163,68 +164,6 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
         )
     }
 
-    const renderFoodItem = (item, index) => (
-        <View key={index} style={styles.foodItemRow}>
-            <View style={styles.foodItemContent}>
-                {editingFoodItem === index ? (
-                    <>
-                        <TextInput
-                            style={[styles.input, styles.foodItemInput]}
-                            value={item.name}
-                            onChangeText={(text) =>
-                                handleFoodItemChange(index, 'name', text)
-                            }
-                            placeholder="Raaka-aineen nimi"
-                        />
-                        <TextInput
-                            style={[styles.input, styles.foodItemInput]}
-                            value={item.quantity}
-                            onChangeText={(text) =>
-                                handleFoodItemChange(index, 'quantity', text)
-                            }
-                            placeholder="Määrä"
-                            keyboardType="numeric"
-                        />
-                        <TextInput
-                            style={[styles.input, styles.foodItemInput]}
-                            value={item.unit}
-                            onChangeText={(text) =>
-                                handleFoodItemChange(index, 'unit', text)
-                            }
-                            placeholder="Yksikkö"
-                        />
-                    </>
-                ) : (
-                    <CustomText>
-                        {item.name} - {item.quantities?.meal || 0} {item.unit}
-                    </CustomText>
-                )}
-            </View>
-            <View style={styles.foodItemActions}>
-                <TouchableOpacity
-                    style={styles.editIcon}
-                    onPress={() =>
-                        setEditingFoodItem(
-                            editingFoodItem === index ? null : index
-                        )
-                    }
-                >
-                    <Feather
-                        name={editingFoodItem === index ? 'check' : 'edit-2'}
-                        size={18}
-                        color="#666"
-                    />
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={styles.editIcon}
-                    onPress={() => handleRemoveFoodItem(index)}
-                >
-                    <Feather name="trash-2" size={18} color="#666" />
-                </TouchableOpacity>
-            </View>
-        </View>
-    )
-
     const renderTabContent = () => {
         if (activeTab === 'ingredients') {
             return (
@@ -240,9 +179,21 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                             <Feather name="plus" size={20} color="#666" />
                         </TouchableOpacity>
                     </View>
-                    {editedValues.foodItems?.map((item, index) =>
-                        renderFoodItem(item, index)
-                    )}
+                    {editedValues.foodItems?.map((item, index) => (
+                        <FoodItemRow
+                            key={index}
+                            item={item}
+                            index={index}
+                            onEdit={(index) =>
+                                setEditingFoodItem(
+                                    editingFoodItem === index ? null : index
+                                )
+                            }
+                            onRemove={handleRemoveFoodItem}
+                            isEditing={editingFoodItem === index}
+                            onItemChange={handleFoodItemChange}
+                        />
+                    ))}
                 </View>
             )
         } else {
