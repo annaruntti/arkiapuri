@@ -1,12 +1,6 @@
-import * as React from 'react'
-import {
-    StyleSheet,
-    Text,
-    View,
-    ImageBackground,
-    Dimensions,
-} from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
+import * as React from 'react'
+import { Dimensions, ImageBackground, StyleSheet, View } from 'react-native'
 import Svg, { Path } from 'react-native-svg'
 import Button from '../components/Button'
 import CustomText from '../components/CustomText'
@@ -64,9 +58,9 @@ const LandingScreen = ({ navigation }) => {
                             ilmaista ja vie vain hetken!
                         </CustomText>
                         <Button
-                            title="Kirjaudu sovellukseen"
+                            title="Aloitetaan!"
                             onPress={onSignUpPress}
-                            style={styles.primaryButton}
+                            style={styles.primaryButtonStart}
                         />
                     </View>
                 </View>
@@ -102,7 +96,6 @@ const styles = StyleSheet.create({
     },
     textContentArea: {
         flex: 1,
-        alignItems: 'flex-start',
         justifyContent: 'top',
         width: '100%',
         padding: 40,
@@ -111,7 +104,7 @@ const styles = StyleSheet.create({
         fontSize: 25,
         fontWeight: 'bold',
         color: '#fff',
-        textAlign: 'left',
+        textAlign: 'center',
         paddingTop: 20,
         textShadowColor: 'rgba(0, 0, 0, 0.85)',
         textShadowOffset: { width: -1, height: 1 },
@@ -121,7 +114,7 @@ const styles = StyleSheet.create({
         fontSize: 17,
         fontWeight: 500,
         color: '#fff',
-        textAlign: 'left',
+        textAlign: 'center',
         paddingTop: 10,
         paddingBottom: 20,
         marginBottom: 10,
@@ -136,7 +129,7 @@ const styles = StyleSheet.create({
         marginTop: 'auto',
     },
     bottomBoxContent: {
-        paddingTop: 10,
+        paddingTop: 30,
         paddingRight: 20,
         paddingBottom: 20,
         paddingLeft: 20,
@@ -147,11 +140,11 @@ const styles = StyleSheet.create({
         alignItems: 'flex-end',
     },
     bottomBoxText: {
-        textAlign: 'right',
+        textAlign: 'center',
         fontSize: 19,
-        marginBottom: 22,
+        marginBottom: 30,
     },
-    primaryButton: {
+    primaryButtonStart: {
         borderRadius: 25,
         paddingTop: 7,
         paddingBottom: 7,
@@ -164,6 +157,8 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         width: 'auto',
         marginBottom: 20,
+        marginHorizontal: 'auto',
+        width: '60%',
     },
     secondaryButton: {
         borderRadius: 25,

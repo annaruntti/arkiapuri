@@ -1,8 +1,8 @@
 const ENV = {
     development: {
-        apiUrl: 'http://localhost:3000', // Local backend for testing in web
-        // For mobile device testing, uncomment below and comment above:
-        // apiUrl: 'http://(local-ip-address):3000', // local IP - update as needed
+        // Use IP address for mobile device testing with Expo Go
+        apiUrl: 'http://192.168.50.179:3000', // Your local IP for mobile testing
+        // For web testing only, use: 'http://localhost:3000'
     },
     production: {
         apiUrl: 'https://arkiapuri-api-production.up.railway.app', // Railway backend domain

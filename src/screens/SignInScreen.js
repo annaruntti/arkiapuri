@@ -1,16 +1,16 @@
-import React from 'react'
-import { View, StyleSheet, ScrollView, Alert } from 'react-native'
+import { Link, useNavigation } from '@react-navigation/native'
 import axios from 'axios'
-import { useNavigation } from '@react-navigation/native'
+import React from 'react'
 import { useForm } from 'react-hook-form'
-import storage from '../utils/storage'
-import { getServerUrl } from '../utils/getServerUrl'
+import { Alert, ScrollView, StyleSheet, View } from 'react-native'
 import { useLogin } from '../context/LoginProvider'
+import { getServerUrl } from '../utils/getServerUrl'
+import storage from '../utils/storage'
 
 import Button from '../components/Button'
-// import SocialSignInButtons from '../../components/SocialSignInButtons'
 import CustomInput from '../components/CustomInput'
 import CustomText from '../components/CustomText'
+import SocialSignInButtons from '../components/SocialSignInButtons'
 
 const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/
 
@@ -58,6 +58,31 @@ const SignInScreen = () => {
         navigation.navigate('Luo tunnus')
     }
 
+    const onSocialSignIn = async (provider, data) => {
+        console.log('Social sign in:', provider, data)
+        try {
+            // Send the social auth token to your backend
+            const response = await axios.post(getServerUrl('/auth/social'), {
+                provider,
+                token: data.token,
+            })
+
+            if (response.data.success) {
+                await storage.setItem('userToken', response.data.token)
+                await login(response.data.user)
+            } else {
+                Alert.alert(
+                    'Virhe',
+                    response.data.message ||
+                        'Sosiaalinen kirjautuminen epäonnistui'
+                )
+            }
+        } catch (error) {
+            console.error('Social login error:', error)
+            Alert.alert('Virhe', 'Sosiaalinen kirjautuminen epäonnistui')
+        }
+    }
+
     return (
         <ScrollView
             style={styles.scrollView}
@@ -100,6 +125,11 @@ const SignInScreen = () => {
                         }}
                     />
                 </View>
+                <Link
+                    to="/forgot-password"
+                    style={styles.link}
+                    children="Unohditko salasanasi?"
+                />
                 <View style={styles.buttonView}>
                     <View style={styles.buttonMainContainer}>
                         <Button
@@ -116,20 +146,10 @@ const SignInScreen = () => {
                             title="Luo käyttäjätunnus"
                             onPress={onSignUpPress}
                             type="TERTIARY"
-                            style={styles.secondaryButton}
-                        />
-                    </View>
-                    <View style={styles.buttonContainer}>
-                        <CustomText style={styles.text}>
-                            Unohditko salasanasi?
-                        </CustomText>
-                        <Button
-                            title="Tilaa uusi salasana"
-                            onPress={onForgotPasswordPressed}
-                            type="TERTIARY"
                             style={styles.tertiaryButton}
                         />
                     </View>
+                    <SocialSignInButtons onSocialSignIn={onSocialSignIn} />
                 </View>
             </View>
         </ScrollView>
@@ -152,7 +172,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     inputContainer: {
-        marginBottom: 10,
+        marginBottom: 5,
     },
     logo: {
         width: '70%',
@@ -160,13 +180,15 @@ const styles = StyleSheet.create({
         maxHeight: 200,
     },
     buttonView: {
-        paddingVertical: 10,
+        paddingTop: 10,
+        paddingBottom: 10,
     },
     buttonContainer: {
+        paddingTop: 10,
         marginBottom: 10,
     },
     buttonMainContainer: {
-        marginBottom: 20,
+        marginBottom: 5,
     },
     primaryButton: {
         borderRadius: 25,
@@ -176,19 +198,6 @@ const styles = StyleSheet.create({
         paddingRight: 10,
         elevation: 2,
         backgroundColor: '#9C86FC',
-        color: 'black',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        width: 'auto',
-    },
-    secondaryButton: {
-        borderRadius: 25,
-        paddingTop: 7,
-        paddingBottom: 7,
-        paddingLeft: 10,
-        paddingRight: 10,
-        elevation: 2,
-        backgroundColor: '#38E4D9',
         color: 'black',
         fontWeight: 'bold',
         textAlign: 'center',
@@ -208,6 +217,12 @@ const styles = StyleSheet.create({
         width: 'auto',
         borderWidth: 3,
         borderColor: '#9C86FC',
+    },
+    link: {
+        marginBottom: 10,
+        color: '#9C86FC',
+        fontWeight: 'normal',
+        textAlign: 'left',
     },
     text: {
         color: 'gray',

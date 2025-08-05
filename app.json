@@ -1,41 +1,46 @@
 {
-    "expo": {
-        "name": "Arkiapuri",
-        "slug": "arkiapuri",
-        "version": "1.0.0",
-        "orientation": "portrait",
-        "icon": "./assets/arkiapuri-logo.png",
-        "userInterfaceStyle": "light",
-        "sdkVersion": "53.0.0",
-        "newArchEnabled": true,
-        "host": "your-ip-address",
-        "splash": {
-            "image": "./assets/arkiapuri-logo.png",
-            "resizeMode": "contain",
-            "backgroundColor": "#DCD4FC"
-        },
-        "assetBundlePatterns": ["**/*"],
-        "plugins": [
-            [
-                "expo-font",
-                {
-                    "fonts": ["./assets/fonts/FireSans-Regular.ttf"]
-                }
-            ]
-        ],
-        "ios": {
-            "supportsTablet": true,
-            "bundleIdentifier": "com.arkiapuri.app"
-        },
-        "android": {
-            "adaptiveIcon": {
-                "foregroundImage": "./assets/arkiapuri-logo.png",
-                "backgroundColor": "#DCD4FC"
-            },
-            "package": "com.arkiapuri.app"
-        },
-        "web": {
-            "favicon": "./assets/arkiapuri-logo.png"
+  "expo": {
+    "name": "Arkiapuri",
+    "slug": "arkiapuri",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/arkiapuri-logo.png",
+    "userInterfaceStyle": "light",
+    "sdkVersion": "53.0.0",
+    "newArchEnabled": true,
+    "host": "your-ip-address",
+    "splash": {
+      "image": "./assets/arkiapuri-logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#DCD4FC"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "plugins": [
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/FireSans-Regular.ttf"
+          ]
         }
+      ],
+      "expo-web-browser"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.arkiapuri.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/arkiapuri-logo.png",
+        "backgroundColor": "#DCD4FC"
+      },
+      "package": "com.arkiapuri.app"
+    },
+    "web": {
+      "favicon": "./assets/arkiapuri-logo.png"
     }
+  }
 }

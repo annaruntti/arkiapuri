@@ -1,7 +1,7 @@
-import React from 'react'
-import { View, Text, TextInput, StyleSheet } from 'react-native'
-import { Controller } from 'react-hook-form'
 import { MaterialIcons as Icon } from '@expo/vector-icons'
+import React from 'react'
+import { Controller } from 'react-hook-form'
+import { StyleSheet, Text, TextInput, View } from 'react-native'
 import CustomText from './CustomText'
 
 const CustomInput = ({
@@ -68,8 +68,8 @@ const styles = StyleSheet.create({
         height: 40,
         padding: 10,
         borderRadius: 4,
-        marginBottom: 8,
         width: '100%',
+        marginBottom: 5,
     },
     messageSection: {
         flex: 1,
