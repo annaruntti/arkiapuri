@@ -133,7 +133,9 @@ const FormFoodItem = forwardRef(
                     calories: parseInt(data.calories) || 0,
                     expirationDate: data.expirationDate,
                     location: location,
-                    locations: [location],
+                    locations: showLocationSelector
+                        ? selectedLocations
+                        : [location],
                     quantity: quantity,
                     quantities: {
                         meal: 0,
@@ -142,18 +144,30 @@ const FormFoodItem = forwardRef(
                     },
                 }
 
-                // Set the quantity for the selected location
-                if (location === 'pantry') {
-                    formData.quantities.pantry = quantity
-                } else if (location === 'shopping-list') {
-                    formData.quantities['shopping-list'] = quantity
-                } else if (location === 'meal') {
-                    formData.quantities.meal = quantity
+                // Set quantities based on whether multi-location is enabled
+                if (showLocationSelector) {
+                    // Multi-location mode: use the quantities from the state
+                    selectedLocations.forEach((loc) => {
+                        const locQuantity = parseFloat(quantities[loc]) || 0
+                        formData.quantities[loc] = locQuantity
+                    })
+                    // Set primary quantity to the main location quantity
+                    formData.quantity =
+                        parseFloat(quantities[location]) || quantity
+                } else {
+                    // Single location mode: use the main quantity field
+                    if (location === 'pantry') {
+                        formData.quantities.pantry = quantity
+                    } else if (location === 'shopping-list') {
+                        formData.quantities['shopping-list'] = quantity
+                    } else if (location === 'meal') {
+                        formData.quantities.meal = quantity
+                    }
                 }
 
                 console.log('Form data being submitted:', formData)
 
-                if (location === 'meal') {
+                if (location === 'meal' || location === 'shopping-list') {
                     onSubmit(formData)
                     reset()
                     setQuantities({ meal: '', 'shopping-list': '', pantry: '' })

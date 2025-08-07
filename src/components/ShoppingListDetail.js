@@ -9,10 +9,12 @@ import {
 } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
 import axios from 'axios'
+import * as ImagePicker from 'expo-image-picker'
 import CustomText from './CustomText'
 import Button from './Button'
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
+import { analyzeImage } from '../utils/googleVision'
 import FormFoodItem from './FormFoodItem'
 import CustomModal from './CustomModal'
 
@@ -24,6 +26,8 @@ const ShoppingListDetail = ({
 }) => {
     const [checkedItems, setCheckedItems] = useState([])
     const [showItemForm, setShowItemForm] = useState(false)
+    const [scannedProduct, setScannedProduct] = useState(null)
+    const [loading, setLoading] = useState(false)
 
     const handleCheckItem = (item) => {
         setCheckedItems((prev) =>
@@ -129,6 +133,72 @@ const ShoppingListDetail = ({
         }
     }
 
+    const processVisionResults = (visionResponse) => {
+        const products = []
+
+        // Process text detection
+        if (visionResponse.textAnnotations) {
+            const text = visionResponse.textAnnotations[0]?.description || ''
+            // logic to extract product information from text
+        }
+
+        // Process object detection
+        if (visionResponse.localizedObjectAnnotations) {
+            visionResponse.localizedObjectAnnotations.forEach((object) => {
+                if (object.score > 0.5) {
+                    products.push({
+                        name: object.name,
+                        confidence: object.score,
+                    })
+                }
+            })
+        }
+
+        return products
+    }
+
+    const handleScanProduct = async () => {
+        try {
+            const { status } = await ImagePicker.requestCameraPermissionsAsync()
+            if (status !== 'granted') {
+                Alert.alert(
+                    'Virhe',
+                    'Tarvitsemme kameran käyttöoikeuden skannataksemme tuotteita'
+                )
+                return
+            }
+
+            const result = await ImagePicker.launchCameraAsync({
+                mediaTypes: 'images',
+                quality: 0.8,
+                base64: true,
+            })
+
+            if (!result.canceled) {
+                setLoading(true)
+
+                const visionResponse = await analyzeImage(
+                    result.assets[0].base64
+                )
+                const detectedProduct = processVisionResults(visionResponse)
+
+                if (detectedProduct.length > 0) {
+                    // Open add item form with pre-filled data
+                    setShowItemForm(true)
+                    // Pass the detected product to form component
+                    setScannedProduct(detectedProduct[0])
+                } else {
+                    Alert.alert('Virhe', 'Tuotetta ei tunnistettu')
+                }
+            }
+        } catch (error) {
+            console.error('Error scanning product:', error)
+            Alert.alert('Virhe', 'Skannaus epäonnistui')
+        } finally {
+            setLoading(false)
+        }
+    }
+
     const renderItem = ({ item }) => (
         <View style={styles.itemRow}>
             <TouchableOpacity
@@ -178,6 +248,11 @@ const ShoppingListDetail = ({
                     <FormFoodItem
                         onSubmit={handleAddItem}
                         location="shopping-list"
+                        initialData={scannedProduct}
+                        onClose={() => {
+                            setShowItemForm(false)
+                            setScannedProduct(null)
+                        }}
                     />
                 </View>
             </CustomModal>
@@ -189,9 +264,22 @@ const ShoppingListDetail = ({
                     {shoppingList.description}
                 </CustomText>
             </View>
+            <View style={styles.addItemButtonsContainer}>
+                <Button
+                    title="Lisää tuote"
+                    onPress={() => setShowItemForm(true)}
+                    style={[styles.primaryButton, styles.halfWidthButton]}
+                />
+                <Button
+                    title="Skannaa tuote"
+                    onPress={handleScanProduct}
+                    style={[styles.secondaryButton, styles.halfWidthButton]}
+                    disabled={loading}
+                />
+            </View>
             <View style={styles.stats}>
                 <CustomText>
-                    Tuotteita: {shoppingList.items?.length || 0}
+                    Tuotteita: {shoppingList.items?.length || 0} kpl
                 </CustomText>
                 <CustomText>
                     Kokonaishinta:{' '}
@@ -214,20 +302,15 @@ const ShoppingListDetail = ({
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={true}
             />
-            <View style={styles.buttonContainer}>
-                {checkedItems.length > 0 && (
+            {checkedItems.length > 0 && (
+                <View style={styles.buttonContainer}>
                     <Button
                         title={`Siirrä ${checkedItems.length} tuotetta ruokavarastoon`}
                         onPress={() => moveCheckedToPantry(checkedItems)}
                         style={styles.secondaryButton}
                     />
-                )}
-                <Button
-                    title="Lisää tuote"
-                    onPress={() => setShowItemForm(true)}
-                    style={styles.primaryButton}
-                />
-            </View>
+                </View>
+            )}
         </View>
     )
 }
@@ -348,6 +431,17 @@ const styles = StyleSheet.create({
     buttonContainer: {
         width: '100%',
         marginTop: 10,
+    },
+    addItemButtonsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        gap: 10,
+        marginBottom: 15,
+    },
+    halfWidthButton: {
+        flex: 1,
+        marginTop: 0,
+        marginBottom: 10,
     },
 })
 

@@ -374,16 +374,7 @@ const AddMealForm = ({ onSubmit, onClose }) => {
             ...foodItemData,
             shoppingListId: selectedShoppingListId,
             locations: foodItemData.locations,
-            quantities: {
-                meal: parseFloat(foodItemData.quantity) || 0,
-                'shopping-list': foodItemData.locations.includes(
-                    'shopping-list'
-                )
-                    ? parseFloat(foodItemData.quantities?.['shopping-list']) ||
-                      0
-                    : 0,
-                pantry: parseFloat(foodItemData.quantities?.pantry) || 0,
-            },
+            quantities: foodItemData.quantities,
         }
 
         setFoodItems([...foodItems, newFoodItem])
