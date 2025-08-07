@@ -1,4 +1,3 @@
-import { LinearGradient } from 'expo-linear-gradient'
 import * as React from 'react'
 import { Dimensions, ImageBackground, StyleSheet, View } from 'react-native'
 import Svg, { Path } from 'react-native-svg'
@@ -18,28 +17,10 @@ const LandingScreen = ({ navigation }) => {
             <ImageBackground
                 imageStyle={{
                     resizeMode: 'cover', // works only here!
-                    // top: -22,
                 }}
                 style={styles.image}
                 source={image}
             >
-                <LinearGradient
-                    // Background Linear Gradient
-                    colors={['rgba(0,0,0,1)', 'transparent']}
-                    style={styles.background}
-                >
-                    <View style={styles.layer}>
-                        <View style={styles.textContentArea}>
-                            <CustomText style={styles.introTextTitle}>
-                                Tervetuloa Arkiapuriin!
-                            </CustomText>
-                            <CustomText style={styles.introText}>
-                                Arkiapuri tuo apua jokaisen jokapäiväiseen
-                                elämään.
-                            </CustomText>
-                        </View>
-                    </View>
-                </LinearGradient>
                 <View style={styles.bottomBox}>
                     <Svg
                         height={90}
@@ -53,6 +34,12 @@ const LandingScreen = ({ navigation }) => {
                         />
                     </Svg>
                     <View style={styles.bottomBoxContent}>
+                        <CustomText style={styles.introTextTitle}>
+                            Tervetuloa Arkiapuriin!
+                        </CustomText>
+                        <CustomText style={styles.introText}>
+                            Arkiapuri tuo apua jokaisen jokapäiväiseen elämään.
+                        </CustomText>
                         <CustomText style={styles.bottomBoxText}>
                             Kirjaudu sisään tai rekisteröidy. Se on helppoa,
                             ilmaista ja vie vain hetken!
@@ -85,14 +72,24 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
         alignItems: 'center',
-        // overflow: 'hidden', // prevent image overflow the container
     },
     background: {
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        top: 0,
-        height: '50%',
+        borderRadius: 10,
+        paddingHorizontal: 25,
+        paddingVertical: 20,
+        marginHorizontal: 20,
+        marginVertical: 15,
+        minHeight: 150,
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 4,
+        },
+        shadowOpacity: 0.3,
+        shadowRadius: 4.65,
+        elevation: 8,
     },
     textContentArea: {
         flex: 1,
@@ -101,26 +98,20 @@ const styles = StyleSheet.create({
         padding: 40,
     },
     introTextTitle: {
-        fontSize: 25,
+        fontSize: 26,
         fontWeight: 'bold',
-        color: '#fff',
+        color: '#000',
         textAlign: 'center',
-        paddingTop: 20,
-        textShadowColor: 'rgba(0, 0, 0, 0.85)',
-        textShadowOffset: { width: -1, height: 1 },
-        textShadowRadius: 10,
+        marginBottom: 8,
+        maxWidth: 400,
+        alignSelf: 'center',
     },
     introText: {
-        fontSize: 17,
-        fontWeight: 500,
-        color: '#fff',
         textAlign: 'center',
-        paddingTop: 10,
-        paddingBottom: 20,
-        marginBottom: 10,
-        textShadowColor: 'rgba(0, 0, 0, 0.85)',
-        textShadowOffset: { width: -1, height: 1 },
-        textShadowRadius: 10,
+        fontSize: 19,
+        marginBottom: 25,
+        maxWidth: 400,
+        alignSelf: 'center',
     },
     layer: {
         height: '100%',
@@ -129,36 +120,44 @@ const styles = StyleSheet.create({
         marginTop: 'auto',
     },
     bottomBoxContent: {
-        paddingTop: 30,
+        paddingTop: 25,
         paddingRight: 20,
         paddingBottom: 20,
         paddingLeft: 20,
         backgroundColor: '#fff',
-        width: 'auto',
+        width: '100%',
+        maxWidth: 400,
         minWidth: 360,
-        justifyContent: 'flex-end',
-        alignItems: 'flex-end',
+        alignItems: 'center',
+        alignSelf: 'center',
     },
     bottomBoxText: {
+        fontSize: 15,
+        fontWeight: '500',
+        color: '#000',
         textAlign: 'center',
-        fontSize: 19,
-        marginBottom: 30,
+        lineHeight: 24,
+        marginBottom: 20,
+        maxWidth: 400,
+        alignSelf: 'center',
     },
     primaryButtonStart: {
         borderRadius: 25,
-        paddingTop: 7,
-        paddingBottom: 7,
-        paddingLeft: 10,
-        paddingRight: 10,
+        paddingTop: 12,
+        paddingBottom: 12,
+        paddingLeft: 20,
+        paddingRight: 20,
         elevation: 2,
         backgroundColor: '#9C86FC',
         color: 'black',
         fontWeight: 'bold',
         textAlign: 'center',
-        width: 'auto',
         marginBottom: 20,
         marginHorizontal: 'auto',
+        minWidth: 200,
+        maxWidth: 400,
         width: '60%',
+        alignSelf: 'center',
     },
     secondaryButton: {
         borderRadius: 25,

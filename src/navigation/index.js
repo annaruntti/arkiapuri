@@ -1,6 +1,10 @@
 import * as React from 'react'
 import { TouchableOpacity, View, Image, StyleSheet } from 'react-native'
-import { NavigationContainer, useNavigation } from '@react-navigation/native'
+import {
+    NavigationContainer,
+    useNavigation,
+    useFocusEffect,
+} from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { useLogin } from '../context/LoginProvider'
@@ -22,12 +26,89 @@ import CustomText from '../components/CustomText'
 
 const HomeStack = createNativeStackNavigator()
 
+// Navigation History Context
+const NavigationHistoryContext = React.createContext()
+
+const NavigationHistoryProvider = ({ children }) => {
+    const [navigationHistory, setNavigationHistory] = React.useState([])
+
+    const addToHistory = React.useCallback((screenName) => {
+        setNavigationHistory((prev) => {
+            // Don't add if it's the same as the last entry
+            if (prev.length > 0 && prev[prev.length - 1] === screenName) {
+                return prev
+            }
+            const newHistory = [...prev, screenName]
+            // Keep only the last 10 entries to prevent memory issues
+            return newHistory.slice(-10)
+        })
+    }, [])
+
+    const getPreviousScreen = React.useCallback(() => {
+        return navigationHistory.length >= 2
+            ? navigationHistory[navigationHistory.length - 2]
+            : null
+    }, [navigationHistory])
+
+    const clearHistory = React.useCallback(() => {
+        setNavigationHistory([])
+    }, [])
+
+    const contextValue = React.useMemo(
+        () => ({
+            addToHistory,
+            getPreviousScreen,
+            clearHistory,
+            navigationHistory,
+        }),
+        [addToHistory, getPreviousScreen, clearHistory, navigationHistory]
+    )
+
+    return (
+        <NavigationHistoryContext.Provider value={contextValue}>
+            {children}
+        </NavigationHistoryContext.Provider>
+    )
+}
+
+const useNavigationHistory = () => {
+    const context = React.useContext(NavigationHistoryContext)
+    if (!context) {
+        throw new Error(
+            'useNavigationHistory must be used within NavigationHistoryProvider'
+        )
+    }
+    return context
+}
+
 function LogoTitle() {
+    const navigation = useNavigation()
+    const { isLoggedIn } = useLogin()
+
     const image = {
         uri: 'https://images.ctfassets.net/hef5a6s5axrs/2wzxlzyydJLVr8T7k67cOO/90074490ee64362fe6f0e384d2b3daf8/arkiapuri-removebg-preview.png',
     }
+
+    const handleLogoPress = () => {
+        if (isLoggedIn) {
+            // Navigate to HomeScreen when logged in
+            navigation.navigate('Main', {
+                screen: 'HomeStack',
+                params: { screen: 'Arkiapuri' },
+            })
+        } else {
+            // Navigate to LandingScreen when not logged in
+            navigation.navigate('Auth', {
+                screen: 'Tervetuloa',
+            })
+        }
+    }
+
     return (
-        <View style={{ flexDirection: 'row' }}>
+        <TouchableOpacity
+            onPress={handleLogoPress}
+            style={{ flexDirection: 'row' }}
+        >
             <Image
                 style={{ width: 40, height: 40 }}
                 source={image}
@@ -43,8 +124,62 @@ function LogoTitle() {
             >
                 Arkiapuri
             </CustomText>
-        </View>
+        </TouchableOpacity>
     )
+}
+
+const BackButton = () => {
+    const navigation = useNavigation()
+    const { getPreviousScreen } = useNavigationHistory()
+    const { isLoggedIn } = useLogin()
+
+    const handleBackPress = () => {
+        const previousScreen = getPreviousScreen()
+
+        if (previousScreen) {
+            if (isLoggedIn) {
+                // For logged in users, navigate within Main tab navigator
+                navigation.navigate('Main', { screen: previousScreen })
+            } else {
+                // For non-logged in users, navigate within Auth stack
+                navigation.navigate('Auth', { screen: previousScreen })
+            }
+        } else if (navigation.canGoBack()) {
+            // Fallback to default goBack behavior
+            navigation.goBack()
+        }
+    }
+
+    return (
+        <TouchableOpacity
+            onPress={handleBackPress}
+            style={[styles.iconButton, styles.backButton]}
+        >
+            <Feather name="arrow-left" size={24} color="black" />
+        </TouchableOpacity>
+    )
+}
+
+// Component to track screen focus and update navigation history
+const NavigationTracker = ({ screenName }) => {
+    const { addToHistory } = useNavigationHistory()
+
+    useFocusEffect(
+        React.useCallback(() => {
+            addToHistory(screenName)
+        }, [screenName, addToHistory])
+    )
+
+    return null
+}
+
+const ConditionalBackButton = () => {
+    const navigation = useNavigation()
+
+    // Simply show back button if can't go back
+    const canGoBack = navigation.canGoBack()
+
+    return canGoBack ? <BackButton /> : null
 }
 
 const UserProfile = ({ isActive = false }) => {
@@ -89,10 +224,18 @@ function HomeStackScreen() {
                     backgroundColor: '#fff',
                 },
                 headerTitle: (props) => <LogoTitle {...props} />,
+                headerLeft: () => <ConditionalBackButton />,
                 headerRight: () => <UserProfile />,
             }}
         >
-            <HomeStack.Screen name="Arkiapuri" component={HomeScreen} />
+            <HomeStack.Screen name="Arkiapuri">
+                {(props) => (
+                    <>
+                        <NavigationTracker screenName="HomeStack" />
+                        <HomeScreen {...props} />
+                    </>
+                )}
+            </HomeStack.Screen>
         </HomeStack.Navigator>
     )
 }
@@ -107,10 +250,18 @@ function MealsStackScreen() {
                     backgroundColor: '#fff',
                 },
                 headerTitle: (props) => <LogoTitle {...props} />,
+                headerLeft: () => <ConditionalBackButton />,
                 headerRight: () => <UserProfile />,
             }}
         >
-            <MealsStack.Screen name="Ateriat" component={MealsScreen} />
+            <MealsStack.Screen name="Ateriat">
+                {(props) => (
+                    <>
+                        <NavigationTracker screenName="MealsStack" />
+                        <MealsScreen {...props} />
+                    </>
+                )}
+            </MealsStack.Screen>
         </MealsStack.Navigator>
     )
 }
@@ -125,10 +276,18 @@ function PantryStackScreen() {
                     backgroundColor: '#fff',
                 },
                 headerTitle: (props) => <LogoTitle {...props} />,
+                headerLeft: () => <ConditionalBackButton />,
                 headerRight: () => <UserProfile />,
             }}
         >
-            <PantryStack.Screen name="Pentteri" component={PantryScreen} />
+            <PantryStack.Screen name="Pentteri">
+                {(props) => (
+                    <>
+                        <NavigationTracker screenName="PantryStack" />
+                        <PantryScreen {...props} />
+                    </>
+                )}
+            </PantryStack.Screen>
         </PantryStack.Navigator>
     )
 }
@@ -143,13 +302,18 @@ function ShoppingListStackScreen() {
                     backgroundColor: '#fff',
                 },
                 headerTitle: (props) => <LogoTitle {...props} />,
+                headerLeft: () => <ConditionalBackButton />,
                 headerRight: () => <UserProfile />,
             }}
         >
-            <ShoppingListStack.Screen
-                name="Ostoslista"
-                component={ShoppingListScreen}
-            />
+            <ShoppingListStack.Screen name="Ostoslista">
+                {(props) => (
+                    <>
+                        <NavigationTracker screenName="ShoppingListStack" />
+                        <ShoppingListScreen {...props} />
+                    </>
+                )}
+            </ShoppingListStack.Screen>
         </ShoppingListStack.Navigator>
     )
 }
@@ -164,13 +328,18 @@ function ReadingOrderStackScreen() {
                     backgroundColor: '#fff',
                 },
                 headerTitle: (props) => <LogoTitle {...props} />,
+                headerLeft: () => <ConditionalBackButton />,
                 headerRight: () => <UserProfile />,
             }}
         >
-            <ReadingOrderStack.Screen
-                name="Lukujärjestys"
-                component={ReadingOrderScreen}
-            />
+            <ReadingOrderStack.Screen name="Lukujärjestys">
+                {(props) => (
+                    <>
+                        <NavigationTracker screenName="ReadingOrderStack" />
+                        <ReadingOrderScreen {...props} />
+                    </>
+                )}
+            </ReadingOrderStack.Screen>
         </ReadingOrderStack.Navigator>
     )
 }
@@ -340,15 +509,23 @@ export default function Navigation() {
     const { isLoggedIn } = useLogin()
 
     return (
-        <NavigationContainer>
-            <RootStack.Navigator screenOptions={{ headerShown: false }}>
-                {isLoggedIn ? (
-                    <RootStack.Screen name="Main" component={TabNavigator} />
-                ) : (
-                    <RootStack.Screen name="Auth" component={AuthStackScreen} />
-                )}
-            </RootStack.Navigator>
-        </NavigationContainer>
+        <NavigationHistoryProvider>
+            <NavigationContainer>
+                <RootStack.Navigator screenOptions={{ headerShown: false }}>
+                    {isLoggedIn ? (
+                        <RootStack.Screen
+                            name="Main"
+                            component={TabNavigator}
+                        />
+                    ) : (
+                        <RootStack.Screen
+                            name="Auth"
+                            component={AuthStackScreen}
+                        />
+                    )}
+                </RootStack.Navigator>
+            </NavigationContainer>
+        </NavigationHistoryProvider>
     )
 }
 
@@ -360,19 +537,49 @@ function AuthStackScreen() {
                     backgroundColor: '#fff',
                 },
                 headerTitle: (props) => <LogoTitle {...props} />,
+                headerLeft: () => <ConditionalBackButton />,
             }}
         >
-            <HomeStack.Screen name="Tervetuloa" component={LandingScreen} />
-            <HomeStack.Screen name="Kirjaudu sisään" component={SignInScreen} />
-            <HomeStack.Screen name="Luo tunnus" component={SignUpScreen} />
-            <HomeStack.Screen
-                name="Lataa profiilikuva"
-                component={ImageUploadScreen}
-            />
-            <HomeStack.Screen
-                name="Vahvista sähköposti"
-                component={ConfirmEmailScreen}
-            />
+            <HomeStack.Screen name="Tervetuloa">
+                {(props) => (
+                    <>
+                        <NavigationTracker screenName="Tervetuloa" />
+                        <LandingScreen {...props} />
+                    </>
+                )}
+            </HomeStack.Screen>
+            <HomeStack.Screen name="Kirjaudu sisään">
+                {(props) => (
+                    <>
+                        <NavigationTracker screenName="Kirjaudu sisään" />
+                        <SignInScreen {...props} />
+                    </>
+                )}
+            </HomeStack.Screen>
+            <HomeStack.Screen name="Luo tunnus">
+                {(props) => (
+                    <>
+                        <NavigationTracker screenName="Luo tunnus" />
+                        <SignUpScreen {...props} />
+                    </>
+                )}
+            </HomeStack.Screen>
+            <HomeStack.Screen name="Lataa profiilikuva">
+                {(props) => (
+                    <>
+                        <NavigationTracker screenName="Lataa profiilikuva" />
+                        <ImageUploadScreen {...props} />
+                    </>
+                )}
+            </HomeStack.Screen>
+            <HomeStack.Screen name="Vahvista sähköposti">
+                {(props) => (
+                    <>
+                        <NavigationTracker screenName="Vahvista sähköposti" />
+                        <ConfirmEmailScreen {...props} />
+                    </>
+                )}
+            </HomeStack.Screen>
         </HomeStack.Navigator>
     )
 }
