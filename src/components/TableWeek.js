@@ -217,6 +217,82 @@ const Table = () => {
         setSelectedMeal(null)
     }
 
+    const handleMealUpdate = async (mealId, updatedMeal) => {
+        try {
+            console.log(
+                'handleMealUpdate called with mealId:',
+                mealId,
+                'updatedMeal:',
+                updatedMeal
+            )
+
+            if (!mealId) {
+                console.error('No meal ID provided')
+                Alert.alert('Virhe', 'Aterian ID puuttuu')
+                return
+            }
+
+            const token = await storage.getItem('userToken')
+
+            // Prepare the meal data for API call
+            const cleanedMeal = {
+                name: updatedMeal.name,
+                cookingTime: parseInt(updatedMeal.cookingTime) || 0,
+                difficultyLevel:
+                    updatedMeal.difficultyLevel?.toString() || 'easy',
+                defaultRoles: Array.isArray(updatedMeal.defaultRoles)
+                    ? updatedMeal.defaultRoles
+                    : [updatedMeal.defaultRoles?.toString() || 'dinner'],
+                plannedCookingDate: updatedMeal.plannedCookingDate,
+                recipe: updatedMeal.recipe || '',
+                // Keep existing food items unchanged for now
+                foodItems:
+                    updatedMeal.foodItems?.map((item) => item._id || item) ||
+                    [],
+            }
+
+            console.log('Updating meal with ID:', mealId)
+            console.log('Cleaned meal data:', cleanedMeal)
+
+            // Send API call to update the meal
+            const response = await axios.put(
+                getServerUrl(`/meals/${mealId}`),
+                cleanedMeal,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+            )
+
+            if (response.data.success) {
+                // Update the meal in the local state with the response data
+                setMealsByDate((prev) => {
+                    const updated = { ...prev }
+                    Object.keys(updated).forEach((dateKey) => {
+                        updated[dateKey] = updated[dateKey].map((meal) =>
+                            meal._id === mealId ? response.data.meal : meal
+                        )
+                    })
+                    return updated
+                })
+
+                // Close the detail modal
+                setDetailModalVisible(false)
+                setSelectedMeal(null)
+
+                console.log('Meal updated successfully')
+            } else {
+                console.error('Failed to update meal:', response.data.message)
+                Alert.alert('Virhe', 'Aterian päivittäminen epäonnistui')
+            }
+        } catch (error) {
+            console.error('Error updating meal:', error)
+            Alert.alert('Virhe', 'Aterian päivittäminen epäonnistui')
+        }
+    }
+
     const renderMealItem = ({ item }) => (
         <TouchableOpacity
             onPress={() => handleMealPress(item)}
@@ -327,6 +403,7 @@ const Table = () => {
                 meal={selectedMeal}
                 visible={detailModalVisible}
                 onClose={handleCloseDetail}
+                onUpdate={handleMealUpdate}
             />
         </View>
     )

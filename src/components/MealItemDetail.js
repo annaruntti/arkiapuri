@@ -147,7 +147,9 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                 difficultyLevel:
                     editedValues.difficultyLevel || meal.difficultyLevel,
                 defaultRoles: editedValues.defaultRoles
-                    ? [editedValues.defaultRoles]
+                    ? Array.isArray(editedValues.defaultRoles)
+                        ? editedValues.defaultRoles
+                        : [editedValues.defaultRoles]
                     : meal.defaultRoles,
                 _id: undefined,
                 id: undefined,
@@ -205,16 +207,29 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
         }
 
         if (field === 'defaultRoles' && editableFields[field]) {
+            // Handle defaultRoles as an array - use first element for picker
+            const currentValue = Array.isArray(editedValues[field])
+                ? editedValues[field][0]
+                : editedValues[field] ||
+                  (Array.isArray(value) ? value[0] : value)
+
             return (
                 <View style={styles.detailRow}>
                     <CustomText style={styles.detailLabel}>{label}:</CustomText>
                     <View style={styles.valueContainer}>
                         <View style={styles.pickerContainer}>
                             <Picker
-                                selectedValue={editedValues[field] || value}
-                                onValueChange={(itemValue) =>
-                                    handleChange(field, itemValue)
-                                }
+                                selectedValue={currentValue}
+                                onValueChange={(itemValue) => {
+                                    console.log(
+                                        'Changing field:',
+                                        field,
+                                        'to value:',
+                                        itemValue
+                                    )
+                                    // Store as array to maintain consistency
+                                    handleChange(field, [itemValue])
+                                }}
                                 style={styles.picker}
                             >
                                 {mealTypes.map((type) => (
