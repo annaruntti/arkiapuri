@@ -852,6 +852,39 @@ const styles = StyleSheet.create({
         color: '#666',
         minWidth: 100,
     },
+    quantityContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        backgroundColor: '#f5f5f5',
+        borderRadius: 8,
+        marginTop: 8,
+    },
+    quantityLabel: {
+        fontSize: 14,
+        fontWeight: '500',
+        marginRight: 8,
+        color: '#333',
+    },
+    quantityInput: {
+        flex: 1,
+        height: 36,
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderRadius: 6,
+        paddingHorizontal: 8,
+        backgroundColor: 'white',
+        fontSize: 16,
+        textAlign: 'center',
+        marginRight: 8,
+    },
+    unitText: {
+        fontSize: 14,
+        color: '#666',
+        fontWeight: '500',
+        minWidth: 30,
+    },
 })
 
 export default AddMealForm

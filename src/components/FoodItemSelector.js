@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
     foodItemRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#f8f8f8',
+        backgroundColor: 'white',
         padding: 10,
         borderRadius: 8,
         marginBottom: 8,
