@@ -299,6 +299,7 @@ const ShoppingListDetail = ({
                 <UnifiedFoodSearch
                     onSelectItem={handleSearchItemSelect}
                     location="shopping-list"
+                    shoppingListId={shoppingList._id}
                 />
             </View>
 
@@ -495,7 +496,7 @@ const styles = StyleSheet.create({
     },
     infoTitle: {
         paddingTop: 10,
-        marginBottom: 20,
+        marginBottom: 5,
         fontWeight: 'bold',
         textAlign: 'left',
         fontSize: 16,

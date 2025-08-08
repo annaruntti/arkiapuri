@@ -18,7 +18,12 @@ import storage from '../utils/storage'
 import BarcodeScanner from './BarcodeScanner'
 import CustomText from './CustomText'
 
-const UnifiedFoodSearch = ({ onSelectItem, location = 'shopping-list' }) => {
+const UnifiedFoodSearch = ({
+    onSelectItem,
+    location = 'shopping-list',
+    shoppingListId = null,
+    mealId = null,
+}) => {
     const [searchQuery, setSearchQuery] = useState('')
     const [localFoodItems, setLocalFoodItems] = useState([])
     const [openFoodFactsItems, setOpenFoodFactsItems] = useState([])
@@ -189,6 +194,79 @@ const UnifiedFoodSearch = ({ onSelectItem, location = 'shopping-list' }) => {
         }
     }
 
+    const addToPantry = async (foodItem, collectionData) => {
+        try {
+            const token = await storage.getItem('userToken')
+            const pantryItemData = {
+                name: foodItem.name,
+                quantity: collectionData.quantity,
+                unit: collectionData.unit,
+                expirationDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                foodId: foodItem._id,
+                category: foodItem.category || [],
+                calories: foodItem.calories || 0,
+                price: 0,
+                addedFrom: 'pantry',
+            }
+
+            const response = await fetch(`${getServerUrl('')}/pantry/items`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(pantryItemData),
+            })
+
+            const data = await response.json()
+            if (!data.success) {
+                throw new Error(data.message || 'Failed to add to pantry')
+            }
+        } catch (error) {
+            console.error('Error adding to pantry:', error)
+            throw error
+        }
+    }
+
+    const addToShoppingList = async (foodItem, collectionData) => {
+        try {
+            const token = await storage.getItem('userToken')
+            const shoppingListItemData = {
+                name: foodItem.name,
+                quantity: collectionData.quantity,
+                unit: collectionData.unit,
+                foodId: foodItem._id,
+                category: foodItem.category || [],
+                calories: foodItem.calories || 0,
+                price: 0,
+            }
+
+            const response = await fetch(
+                `${getServerUrl('')}/shopping-lists/${collectionData.shoppingListId}`,
+                {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({
+                        items: [shoppingListItemData], // Add to existing items
+                    }),
+                }
+            )
+
+            const data = await response.json()
+            if (!data.success) {
+                throw new Error(
+                    data.message || 'Failed to add to shopping list'
+                )
+            }
+        } catch (error) {
+            console.error('Error adding to shopping list:', error)
+            throw error
+        }
+    }
+
     const addOpenFoodFactsProduct = async (product) => {
         try {
             const token = await storage.getItem('userToken')
@@ -204,6 +282,8 @@ const UnifiedFoodSearch = ({ onSelectItem, location = 'shopping-list' }) => {
                         location: location,
                         quantity: 1,
                         unit: 'pcs',
+                        shoppingListId: shoppingListId,
+                        mealId: mealId,
                     }),
                 }
             )
@@ -211,6 +291,16 @@ const UnifiedFoodSearch = ({ onSelectItem, location = 'shopping-list' }) => {
             const data = await response.json()
 
             if (data.success) {
+                // Now add to the specific collection using the same flow as manual addition
+                if (data.collectionData.location === 'pantry') {
+                    await addToPantry(data.foodItem, data.collectionData)
+                } else if (
+                    data.collectionData.location === 'shopping-list' &&
+                    data.collectionData.shoppingListId
+                ) {
+                    await addToShoppingList(data.foodItem, data.collectionData)
+                }
+
                 Alert.alert('Onnistui!', 'Tuote lisätty listaan.')
                 onSelectItem(data.foodItem)
                 setSearchQuery('')
@@ -267,16 +357,20 @@ const UnifiedFoodSearch = ({ onSelectItem, location = 'shopping-list' }) => {
         >
             <View style={styles.itemContent}>
                 <View style={styles.itemLeft}>
-                    <CustomText style={styles.itemName}>{item.name}</CustomText>
-                    <View style={styles.itemDetails}>
-                        <CustomText style={styles.itemCategory}>
-                            {item.category?.join(', ') || 'Ei kategoriaa'}
+                    <View style={styles.itemNameContainer}>
+                        <CustomText style={styles.itemName}>
+                            {item.name}
                         </CustomText>
                         {item.calories && (
                             <CustomText style={styles.itemCalories}>
                                 {item.calories} kcal
                             </CustomText>
                         )}
+                    </View>
+                    <View style={styles.itemDetails}>
+                        <CustomText style={styles.itemCategory}>
+                            {item.category?.join(', ') || 'Ei kategoriaa'}
+                        </CustomText>
                     </View>
                 </View>
                 <View style={styles.itemRight}>
@@ -305,7 +399,7 @@ const UnifiedFoodSearch = ({ onSelectItem, location = 'shopping-list' }) => {
             onPress={() => handleSelectOpenFoodFactsItem(item)}
         >
             <View style={styles.itemContent}>
-                <View style={styles.itemLeft}>
+                <View style={styles.imageItemLeft}>
                     {item.imageUrl && (
                         <Image
                             source={{ uri: item.imageUrl }}
@@ -606,10 +700,19 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
     },
+    itemNameContainer: {
+        flexDirection: 'row',
+        alignItems: 'left',
+        justifyContent: 'space-between',
+    },
     itemLeft: {
         flex: 1,
+        alignItems: 'left',
+    },
+    imageItemLeft: {
         flexDirection: 'row',
-        alignItems: 'center',
+        alignItems: 'left',
+        justifyContent: 'space-between',
     },
     productImage: {
         width: 40,
@@ -643,6 +746,7 @@ const styles = StyleSheet.create({
     itemCalories: {
         fontSize: 12,
         color: '#666',
+        paddingRight: 10,
     },
     productMeta: {
         flexDirection: 'row',
