@@ -20,6 +20,8 @@ import storage from '../utils/storage'
 import { useLogin } from '../context/LoginProvider'
 import FoodItemSelector from './FoodItemSelector'
 import CustomModal from './CustomModal'
+import Info from './Info'
+import DifficultySelector from './DifficultySelector'
 import {
     mealRoles,
     getDifficultyText,
@@ -441,31 +443,10 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                         <CustomText style={styles.label}>
                             Vaikeustaso (1-5)
                         </CustomText>
-                        <View style={styles.difficultyContainer}>
-                            <TextInput
-                                style={[
-                                    styles.formInput,
-                                    styles.difficultyInput,
-                                ]}
-                                value={difficultyLevel}
-                                onChangeText={(text) => {
-                                    if (text === '' || /^[1-5]$/.test(text)) {
-                                        setDifficultyLevel(text)
-                                    }
-                                }}
-                                keyboardType="numeric"
-                                maxLength={1}
-                                placeholder={`1-5 (1-2 ${getDifficultyText('EASY')}, 3-4 ${getDifficultyText('MEDIUM')}, 5 ${getDifficultyText('HARD')})`}
-                            />
-                            {difficultyLevel && (
-                                <CustomText style={styles.difficultyText}>
-                                    {getDifficultyText(
-                                        getDifficultyEnum(difficultyLevel)
-                                    )}
-                                </CustomText>
-                            )}
-                        </View>
-
+                        <DifficultySelector
+                            value={difficultyLevel}
+                            onSelect={setDifficultyLevel}
+                        />
                         <CustomText style={styles.label}>
                             Valmistusaika (min)
                         </CustomText>
@@ -509,10 +490,15 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                                 </Pressable>
                             ))}
                         </View>
-
-                        <CustomText style={styles.label}>
-                            Suunniteltu valmistuspäivä
-                        </CustomText>
+                        <View style={styles.labelWithInfo}>
+                            <CustomText style={styles.label}>
+                                Suunniteltu valmistuspäivä
+                            </CustomText>
+                            <Info
+                                title="Suunniteltu valmistuspäivä"
+                                content="Tässä voit valita päivän, jolloin aiot valmistaa tämän aterian. Valittuasi suunnitellun valmistuspäivän, ateria ilmestyy lukujärjestykseesi kyseisen päivän kohdalle. Voit muuttaa päivämäärää myöhemmin tarvittaessa. Luotu ateria jää myös talteen Ateriat-listaasi ja voit asettaa aina uudelleen suunnitellun valmistuspäivämää sille kun haluat taas valmistaa kyseisen aterian."
+                            />
+                        </View>
                         <Pressable
                             style={styles.dateButton}
                             onPress={() => setShowDatePicker(true)}
@@ -640,6 +626,12 @@ const styles = StyleSheet.create({
         flexGrow: 1,
     },
     label: {
+        marginTop: 10,
+        marginBottom: 5,
+    },
+    labelWithInfo: {
+        flexDirection: 'row',
+        alignItems: 'center',
         marginTop: 10,
         marginBottom: 5,
     },
@@ -779,7 +771,7 @@ const styles = StyleSheet.create({
     checkboxGroup: {
         backgroundColor: 'white',
         padding: 5,
-        marginBottom: 15,
+        marginBottom: 10,
     },
     checkboxRow: {
         flexDirection: 'row',
@@ -830,8 +822,21 @@ const styles = StyleSheet.create({
         width: '100%',
     },
     foodItemSelectorContainer: {
-        marginTop: 10,
-        marginBottom: 10,
+        marginTop: 20,
+        marginBottom: 20,
+        backgroundColor: '#F8F9FA',
+        borderRadius: 12,
+        padding: 15,
+        borderWidth: 1,
+        borderColor: '#E9ECEF',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 2,
     },
     difficultyContainer: {
         flexDirection: 'row',
