@@ -1,23 +1,22 @@
-import React, { useState } from 'react'
-import {
-    StyleSheet,
-    View,
-    FlatList,
-    TouchableOpacity,
-    Alert,
-    Text,
-} from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
 import axios from 'axios'
 import * as ImagePicker from 'expo-image-picker'
-import CustomText from './CustomText'
-import Button from './Button'
+import React, { useState } from 'react'
+import {
+    Alert,
+    FlatList,
+    StyleSheet,
+    TouchableOpacity,
+    View,
+} from 'react-native'
 import { getServerUrl } from '../utils/getServerUrl'
-import storage from '../utils/storage'
 import { analyzeImage } from '../utils/googleVision'
-import FormFoodItem from './FormFoodItem'
-import SearchFoodItems from './SearchFoodItems'
+import storage from '../utils/storage'
+import Button from './Button'
 import CustomModal from './CustomModal'
+import CustomText from './CustomText'
+import FormFoodItem from './FormFoodItem'
+import UnifiedFoodSearch from './UnifiedFoodSearch'
 
 const ShoppingListDetail = ({
     shoppingList,
@@ -289,24 +288,28 @@ const ShoppingListDetail = ({
             </View>
 
             <CustomText style={styles.infoTitle}>
-                Lisää ostoslistaan tuotteita
+                Hae ja lisää tuotteita
             </CustomText>
-            <View style={styles.addItemButtonsContainer}>
-                <Button
-                    title="Lisää tuote"
-                    onPress={() => setShowItemForm(true)}
-                    style={[styles.primaryButton, styles.halfWidthButton]}
-                />
-                <Button
-                    title="Skannaa tuote"
-                    onPress={handleScanProduct}
-                    style={[styles.secondaryButton, styles.halfWidthButton]}
-                    disabled={loading}
-                />
-            </View>
+            <CustomText style={styles.infoText}>
+                Hae tuotteita nimellä tai skannaa viivakoodi. Tulokset
+                sisältävät sekä omat tuotteesi että Open Food Facts
+                -tietokannan.
+            </CustomText>
             <View style={styles.searchContainer}>
-                <SearchFoodItems onSelectItem={handleSearchItemSelect} />
+                <UnifiedFoodSearch
+                    onSelectItem={handleSearchItemSelect}
+                    location="shopping-list"
+                />
             </View>
+
+            <View style={styles.manualAddContainer}>
+                <Button
+                    title="+ Lisää tuote manuaalisesti"
+                    onPress={() => setShowItemForm(true)}
+                    style={styles.tertiaryButton}
+                />
+            </View>
+
             <View style={styles.stats}>
                 <CustomText>
                     Tuotteita: {shoppingList.items?.length || 0} kpl
@@ -505,6 +508,11 @@ const styles = StyleSheet.create({
     },
     searchContainer: {
         marginBottom: 15,
+        zIndex: 9998,
+    },
+    manualAddContainer: {
+        marginBottom: 15,
+        alignItems: 'center',
     },
 })
 

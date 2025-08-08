@@ -1,22 +1,22 @@
-import React, { useState, useEffect } from 'react'
+import { MaterialIcons } from '@expo/vector-icons'
+import axios from 'axios'
+import React, { useEffect, useState } from 'react'
 import {
     Alert,
-    StyleSheet,
-    View,
     FlatList,
-    Pressable,
+    StyleSheet,
     TouchableOpacity,
+    View,
 } from 'react-native'
 import Button from '../components/Button'
-import FormFoodItem from '../components/FormFoodItem'
-import CustomText from '../components/CustomText'
-import axios from 'axios'
-import { getServerUrl } from '../utils/getServerUrl'
-import storage from '../utils/storage'
-import { AntDesign, MaterialIcons } from '@expo/vector-icons'
-import { scanItems } from '../utils/scanItems'
-import PantryItemDetails from '../components/PantryItemDetails'
 import CustomModal from '../components/CustomModal'
+import CustomText from '../components/CustomText'
+import FormFoodItem from '../components/FormFoodItem'
+import PantryItemDetails from '../components/PantryItemDetails'
+import UnifiedFoodSearch from '../components/UnifiedFoodSearch'
+import { getServerUrl } from '../utils/getServerUrl'
+import { scanItems } from '../utils/scanItems'
+import storage from '../utils/storage'
 
 const PantryScreen = ({}) => {
     const [showItemForm, setShowItemForm] = useState(false)
@@ -297,6 +297,12 @@ const PantryScreen = ({}) => {
         }
     }
 
+    const handleSearchItemSelect = (item) => {
+        // Add item to pantry or refresh the list if it was added via API
+        fetchPantryItems()
+        Alert.alert('Onnistui', `${item.name} lisätty pentteriisi`)
+    }
+
     const renderItem = ({ item }) => (
         <TouchableOpacity
             style={styles.itemContainer}
@@ -338,26 +344,33 @@ const PantryScreen = ({}) => {
                     <FormFoodItem onSubmit={handleAddItem} location="pantry" />
                 </View>
             </CustomModal>
-            <CustomText style={styles.introText}>
-                Selaa pentteriäsi eli ruokakomeroasi ja käytä kotoasi jo
-                löytyviä elintarvikkeita avuksi ateriasuunnittelussa ja
-                ostoslistan luonnissa.
+            <CustomText style={styles.infoTitle}>
+                Etsi ja lisää tuotteita
             </CustomText>
             <CustomText style={styles.infoText}>
-                Voit lisätä uusia elintarvikkeita pentteriisi manuaalisesti
-                lomakkeen avulla tai skannata ne kameran avulla.
+                Etsi tuotteita nimellä tai skannaa viivakoodi. Tulokset
+                sisältävät sekä itse lisäämäsi tuotteet että Open Food Facts
+                -tietokannasta löytyvät elintarvikkeet.
             </CustomText>
-            <View style={styles.buttonContainer}>
+            <View style={styles.searchContainer}>
+                <UnifiedFoodSearch
+                    onSelectItem={handleSearchItemSelect}
+                    location="pantry"
+                />
+            </View>
+
+            <View style={styles.manualAddContainer}>
                 <Button
-                    title="Lisää tuote"
+                    title="+ Lisää tuote manuaalisesti"
                     onPress={() => setShowItemForm(true)}
-                    style={styles.primaryButton}
+                    style={styles.tertiaryButton}
                 />
-                <Button
-                    title="Skannaa pentteri"
-                    onPress={handleScanPantry}
-                    style={styles.secondaryButton}
-                />
+            </View>
+
+            <View style={styles.stats}>
+                <CustomText>
+                    Tuotteita: {pantryItems?.length || 0} kpl
+                </CustomText>
             </View>
             <FlatList
                 data={pantryItems}
@@ -393,8 +406,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fff',
-        alignItems: 'center',
-        justifyContent: 'center',
         padding: 20,
     },
     introText: {
@@ -518,5 +529,78 @@ const styles = StyleSheet.create({
     },
     formContainer: {
         padding: 15,
+    },
+    searchContainer: {
+        marginBottom: 15,
+        zIndex: 9998,
+    },
+    infoTitle: {
+        paddingTop: 10,
+        marginBottom: 20,
+        fontWeight: 'bold',
+        textAlign: 'left',
+        fontSize: 16,
+    },
+    infoText: {
+        paddingTop: 10,
+        marginBottom: 20,
+        fontSize: 14,
+        textAlign: 'left',
+    },
+    manualAddContainer: {
+        marginBottom: 20,
+        alignItems: 'center',
+    },
+    stats: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 10,
+        paddingBottom: 5,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+    primaryButton: {
+        borderRadius: 25,
+        paddingTop: 7,
+        paddingBottom: 7,
+        paddingLeft: 10,
+        paddingRight: 10,
+        elevation: 2,
+        backgroundColor: '#9C86FC',
+        color: 'black',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        width: 'auto',
+        marginBottom: 20,
+    },
+    secondaryButton: {
+        borderRadius: 25,
+        paddingTop: 7,
+        paddingBottom: 7,
+        paddingLeft: 10,
+        paddingRight: 10,
+        elevation: 2,
+        backgroundColor: '#38E4D9',
+        color: 'black',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        width: 'auto',
+        marginTop: 10,
+        marginBottom: 10,
+    },
+    tertiaryButton: {
+        borderRadius: 25,
+        paddingTop: 7,
+        paddingBottom: 7,
+        paddingLeft: 10,
+        paddingRight: 10,
+        elevation: 2,
+        backgroundColor: '#fff',
+        color: 'black',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        width: 'auto',
+        borderWidth: 3,
+        borderColor: '#9C86FC',
     },
 })
