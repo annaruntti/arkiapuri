@@ -16,6 +16,7 @@ import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
 import { analyzeImage } from '../utils/googleVision'
 import FormFoodItem from './FormFoodItem'
+import SearchFoodItems from './SearchFoodItems'
 import CustomModal from './CustomModal'
 
 const ShoppingListDetail = ({
@@ -199,6 +200,27 @@ const ShoppingListDetail = ({
         }
     }
 
+    const handleSearchItemSelect = async (selectedItem) => {
+        try {
+            // Transform the selected food item to shopping list item format
+            const itemData = {
+                name: selectedItem.name,
+                unit: selectedItem.unit || 'kpl',
+                price: selectedItem.price || 0,
+                calories: selectedItem.calories || 0,
+                category: selectedItem.category || [],
+                quantity: 1, // Default quantity
+                location: 'shopping-list',
+            }
+
+            // Add the item to the shopping list
+            await handleAddItem(itemData)
+        } catch (error) {
+            console.error('Error adding searched item:', error)
+            Alert.alert('Virhe', 'Tuotteen lisääminen epäonnistui')
+        }
+    }
+
     const renderItem = ({ item }) => (
         <View style={styles.itemRow}>
             <TouchableOpacity
@@ -256,6 +278,7 @@ const ShoppingListDetail = ({
                     />
                 </View>
             </CustomModal>
+
             <View style={styles.header}>
                 <CustomText style={styles.title}>
                     {shoppingList.name}
@@ -264,6 +287,10 @@ const ShoppingListDetail = ({
                     {shoppingList.description}
                 </CustomText>
             </View>
+
+            <CustomText style={styles.infoTitle}>
+                Lisää ostoslistaan tuotteita
+            </CustomText>
             <View style={styles.addItemButtonsContainer}>
                 <Button
                     title="Lisää tuote"
@@ -276,6 +303,9 @@ const ShoppingListDetail = ({
                     style={[styles.secondaryButton, styles.halfWidthButton]}
                     disabled={loading}
                 />
+            </View>
+            <View style={styles.searchContainer}>
+                <SearchFoodItems onSelectItem={handleSearchItemSelect} />
             </View>
             <View style={styles.stats}>
                 <CustomText>
@@ -320,7 +350,10 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     header: {
-        marginBottom: 10,
+        marginBottom: 5,
+        paddingBottom: 5,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
     },
     title: {
         fontSize: 20,
@@ -328,7 +361,7 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     description: {
-        marginBottom: 20,
+        marginBottom: 5,
         color: '#666',
     },
     stats: {
@@ -442,6 +475,28 @@ const styles = StyleSheet.create({
         flex: 1,
         marginTop: 0,
         marginBottom: 10,
+    },
+    thirdWidthButton: {
+        flex: 1,
+        marginTop: 0,
+        marginBottom: 10,
+        marginHorizontal: 2,
+    },
+    infoTitle: {
+        paddingTop: 10,
+        marginBottom: 20,
+        fontWeight: 'bold',
+        textAlign: 'left',
+        fontSize: 16,
+    },
+    infoText: {
+        paddingTop: 10,
+        marginBottom: 20,
+        fontSize: 14,
+        textAlign: 'left',
+    },
+    searchContainer: {
+        marginBottom: 15,
     },
 })
 
