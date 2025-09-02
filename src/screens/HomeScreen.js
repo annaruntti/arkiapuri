@@ -98,8 +98,8 @@ const HomeScreen = () => {
                     style={styles.scrollView}
                     contentContainerStyle={styles.scrollContentContainer}
                 >
-                    <View style={styles.homeViewTop}>
-                        <View style={styles.header}>
+                    <View style={styles.desktopHeaderSection}>
+                        <View style={styles.desktopHeaderCard}>
                             <CustomText
                                 style={[
                                     styles.introTitle,
@@ -121,7 +121,16 @@ const HomeScreen = () => {
                             </CustomText>
                         </View>
                     </View>
-                    {renderDesktopGrid()}
+
+                    {/* Desktop Navigation Grid */}
+                    <View style={styles.desktopNavigationWrapper}>
+                        <LinearGradient
+                            colors={['#9C86FC', '#7B61F8']}
+                            style={styles.desktopNavigationGradient}
+                        >
+                            {renderDesktopGrid()}
+                        </LinearGradient>
+                    </View>
                 </ScrollView>
             </ResponsiveLayout>
         )
@@ -129,7 +138,7 @@ const HomeScreen = () => {
 
     return (
         <ScrollView
-            style={styles.scrollView}
+            style={[styles.scrollView, styles.mobileScrollView]}
             contentContainerStyle={styles.scrollContentContainer}
         >
             {/* Top Section */}
@@ -282,8 +291,10 @@ export default HomeScreen
 
 const styles = StyleSheet.create({
     scrollView: {
-        backgroundColor: '#fff',
         flex: 1,
+    },
+    mobileScrollView: {
+        backgroundColor: '#fff',
     },
     scrollContentContainer: {
         flexGrow: 1,
@@ -389,10 +400,29 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     // Desktop-specific styles
+    desktopHeaderSection: {
+        paddingHorizontal: 30,
+        paddingTop: 20,
+    },
+    desktopHeaderCard: {
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        padding: 30,
+        marginBottom: 15,
+        alignItems: 'center',
+    },
+    desktopNavigationWrapper: {
+        flex: 1,
+    },
+    desktopNavigationGradient: {
+        paddingVertical: 40,
+        paddingHorizontal: 50,
+        flex: 1,
+    },
     desktopIntroTitle: {
         fontSize: 32,
         textAlign: 'center',
-        marginBottom: 20,
+        marginBottom: 8,
     },
     desktopIntroText: {
         fontSize: 18,

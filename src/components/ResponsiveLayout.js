@@ -33,8 +33,6 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#fff',
         overflow: 'hidden',
-        paddingHorizontal: 30,
-        paddingVertical: 20,
     },
 })
 
