@@ -1,28 +1,29 @@
-import * as React from 'react'
-import { TouchableOpacity, View, Image, StyleSheet } from 'react-native'
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import {
     NavigationContainer,
-    useNavigation,
     useFocusEffect,
+    useNavigation,
 } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
+import * as React from 'react'
+import { Image, StyleSheet, TouchableOpacity, View } from 'react-native'
 import { useLogin } from '../context/LoginProvider'
+import { useResponsiveDimensions } from '../utils/responsive'
 
-import { Feather, AntDesign, FontAwesome6 } from '@expo/vector-icons'
+import { AntDesign, Feather, FontAwesome6 } from '@expo/vector-icons'
 
-import LandingScreen from '../screens/LandingScreen'
-import SignInScreen from '../screens/SignInScreen'
-import SignUpScreen from '../screens/SignUpScreen'
-import ImageUploadScreen from '../screens/ImageUploadScreen'
+import CustomText from '../components/CustomText'
 import ConfirmEmailScreen from '../screens/ConfirmEmailScreen'
 import HomeScreen from '../screens/HomeScreen'
+import ImageUploadScreen from '../screens/ImageUploadScreen'
+import LandingScreen from '../screens/LandingScreen'
 import MealsScreen from '../screens/MealsScreen'
-import ReadingOrderScreen from '../screens/ReadingOrderScreen'
 import PantryScreen from '../screens/PantryScreen'
-import ShoppingListScreen from '../screens/ShoppingListsScreen'
 import ProfileScreen from '../screens/ProfileScreen'
-import CustomText from '../components/CustomText'
+import ReadingOrderScreen from '../screens/ReadingOrderScreen'
+import ShoppingListScreen from '../screens/ShoppingListsScreen'
+import SignInScreen from '../screens/SignInScreen'
+import SignUpScreen from '../screens/SignUpScreen'
 
 const HomeStack = createNativeStackNavigator()
 
@@ -395,18 +396,22 @@ const tabBarLabelStyle = {
 }
 
 function TabNavigator() {
+    const { isDesktop } = useResponsiveDimensions()
+
     return (
         <Tab.Navigator
             screenOptions={({ route }) => ({
                 tabBarShowLabel: false,
                 headerShown: false,
-                tabBarStyle: {
-                    height: 80,
-                    paddingHorizontal: 0,
-                    paddingBottom: 10,
-                    paddingTop: 0,
-                    flexDirection: 'row',
-                },
+                tabBarStyle: isDesktop
+                    ? { display: 'none' }
+                    : {
+                          height: 80,
+                          paddingHorizontal: 0,
+                          paddingBottom: 10,
+                          paddingTop: 0,
+                          flexDirection: 'row',
+                      },
                 tabBarIcon: ({ focused }) => {
                     let iconName
                     let iconColor = focused ? '#9C86FC' : 'black'

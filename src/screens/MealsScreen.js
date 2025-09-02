@@ -1,22 +1,24 @@
-import React, { useState, useEffect, useCallback } from 'react'
-import {
-    View,
-    StyleSheet,
-    FlatList,
-    Alert,
-    TouchableOpacity,
-    Platform,
-} from 'react-native'
-import CustomText from '../components/CustomText'
-import Button from '../components/Button'
-import AddMealForm from '../components/FormAddMeal'
 import { MaterialIcons } from '@expo/vector-icons'
 import axios from 'axios'
-import { getServerUrl } from '../utils/getServerUrl'
-import storage from '../utils/storage'
-import MealItemDetail from '../components/MealItemDetail'
-import { getDifficultyText } from '../utils/mealUtils'
+import React, { useEffect, useState } from 'react'
+import {
+    Alert,
+    FlatList,
+    Platform,
+    StyleSheet,
+    TouchableOpacity,
+    View,
+} from 'react-native'
+import Button from '../components/Button'
 import CustomModal from '../components/CustomModal'
+import CustomText from '../components/CustomText'
+import AddMealForm from '../components/FormAddMeal'
+import MealItemDetail from '../components/MealItemDetail'
+import ResponsiveLayout from '../components/ResponsiveLayout'
+import { getServerUrl } from '../utils/getServerUrl'
+import { getDifficultyText } from '../utils/mealUtils'
+import { useResponsiveDimensions } from '../utils/responsive'
+import storage from '../utils/storage'
 
 const MealsScreen = () => {
     const [modalVisible, setModalVisible] = useState(false)
@@ -25,6 +27,8 @@ const MealsScreen = () => {
     const [selectedMeal, setSelectedMeal] = useState(null)
     const [detailModalVisible, setDetailModalVisible] = useState(false)
     const [categories, setCategories] = useState([])
+    const { isDesktop, responsivePadding, responsiveColumns } =
+        useResponsiveDimensions()
 
     const fetchMeals = async () => {
         try {
@@ -350,7 +354,7 @@ const MealsScreen = () => {
         setDetailModalVisible(true)
     }
 
-    return (
+    const content = (
         <View style={styles.container}>
             <CustomModal
                 visible={modalVisible}
@@ -404,6 +408,16 @@ const MealsScreen = () => {
             />
         </View>
     )
+
+    if (isDesktop) {
+        return (
+            <ResponsiveLayout activeRoute="MealsStack">
+                {content}
+            </ResponsiveLayout>
+        )
+    }
+
+    return content
 }
 
 const styles = StyleSheet.create({

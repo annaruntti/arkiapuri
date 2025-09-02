@@ -1,16 +1,18 @@
+import { useNavigation } from '@react-navigation/native'
+import { LinearGradient } from 'expo-linear-gradient'
 import React from 'react'
 import {
-    StyleSheet,
-    View,
+    Dimensions,
     Image,
     ScrollView,
+    StyleSheet,
     TouchableOpacity,
-    Dimensions,
+    View,
 } from 'react-native'
-import { useNavigation } from '@react-navigation/native'
 import Svg, { Path } from 'react-native-svg'
 import CustomText from '../components/CustomText'
-import { LinearGradient } from 'expo-linear-gradient'
+import ResponsiveLayout from '../components/ResponsiveLayout'
+import { useResponsiveDimensions } from '../utils/responsive'
 
 const mealImage = {
     uri: 'https://images.ctfassets.net/hef5a6s5axrs/1fvToRJqesGgl6dJCFyyJl/0f484ccfe293cca2a0a4ab57d3324c34/undraw_breakfast_rgx5.png',
@@ -33,6 +35,102 @@ const staticWavePathData =
 
 const HomeScreen = () => {
     const navigation = useNavigation()
+    const { isDesktop, responsivePadding, responsiveColumns } =
+        useResponsiveDimensions()
+
+    const navigationCards = [
+        {
+            title: 'Ateriat',
+            image: mealImage,
+            route: 'MealsStack',
+            screen: 'Ateriat',
+        },
+        {
+            title: 'Pentteri',
+            image: pantryImage,
+            route: 'PantryStack',
+            screen: 'Pentteri',
+        },
+        {
+            title: 'Ostoslista',
+            image: shoppingListImage,
+            route: 'ShoppingListStack',
+            screen: 'Ostoslista',
+        },
+        {
+            title: 'Lukujärjestys',
+            image: readingOrderImage,
+            route: 'ReadingOrderStack',
+            screen: 'Lukujärjestys',
+        },
+    ]
+
+    const renderDesktopGrid = () => {
+        return (
+            <View style={styles.desktopGrid}>
+                {navigationCards.map((card, index) => (
+                    <TouchableOpacity
+                        key={index}
+                        style={[
+                            styles.desktopCard,
+                            { width: `${100 / responsiveColumns - 2}%` },
+                        ]}
+                        onPress={() =>
+                            navigation.navigate(card.route, {
+                                screen: card.screen,
+                            })
+                        }
+                    >
+                        <Image
+                            source={card.image}
+                            style={styles.desktopCardImage}
+                        />
+                        <View style={styles.desktopCardContent}>
+                            <CustomText style={styles.desktopCardTitle}>
+                                {card.title}
+                            </CustomText>
+                        </View>
+                    </TouchableOpacity>
+                ))}
+            </View>
+        )
+    }
+
+    if (isDesktop) {
+        return (
+            <ResponsiveLayout activeRoute="HomeStack">
+                <ScrollView
+                    style={styles.scrollView}
+                    contentContainerStyle={styles.scrollContentContainer}
+                >
+                    <View style={styles.homeViewTop}>
+                        <View style={styles.header}>
+                            <CustomText
+                                style={[
+                                    styles.introTitle,
+                                    styles.desktopIntroTitle,
+                                ]}
+                            >
+                                Tervetuloa käyttämään Arkiapuria!
+                            </CustomText>
+                            <CustomText
+                                style={[
+                                    styles.introText,
+                                    styles.desktopIntroText,
+                                ]}
+                            >
+                                Arkiapurin avulla voit helposti suunnitella ja
+                                selata aterioita ja reseptejä, luoda oman
+                                lukujärjestyksesi, sekä luoda älykkäitä
+                                ostoslistoja.
+                            </CustomText>
+                        </View>
+                    </View>
+                    {renderDesktopGrid()}
+                </ScrollView>
+            </ResponsiveLayout>
+        )
+    }
 
     return (
         <ScrollView
@@ -246,5 +344,53 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#333',
         fontWeight: 'bold',
+    },
+    // Desktop-specific styles
+    desktopIntroTitle: {
+        fontSize: 32,
+        textAlign: 'center',
+        marginBottom: 20,
+    },
+    desktopIntroText: {
+        fontSize: 18,
+        textAlign: 'center',
+        lineHeight: 26,
+        maxWidth: 800,
+    },
+    desktopGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        paddingVertical: 40,
+        paddingHorizontal: 20,
+    },
+    desktopCard: {
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        marginBottom: 24,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 4,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 5,
+        overflow: 'hidden',
+    },
+    desktopCardImage: {
+        width: '100%',
+        height: 200,
+        resizeMode: 'cover',
+    },
+    desktopCardContent: {
+        padding: 20,
+        alignItems: 'center',
+    },
+    desktopCardTitle: {
+        fontSize: 20,
+        fontWeight: '600',
+        color: '#333',
+        textAlign: 'center',
     },
 })

@@ -10,6 +10,7 @@ import storage from '../utils/storage'
 import Button from '../components/Button'
 import CustomInput from '../components/CustomInput'
 import CustomText from '../components/CustomText'
+import FullWidthLayout from '../components/FullWidthLayout'
 import SocialSignInButtons from '../components/SocialSignInButtons'
 
 const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/
@@ -84,75 +85,78 @@ const SignInScreen = () => {
     }
 
     return (
-        <ScrollView
-            style={styles.scrollView}
-            showsVerticalScrollIndicator={false}
-        >
-            <View style={styles.root}>
-                <View style={styles.header}>
-                    <CustomText style={styles.headerTitle}>
-                        Kirjaudu sisään
-                    </CustomText>
-                </View>
-                <View style={styles.inputContainer}>
-                    <CustomInput
-                        label="Sähköpostiosoite"
-                        name="email"
-                        control={control}
-                        placeholder="Kirjoita sähköpostiosoitteesi"
-                        rules={{
-                            pattern: {
-                                value: emailRegex,
-                                message:
-                                    'Kirjoita sähköpostiosoitteesi muodossa esim. "matti.meikalainen@gmail.com"',
-                            },
-                            required: 'Sähköpostiosoite on pakollinen tieto',
-                        }}
-                    />
-                    <CustomInput
-                        label="Salasana"
-                        name="password"
-                        placeholder="Kirjoita salsanasi"
-                        secureTextEntry
-                        control={control}
-                        rules={{
-                            required: 'Salasana on pakollinen tieto',
-                            minLength: {
-                                value: 6,
-                                message:
-                                    'Salasanan pituuden tulee olla vähintään 6 merkkiä',
-                            },
-                        }}
-                    />
-                </View>
-                <Link
-                    to="/forgot-password"
-                    style={styles.link}
-                    children="Unohditko salasanasi?"
-                />
-                <View style={styles.buttonView}>
-                    <View style={styles.buttonMainContainer}>
-                        <Button
-                            title="Kirjaudu sisään"
-                            onPress={handleSubmit(onSignInPressed)}
-                            style={styles.primaryButton}
-                        />
-                    </View>
-                    <View style={styles.buttonContainer}>
-                        <CustomText style={styles.text}>
-                            Eikö sinulla ole vielä käyttäjätunnusta?
+        <FullWidthLayout>
+            <ScrollView
+                style={styles.scrollView}
+                showsVerticalScrollIndicator={false}
+            >
+                <View style={styles.root}>
+                    <View style={styles.header}>
+                        <CustomText style={styles.headerTitle}>
+                            Kirjaudu sisään
                         </CustomText>
-                        <Button
-                            title="Luo käyttäjätunnus"
-                            onPress={onSignUpPress}
-                            type="TERTIARY"
-                            style={styles.tertiaryButton}
+                    </View>
+                    <View style={styles.inputContainer}>
+                        <CustomInput
+                            label="Sähköpostiosoite"
+                            name="email"
+                            control={control}
+                            placeholder="Kirjoita sähköpostiosoitteesi"
+                            rules={{
+                                pattern: {
+                                    value: emailRegex,
+                                    message:
+                                        'Kirjoita sähköpostiosoitteesi muodossa esim. "matti.meikalainen@gmail.com"',
+                                },
+                                required:
+                                    'Sähköpostiosoite on pakollinen tieto',
+                            }}
+                        />
+                        <CustomInput
+                            label="Salasana"
+                            name="password"
+                            placeholder="Kirjoita salsanasi"
+                            secureTextEntry
+                            control={control}
+                            rules={{
+                                required: 'Salasana on pakollinen tieto',
+                                minLength: {
+                                    value: 6,
+                                    message:
+                                        'Salasanan pituuden tulee olla vähintään 6 merkkiä',
+                                },
+                            }}
                         />
                     </View>
-                    <SocialSignInButtons onSocialSignIn={onSocialSignIn} />
+                    <Link
+                        to="/forgot-password"
+                        style={styles.link}
+                        children="Unohditko salasanasi?"
+                    />
+                    <View style={styles.buttonView}>
+                        <View style={styles.buttonMainContainer}>
+                            <Button
+                                title="Kirjaudu sisään"
+                                onPress={handleSubmit(onSignInPressed)}
+                                style={styles.primaryButton}
+                            />
+                        </View>
+                        <View style={styles.buttonContainer}>
+                            <CustomText style={styles.text}>
+                                Eikö sinulla ole vielä käyttäjätunnusta?
+                            </CustomText>
+                            <Button
+                                title="Luo käyttäjätunnus"
+                                onPress={onSignUpPress}
+                                type="TERTIARY"
+                                style={styles.tertiaryButton}
+                            />
+                        </View>
+                        <SocialSignInButtons onSocialSignIn={onSocialSignIn} />
+                    </View>
                 </View>
-            </View>
-        </ScrollView>
+            </ScrollView>
+        </FullWidthLayout>
     )
 }
 

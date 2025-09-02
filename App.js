@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react'
-import { StyleSheet, View } from 'react-native'
-import * as SplashScreen from 'expo-splash-screen'
 import { useFonts } from 'expo-font'
-import Navigation from './src/navigation'
-import LoginProvider from './src/context/LoginProvider'
+import * as SplashScreen from 'expo-splash-screen'
+import React, { useEffect, useState } from 'react'
+import { Platform, StyleSheet, View } from 'react-native'
 import AnimatedSplashScreen from './src/components/AnimatedSplashScreen'
+import LoginProvider from './src/context/LoginProvider'
+import Navigation from './src/navigation'
+import { useResponsiveDimensions } from './src/utils/responsive'
 
 // Splash screen is keep visible while we fetch resources
 SplashScreen.preventAutoHideAsync()
@@ -13,6 +14,8 @@ const App = () => {
     console.log('App component rendering')
     const [appIsReady, setAppIsReady] = useState(false)
     const [showSplash, setShowSplash] = useState(true)
+    const { containerMaxWidth, responsivePadding, isDesktop, isWeb } =
+        useResponsiveDimensions()
     const [fontsLoaded] = useFonts({
         'FireSans-Regular': require('./src/assets/fonts/FiraSans-Regular.ttf'),
         'FiraSans-Regular': require('./src/assets/fonts/FiraSans-Regular.ttf'),
@@ -62,27 +65,56 @@ const App = () => {
         return null
     }
 
+    const dynamicStyles = {
+        ...styles.root,
+        maxWidth: isDesktop ? 960 : containerMaxWidth,
+        backgroundColor: '#fff',
+        marginTop: isDesktop ? 20 : 0,
+        marginBottom: isDesktop ? 20 : 0,
+    }
+
     return (
-        <View style={styles.root} onLayout={onLayoutRootView}>
-            {showSplash ? (
-                <AnimatedSplashScreen />
-            ) : (
-                <LoginProvider>
-                    <Navigation />
-                </LoginProvider>
-            )}
+        <View style={styles.container}>
+            <View style={dynamicStyles} onLayout={onLayoutRootView}>
+                {showSplash ? (
+                    <AnimatedSplashScreen />
+                ) : (
+                    <LoginProvider>
+                        <Navigation />
+                    </LoginProvider>
+                )}
+            </View>
         </View>
     )
 }
 
 const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#f5f5f5',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
     root: {
         flex: 1,
         backgroundColor: '#fff',
-        maxWidth: 400,
-        marginHorizontal: 'auto',
         width: '100%',
         fontFamily: 'FireSans-Regular',
+        borderRadius: 8,
+        overflow: 'hidden',
+        shadowColor: 'rgba(0, 0, 0, 0.1)',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 1,
+        shadowRadius: 8,
+        elevation: 5,
+        // Web-specific shadow that matches your specification
+        ...(Platform.OS === 'web' && {
+            boxShadow:
+                'rgba(0, 0, 0, 0.1) 0px 2px 8px, rgba(0, 0, 0, 0.1) 0px 2px 8px',
+        }),
     },
 })
 
