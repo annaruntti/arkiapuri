@@ -2,7 +2,6 @@ import { useNavigation } from '@react-navigation/native'
 import { LinearGradient } from 'expo-linear-gradient'
 import React from 'react'
 import {
-    Dimensions,
     Image,
     ScrollView,
     StyleSheet,
@@ -35,8 +34,7 @@ const staticWavePathData =
 
 const HomeScreen = () => {
     const navigation = useNavigation()
-    const { isDesktop, responsivePadding, responsiveColumns } =
-        useResponsiveDimensions()
+    const { isDesktop, isTablet, responsivePadding } = useResponsiveDimensions()
 
     const navigationCards = [
         {
@@ -71,10 +69,7 @@ const HomeScreen = () => {
                 {navigationCards.map((card, index) => (
                     <TouchableOpacity
                         key={index}
-                        style={[
-                            styles.desktopCard,
-                            { width: `${100 / responsiveColumns - 2}%` },
-                        ]}
+                        style={[styles.desktopCard, { width: '48%' }]}
                         onPress={() =>
                             navigation.navigate(card.route, {
                                 screen: card.screen,
@@ -138,7 +133,12 @@ const HomeScreen = () => {
             contentContainerStyle={styles.scrollContentContainer}
         >
             {/* Top Section */}
-            <View style={styles.homeViewTop}>
+            <View
+                style={[
+                    styles.homeViewTop,
+                    isTablet && styles.tabletHomeViewTop,
+                ]}
+            >
                 <View style={styles.header}>
                     <CustomText style={styles.introTitle}>
                         Tervetuloa käyttämään Arkiapuria!
@@ -152,10 +152,15 @@ const HomeScreen = () => {
             </View>
 
             {/* Static SVG Wave */}
-            <View style={styles.svgContainer}>
+            <View
+                style={[
+                    styles.svgContainer,
+                    isTablet && styles.tabletSvgContainer,
+                ]}
+            >
                 <Svg
-                    height={80}
-                    width={Dimensions.get('window').width}
+                    height={isTablet ? 120 : 80}
+                    width="100%"
                     viewBox="0 0 1440 280"
                     preserveAspectRatio="xMidYMax slice"
                 >
@@ -166,13 +171,24 @@ const HomeScreen = () => {
             {/* Gradient Area Below Static Wave */}
             <LinearGradient
                 colors={['#9C86FC', '#7B61F8']}
-                style={styles.linkAreaGradient}
+                style={[
+                    styles.linkAreaGradient,
+                    isTablet && styles.tabletLinkAreaGradient,
+                ]}
             >
-                <View style={styles.linkAreaContent}>
+                <View
+                    style={[
+                        styles.linkAreaContent,
+                        isTablet && styles.tabletLinkAreaContent,
+                    ]}
+                >
                     <View style={styles.container}>
                         <View style={styles.boxRow}>
                             <TouchableOpacity
-                                style={styles.box}
+                                style={[
+                                    styles.box,
+                                    isTablet && styles.tabletBox,
+                                ]}
                                 onPress={() =>
                                     navigation.navigate('MealsStack', {
                                         screen: 'Ateriat',
@@ -190,7 +206,10 @@ const HomeScreen = () => {
                                 </View>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={styles.box}
+                                style={[
+                                    styles.box,
+                                    isTablet && styles.tabletBox,
+                                ]}
                                 onPress={() =>
                                     navigation.navigate('PantryStack', {
                                         screen: 'Pentteri',
@@ -210,7 +229,10 @@ const HomeScreen = () => {
                         </View>
                         <View style={styles.boxRow}>
                             <TouchableOpacity
-                                style={styles.box}
+                                style={[
+                                    styles.box,
+                                    isTablet && styles.tabletBox,
+                                ]}
                                 onPress={() =>
                                     navigation.navigate('ShoppingListStack', {
                                         screen: 'Ostoslista',
@@ -228,7 +250,10 @@ const HomeScreen = () => {
                                 </View>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={styles.box}
+                                style={[
+                                    styles.box,
+                                    isTablet && styles.tabletBox,
+                                ]}
                                 onPress={() =>
                                     navigation.navigate('ReadingOrderStack', {
                                         screen: 'Lukujärjestys',
@@ -286,6 +311,24 @@ const styles = StyleSheet.create({
         paddingTop: 25,
         paddingBottom: 30,
         marginTop: -25,
+    },
+    tabletSvgContainer: {
+        minHeight: 140,
+        aspectRatio: 1440 / (280 - 60),
+    },
+    tabletLinkAreaGradient: {
+        paddingTop: 60,
+        marginTop: -40,
+    },
+    tabletHomeViewTop: {
+        paddingBottom: 30,
+    },
+    tabletLinkAreaContent: {
+        paddingHorizontal: 40,
+    },
+    tabletBox: {
+        marginHorizontal: 15,
+        marginVertical: 12,
     },
     linkAreaContent: {
         backgroundColor: 'transparent',
@@ -379,12 +422,17 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
     },
     desktopCardImage: {
-        width: '100%',
-        height: 200,
-        resizeMode: 'cover',
+        width: 120,
+        height: 120,
+        resizeMode: 'contain',
+        alignSelf: 'center',
+        marginTop: 20,
+        marginBottom: 10,
     },
     desktopCardContent: {
-        padding: 20,
+        paddingHorizontal: 20,
+        paddingBottom: 20,
+        paddingTop: 10,
         alignItems: 'center',
     },
     desktopCardTitle: {
