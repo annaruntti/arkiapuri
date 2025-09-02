@@ -12,11 +12,11 @@ import {
 } from 'react-native'
 import { getDifficultyText, getMealTypeText } from '../utils/mealUtils'
 import Button from './Button'
-import CustomModal from './CustomModal'
 import CustomText from './CustomText'
 import DateTimePicker from './DatePicker.web'
 import FoodItemRow from './FoodItemRow'
 import FormFoodItem from './FormFoodItem'
+import ResponsiveModal from './ResponsiveModal'
 
 const difficultyLevels = [
     { value: 'easy', label: 'Helppo' },
@@ -370,7 +370,12 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
 
     return (
         <>
-            <CustomModal visible={visible} onClose={onClose} title={meal.name}>
+            <ResponsiveModal
+                visible={visible}
+                onClose={onClose}
+                title={meal.name}
+                maxWidth={700}
+            >
                 <ScrollView style={styles.detailScroll}>
                     <View style={styles.mealDetails}>
                         {renderEditableField('name', 'Nimi', meal.name)}
@@ -495,20 +500,21 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                         </View>
                     </View>
                 </ScrollView>
-            </CustomModal>
+            </ResponsiveModal>
 
             {showFoodItemForm && (
-                <CustomModal
+                <ResponsiveModal
                     visible={showFoodItemForm}
                     onClose={() => setShowFoodItemForm(false)}
                     title="Lisää uusi raaka-aine"
+                    maxWidth={650}
                 >
                     <FormFoodItem
                         onSubmit={handleNewFoodItem}
                         onClose={() => setShowFoodItemForm(false)}
                         location="meal"
                     />
-                </CustomModal>
+                </ResponsiveModal>
             )}
         </>
     )

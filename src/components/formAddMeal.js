@@ -3,8 +3,8 @@ import axios from 'axios'
 import React, { useEffect, useState } from 'react'
 import {
     Alert,
-    FlatList,
     Pressable,
+    ScrollView,
     StyleSheet,
     TextInput,
     View,
@@ -14,12 +14,11 @@ import { getServerUrl } from '../utils/getServerUrl'
 import { getDifficultyEnum, mealRoles } from '../utils/mealUtils'
 import storage from '../utils/storage'
 import Button from './Button'
-import CustomModal from './CustomModal'
 import CustomText from './CustomText'
 import DateTimePicker from './DatePicker.web'
 import DifficultySelector from './DifficultySelector'
-import FoodItemSelector from './FoodItemSelector'
-import FormFoodItem from './FormFoodItem'
+import ExpandableFoodItemSelector from './ExpandableFoodItemSelector'
+
 import Info from './Info'
 
 const AddMealForm = ({ onSubmit, onClose }) => {
@@ -29,151 +28,12 @@ const AddMealForm = ({ onSubmit, onClose }) => {
     const [difficultyLevel, setDifficultyLevel] = useState('')
     const [cookingTime, setCookingTime] = useState('')
     const [foodItems, setFoodItems] = useState([])
-    const [foodItemModalVisible, setFoodItemModalVisible] = useState(false)
-    const [pantryModalVisible, setPantryModalVisible] = useState(false)
-    const [pantryItems, setPantryItems] = useState([])
-    const [selectedPantryItems, setSelectedPantryItems] = useState([])
-    const [isLoading, setIsLoading] = useState(false)
+
     const [selectedRoles, setSelectedRoles] = useState([])
     const [plannedCookingDate, setPlannedCookingDate] = useState(new Date())
     const [showDatePicker, setShowDatePicker] = useState(false)
     const [shoppingLists, setShoppingLists] = useState([])
     const [selectedShoppingListId, setSelectedShoppingListId] = useState(null)
-    const [pantryItemQuantities, setPantryItemQuantities] = useState({})
-
-    const fetchPantryItems = async () => {
-        try {
-            setIsLoading(true)
-            const token = await storage.getItem('userToken')
-            const response = await axios.get(getServerUrl('/pantry'), {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            })
-            if (response.data.success && response.data.pantry) {
-                setPantryItems(response.data.pantry.items)
-            }
-        } catch (error) {
-            console.error('Error fetching pantry items:', error)
-        } finally {
-            setIsLoading(false)
-        }
-    }
-
-    const handleOpenPantryModal = async () => {
-        setPantryModalVisible(true)
-        await fetchPantryItems()
-        const initialQuantities = {}
-        pantryItems.forEach((item) => {
-            initialQuantities[item._id] = item.quantity || 0
-        })
-        setPantryItemQuantities(initialQuantities)
-    }
-
-    const togglePantryItemSelection = (item) => {
-        const isSelected = selectedPantryItems.some(
-            (selected) => selected._id === item._id
-        )
-        if (isSelected) {
-            setSelectedPantryItems(
-                selectedPantryItems.filter(
-                    (selected) => selected._id !== item._id
-                )
-            )
-        } else {
-            setSelectedPantryItems([...selectedPantryItems, item])
-        }
-    }
-
-    const addSelectedPantryItems = () => {
-        const formattedPantryItems = selectedPantryItems.map((item) => ({
-            name: item.name,
-            unit: item.unit || 'kpl',
-            category: item.foodId?.category || item.category || [],
-            calories: parseInt(item.calories) || 0,
-            price: parseFloat(item.price) || 0,
-            locations: ['meal'],
-            quantities: {
-                meal: parseFloat(pantryItemQuantities[item._id]) || 0,
-                'shopping-list': 0,
-                pantry: 0,
-            },
-            quantity: parseFloat(pantryItemQuantities[item._id]) || 0,
-            foodId: item.foodId?._id || item.foodId,
-            expirationDate: item.expirationDate,
-        }))
-
-        setFoodItems([...foodItems, ...formattedPantryItems])
-        setSelectedPantryItems([])
-        setPantryModalVisible(false)
-    }
-
-    const renderPantryItem = ({ item }) => {
-        const isSelected = selectedPantryItems.some(
-            (selected) => selected._id === item._id
-        )
-
-        return (
-            <View
-                style={[
-                    styles.pantryItem,
-                    isSelected && styles.selectedPantryItem,
-                ]}
-            >
-                <Pressable
-                    style={styles.itemRow}
-                    onPress={() => togglePantryItemSelection(item)}
-                >
-                    <View style={styles.itemContent}>
-                        <CustomText style={styles.itemName}>
-                            {item.name}
-                        </CustomText>
-                        <CustomText style={styles.itemDetails}>
-                            Saatavilla: {item.quantity} {item.unit}
-                        </CustomText>
-                    </View>
-                    <View style={styles.checkboxContainer}>
-                        <MaterialIcons
-                            name={
-                                isSelected
-                                    ? 'check-box'
-                                    : 'check-box-outline-blank'
-                            }
-                            size={24}
-                            color={isSelected ? '#38E4D9' : '#666'}
-                        />
-                    </View>
-                </Pressable>
-
-                {isSelected && (
-                    <View style={styles.quantityContainer}>
-                        <CustomText style={styles.quantityLabel}>
-                            Määrä:
-                        </CustomText>
-                        <TextInput
-                            style={styles.quantityInput}
-                            value={pantryItemQuantities[item._id]?.toString()}
-                            onChangeText={(text) => {
-                                // Allow empty string or numbers with optional decimal point
-                                if (text === '' || /^\d*\.?\d*$/.test(text)) {
-                                    setPantryItemQuantities({
-                                        ...pantryItemQuantities,
-                                        [item._id]: text,
-                                    })
-                                }
-                            }}
-                            keyboardType="numeric"
-                            placeholder="0"
-                            selectTextOnFocus={true} // Selects all text when focused
-                        />
-                        <CustomText style={styles.unitText}>
-                            {item.unit}
-                        </CustomText>
-                    </View>
-                )}
-            </View>
-        )
-    }
 
     const fetchShoppingLists = async () => {
         try {
@@ -374,7 +234,7 @@ const AddMealForm = ({ onSubmit, onClose }) => {
         }
 
         setFoodItems([...foodItems, newFoodItem])
-        setFoodItemModalVisible(false)
+        // Modal closing is now handled by ExpandableFoodItemSelector
     }
 
     const handleDateChange = (event, selectedDate) => {
@@ -412,197 +272,133 @@ const AddMealForm = ({ onSubmit, onClose }) => {
 
     return (
         <View style={styles.container}>
-            <FlatList
-                data={[{ key: 'form' }]}
-                renderItem={() => (
-                    <View style={styles.formContainer}>
-                        <CustomText style={styles.label}>
-                            Aterian nimi
-                        </CustomText>
-                        <TextInput
-                            style={styles.formInput}
-                            value={name}
-                            onChangeText={setName}
-                        />
-
-                        <CustomText style={styles.label}>Resepti</CustomText>
-                        <TextInput
-                            style={[styles.formInput, styles.multilineInput]}
-                            value={recipe}
-                            onChangeText={setRecipe}
-                            multiline
-                            numberOfLines={4}
-                        />
-
-                        <CustomText style={styles.label}>
-                            Vaikeustaso (1-5)
-                        </CustomText>
-                        <DifficultySelector
-                            value={difficultyLevel}
-                            onSelect={setDifficultyLevel}
-                        />
-                        <CustomText style={styles.label}>
-                            Valmistusaika (min)
-                        </CustomText>
-                        <TextInput
-                            style={styles.formInput}
-                            value={cookingTime}
-                            onChangeText={setCookingTime}
-                            keyboardType="numeric"
-                        />
-
-                        <CustomText style={styles.label}>
-                            Aterian tyyppi
-                        </CustomText>
-                        <View style={styles.checkboxGroup}>
-                            {Object.entries(mealRoles).map(([value, label]) => (
-                                <Pressable
-                                    key={value}
-                                    style={styles.checkboxRow}
-                                    onPress={() => {
-                                        setSelectedRoles([value])
-                                    }}
-                                >
-                                    <View
-                                        style={[
-                                            styles.checkbox,
-                                            selectedRoles.includes(value) &&
-                                                styles.checkboxChecked,
-                                        ]}
-                                    >
-                                        {selectedRoles.includes(value) && (
-                                            <MaterialIcons
-                                                name="check"
-                                                size={16}
-                                                color="white"
-                                            />
-                                        )}
-                                    </View>
-                                    <CustomText style={styles.checkboxLabel}>
-                                        {label}
-                                    </CustomText>
-                                </Pressable>
-                            ))}
-                        </View>
-                        <View style={styles.labelWithInfo}>
-                            <CustomText style={styles.label}>
-                                Suunniteltu valmistuspäivä
-                            </CustomText>
-                            <Info
-                                title="Suunniteltu valmistuspäivä"
-                                content="Tässä voit valita päivän, jolloin aiot valmistaa tämän aterian. Valittuasi suunnitellun valmistuspäivän, ateria ilmestyy lukujärjestykseesi kyseisen päivän kohdalle. Voit muuttaa päivämäärää myöhemmin tarvittaessa. Luotu ateria jää myös talteen Ateriat-listaasi ja voit asettaa aina uudelleen suunnitellun valmistuspäivämää sille kun haluat taas valmistaa kyseisen aterian."
-                            />
-                        </View>
-                        <Pressable
-                            style={styles.dateButton}
-                            onPress={() => setShowDatePicker(true)}
-                        >
-                            <CustomText>
-                                {formatDate(plannedCookingDate)}
-                            </CustomText>
-                        </Pressable>
-
-                        {showDatePicker && (
-                            <DateTimePicker
-                                value={plannedCookingDate}
-                                mode="date"
-                                display="default"
-                                onChange={handleDateChange}
-                                minimumDate={new Date()}
-                            />
-                        )}
-
-                        <View style={styles.foodItemSelectorContainer}>
-                            <FoodItemSelector
-                                foodItems={foodItems}
-                                onSelectItem={(item) => {
-                                    setFoodItems([...foodItems, item])
-                                }}
-                                onOpenFoodItemModal={() =>
-                                    setFoodItemModalVisible(true)
-                                }
-                                onOpenPantryModal={handleOpenPantryModal}
-                                onUpdateQuantity={handleUpdateQuantity}
-                                onRemoveItem={handleRemoveFoodItem}
-                            />
-                        </View>
-
-                        <View style={styles.buttonGroup}>
-                            <Button
-                                title="Tallenna ateria"
-                                onPress={handleFormSubmit}
-                                style={styles.primaryButton}
-                            />
-                        </View>
-                    </View>
-                )}
-                keyExtractor={() => 'form'}
+            <ScrollView
+                style={styles.scrollView}
                 contentContainerStyle={styles.formScroll}
                 showsVerticalScrollIndicator={true}
                 bounces={false}
-            />
-
-            <CustomModal
-                visible={foodItemModalVisible}
-                onClose={() => setFoodItemModalVisible(false)}
-                title="Lisää uusi raaka-aine"
+                keyboardShouldPersistTaps="handled"
             >
-                <View style={styles.modalBody}>
-                    <FormFoodItem
-                        onSubmit={handleAddFoodItem}
-                        onClose={() => setFoodItemModalVisible(false)}
-                        location="meal"
-                        showLocationSelector={true}
-                        shoppingLists={shoppingLists}
-                        selectedShoppingListId={selectedShoppingListId}
-                        onShoppingListSelect={setSelectedShoppingListId}
-                        initialValues={{
-                            quantities: {
-                                meal: '',
-                                'shopping-list': '',
-                                pantry: '',
-                            },
-                            locations: ['meal'],
-                        }}
+                <View style={styles.formContainer}>
+                    <CustomText style={styles.label}>Aterian nimi</CustomText>
+                    <TextInput
+                        style={styles.formInput}
+                        value={name}
+                        onChangeText={setName}
                     />
-                </View>
-            </CustomModal>
 
-            <CustomModal
-                visible={pantryModalVisible}
-                onClose={() => setPantryModalVisible(false)}
-                title="Valitse pentteristä"
-            >
-                <View style={styles.modalBody}>
-                    {isLoading ? (
-                        <CustomText style={styles.loadingText}>
-                            Ladataan...
-                        </CustomText>
-                    ) : (
-                        <View style={styles.modalScrollContainer}>
-                            <CustomText style={styles.foundItemsText}>
-                                {pantryItems.length} elintarviketta löydetty
-                            </CustomText>
-                            <FlatList
-                                data={pantryItems}
-                                renderItem={renderPantryItem}
-                                keyExtractor={(item) => item._id}
-                                style={styles.pantryList}
-                            />
-                            <View style={styles.modalButtonGroup}>
-                                <Button
-                                    title="Lisää valitut"
-                                    onPress={addSelectedPantryItems}
+                    <CustomText style={styles.label}>Resepti</CustomText>
+                    <TextInput
+                        style={[styles.formInput, styles.multilineInput]}
+                        value={recipe}
+                        onChangeText={setRecipe}
+                        multiline
+                        numberOfLines={4}
+                    />
+
+                    <CustomText style={styles.label}>
+                        Vaikeustaso (1-5)
+                    </CustomText>
+                    <DifficultySelector
+                        value={difficultyLevel}
+                        onSelect={setDifficultyLevel}
+                    />
+                    <CustomText style={styles.label}>
+                        Valmistusaika (min)
+                    </CustomText>
+                    <TextInput
+                        style={styles.formInput}
+                        value={cookingTime}
+                        onChangeText={setCookingTime}
+                        keyboardType="numeric"
+                    />
+
+                    <CustomText style={styles.label}>Aterian tyyppi</CustomText>
+                    <View style={styles.checkboxGroup}>
+                        {Object.entries(mealRoles).map(([value, label]) => (
+                            <Pressable
+                                key={value}
+                                style={styles.checkboxRow}
+                                onPress={() => {
+                                    setSelectedRoles([value])
+                                }}
+                            >
+                                <View
                                     style={[
-                                        styles.primaryButton,
-                                        styles.fullWidthButton,
+                                        styles.checkbox,
+                                        selectedRoles.includes(value) &&
+                                            styles.checkboxChecked,
                                     ]}
-                                />
-                            </View>
-                        </View>
+                                >
+                                    {selectedRoles.includes(value) && (
+                                        <MaterialIcons
+                                            name="check"
+                                            size={16}
+                                            color="white"
+                                        />
+                                    )}
+                                </View>
+                                <CustomText style={styles.checkboxLabel}>
+                                    {label}
+                                </CustomText>
+                            </Pressable>
+                        ))}
+                    </View>
+                    <View style={styles.labelWithInfo}>
+                        <CustomText style={styles.label}>
+                            Suunniteltu valmistuspäivä
+                        </CustomText>
+                        <Info
+                            title="Suunniteltu valmistuspäivä"
+                            content="Tässä voit valita päivän, jolloin aiot valmistaa tämän aterian. Valittuasi suunnitellun valmistuspäivän, ateria ilmestyy lukujärjestykseesi kyseisen päivän kohdalle. Voit muuttaa päivämäärää myöhemmin tarvittaessa. Luotu ateria jää myös talteen Ateriat-listaasi ja voit asettaa aina uudelleen suunnitellun valmistuspäivämää sille kun haluat taas valmistaa kyseisen aterian."
+                        />
+                    </View>
+                    <Pressable
+                        style={styles.dateButton}
+                        onPress={() => setShowDatePicker(true)}
+                    >
+                        <CustomText>
+                            {formatDate(plannedCookingDate)}
+                        </CustomText>
+                    </Pressable>
+
+                    {showDatePicker && (
+                        <DateTimePicker
+                            value={plannedCookingDate}
+                            mode="date"
+                            display="default"
+                            onChange={handleDateChange}
+                            minimumDate={new Date()}
+                        />
                     )}
+
+                    <View style={styles.foodItemSelectorContainer}>
+                        <ExpandableFoodItemSelector
+                            foodItems={foodItems}
+                            onSelectItem={(item) => {
+                                setFoodItems((prev) => [...prev, item])
+                            }}
+                            onSelectMultipleItems={(items) => {
+                                setFoodItems((prev) => [...prev, ...items])
+                            }}
+                            onAddFoodItem={handleAddFoodItem}
+                            onUpdateQuantity={handleUpdateQuantity}
+                            onRemoveItem={handleRemoveFoodItem}
+                            shoppingLists={shoppingLists}
+                            selectedShoppingListId={selectedShoppingListId}
+                            onShoppingListSelect={setSelectedShoppingListId}
+                        />
+                    </View>
+
+                    <View style={styles.buttonGroup}>
+                        <Button
+                            title="Tallenna ateria"
+                            onPress={handleFormSubmit}
+                            style={styles.primaryButton}
+                        />
+                    </View>
                 </View>
-            </CustomModal>
+            </ScrollView>
         </View>
     )
 }
@@ -612,12 +408,16 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#fff',
     },
+    scrollView: {
+        flex: 1,
+    },
     formContainer: {
         paddingVertical: 5,
         paddingHorizontal: 10,
     },
     formScroll: {
         flexGrow: 1,
+        paddingBottom: 20,
     },
     label: {
         marginTop: 10,

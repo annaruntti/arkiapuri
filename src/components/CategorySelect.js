@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react'
-import { View, TouchableOpacity, StyleSheet, ScrollView } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
-import CustomText from './CustomText'
-import CustomModal from './CustomModal'
+import React, { useEffect, useState } from 'react'
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native'
 import Button from './Button'
+import CustomText from './CustomText'
+import ResponsiveModal from './ResponsiveModal'
 
 const CategorySelect = ({
     value,
@@ -104,10 +104,11 @@ const CategorySelect = ({
                 )}
             </TouchableOpacity>
 
-            <CustomModal
+            <ResponsiveModal
                 visible={isModalVisible}
                 onClose={() => setIsModalVisible(false)}
                 title="Valitse kategoriat"
+                maxWidth={500}
             >
                 <View style={styles.modalBody}>
                     <ScrollView style={styles.categoryContainer}>
@@ -169,7 +170,7 @@ const CategorySelect = ({
                         />
                     </View>
                 </View>
-            </CustomModal>
+            </ResponsiveModal>
         </View>
     )
 }

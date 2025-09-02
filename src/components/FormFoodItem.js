@@ -23,13 +23,14 @@ import DateTimePicker from './DatePicker.web'
 import categories from '../data/categories'
 import { getServerUrl } from '../utils/getServerUrl'
 import Button from './Button'
-import CategorySelect from './CategorySelect'
 import CustomText from './CustomText'
+import InlineCategorySelect from './InlineCategorySelect'
 
 const FormFoodItem = forwardRef(
     (
         {
             onSubmit,
+            onClose,
             location = 'meal',
             showLocationSelector = false,
             shoppingLists = [],
@@ -49,8 +50,6 @@ const FormFoodItem = forwardRef(
             pantry: '',
         })
         const [isModalVisible, setIsModalVisible] = useState(false)
-        const [isCategoryModalVisible, setIsCategoryModalVisible] =
-            useState(false)
 
         const {
             control,
@@ -167,12 +166,9 @@ const FormFoodItem = forwardRef(
                 }
 
                 console.log('Form data being submitted:', formData)
-
                 if (location === 'meal' || location === 'shopping-list') {
                     onSubmit(formData)
-                    reset()
-                    setQuantities({ meal: '', 'shopping-list': '', pantry: '' })
-                    setSelectedLocations(['meal'])
+                    // Form reset and closing handled by parent component
                 } else {
                     // Normal food item creation flow
                     const token = await storage.getItem('userToken')
@@ -309,13 +305,11 @@ const FormFoodItem = forwardRef(
                         required: true,
                     }}
                     render={({ field: { value, onChange } }) => (
-                        <CategorySelect
+                        <InlineCategorySelect
                             value={value}
                             onChange={onChange}
-                            isModalVisible={isCategoryModalVisible}
-                            setIsModalVisible={setIsCategoryModalVisible}
-                            toggleModal={() => setIsCategoryModalVisible(true)}
                             categories={categories}
+                            placeholder="Valitse elintarvikkeen kategoriat"
                         />
                     )}
                     name="category"

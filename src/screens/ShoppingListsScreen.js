@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react'
-import { Alert, StyleSheet, View, FlatList } from 'react-native'
 import axios from 'axios'
+import React, { useEffect, useState } from 'react'
+import { Alert, FlatList, StyleSheet, View } from 'react-native'
 import Button from '../components/Button'
-import FormAddShoppingList from '../components/FormAddShoppingList'
 import CustomText from '../components/CustomText'
-import storage from '../utils/storage'
-import { getServerUrl } from '../utils/getServerUrl'
+import FormAddShoppingList from '../components/FormAddShoppingList'
 import ShoppingListDetail from '../components/ShoppingListDetail'
+import { getServerUrl } from '../utils/getServerUrl'
+import storage from '../utils/storage'
 
-import CustomModal from '../components/CustomModal'
+import ResponsiveModal from '../components/ResponsiveModal'
 
 const ShoppingListsScreen = () => {
     const [modalVisible, setModalVisible] = useState(false)
@@ -131,36 +131,34 @@ const ShoppingListsScreen = () => {
 
     return (
         <View style={styles.container}>
-            <CustomModal
+            <ResponsiveModal
                 visible={modalVisible}
                 onClose={() => setModalVisible(false)}
                 title="Luo uusi ostoslista"
+                maxWidth={500}
             >
-                <View style={styles.modalBody}>
-                    <FormAddShoppingList
-                        onSubmit={handleCreateList}
-                        onClose={() => setModalVisible(false)}
-                    />
-                </View>
-            </CustomModal>
+                <FormAddShoppingList
+                    onSubmit={handleCreateList}
+                    onClose={() => setModalVisible(false)}
+                />
+            </ResponsiveModal>
 
-            <CustomModal
+            <ResponsiveModal
                 visible={!!selectedList}
                 onClose={() => setSelectedList(null)}
                 title="Ostoslistan tiedot"
+                maxWidth={800}
             >
-                <View style={styles.modalBody}>
-                    {selectedList && (
-                        <ShoppingListDetail
-                            shoppingList={selectedList}
-                            onClose={() => setSelectedList(null)}
-                            onUpdate={handleListUpdate}
-                            fetchShoppingLists={fetchShoppingLists}
-                            fetchPantryItems={fetchPantryItems}
-                        />
-                    )}
-                </View>
-            </CustomModal>
+                {selectedList && (
+                    <ShoppingListDetail
+                        shoppingList={selectedList}
+                        onClose={() => setSelectedList(null)}
+                        onUpdate={handleListUpdate}
+                        fetchShoppingLists={fetchShoppingLists}
+                        fetchPantryItems={fetchPantryItems}
+                    />
+                )}
+            </ResponsiveModal>
 
             <View style={styles.content}>
                 <CustomText style={styles.introText}>

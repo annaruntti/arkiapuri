@@ -10,11 +10,11 @@ import {
     View,
 } from 'react-native'
 import Button from '../components/Button'
-import CustomModal from '../components/CustomModal'
 import CustomText from '../components/CustomText'
 import AddMealForm from '../components/FormAddMeal'
 import MealItemDetail from '../components/MealItemDetail'
 import ResponsiveLayout from '../components/ResponsiveLayout'
+import ResponsiveModal from '../components/ResponsiveModal'
 import { getServerUrl } from '../utils/getServerUrl'
 import { getDifficultyText } from '../utils/mealUtils'
 import { useResponsiveDimensions } from '../utils/responsive'
@@ -356,18 +356,17 @@ const MealsScreen = () => {
 
     const content = (
         <View style={styles.container}>
-            <CustomModal
+            <ResponsiveModal
                 visible={modalVisible}
                 onClose={() => setModalVisible(false)}
                 title="Lisää uusi ateria"
+                maxWidth={700}
             >
-                <View style={styles.modalBody}>
-                    <AddMealForm
-                        onSubmit={handleAddMeal}
-                        onClose={() => setModalVisible(false)}
-                    />
-                </View>
-            </CustomModal>
+                <AddMealForm
+                    onSubmit={handleAddMeal}
+                    onClose={() => setModalVisible(false)}
+                />
+            </ResponsiveModal>
 
             <CustomText style={styles.introText}>
                 Selaa ja hallinnoi aterioitasi. Voit lisätä uusia aterioita ja

@@ -9,10 +9,10 @@ import {
     View,
 } from 'react-native'
 import Button from '../components/Button'
-import CustomModal from '../components/CustomModal'
 import CustomText from '../components/CustomText'
 import FormFoodItem from '../components/FormFoodItem'
 import PantryItemDetails from '../components/PantryItemDetails'
+import ResponsiveModal from '../components/ResponsiveModal'
 import UnifiedFoodSearch from '../components/UnifiedFoodSearch'
 import { getServerUrl } from '../utils/getServerUrl'
 import { scanItems } from '../utils/scanItems'
@@ -335,15 +335,14 @@ const PantryScreen = ({}) => {
 
     return (
         <View style={styles.container}>
-            <CustomModal
+            <ResponsiveModal
                 visible={showItemForm}
                 onClose={() => setShowItemForm(false)}
                 title="Lisää tuote pantteriin"
+                maxWidth={600}
             >
-                <View style={styles.formContainer}>
-                    <FormFoodItem onSubmit={handleAddItem} location="pantry" />
-                </View>
-            </CustomModal>
+                <FormFoodItem onSubmit={handleAddItem} location="pantry" />
+            </ResponsiveModal>
             <CustomText style={styles.infoTitle}>
                 Etsi ja lisää tuotteita
             </CustomText>

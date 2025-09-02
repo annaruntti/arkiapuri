@@ -1,20 +1,20 @@
-import React, { useState } from 'react'
-import {
-    StyleSheet,
-    View,
-    Alert,
-    TouchableOpacity,
-    FlatList,
-} from 'react-native'
-import { useForm } from 'react-hook-form'
 import axios from 'axios'
+import React, { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import {
+    Alert,
+    FlatList,
+    StyleSheet,
+    TouchableOpacity,
+    View,
+} from 'react-native'
+import { getServerUrl } from '../utils/getServerUrl'
+import storage from '../utils/storage'
+import Button from './Button'
 import CustomInput from './CustomInput'
 import CustomText from './CustomText'
-import Button from './Button'
 import FormFoodItem from './FormFoodItem'
-import storage from '../utils/storage'
-import { getServerUrl } from '../utils/getServerUrl'
-import CustomModal from './CustomModal'
+import ResponsiveModal from './ResponsiveModal'
 
 const FormAddShoppingList = ({ onSubmit, onClose }) => {
     const [items, setItems] = useState([])
@@ -240,35 +240,35 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
                 />
             </View>
 
-            <CustomModal
+            <ResponsiveModal
                 visible={foodItemModalVisible}
                 onClose={() => setFoodItemModalVisible(false)}
                 title="Lisää uusi raaka-aine"
+                maxWidth={650}
             >
-                <View style={styles.modalBody}>
-                    <FormFoodItem
-                        onSubmit={handleAddItem}
-                        onClose={() => setFoodItemModalVisible(false)}
-                        location="shopping-list"
-                        showLocationSelector={true}
-                        selectedShoppingListId={selectedShoppingListId}
-                        onShoppingListSelect={setSelectedShoppingListId}
-                        initialValues={{
-                            quantities: {
-                                meal: '',
-                                'shopping-list': '',
-                                pantry: '',
-                            },
-                            locations: ['shopping-list'],
-                        }}
-                    />
-                </View>
-            </CustomModal>
+                <FormFoodItem
+                    onSubmit={handleAddItem}
+                    onClose={() => setFoodItemModalVisible(false)}
+                    location="shopping-list"
+                    showLocationSelector={true}
+                    selectedShoppingListId={selectedShoppingListId}
+                    onShoppingListSelect={setSelectedShoppingListId}
+                    initialValues={{
+                        quantities: {
+                            meal: '',
+                            'shopping-list': '',
+                            pantry: '',
+                        },
+                        locations: ['shopping-list'],
+                    }}
+                />
+            </ResponsiveModal>
 
-            <CustomModal
+            <ResponsiveModal
                 visible={pantryModalVisible}
                 onClose={() => setPantryModalVisible(false)}
                 title="Valitse pentteristä"
+                maxWidth={600}
             >
                 {isLoading ? (
                     <CustomText style={styles.loadingText}>
@@ -297,7 +297,7 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
                         </View>
                     </View>
                 )}
-            </CustomModal>
+            </ResponsiveModal>
         </View>
     )
 }
