@@ -1,20 +1,20 @@
-import React, { useState, useEffect } from 'react'
-import {
-    View,
-    StyleSheet,
-    TouchableOpacity,
-    ScrollView,
-    TextInput,
-} from 'react-native'
-import CustomText from './CustomText'
-import Button from './Button'
 import { Feather } from '@expo/vector-icons'
 import { format } from 'date-fns'
 import { fi } from 'date-fns/locale'
-import DateTimePicker from '@react-native-community/datetimepicker'
-import CustomModal from './CustomModal'
-import CategorySelect from './CategorySelect'
+import React, { useEffect, useState } from 'react'
+import {
+    ScrollView,
+    StyleSheet,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native'
 import categories from '../data/categories'
+import Button from './Button'
+import CategorySelect from './CategorySelect'
+import CustomModal from './CustomModal'
+import CustomText from './CustomText'
+import DateTimePicker from './DatePicker.web'
 
 const PantryItemDetails = ({ item, visible, onClose, onUpdate }) => {
     const [editableFields, setEditableFields] = useState({})

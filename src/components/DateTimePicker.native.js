@@ -1,16 +1,22 @@
+import RNDateTimePicker from '@react-native-community/datetimepicker'
 import React from 'react'
-import { Button } from 'react-native'
 
-const DateTimePicker = () => {
-    const handlePress = () => {
-        // Handle press logic here
-    }
-
+const DateTimePicker = ({
+    value,
+    mode = 'date',
+    display = 'default',
+    onChange,
+    minimumDate,
+    testID,
+}) => {
     return (
-        <Button
-            title={buttonTitle}
-            onPress={handlePress}
-            style={styles.tertiaryButton}
+        <RNDateTimePicker
+            value={value}
+            mode={mode}
+            display={display}
+            onChange={onChange}
+            minimumDate={minimumDate}
+            testID={testID}
         />
     )
 }

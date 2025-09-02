@@ -1,32 +1,26 @@
-import React, { useState, useEffect } from 'react'
-import {
-    View,
-    StyleSheet,
-    TextInput,
-    Pressable,
-    FlatList,
-    Alert,
-    Platform,
-} from 'react-native'
-import DateTimePicker from '@react-native-community/datetimepicker'
-import { Picker } from '@react-native-picker/picker'
 import { MaterialIcons } from '@expo/vector-icons'
 import axios from 'axios'
-import CustomText from './CustomText'
-import Button from './Button'
-import FormFoodItem from './FormFoodItem'
-import { getServerUrl } from '../utils/getServerUrl'
-import storage from '../utils/storage'
-import { useLogin } from '../context/LoginProvider'
-import FoodItemSelector from './FoodItemSelector'
-import CustomModal from './CustomModal'
-import Info from './Info'
-import DifficultySelector from './DifficultySelector'
+import React, { useEffect, useState } from 'react'
 import {
-    mealRoles,
-    getDifficultyText,
-    getDifficultyEnum,
-} from '../utils/mealUtils'
+    Alert,
+    FlatList,
+    Pressable,
+    StyleSheet,
+    TextInput,
+    View,
+} from 'react-native'
+import { useLogin } from '../context/LoginProvider'
+import { getServerUrl } from '../utils/getServerUrl'
+import { getDifficultyEnum, mealRoles } from '../utils/mealUtils'
+import storage from '../utils/storage'
+import Button from './Button'
+import CustomModal from './CustomModal'
+import CustomText from './CustomText'
+import DateTimePicker from './DatePicker.web'
+import DifficultySelector from './DifficultySelector'
+import FoodItemSelector from './FoodItemSelector'
+import FormFoodItem from './FormFoodItem'
+import Info from './Info'
 
 const AddMealForm = ({ onSubmit, onClose }) => {
     const { profile } = useLogin()

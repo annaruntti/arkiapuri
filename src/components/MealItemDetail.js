@@ -1,26 +1,22 @@
-import React, { useState, useEffect } from 'react'
-import {
-    View,
-    StyleSheet,
-    ScrollView,
-    TouchableOpacity,
-    TextInput,
-} from 'react-native'
-import CustomText from './CustomText'
-import {
-    getDifficultyText,
-    getMealTypeText,
-    formatDate,
-} from '../utils/mealUtils'
-import CustomModal from './CustomModal'
-import Button from './Button'
 import { Feather } from '@expo/vector-icons'
-import DateTimePicker from '@react-native-community/datetimepicker'
+import { Picker } from '@react-native-picker/picker'
 import { format } from 'date-fns'
 import { fi } from 'date-fns/locale'
-import FormFoodItem from './FormFoodItem'
+import React, { useEffect, useState } from 'react'
+import {
+    ScrollView,
+    StyleSheet,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native'
+import { getDifficultyText, getMealTypeText } from '../utils/mealUtils'
+import Button from './Button'
+import CustomModal from './CustomModal'
+import CustomText from './CustomText'
+import DateTimePicker from './DatePicker.web'
 import FoodItemRow from './FoodItemRow'
-import { Picker } from '@react-native-picker/picker'
+import FormFoodItem from './FormFoodItem'
 
 const difficultyLevels = [
     { value: 'easy', label: 'Helppo' },

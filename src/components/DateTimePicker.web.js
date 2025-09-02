@@ -1,6 +1,5 @@
 import React from 'react'
 
-// Simple web date input wrapper to mimic native API used in our forms
 const DateTimePicker = ({ value, onChange, testID, minimumDate }) => {
     const toInputValue = (date) => {
         try {
@@ -16,7 +15,6 @@ const DateTimePicker = ({ value, onChange, testID, minimumDate }) => {
 
     const handleChange = (e) => {
         const selected = e.target.value ? new Date(e.target.value) : null
-        // mimic native onChange signature: (event, selectedDate)
         onChange && onChange(null, selected)
     }
 

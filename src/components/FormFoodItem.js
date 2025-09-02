@@ -1,29 +1,30 @@
-import React, { useState, forwardRef } from 'react'
-import {
-    StyleSheet,
-    ScrollView,
-    View,
-    TextInput,
-    TouchableOpacity,
-    Alert,
-    Platform,
-} from 'react-native'
-import { Controller, useForm } from 'react-hook-form'
 import { MaterialIcons } from '@expo/vector-icons'
 import Fontisto from '@expo/vector-icons/Fontisto'
-import DateTimePicker from '@react-native-community/datetimepicker'
-import { RadioButton } from 'react-native-paper'
+import React, { forwardRef, useState } from 'react'
+import { Controller, useForm } from 'react-hook-form'
+import {
+    Alert,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native'
+// Cross-platform picker: web uses input[type=date], native uses community picker
 import { Picker } from '@react-native-picker/picker'
 import axios from 'axios'
-import storage from '../utils/storage'
 import { format } from 'date-fns'
 import { fi } from 'date-fns/locale'
+import { RadioButton } from 'react-native-paper'
+import storage from '../utils/storage'
+import DateTimePicker from './DatePicker.web'
 
 import categories from '../data/categories'
-import CustomText from './CustomText'
-import Button from './Button'
 import { getServerUrl } from '../utils/getServerUrl'
+import Button from './Button'
 import CategorySelect from './CategorySelect'
+import CustomText from './CustomText'
 
 const FormFoodItem = forwardRef(
     (
