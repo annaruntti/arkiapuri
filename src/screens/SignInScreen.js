@@ -2,15 +2,15 @@ import { Link, useNavigation } from '@react-navigation/native'
 import axios from 'axios'
 import React from 'react'
 import { useForm } from 'react-hook-form'
-import { Alert, ScrollView, StyleSheet, View } from 'react-native'
+import { Alert, StyleSheet, View } from 'react-native'
 import { useLogin } from '../context/LoginProvider'
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
 
+import AuthLayout from '../components/AuthLayout'
 import Button from '../components/Button'
 import CustomInput from '../components/CustomInput'
 import CustomText from '../components/CustomText'
-import FullWidthLayout from '../components/FullWidthLayout'
 import SocialSignInButtons from '../components/SocialSignInButtons'
 
 const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/
@@ -85,114 +85,98 @@ const SignInScreen = () => {
     }
 
     return (
-        <FullWidthLayout>
-            <ScrollView
-                style={styles.scrollView}
-                showsVerticalScrollIndicator={false}
-            >
-                <View style={styles.root}>
-                    <View style={styles.header}>
-                        <CustomText style={styles.headerTitle}>
-                            Kirjaudu sisään
-                        </CustomText>
-                    </View>
-                    <View style={styles.inputContainer}>
-                        <CustomInput
-                            label="Sähköpostiosoite"
-                            name="email"
-                            control={control}
-                            placeholder="Kirjoita sähköpostiosoitteesi"
-                            rules={{
-                                pattern: {
-                                    value: emailRegex,
-                                    message:
-                                        'Kirjoita sähköpostiosoitteesi muodossa esim. "matti.meikalainen@gmail.com"',
-                                },
-                                required:
-                                    'Sähköpostiosoite on pakollinen tieto',
-                            }}
-                        />
-                        <CustomInput
-                            label="Salasana"
-                            name="password"
-                            placeholder="Kirjoita salsanasi"
-                            secureTextEntry
-                            control={control}
-                            rules={{
-                                required: 'Salasana on pakollinen tieto',
-                                minLength: {
-                                    value: 6,
-                                    message:
-                                        'Salasanan pituuden tulee olla vähintään 6 merkkiä',
-                                },
-                            }}
-                        />
-                    </View>
-                    <Link
-                        to="/forgot-password"
-                        style={styles.link}
-                        children="Unohditko salasanasi?"
+        <AuthLayout
+            title="Kirjaudu sisään"
+            subtitle="Tervetuloa takaisin! Kirjaudu sisään jatkaaksesi."
+        >
+            <View style={styles.form}>
+                <CustomInput
+                    label="Sähköpostiosoite"
+                    name="email"
+                    control={control}
+                    placeholder="Kirjoita sähköpostiosoitteesi"
+                    rules={{
+                        pattern: {
+                            value: emailRegex,
+                            message:
+                                'Kirjoita sähköpostiosoitteesi muodossa esim. "matti.meikalainen@gmail.com"',
+                        },
+                        required: 'Sähköpostiosoite on pakollinen tieto',
+                    }}
+                />
+                <CustomInput
+                    label="Salasana"
+                    name="password"
+                    placeholder="Kirjoita salasanasi"
+                    secureTextEntry
+                    control={control}
+                    rules={{
+                        required: 'Salasana on pakollinen tieto',
+                        minLength: {
+                            value: 6,
+                            message:
+                                'Salasanan pituuden tulee olla vähintään 6 merkkiä',
+                        },
+                    }}
+                />
+
+                <Link
+                    to="/forgot-password"
+                    style={styles.forgotPassword}
+                    children="Unohditko salasanasi?"
+                />
+
+                <View style={styles.buttonSection}>
+                    <Button
+                        title="Kirjaudu sisään"
+                        onPress={handleSubmit(onSignInPressed)}
+                        style={styles.primaryButton}
+                        textStyle={styles.buttonText}
                     />
-                    <View style={styles.buttonView}>
-                        <View style={styles.buttonMainContainer}>
-                            <Button
-                                title="Kirjaudu sisään"
-                                onPress={handleSubmit(onSignInPressed)}
-                                style={styles.primaryButton}
-                            />
-                        </View>
-                        <View style={styles.buttonContainer}>
-                            <CustomText style={styles.text}>
-                                Eikö sinulla ole vielä käyttäjätunnusta?
-                            </CustomText>
-                            <Button
-                                title="Luo käyttäjätunnus"
-                                onPress={onSignUpPress}
-                                type="TERTIARY"
-                                style={styles.tertiaryButton}
-                            />
-                        </View>
-                        <SocialSignInButtons onSocialSignIn={onSocialSignIn} />
+
+                    <View style={styles.signUpSection}>
+                        <CustomText style={styles.signUpText}>
+                            Eikö sinulla ole vielä käyttäjätunnusta?
+                        </CustomText>
+                        <Button
+                            title="Luo käyttäjätunnus"
+                            onPress={onSignUpPress}
+                            style={styles.tertiaryButton}
+                            textStyle={styles.buttonText}
+                        />
                     </View>
+
+                    <SocialSignInButtons onSocialSignIn={onSocialSignIn} />
                 </View>
-            </ScrollView>
-        </FullWidthLayout>
+            </View>
+        </AuthLayout>
     )
 }
 
 const styles = StyleSheet.create({
-    scrollView: {
-        backgroundColor: '#fff',
+    form: {
+        width: '100%',
     },
-    root: {
-        alignItems: 'left',
-        padding: 20,
+    forgotPassword: {
+        color: '#9C86FC',
+        fontSize: 14,
+        fontWeight: '500',
+        textAlign: 'right',
+        marginBottom: 24,
+        textDecorationLine: 'underline',
     },
-    header: {
-        paddingVertical: 20,
+    buttonSection: {
+        gap: 20,
     },
-    headerTitle: {
-        fontSize: 25,
-        fontWeight: 'bold',
+    signUpSection: {
+        alignItems: 'center',
+        gap: 12,
     },
-    inputContainer: {
-        marginBottom: 5,
-    },
-    logo: {
-        width: '70%',
-        maxWidth: 300,
-        maxHeight: 200,
-    },
-    buttonView: {
-        paddingTop: 10,
-        paddingBottom: 10,
-    },
-    buttonContainer: {
-        paddingTop: 10,
-        marginBottom: 10,
-    },
-    buttonMainContainer: {
-        marginBottom: 5,
+    signUpText: {
+        color: '#6b7280',
+        fontSize: 14,
+        textAlign: 'center',
+        lineHeight: 20,
     },
     primaryButton: {
         borderRadius: 25,
@@ -202,10 +186,10 @@ const styles = StyleSheet.create({
         paddingRight: 10,
         elevation: 2,
         backgroundColor: '#9C86FC',
-        color: 'black',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        width: 'auto',
+        width: '100%',
+        maxWidth: 300,
+        alignSelf: 'center',
+        marginBottom: 10,
     },
     tertiaryButton: {
         borderRadius: 25,
@@ -215,22 +199,16 @@ const styles = StyleSheet.create({
         paddingRight: 10,
         elevation: 2,
         backgroundColor: '#fff',
-        color: 'black',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        width: 'auto',
+        width: '100%',
+        maxWidth: 300,
+        alignSelf: 'center',
+        marginBottom: 10,
         borderWidth: 3,
         borderColor: '#9C86FC',
     },
-    link: {
-        marginBottom: 10,
-        color: '#9C86FC',
-        fontWeight: 'normal',
-        textAlign: 'left',
-    },
-    text: {
-        color: 'gray',
-        marginVertical: 10,
+    buttonText: {
+        color: '#000000',
+        fontWeight: 'bold',
         textAlign: 'center',
     },
 })

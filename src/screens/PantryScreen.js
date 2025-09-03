@@ -363,6 +363,7 @@ const PantryScreen = ({}) => {
                     title="+ Lisää tuote manuaalisesti"
                     onPress={() => setShowItemForm(true)}
                     style={styles.tertiaryButton}
+                    textStyle={styles.buttonText}
                 />
             </View>
 
@@ -595,11 +596,13 @@ const styles = StyleSheet.create({
         paddingRight: 10,
         elevation: 2,
         backgroundColor: '#fff',
-        color: 'black',
-        fontWeight: 'bold',
-        textAlign: 'center',
         width: 'auto',
         borderWidth: 3,
         borderColor: '#9C86FC',
+    },
+    buttonText: {
+        color: '#000000',
+        fontWeight: 'bold',
+        textAlign: 'center',
     },
 })

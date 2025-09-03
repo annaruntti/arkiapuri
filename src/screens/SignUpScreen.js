@@ -1,14 +1,14 @@
-import React from 'react'
-import { View, Text, StyleSheet, ScrollView } from 'react-native'
-import { useNavigation } from '@react-navigation/core'
-import { useForm } from 'react-hook-form'
-import axios from 'axios'
-import { getServerUrl } from '../utils/getServerUrl'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useNavigation } from '@react-navigation/core'
+import axios from 'axios'
+import React from 'react'
+import { useForm } from 'react-hook-form'
+import { Alert, StyleSheet, View } from 'react-native'
+import { getServerUrl } from '../utils/getServerUrl'
 
-import CustomInput from '../components/CustomInput'
-// import SocialSignInButtons from '../components/SocialSignInButtons'
+import AuthLayout from '../components/AuthLayout'
 import Button from '../components/Button'
+import CustomInput from '../components/CustomInput'
 import CustomText from '../components/CustomText'
 
 const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/
@@ -27,25 +27,42 @@ const SignUpScreen = () => {
             )
             console.log('response', response)
 
-            const signInData = {
-                email: data.email,
-                password: data.password,
-            }
+            if (response.data.success) {
+                const signInData = {
+                    email: data.email,
+                    password: data.password,
+                }
 
-            const signInResponse = await axios.post(
-                getServerUrl('/sign-in'),
-                signInData
-            )
-            const signInRes = signInResponse.data
-            console.log('signInRes', signInRes)
-            if (signInRes.success) {
-                await AsyncStorage.setItem('userToken', signInRes.token)
-                navigation.navigate('Lataa profiilikuva', {
-                    token: signInRes.token,
-                })
+                const signInResponse = await axios.post(
+                    getServerUrl('/sign-in'),
+                    signInData
+                )
+                const signInRes = signInResponse.data
+                console.log('signInRes', signInRes)
+                if (signInRes.success) {
+                    await AsyncStorage.setItem('userToken', signInRes.token)
+                    navigation.navigate('Lataa profiilikuva', {
+                        token: signInRes.token,
+                    })
+                } else {
+                    Alert.alert(
+                        'Virhe',
+                        signInRes.message ||
+                            'Kirjautuminen epäonnistui rekisteröinnin jälkeen'
+                    )
+                }
+            } else {
+                Alert.alert(
+                    'Virhe',
+                    response.data.message || 'Rekisteröinti epäonnistui'
+                )
             }
         } catch (error) {
             console.error('Error sending data: ', error)
+            Alert.alert(
+                'Virhe',
+                error.response?.data?.message || 'Rekisteröinti epäonnistui'
+            )
         }
     }
 
@@ -62,105 +79,99 @@ const SignUpScreen = () => {
     }
 
     return (
-        <ScrollView
-            style={styles.scrollView}
-            showsVerticalScrollIndicator={false}
+        <AuthLayout
+            title="Luo käyttäjätunnus"
+            subtitle="Aloita matka Arkiapurin kanssa luomalla käyttäjätunnus."
         >
-            <View style={styles.root}>
-                <View style={styles.header}>
-                    <CustomText style={styles.headerTitle}>
-                        Luo käyttäjätunnus
-                    </CustomText>
-                </View>
-                <View style={styles.inputContainer}>
-                    <CustomInput
-                        label="Käyttäjänimi"
-                        name="username"
-                        control={control}
-                        placeholder="Kirjoita käyttäjänimesi"
-                        rules={{
-                            required: 'Käyttäjätunnus on pakollinen tieto',
-                            minLength: {
-                                value: 6,
-                                message:
-                                    'Käyttäjätunnuksen pituuden tulee olla vähintään 6 merkkiä',
-                            },
-                            maxLength: {
-                                value: 24,
-                                message:
-                                    'Käyttäjätunnuksen pituuden tulee olla enintään 24 merkkiä',
-                            },
-                        }}
+            <View style={styles.form}>
+                <CustomInput
+                    label="Käyttäjänimi"
+                    name="username"
+                    control={control}
+                    placeholder="Kirjoita käyttäjänimesi"
+                    rules={{
+                        required: 'Käyttäjätunnus on pakollinen tieto',
+                        minLength: {
+                            value: 6,
+                            message:
+                                'Käyttäjätunnuksen pituuden tulee olla vähintään 6 merkkiä',
+                        },
+                        maxLength: {
+                            value: 24,
+                            message:
+                                'Käyttäjätunnuksen pituuden tulee olla enintään 24 merkkiä',
+                        },
+                    }}
+                />
+                <CustomInput
+                    label="Sähköpostiosoite"
+                    name="email"
+                    control={control}
+                    placeholder="Kirjoita sähköpostiosoitteesi"
+                    rules={{
+                        pattern: {
+                            value: emailRegex,
+                            message:
+                                'Kirjoita sähköpostiosoitteesi muodossa esim. "matti.meikalainen@gmail.com"',
+                        },
+                        required: 'Sähköpostiosoite on pakollinen tieto',
+                    }}
+                />
+                <CustomInput
+                    label="Salasana"
+                    name="password"
+                    control={control}
+                    placeholder="Syötä vahva salasana"
+                    secureTextEntry
+                    rules={{
+                        required: 'Salasana on pakollinen tieto',
+                        minLength: {
+                            value: 6,
+                            message:
+                                'Salasanan pituuden tulee olla vähintään 6 merkkiä',
+                        },
+                        maxLength: {
+                            value: 24,
+                            message:
+                                'Salasanan pituuden tulee olla enintään 24 merkkiä',
+                        },
+                    }}
+                />
+                <CustomInput
+                    label="Salasana uudelleen"
+                    name="confirmPassword"
+                    control={control}
+                    placeholder="Syötä salasana uudelleen"
+                    secureTextEntry
+                    rules={{
+                        validate: (value) =>
+                            value === pwd || 'Salasana ei täsmää',
+                    }}
+                />
+
+                <View style={styles.buttonSection}>
+                    <Button
+                        title="Luo käyttäjätunnus"
+                        onPress={handleSubmit(onRegisterPressed)}
+                        style={styles.primaryButton}
+                        textStyle={styles.buttonText}
                     />
-                    <CustomInput
-                        label="Sähköpostiosoite"
-                        name="email"
-                        control={control}
-                        placeholder="Kirjoita sähköpostiosoitteesi"
-                        rules={{
-                            pattern: {
-                                value: emailRegex,
-                                message:
-                                    'Kirjoita sähköpostiosoitteesi muodossa esim. "matti.meikalainen@gmail.com"',
-                            },
-                            required: 'Sähköpostiosoite on pakollinen tieto',
-                        }}
-                    />
-                    <CustomInput
-                        label="Salasana"
-                        name="password"
-                        control={control}
-                        placeholder="Syötä vahva salasana"
-                        secureTextEntry
-                        rules={{
-                            required: 'Salasana on pakollinen tieto',
-                            minLength: {
-                                value: 6,
-                                message:
-                                    'Salasanan pituuden tulee olla vähintään 6 merkkiä',
-                            },
-                            maxLength: {
-                                value: 24,
-                                message:
-                                    'Salasanan pituuden tulee olla enintään 24 merkkiä',
-                            },
-                        }}
-                    />
-                    <CustomInput
-                        label="Salasana uudelleen"
-                        name="confirmPassword"
-                        control={control}
-                        placeholder="Syötä salasana uudelleen"
-                        secureTextEntry
-                        rules={{
-                            validate: (value) =>
-                                value === pwd || 'Salasana ei täsmää',
-                        }}
-                    />
-                </View>
-                <View style={styles.buttonView}>
-                    <View style={styles.buttonContainer}>
-                        <Button
-                            title="Luo käyttäjätunns"
-                            style={styles.primaryButton}
-                            onPress={handleSubmit(onRegisterPressed)}
-                        />
-                    </View>
-                    {/* <SocialSignInButtons /> */}
-                    <View style={styles.buttonContainer}>
-                        <CustomText style={styles.text}>
+
+                    <View style={styles.signInSection}>
+                        <CustomText style={styles.signInText}>
                             Onko sinulla jo käyttäjätunnus?
                         </CustomText>
                         <Button
-                            title="Sisäänkirjautumiseen"
+                            title="Kirjaudu sisään"
                             onPress={onSignInPress}
-                            type="TERTIARY"
-                            style={styles.secondaryButton}
+                            style={styles.tertiaryButton}
+                            textStyle={styles.buttonText}
                         />
                     </View>
-                    <View style={styles.buttonContainer}>
-                        <CustomText style={styles.text}>
-                            Rekisteröitymälläsi, hyväksyt{' '}
+
+                    <View style={styles.termsSection}>
+                        <CustomText style={styles.termsText}>
+                            Rekisteröitymällä hyväksyt{' '}
                             <CustomText
                                 style={styles.link}
                                 onPress={onTermsOfUsePressed}
@@ -178,38 +189,41 @@ const SignUpScreen = () => {
                     </View>
                 </View>
             </View>
-        </ScrollView>
+        </AuthLayout>
     )
 }
 
 const styles = StyleSheet.create({
-    scrollView: {
-        backgroundColor: '#fff',
+    form: {
+        width: '100%',
     },
-    root: {
-        alignItems: 'left',
-        padding: 20,
+    buttonSection: {
+        marginTop: 8,
+        gap: 20,
     },
-    header: {
-        paddingVertical: 20,
+    signInSection: {
+        alignItems: 'center',
+        gap: 12,
     },
-    headerTitle: {
-        fontSize: 25,
-        fontWeight: 'bold',
+    signInText: {
+        color: '#6b7280',
+        fontSize: 14,
+        textAlign: 'center',
+        lineHeight: 20,
     },
-    logo: {
-        width: '70%',
-        maxWidth: 300,
-        maxHeight: 200,
+    termsSection: {
+        marginTop: 8,
     },
-    inputContainer: {
-        marginBottom: 10,
+    termsText: {
+        color: '#6b7280',
+        fontSize: 12,
+        textAlign: 'center',
+        lineHeight: 18,
     },
-    buttonView: {
-        paddingVertical: 10,
-    },
-    buttonContainer: {
-        marginBottom: 10,
+    link: {
+        color: '#9C86FC',
+        fontWeight: '600',
+        textDecorationLine: 'underline',
     },
     primaryButton: {
         borderRadius: 25,
@@ -219,23 +233,10 @@ const styles = StyleSheet.create({
         paddingRight: 10,
         elevation: 2,
         backgroundColor: '#9C86FC',
-        color: 'black',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        width: 'auto',
-    },
-    secondaryButton: {
-        borderRadius: 25,
-        paddingTop: 7,
-        paddingBottom: 7,
-        paddingLeft: 10,
-        paddingRight: 10,
-        elevation: 2,
-        backgroundColor: '#38E4D9',
-        color: 'black',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        width: 'auto',
+        width: '100%',
+        maxWidth: 300,
+        alignSelf: 'center',
+        marginBottom: 10,
     },
     tertiaryButton: {
         borderRadius: 25,
@@ -245,20 +246,17 @@ const styles = StyleSheet.create({
         paddingRight: 10,
         elevation: 2,
         backgroundColor: '#fff',
-        color: 'black',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        width: 'auto',
+        width: '100%',
+        maxWidth: 300,
+        alignSelf: 'center',
+        marginBottom: 10,
         borderWidth: 3,
         borderColor: '#9C86FC',
     },
-    text: {
-        color: 'gray',
-        marginVertical: 10,
+    buttonText: {
+        color: '#000000',
+        fontWeight: 'bold',
         textAlign: 'center',
-    },
-    link: {
-        color: '#FDB075',
     },
 })
 

@@ -164,13 +164,14 @@ const styles = StyleSheet.create({
     desktopModalView: {
         justifyContent: 'center',
         alignItems: 'center',
-        paddingHorizontal: 60,
-        paddingVertical: 60,
+        paddingHorizontal: 40,
+        paddingVertical: 40,
     },
     desktopModalContent: {
         borderRadius: 12,
         height: 'auto',
-        maxHeight: '80%',
+        maxHeight: '90%',
+        minHeight: '60%',
         width: '100%',
         paddingTop: 30,
         shadowColor: '#000',

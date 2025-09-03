@@ -3,6 +3,7 @@ import axios from 'axios'
 import React, { useEffect, useState } from 'react'
 import { Animated, FlatList, Pressable, StyleSheet, View } from 'react-native'
 import { getServerUrl } from '../utils/getServerUrl'
+import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 import Button from './Button'
 import CustomText from './CustomText'
@@ -20,6 +21,7 @@ const ExpandableFoodItemSelector = ({
     selectedShoppingListId,
     onShoppingListSelect,
 }) => {
+    const { isDesktop, isTablet } = useResponsiveDimensions()
     const [activeMode, setActiveMode] = useState(null)
     const [showNewItemForm, setShowNewItemForm] = useState(false)
     const [showPantrySelector, setShowPantrySelector] = useState(false)
@@ -214,7 +216,10 @@ const ExpandableFoodItemSelector = ({
                         styles.secondaryButton,
                         activeMode === 'new' && styles.activeButton,
                     ]}
-                    textStyle={styles.secondaryButtonText}
+                    textStyle={[
+                        styles.secondaryButtonText,
+                        !isDesktop && !isTablet && styles.mobileButtonText,
+                    ]}
                 />
                 <Button
                     title="Valitse Pentteristä"
@@ -223,7 +228,10 @@ const ExpandableFoodItemSelector = ({
                         styles.secondaryButton,
                         activeMode === 'pantry' && styles.activeButton,
                     ]}
-                    textStyle={styles.secondaryButtonText}
+                    textStyle={[
+                        styles.secondaryButtonText,
+                        !isDesktop && !isTablet && styles.mobileButtonText,
+                    ]}
                 />
             </View>
 
@@ -264,6 +272,7 @@ const ExpandableFoodItemSelector = ({
                         shoppingLists={shoppingLists}
                         selectedShoppingListId={selectedShoppingListId}
                         onShoppingListSelect={onShoppingListSelect}
+                        buttonStyle="secondary"
                         initialValues={{
                             quantities: {
                                 meal: '',
@@ -284,7 +293,7 @@ const ExpandableFoodItemSelector = ({
                         {
                             maxHeight: pantryAnimation.interpolate({
                                 inputRange: [0, 1],
-                                outputRange: [0, 450],
+                                outputRange: [0, 400],
                             }),
                             opacity: pantryAnimation,
                         },
@@ -344,6 +353,7 @@ const ExpandableFoodItemSelector = ({
                                         title="Lisää valitut"
                                         onPress={addSelectedPantryItems}
                                         style={styles.addSelectedButton}
+                                        textStyle={styles.buttonText}
                                     />
                                 </View>
                             )}
@@ -490,10 +500,13 @@ const styles = StyleSheet.create({
         backgroundColor: '#9C86FC',
     },
     secondaryButtonText: {
-        fontSize: 13,
+        fontSize: 16,
         fontWeight: 'bold',
         color: 'black',
         textAlign: 'center',
+    },
+    mobileButtonText: {
+        fontSize: 13,
     },
 
     // Expandable sections
@@ -542,7 +555,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     pantryListContainer: {
-        height: 250,
+        height: 200,
         backgroundColor: '#f8f9fa',
         borderRadius: 8,
         borderWidth: 1,
@@ -595,8 +608,11 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+        height: 55,
         marginTop: 15,
+        marginBottom: 20,
         paddingTop: 15,
+        paddingBottom: 10,
         borderTopWidth: 1,
         borderTopColor: '#e9ecef',
     },
@@ -605,10 +621,16 @@ const styles = StyleSheet.create({
         color: '#666',
     },
     addSelectedButton: {
-        backgroundColor: '#9C86FC',
+        backgroundColor: '#38E4D9',
         paddingHorizontal: 20,
         paddingVertical: 8,
-        borderRadius: 20,
+        borderRadius: 25,
+        elevation: 2,
+    },
+    buttonText: {
+        color: '#000000',
+        fontWeight: 'bold',
+        textAlign: 'center',
     },
 
     // Food items list (existing styles)

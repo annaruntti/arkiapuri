@@ -9,6 +9,7 @@ import {
     View,
 } from 'react-native'
 import { getServerUrl } from '../utils/getServerUrl'
+import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 import Button from './Button'
 import CustomInput from './CustomInput'
@@ -17,6 +18,7 @@ import FormFoodItem from './FormFoodItem'
 import ResponsiveModal from './ResponsiveModal'
 
 const FormAddShoppingList = ({ onSubmit, onClose }) => {
+    const { isDesktop } = useResponsiveDimensions()
     const [items, setItems] = useState([])
     const [foodItemModalVisible, setFoodItemModalVisible] = useState(false)
     const [pantryModalVisible, setPantryModalVisible] = useState(false)
@@ -233,11 +235,17 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
                     </View>
                 )}
 
-                <Button
-                    style={styles.primaryButton}
-                    title="Tallenna ostoslista"
-                    onPress={handleSubmit(handleSubmitForm)}
-                />
+                <View style={styles.buttonContainer}>
+                    <Button
+                        style={[
+                            styles.primaryButton,
+                            isDesktop && styles.desktopPrimaryButton,
+                        ]}
+                        textStyle={styles.buttonText}
+                        title="Tallenna ostoslista"
+                        onPress={handleSubmit(handleSubmitForm)}
+                    />
+                </View>
             </View>
 
             <ResponsiveModal
@@ -292,6 +300,7 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
                                 style={[
                                     styles.primaryButton,
                                     styles.fullWidthButton,
+                                    isDesktop && styles.desktopPrimaryButton,
                                 ]}
                             />
                         </View>
@@ -388,6 +397,20 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         width: 'auto',
         marginTop: 10,
+    },
+    desktopPrimaryButton: {
+        maxWidth: 300,
+        alignSelf: 'center',
+    },
+    buttonContainer: {
+        alignItems: 'center',
+        width: '100%',
+        marginTop: 10,
+    },
+    buttonText: {
+        color: '#000000',
+        fontWeight: 'bold',
+        textAlign: 'center',
     },
     secondaryButton: {
         borderRadius: 25,

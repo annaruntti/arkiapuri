@@ -89,6 +89,7 @@ const LandingScreen = ({ navigation }) => {
                                     styles.primaryButtonStart,
                                     isDesktop && styles.desktopPrimaryButton,
                                 ]}
+                                textStyle={styles.buttonText}
                             />
                         </View>
                     </View>
@@ -184,9 +185,6 @@ const styles = StyleSheet.create({
         paddingRight: 20,
         elevation: 2,
         backgroundColor: '#9C86FC',
-        color: 'black',
-        fontWeight: 'bold',
-        textAlign: 'center',
         marginBottom: 20,
         marginHorizontal: 'auto',
         minWidth: 200,
@@ -202,9 +200,6 @@ const styles = StyleSheet.create({
         paddingRight: 10,
         elevation: 2,
         backgroundColor: '#38E4D9',
-        color: 'black',
-        fontWeight: 'bold',
-        textAlign: 'center',
         width: 'auto',
     },
     tertiaryButton: {
@@ -215,10 +210,12 @@ const styles = StyleSheet.create({
         paddingRight: 10,
         elevation: 2,
         backgroundColor: '#38E4D9',
-        color: 'black',
+        width: 'auto',
+    },
+    buttonText: {
+        color: '#000000',
         fontWeight: 'bold',
         textAlign: 'center',
-        width: 'auto',
     },
     // Desktop responsive styles
     tabletBottomBox: {

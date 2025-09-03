@@ -1,24 +1,28 @@
+import { useNavigation } from '@react-navigation/native'
+import axios from 'axios'
+import * as ImagePicker from 'expo-image-picker'
 import * as React from 'react'
 import {
-    StyleSheet,
-    View,
     Alert,
     Image,
     Platform,
+    ScrollView,
+    StyleSheet,
     TouchableOpacity,
+    View,
 } from 'react-native'
-import * as ImagePicker from 'expo-image-picker'
 import Button from '../components/Button'
 import CustomText from '../components/CustomText'
+import ResponsiveLayout from '../components/ResponsiveLayout'
 import { useLogin } from '../context/LoginProvider'
-import { useNavigation } from '@react-navigation/native'
 import { getServerUrl } from '../utils/getServerUrl'
-import axios from 'axios'
+import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 
 const ProfileScreen = () => {
     const { logout, profile, setProfile } = useLogin()
     const navigation = useNavigation()
+    const { isDesktop, isTablet } = useResponsiveDimensions()
 
     const defaultImage = {
         uri: 'https://images.ctfassets.net/hef5a6s5axrs/2wzxlzyydJLVr8T7k67cOO/90074490ee64362fe6f0e384d2b3daf8/arkiapuri-removebg-preview.png',
@@ -105,65 +109,234 @@ const ProfileScreen = () => {
         }
     }
 
+    const getContainerStyle = () => [
+        styles.container,
+        isDesktop && styles.desktopContainer,
+        isTablet && styles.tabletContainer,
+    ]
+
+    const getContentStyle = () => [
+        styles.content,
+        isDesktop && styles.desktopContent,
+        isTablet && styles.tabletContent,
+    ]
+
     return (
-        <View style={styles.container}>
-            <TouchableOpacity onPress={pickImage}>
-                <View style={styles.profileImageContainer}>
-                    <Image
-                        source={
-                            profile?.profileImage
-                                ? { uri: profile.profileImage }
-                                : defaultImage
-                        }
-                        style={styles.profileImage}
-                    />
-                    <View style={styles.editOverlay}>
-                        <CustomText style={styles.editText}>Edit</CustomText>
+        <ResponsiveLayout activeRoute="ProfileStack">
+            <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+            >
+                <View style={getContainerStyle()}>
+                    <View style={getContentStyle()}>
+                        <View style={styles.header}>
+                            <TouchableOpacity onPress={pickImage}>
+                                <View
+                                    style={[
+                                        styles.profileImageContainer,
+                                        isDesktop && styles.desktopProfileImage,
+                                        isTablet && styles.tabletProfileImage,
+                                    ]}
+                                >
+                                    <Image
+                                        source={
+                                            profile?.profileImage
+                                                ? { uri: profile.profileImage }
+                                                : defaultImage
+                                        }
+                                        style={styles.profileImage}
+                                    />
+                                    <View style={styles.editOverlay}>
+                                        <CustomText style={styles.editText}>
+                                            Muokkaa
+                                        </CustomText>
+                                    </View>
+                                </View>
+                            </TouchableOpacity>
+
+                            <View style={styles.userInfo}>
+                                <CustomText
+                                    style={[
+                                        styles.username,
+                                        isDesktop && styles.desktopUsername,
+                                    ]}
+                                >
+                                    {profile?.username}
+                                </CustomText>
+                                <CustomText
+                                    style={[
+                                        styles.email,
+                                        isDesktop && styles.desktopEmail,
+                                    ]}
+                                >
+                                    {profile?.email}
+                                </CustomText>
+                            </View>
+                        </View>
+
+                        <View style={styles.buttonSection}>
+                            <Button
+                                title="Muokkaa tietoja"
+                                style={styles.secondaryButton}
+                                textStyle={styles.buttonText}
+                                onPress={() => {
+                                    console.log('Edit profile pressed')
+                                }}
+                            />
+                            <Button
+                                title="Kirjaudu ulos"
+                                style={styles.tertiaryButton}
+                                textStyle={styles.buttonText}
+                                onPress={handleLogout}
+                            />
+                        </View>
                     </View>
                 </View>
-            </TouchableOpacity>
-            <CustomText style={styles.introText}>
-                {profile?.username}
-            </CustomText>
-            <CustomText style={styles.userInfoText}>
-                Sähköposti: {profile?.email}
-            </CustomText>
-            <Button
-                style={styles.secondaryButton}
-                title="Muokkaa tietoja"
-                onPress={() => {
-                    console.log('You tapped the button!')
-                }}
-            />
-            <Button
-                style={styles.tertiaryButton}
-                title="Kirjaudu ulos"
-                onPress={handleLogout}
-            />
-        </View>
+            </ScrollView>
+        </ResponsiveLayout>
     )
 }
 
 export default ProfileScreen
 
 const styles = StyleSheet.create({
+    scrollView: {
+        flex: 1,
+        backgroundColor: '#ffffff',
+    },
+    scrollContent: {
+        flexGrow: 1,
+    },
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        paddingHorizontal: 20,
+        paddingVertical: 40,
+        minHeight: '100%',
+    },
+    desktopContainer: {
+        paddingHorizontal: 40,
+        paddingVertical: 60,
         alignItems: 'center',
-        justifyContent: 'center',
+        backgroundColor: '#fafafa',
+        minHeight: '100vh',
     },
-    introText: {
-        fontSize: 17,
-        textAlign: 'center',
-        padding: 10,
-        marginBottom: 10,
+    tabletContainer: {
+        paddingHorizontal: 32,
+        paddingVertical: 50,
+        alignItems: 'center',
     },
-    userInfoText: {
-        fontSize: 17,
+    content: {
+        width: '100%',
+        maxWidth: 400,
+        alignItems: 'center',
+    },
+    desktopContent: {
+        backgroundColor: '#ffffff',
+        borderRadius: 16,
+        padding: 40,
+        maxWidth: 480,
+        width: '100%',
+        alignItems: 'center',
+        ...(Platform.OS === 'web' && {
+            boxShadow:
+                '0 10px 25px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05)',
+        }),
+    },
+    tabletContent: {
+        backgroundColor: '#ffffff',
+        borderRadius: 12,
+        padding: 32,
+        maxWidth: 440,
+        width: '100%',
+        alignItems: 'center',
+        ...(Platform.OS === 'web' && {
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+        }),
+    },
+    header: {
+        alignItems: 'center',
+        marginBottom: 40,
+        width: '100%',
+    },
+    profileImageContainer: {
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        overflow: 'hidden',
+        marginBottom: 24,
+        borderWidth: 3,
+        borderColor: '#9C86FC',
+        position: 'relative',
+        ...(Platform.OS === 'web' && {
+            cursor: 'pointer',
+            transition: 'transform 0.2s ease-in-out',
+            '&:hover': {
+                transform: 'scale(1.05)',
+            },
+        }),
+    },
+    desktopProfileImage: {
+        width: 140,
+        height: 140,
+        borderRadius: 70,
+        borderWidth: 4,
+        marginBottom: 32,
+    },
+    tabletProfileImage: {
+        width: 130,
+        height: 130,
+        borderRadius: 65,
+        borderWidth: 3.5,
+        marginBottom: 28,
+    },
+    profileImage: {
+        width: '100%',
+        height: '100%',
+        resizeMode: 'cover',
+    },
+    editOverlay: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        paddingVertical: 6,
+        alignItems: 'center',
+    },
+    editText: {
+        color: '#ffffff',
+        fontSize: 12,
+        fontWeight: '600',
+    },
+    userInfo: {
+        alignItems: 'center',
+        width: '100%',
+    },
+    username: {
+        fontSize: 24,
+        fontWeight: '700',
+        color: '#1f2937',
         textAlign: 'center',
-        padding: 10,
-        marginBottom: 20,
+        marginBottom: 8,
+    },
+    desktopUsername: {
+        fontSize: 28,
+        marginBottom: 12,
+    },
+    email: {
+        fontSize: 16,
+        color: '#6b7280',
+        textAlign: 'center',
+        fontWeight: '400',
+    },
+    desktopEmail: {
+        fontSize: 18,
+    },
+    buttonSection: {
+        width: '100%',
+        gap: 16,
+        alignItems: 'center',
     },
     secondaryButton: {
         borderRadius: 25,
@@ -173,12 +346,8 @@ const styles = StyleSheet.create({
         paddingRight: 10,
         elevation: 2,
         backgroundColor: '#38E4D9',
-        color: 'black',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        width: 'auto',
-        marginBottom: 10,
         width: '80%',
+        marginBottom: 10,
     },
     tertiaryButton: {
         borderRadius: 25,
@@ -188,38 +357,14 @@ const styles = StyleSheet.create({
         paddingRight: 10,
         elevation: 2,
         backgroundColor: '#fff',
-        color: 'black',
-        fontWeight: 'bold',
-        textAlign: 'center',
         width: '80%',
         marginBottom: 10,
         borderWidth: 3,
         borderColor: '#9C86FC',
     },
-    profileImageContainer: {
-        width: 120,
-        height: 120,
-        borderRadius: 60,
-        overflow: 'hidden',
-        marginBottom: 20,
-        borderWidth: 3,
-        borderColor: '#9C86FC',
-    },
-    profileImage: {
-        width: '100%',
-        height: '100%',
-    },
-    editOverlay: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        padding: 5,
-        alignItems: 'center',
-    },
-    editText: {
-        color: 'white',
-        fontSize: 12,
+    buttonText: {
+        color: '#000000',
+        fontWeight: 'bold',
+        textAlign: 'center',
     },
 })

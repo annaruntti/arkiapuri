@@ -17,6 +17,7 @@ import axios from 'axios'
 import { format } from 'date-fns'
 import { fi } from 'date-fns/locale'
 import { RadioButton } from 'react-native-paper'
+import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 import DateTimePicker from './DatePicker.web'
 
@@ -37,9 +38,11 @@ const FormFoodItem = forwardRef(
             selectedShoppingListId,
             onShoppingListSelect,
             initialValues = {},
+            buttonStyle = 'primary',
         },
         ref
     ) => {
+        const { isDesktop } = useResponsiveDimensions()
         const [date, setDate] = useState(new Date())
         const [show, setShow] = useState(false)
         const [mode, setMode] = useState('date')
@@ -325,7 +328,7 @@ const FormFoodItem = forwardRef(
                 )}
 
                 <CustomText style={styles.label}>Kappalemäärä</CustomText>
-                <View style={styles.quantityContainer}>
+                <View style={styles.inputAndIcon}>
                     <Controller
                         control={control}
                         rules={{
@@ -592,11 +595,19 @@ const FormFoodItem = forwardRef(
                         </View>
                     </View>
                 )}
-                <Button
-                    style={styles.primaryButton}
-                    title="Tallenna tuote"
-                    onPress={handleSubmit(handleFormSubmit)}
-                />
+                <View style={styles.buttonContainer}>
+                    <Button
+                        style={[
+                            buttonStyle === 'secondary'
+                                ? styles.secondaryButton
+                                : styles.primaryButton,
+                            isDesktop && styles.desktopButton,
+                        ]}
+                        textStyle={styles.buttonText}
+                        title="Tallenna tuote"
+                        onPress={handleSubmit(handleFormSubmit)}
+                    />
+                </View>
             </View>
         )
 
@@ -634,10 +645,10 @@ const styles = StyleSheet.create({
         marginBottom: 3,
     },
     labelTitle: {
-        paddingTop: 15,
+        paddingTop: 25,
         marginBottom: 15,
         fontWeight: 'bold',
-        textAlign: 'center',
+        textAlign: 'left',
         fontSize: 16,
     },
     formInput: {
@@ -660,7 +671,8 @@ const styles = StyleSheet.create({
         padding: 8,
         borderRadius: 4,
         marginBottom: 5,
-        width: '77%',
+        width: 120,
+        flex: 0,
     },
     unitFormInput: {
         backgroundColor: 'white',
@@ -672,13 +684,15 @@ const styles = StyleSheet.create({
         borderRadius: 4,
         marginBottom: 5,
         width: 65,
-        marginLeft: 'auto',
+        marginLeft: 10,
     },
     inputAndIcon: {
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 8,
         width: '100%',
+        minHeight: 36,
+        position: 'relative',
     },
     messageSection: {
         flex: 1,
@@ -688,8 +702,16 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
     },
     inputMetric: {
-        padding: 10,
-        fontSize: 20,
+        paddingLeft: 10,
+        paddingVertical: 8,
+        fontSize: 16,
+        color: '#666',
+        fontWeight: '500',
+    },
+    buttonContainer: {
+        alignItems: 'center',
+        width: '100%',
+        marginVertical: 10,
     },
     primaryButton: {
         borderRadius: 25,
@@ -699,11 +721,16 @@ const styles = StyleSheet.create({
         paddingRight: 10,
         elevation: 2,
         backgroundColor: '#9C86FC',
-        color: 'black',
+        width: '100%',
+    },
+    desktopButton: {
+        maxWidth: 300,
+        alignSelf: 'center',
+    },
+    buttonText: {
+        color: '#000000',
         fontWeight: 'bold',
         textAlign: 'center',
-        width: 'auto',
-        marginVertical: 10,
     },
     secondaryButton: {
         borderRadius: 25,
@@ -713,10 +740,7 @@ const styles = StyleSheet.create({
         paddingRight: 10,
         elevation: 2,
         backgroundColor: '#38E4D9',
-        color: 'black',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        width: 'auto',
+        width: '100%',
     },
     tertiaryButton: {
         borderRadius: 25,
@@ -812,9 +836,8 @@ const styles = StyleSheet.create({
         alignSelf: 'center',
     },
     dateInputContainer: {
-        flex: 1,
-        marginRight: 5,
-        width: '90%',
+        flex: 0,
+        width: 120,
     },
     dateInput: {
         backgroundColor: 'white',
@@ -823,11 +846,15 @@ const styles = StyleSheet.create({
         height: 36,
         padding: 8,
         borderRadius: 4,
-        width: '100%',
+        width: 120,
     },
     dateIcon: {
-        padding: 5,
-        marginLeft: 5,
+        padding: 8,
+        marginLeft: 130,
+        position: 'absolute',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: 36,
     },
     iosDatePicker: {
         backgroundColor: 'white',

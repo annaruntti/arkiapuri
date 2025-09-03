@@ -378,6 +378,7 @@ const MealsScreen = () => {
                     title="Lisää ateria"
                     onPress={() => setModalVisible(true)}
                     style={styles.primaryButton}
+                    textStyle={styles.buttonText}
                 />
             </View>
 
@@ -505,11 +506,13 @@ const styles = StyleSheet.create({
         paddingRight: 10,
         elevation: 2,
         backgroundColor: '#9C86FC',
-        color: 'black',
-        fontWeight: 'bold',
-        textAlign: 'center',
         width: 'auto',
         marginBottom: 20,
+    },
+    buttonText: {
+        color: '#000000',
+        fontWeight: 'bold',
+        textAlign: 'center',
     },
     modalBody: {
         flex: 1,

@@ -12,6 +12,7 @@ import {
 import { useLogin } from '../context/LoginProvider'
 import { getServerUrl } from '../utils/getServerUrl'
 import { getDifficultyEnum, mealRoles } from '../utils/mealUtils'
+import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 import Button from './Button'
 import CustomText from './CustomText'
@@ -23,6 +24,7 @@ import Info from './Info'
 
 const AddMealForm = ({ onSubmit, onClose }) => {
     const { profile } = useLogin()
+    const { isDesktop } = useResponsiveDimensions()
     const [name, setName] = useState('')
     const [recipe, setRecipe] = useState('')
     const [difficultyLevel, setDifficultyLevel] = useState('')
@@ -315,34 +317,36 @@ const AddMealForm = ({ onSubmit, onClose }) => {
 
                     <CustomText style={styles.label}>Aterian tyyppi</CustomText>
                     <View style={styles.checkboxGroup}>
-                        {Object.entries(mealRoles).map(([value, label]) => (
-                            <Pressable
-                                key={value}
-                                style={styles.checkboxRow}
-                                onPress={() => {
-                                    setSelectedRoles([value])
-                                }}
-                            >
-                                <View
-                                    style={[
-                                        styles.checkbox,
-                                        selectedRoles.includes(value) &&
-                                            styles.checkboxChecked,
-                                    ]}
+                        <View style={styles.checkboxGrid}>
+                            {Object.entries(mealRoles).map(([value, label]) => (
+                                <Pressable
+                                    key={value}
+                                    style={styles.checkboxGridItem}
+                                    onPress={() => {
+                                        setSelectedRoles([value])
+                                    }}
                                 >
-                                    {selectedRoles.includes(value) && (
-                                        <MaterialIcons
-                                            name="check"
-                                            size={16}
-                                            color="white"
-                                        />
-                                    )}
-                                </View>
-                                <CustomText style={styles.checkboxLabel}>
-                                    {label}
-                                </CustomText>
-                            </Pressable>
-                        ))}
+                                    <View
+                                        style={[
+                                            styles.checkbox,
+                                            selectedRoles.includes(value) &&
+                                                styles.checkboxChecked,
+                                        ]}
+                                    >
+                                        {selectedRoles.includes(value) && (
+                                            <MaterialIcons
+                                                name="check"
+                                                size={16}
+                                                color="white"
+                                            />
+                                        )}
+                                    </View>
+                                    <CustomText style={styles.checkboxLabel}>
+                                        {label}
+                                    </CustomText>
+                                </Pressable>
+                            ))}
+                        </View>
                     </View>
                     <View style={styles.labelWithInfo}>
                         <CustomText style={styles.label}>
@@ -394,7 +398,11 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                         <Button
                             title="Tallenna ateria"
                             onPress={handleFormSubmit}
-                            style={styles.primaryButton}
+                            style={[
+                                styles.primaryButton,
+                                isDesktop && styles.desktopPrimaryButton,
+                            ]}
+                            textStyle={styles.buttonText}
                         />
                     </View>
                 </View>
@@ -413,7 +421,6 @@ const styles = StyleSheet.create({
     },
     formContainer: {
         paddingVertical: 5,
-        paddingHorizontal: 10,
     },
     formScroll: {
         flexGrow: 1,
@@ -503,6 +510,15 @@ const styles = StyleSheet.create({
         width: '100%',
         marginBottom: 10,
     },
+    desktopPrimaryButton: {
+        maxWidth: 300,
+        alignSelf: 'center',
+    },
+    buttonText: {
+        color: '#000000',
+        fontWeight: 'bold',
+        textAlign: 'center',
+    },
     secondaryButton: {
         flex: 1,
         borderRadius: 25,
@@ -519,8 +535,7 @@ const styles = StyleSheet.create({
         marginHorizontal: 5,
     },
     buttonGroup: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
+        alignItems: 'center',
         marginBottom: 10,
         width: '100%',
         paddingTop: 15,
@@ -566,6 +581,17 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         padding: 5,
         marginBottom: 10,
+    },
+    checkboxGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+    },
+    checkboxGridItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 8,
+        width: '48%',
     },
     checkboxRow: {
         flexDirection: 'row',
