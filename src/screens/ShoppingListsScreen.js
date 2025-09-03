@@ -8,6 +8,7 @@ import ShoppingListDetail from '../components/ShoppingListDetail'
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
 
+import ResponsiveLayout from '../components/ResponsiveLayout'
 import ResponsiveModal from '../components/ResponsiveModal'
 
 const ShoppingListsScreen = () => {
@@ -130,68 +131,70 @@ const ShoppingListsScreen = () => {
     )
 
     return (
-        <View style={styles.container}>
-            <ResponsiveModal
-                visible={modalVisible}
-                onClose={() => setModalVisible(false)}
-                title="Luo uusi ostoslista"
-                maxWidth={500}
-            >
-                <FormAddShoppingList
-                    onSubmit={handleCreateList}
+        <ResponsiveLayout>
+            <View style={styles.container}>
+                <ResponsiveModal
+                    visible={modalVisible}
                     onClose={() => setModalVisible(false)}
-                />
-            </ResponsiveModal>
-
-            <ResponsiveModal
-                visible={!!selectedList}
-                onClose={() => setSelectedList(null)}
-                title="Ostoslistan tiedot"
-                maxWidth={800}
-            >
-                {selectedList && (
-                    <ShoppingListDetail
-                        shoppingList={selectedList}
-                        onClose={() => setSelectedList(null)}
-                        onUpdate={handleListUpdate}
-                        fetchShoppingLists={fetchShoppingLists}
-                        fetchPantryItems={fetchPantryItems}
+                    title="Luo uusi ostoslista"
+                    maxWidth={500}
+                >
+                    <FormAddShoppingList
+                        onSubmit={handleCreateList}
+                        onClose={() => setModalVisible(false)}
                     />
-                )}
-            </ResponsiveModal>
+                </ResponsiveModal>
 
-            <View style={styles.content}>
-                <CustomText style={styles.introText}>
-                    Täällä voit luoda uusia ostoslistoja ja jakaa ne
-                    perheenjäsenten kanssa. Voitte käyttää ja päivittää
-                    ostoslistoja reaaliajassa.
-                </CustomText>
+                <ResponsiveModal
+                    visible={!!selectedList}
+                    onClose={() => setSelectedList(null)}
+                    title="Ostoslistan tiedot"
+                    maxWidth={800}
+                >
+                    {selectedList && (
+                        <ShoppingListDetail
+                            shoppingList={selectedList}
+                            onClose={() => setSelectedList(null)}
+                            onUpdate={handleListUpdate}
+                            fetchShoppingLists={fetchShoppingLists}
+                            fetchPantryItems={fetchPantryItems}
+                        />
+                    )}
+                </ResponsiveModal>
 
-                <View style={styles.buttonContainer}>
-                    <Button
-                        title="Luo uusi ostoslista"
-                        onPress={() => setModalVisible(true)}
-                        style={styles.primaryButton}
-                    />
-                </View>
-
-                {shoppingLists.length > 0 ? (
-                    <FlatList
-                        style={styles.listContainer}
-                        contentContainerStyle={{ paddingBottom: 20 }}
-                        data={shoppingLists}
-                        renderItem={renderShoppingList}
-                        keyExtractor={(item) => item._id}
-                        showsVerticalScrollIndicator={false}
-                    />
-                ) : (
-                    <CustomText style={styles.emptyText}>
-                        Ei vielä ostoslistoja. Luo ensimmäinen lista painamalla
-                        "Luo uusi ostoslista" -nappia.
+                <View style={styles.content}>
+                    <CustomText style={styles.introText}>
+                        Täällä voit luoda uusia ostoslistoja ja jakaa ne
+                        perheenjäsenten kanssa. Voitte käyttää ja päivittää
+                        ostoslistoja reaaliajassa.
                     </CustomText>
-                )}
+
+                    <View style={styles.buttonContainer}>
+                        <Button
+                            title="Luo uusi ostoslista"
+                            onPress={() => setModalVisible(true)}
+                            style={styles.primaryButton}
+                        />
+                    </View>
+
+                    {shoppingLists.length > 0 ? (
+                        <FlatList
+                            style={styles.listContainer}
+                            contentContainerStyle={{ paddingBottom: 20 }}
+                            data={shoppingLists}
+                            renderItem={renderShoppingList}
+                            keyExtractor={(item) => item._id}
+                            showsVerticalScrollIndicator={false}
+                        />
+                    ) : (
+                        <CustomText style={styles.emptyText}>
+                            Ei vielä ostoslistoja. Luo ensimmäinen lista
+                            painamalla "Luo uusi ostoslista" -nappia.
+                        </CustomText>
+                    )}
+                </View>
             </View>
-        </View>
+        </ResponsiveLayout>
     )
 }
 

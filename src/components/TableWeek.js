@@ -1,22 +1,22 @@
-import {
-    StyleSheet,
-    FlatList,
-    View,
-    TouchableOpacity,
-    Platform,
-    Alert,
-} from 'react-native'
-import React, { useState, useEffect } from 'react'
 import { useNavigation } from '@react-navigation/native'
-import CustomText from './CustomText'
-import { format, addDays } from 'date-fns'
-import { fi } from 'date-fns/locale'
 import axios from 'axios'
-import storage from '../utils/storage'
+import { addDays, format } from 'date-fns'
+import { fi } from 'date-fns/locale'
+import React, { useEffect, useState } from 'react'
+import {
+    Alert,
+    FlatList,
+    StyleSheet,
+    TouchableOpacity,
+    View,
+} from 'react-native'
 import { getServerUrl } from '../utils/getServerUrl'
+import storage from '../utils/storage'
 import Button from './Button'
-import MealItemDetail from './MealItemDetail'
 import CustomModal from './CustomModal'
+import CustomText from './CustomText'
+import MealItemDetail from './MealItemDetail'
+import ResponsiveLayout from './ResponsiveLayout'
 
 const mealTypeTranslations = {
     breakfast: 'Aamiainen',
@@ -391,21 +391,23 @@ const Table = () => {
     )
 
     return (
-        <View style={styles.container}>
-            <FlatList
-                data={dates}
-                renderItem={renderDateSection}
-                keyExtractor={(date) => format(date, 'yyyy-MM-dd')}
-                contentContainerStyle={styles.contentContainer}
-            />
-            {renderMealSelectModal()}
-            <MealItemDetail
-                meal={selectedMeal}
-                visible={detailModalVisible}
-                onClose={handleCloseDetail}
-                onUpdate={handleMealUpdate}
-            />
-        </View>
+        <ResponsiveLayout>
+            <View style={styles.container}>
+                <FlatList
+                    data={dates}
+                    renderItem={renderDateSection}
+                    keyExtractor={(date) => format(date, 'yyyy-MM-dd')}
+                    contentContainerStyle={styles.contentContainer}
+                />
+                {renderMealSelectModal()}
+                <MealItemDetail
+                    meal={selectedMeal}
+                    visible={detailModalVisible}
+                    onClose={handleCloseDetail}
+                    onUpdate={handleMealUpdate}
+                />
+            </View>
+        </ResponsiveLayout>
     )
 }
 
