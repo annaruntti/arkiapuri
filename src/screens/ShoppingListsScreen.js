@@ -10,11 +10,13 @@ import storage from '../utils/storage'
 
 import ResponsiveLayout from '../components/ResponsiveLayout'
 import ResponsiveModal from '../components/ResponsiveModal'
+import { useResponsiveDimensions } from '../utils/responsive'
 
 const ShoppingListsScreen = () => {
     const [modalVisible, setModalVisible] = useState(false)
     const [shoppingLists, setShoppingLists] = useState([])
     const [selectedList, setSelectedList] = useState(null)
+    const { isDesktop } = useResponsiveDimensions()
 
     const fetchShoppingLists = async () => {
         try {
@@ -123,9 +125,14 @@ const ShoppingListsScreen = () => {
                 </CustomText>
             </View>
             <Button
-                style={styles.secondaryButton}
+                style={[
+                    styles.secondaryButton,
+                    styles.listItemButton,
+                    isDesktop && styles.desktopListItemButton,
+                ]}
                 title="Näytä lista"
                 onPress={() => handleViewList(item)}
+                textStyle={styles.buttonText}
             />
         </View>
     )
@@ -169,11 +176,20 @@ const ShoppingListsScreen = () => {
                         ostoslistoja reaaliajassa.
                     </CustomText>
 
-                    <View style={styles.buttonContainer}>
+                    <View
+                        style={[
+                            styles.buttonContainer,
+                            isDesktop && styles.desktopButtonContainer,
+                        ]}
+                    >
                         <Button
                             title="Luo uusi ostoslista"
                             onPress={() => setModalVisible(true)}
-                            style={styles.primaryButton}
+                            style={[
+                                styles.primaryButton,
+                                isDesktop && styles.desktopPrimaryButton,
+                            ]}
+                            textStyle={styles.buttonText}
                         />
                     </View>
 
@@ -284,11 +300,8 @@ const styles = StyleSheet.create({
         paddingRight: 10,
         elevation: 2,
         backgroundColor: '#9C86FC',
-        color: 'black',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        width: 'auto',
-        marginBottom: 20,
+        width: '100%',
+        marginBottom: 10,
     },
     secondaryButton: {
         borderRadius: 25,
@@ -298,11 +311,8 @@ const styles = StyleSheet.create({
         paddingRight: 10,
         elevation: 2,
         backgroundColor: '#38E4D9',
-        color: 'black',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        width: 'auto',
-        marginBottom: 20,
+        width: '100%',
+        marginBottom: 10,
     },
     tertiaryButton: {
         borderRadius: 25,
@@ -312,12 +322,19 @@ const styles = StyleSheet.create({
         paddingRight: 10,
         elevation: 2,
         backgroundColor: '#fff',
-        color: 'black',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        width: 'auto',
+        width: '100%',
+        marginBottom: 10,
         borderWidth: 3,
         borderColor: '#9C86FC',
+    },
+    desktopPrimaryButton: {
+        maxWidth: 300,
+        alignSelf: 'center',
+    },
+    buttonText: {
+        color: '#000000',
+        fontWeight: 'bold',
+        textAlign: 'center',
     },
     closeButton: {
         position: 'absolute',
@@ -337,6 +354,22 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         gap: 10,
         marginBottom: 20,
+    },
+    desktopButtonContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    listItemButton: {
+        width: 120,
+        alignSelf: 'center',
+        marginTop: 10,
+    },
+    desktopListItemButton: {
+        width: 140,
+        maxWidth: 140,
+        paddingHorizontal: 15,
+        alignSelf: 'flex-end',
+        marginTop: 10,
     },
     detailModalView: {
         backgroundColor: 'white',

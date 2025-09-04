@@ -11,6 +11,7 @@ import {
 } from 'react-native'
 import { getServerUrl } from '../utils/getServerUrl'
 import { analyzeImage } from '../utils/googleVision'
+import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 import Button from './Button'
 import CustomModal from './CustomModal'
@@ -28,6 +29,7 @@ const ShoppingListDetail = ({
     const [showItemForm, setShowItemForm] = useState(false)
     const [scannedProduct, setScannedProduct] = useState(null)
     const [loading, setLoading] = useState(false)
+    const { isDesktop } = useResponsiveDimensions()
 
     const handleCheckItem = (item) => {
         setCheckedItems((prev) =>
@@ -307,7 +309,11 @@ const ShoppingListDetail = ({
                 <Button
                     title="+ Lisää tuote manuaalisesti"
                     onPress={() => setShowItemForm(true)}
-                    style={styles.tertiaryButton}
+                    style={[
+                        styles.tertiaryButton,
+                        isDesktop && styles.desktopPrimaryButton,
+                    ]}
+                    textStyle={styles.buttonText}
                 />
             </View>
 
@@ -337,11 +343,20 @@ const ShoppingListDetail = ({
                 showsVerticalScrollIndicator={true}
             />
             {checkedItems.length > 0 && (
-                <View style={styles.buttonContainer}>
+                <View
+                    style={[
+                        styles.buttonContainer,
+                        isDesktop && styles.desktopButtonContainer,
+                    ]}
+                >
                     <Button
                         title={`Siirrä ${checkedItems.length} tuotetta ruokavarastoon`}
                         onPress={() => moveCheckedToPantry(checkedItems)}
-                        style={styles.secondaryButton}
+                        style={[
+                            styles.secondaryButton,
+                            isDesktop && styles.desktopPrimaryButton,
+                        ]}
+                        textStyle={styles.buttonText}
                     />
                 </View>
             )}
@@ -434,11 +449,8 @@ const styles = StyleSheet.create({
         paddingRight: 10,
         elevation: 2,
         backgroundColor: '#9C86FC',
-        color: 'black',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        width: 'auto',
-        marginBottom: 20,
+        width: '100%',
+        marginBottom: 10,
     },
     secondaryButton: {
         borderRadius: 25,
@@ -448,11 +460,7 @@ const styles = StyleSheet.create({
         paddingRight: 10,
         elevation: 2,
         backgroundColor: '#38E4D9',
-        color: 'black',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        width: 'auto',
-        marginTop: 10,
+        width: '100%',
         marginBottom: 10,
     },
     tertiaryButton: {
@@ -463,10 +471,8 @@ const styles = StyleSheet.create({
         paddingRight: 10,
         elevation: 2,
         backgroundColor: '#fff',
-        color: 'black',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        width: 'auto',
+        width: '100%',
+        marginBottom: 10,
         borderWidth: 3,
         borderColor: '#9C86FC',
     },
@@ -513,6 +519,19 @@ const styles = StyleSheet.create({
     },
     manualAddContainer: {
         marginBottom: 15,
+        alignItems: 'center',
+    },
+    desktopPrimaryButton: {
+        maxWidth: 300,
+        alignSelf: 'center',
+    },
+    buttonText: {
+        color: '#000000',
+        fontWeight: 'bold',
+        textAlign: 'center',
+    },
+    desktopButtonContainer: {
+        justifyContent: 'center',
         alignItems: 'center',
     },
 })
