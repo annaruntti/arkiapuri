@@ -432,7 +432,7 @@ const FormFoodItem = forwardRef(
                             }) => (
                                 <View style={styles.inputAndIcon}>
                                     <TextInput
-                                        style={styles.formInput}
+                                        style={styles.quantityFormInput}
                                         placeholder="Esim. 4"
                                         placeholderTextColor="#999"
                                         onChangeText={onChange}

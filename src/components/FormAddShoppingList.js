@@ -4,7 +4,9 @@ import { useForm } from 'react-hook-form'
 import {
     Alert,
     FlatList,
+    ScrollView,
     StyleSheet,
+    TextInput,
     TouchableOpacity,
     View,
 } from 'react-native'
@@ -12,7 +14,6 @@ import { getServerUrl } from '../utils/getServerUrl'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 import Button from './Button'
-import CustomInput from './CustomInput'
 import CustomText from './CustomText'
 import FormFoodItem from './FormFoodItem'
 import ResponsiveModal from './ResponsiveModal'
@@ -21,7 +22,11 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
     const { isDesktop } = useResponsiveDimensions()
     const [items, setItems] = useState([])
     const [foodItemModalVisible, setFoodItemModalVisible] = useState(false)
+    const [showInlineFoodForm, setShowInlineFoodForm] = useState(false)
     const [pantryModalVisible, setPantryModalVisible] = useState(false)
+    const [name, setName] = useState('')
+    const [description, setDescription] = useState('')
+    const [totalEstimatedPrice, setTotalEstimatedPrice] = useState('')
     const [pantryItems, setPantryItems] = useState([])
     const [selectedShoppingListId, setSelectedShoppingListId] = useState(null)
     const [isLoading, setIsLoading] = useState(false)
@@ -42,8 +47,10 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
     const handleAddItem = (itemData) => {
         console.log('Item data received in handleAddItem:', itemData)
         // Transform categories into an array of strings
-        const transformedCategories = Array.isArray(itemData.categories)
-            ? itemData.categories.map((cat) =>
+        // FormFoodItem sends 'category' (singular), so we need to handle both cases
+        const categoryData = itemData.category || itemData.categories || []
+        const transformedCategories = Array.isArray(categoryData)
+            ? categoryData.map((cat) =>
                   typeof cat === 'object' ? cat.name : cat
               )
             : []
@@ -57,6 +64,7 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
         }
         console.log('New item being added:', newItem)
         setItems([...items, newItem])
+        setShowInlineFoodForm(false)
     }
 
     const handleSubmitForm = async (data) => {
@@ -75,25 +83,65 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
             // Process items to ensure quantities and categories are properly formatted
             const processedItems = items.map((item) => {
                 console.log('Processing item:', item)
+                console.log(
+                    'Item categories before processing:',
+                    item.categories
+                )
+
+                // Handle categories more robustly
+                let processedCategories = []
+                if (item.categories) {
+                    if (Array.isArray(item.categories)) {
+                        processedCategories = item.categories.map((cat) => {
+                            if (typeof cat === 'string') {
+                                return cat
+                            } else if (typeof cat === 'object' && cat.name) {
+                                return cat.name
+                            } else {
+                                console.warn('Unexpected category format:', cat)
+                                return String(cat)
+                            }
+                        })
+                    } else if (typeof item.categories === 'string') {
+                        // Handle case where categories might be a stringified array
+                        try {
+                            const parsed = JSON.parse(item.categories)
+                            if (Array.isArray(parsed)) {
+                                processedCategories = parsed.map((cat) =>
+                                    typeof cat === 'object' ? cat.name : cat
+                                )
+                            } else {
+                                processedCategories = [item.categories]
+                            }
+                        } catch (e) {
+                            processedCategories = [item.categories]
+                        }
+                    }
+                }
+
                 const processedItem = {
                     ...item,
                     quantity: parseFloat(item.quantity),
                     price: parseFloat(item.price) || 0,
                     calories: parseInt(item.calories) || 0,
-                    categories: item.categories
-                        ? item.categories.map((cat) =>
-                              typeof cat === 'object' ? cat.name : cat
-                          )
-                        : [],
+                    categories: processedCategories,
                 }
-                console.log('Processed item:', processedItem)
+
+                // Remove the raw category field to avoid conflicts
+                delete processedItem.category
+                console.log(
+                    'Processed item categories:',
+                    processedItem.categories
+                )
+                console.log('Final processed item:', processedItem)
                 return processedItem
             })
 
             const shoppingListData = {
-                ...data,
+                name,
+                description,
+                totalEstimatedPrice: totalEstimatedPrice || 0,
                 items: processedItems,
-                totalEstimatedPrice: data.totalEstimatedPrice || 0,
             }
 
             console.log(
@@ -116,7 +164,9 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
 
             if (response.data) {
                 onSubmit(response.data)
-                reset()
+                setName('')
+                setDescription('')
+                setTotalEstimatedPrice('')
                 setItems([])
                 onClose()
             }
@@ -188,89 +238,98 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
 
     return (
         <View style={styles.container}>
-            <View style={styles.formContainer}>
-                <CustomInput
-                    label="Ostoslistan nimi"
-                    name="name"
-                    placeholder="Kirjoita ostoslistan nimi"
-                    control={control}
-                    rules={{
-                        required: 'Ostoslistan nimi on pakollinen',
-                    }}
-                />
-                <CustomInput
-                    label="Kuvaus"
-                    name="description"
-                    placeholder="Kirjoita kuvaus"
-                    control={control}
-                />
-
-                <CustomInput
-                    label="Arvioitu kokonaishinta"
-                    name="totalEstimatedPrice"
-                    placeholder="Syötä arvioitu kokonaishinta"
-                    control={control}
-                    keyboardType="numeric"
-                />
-
-                <Button
-                    style={styles.secondaryButton}
-                    title="Lisää ostoslistalle tuote"
-                    onPress={() => setFoodItemModalVisible(true)}
-                />
-
-                {items.length > 0 && (
-                    <View style={styles.itemsList}>
-                        <CustomText style={styles.subtitle}>
-                            Lisätyt tuotteet:
-                        </CustomText>
-                        {items.map((item, index) => (
-                            <View key={index} style={styles.itemRow}>
-                                <CustomText>
-                                    {item.name} - {item.quantity} {item.unit} -{' '}
-                                    {item.estimatedPrice}€
-                                </CustomText>
-                            </View>
-                        ))}
-                    </View>
-                )}
-
-                <View style={styles.buttonContainer}>
-                    <Button
-                        style={[
-                            styles.primaryButton,
-                            isDesktop && styles.desktopPrimaryButton,
-                        ]}
-                        textStyle={styles.buttonText}
-                        title="Tallenna ostoslista"
-                        onPress={handleSubmit(handleSubmitForm)}
-                    />
-                </View>
-            </View>
-
-            <ResponsiveModal
-                visible={foodItemModalVisible}
-                onClose={() => setFoodItemModalVisible(false)}
-                title="Lisää uusi raaka-aine"
-                maxWidth={650}
+            <ScrollView
+                style={styles.scrollView}
+                showsVerticalScrollIndicator={false}
             >
-                <FormFoodItem
-                    onSubmit={handleAddItem}
-                    onClose={() => setFoodItemModalVisible(false)}
-                    location="shopping-list"
-                    showLocationSelector={true}
-                    selectedShoppingListId={selectedShoppingListId}
-                    onShoppingListSelect={setSelectedShoppingListId}
-                    initialValues={{
-                        quantities: {
-                            meal: '',
-                            'shopping-list': '',
-                            pantry: '',
-                        },
-                        locations: ['shopping-list'],
-                    }}
-                />
-            </ResponsiveModal>
+                <View style={styles.formContainer}>
+                    <CustomText style={styles.label}>
+                        Ostoslistan nimi
+                    </CustomText>
+                    <TextInput
+                        style={styles.formInput}
+                        value={name}
+                        onChangeText={setName}
+                        placeholder="Kirjoita ostoslistan nimi"
+                    />
+
+                    <CustomText style={styles.label}>Kuvaus</CustomText>
+                    <TextInput
+                        style={styles.formInput}
+                        value={description}
+                        onChangeText={setDescription}
+                        placeholder="Kirjoita kuvaus"
+                    />
+
+                    <CustomText style={styles.label}>
+                        Arvioitu kokonaishinta
+                    </CustomText>
+                    <TextInput
+                        style={styles.formInput}
+                        value={totalEstimatedPrice}
+                        onChangeText={setTotalEstimatedPrice}
+                        placeholder="Syötä arvioitu kokonaishinta"
+                        keyboardType="numeric"
+                    />
+
+                    <View style={styles.buttonContainer}>
+                        <Button
+                            style={[
+                                styles.secondaryButton,
+                                isDesktop && styles.desktopSecondaryButton,
+                            ]}
+                            textStyle={styles.buttonText}
+                            title="Lisää ostoslistalle tuote"
+                            onPress={() =>
+                                setShowInlineFoodForm(!showInlineFoodForm)
+                            }
+                        />
+                    </View>
+
+                    {showInlineFoodForm && (
+                        <View style={styles.inlineFoodFormContainer}>
+                            <CustomText style={styles.inlineFoodFormTitle}>
+                                Lisää uusi raaka-aine
+                            </CustomText>
+                            <FormFoodItem
+                                onSubmit={handleAddItem}
+                                onClose={() => setShowInlineFoodForm(false)}
+                                location="shopping-list"
+                                showLocationSelector={true}
+                                selectedShoppingListId={selectedShoppingListId}
+                            />
+                        </View>
+                    )}
+
+                    {items.length > 0 && (
+                        <View style={styles.itemsList}>
+                            <CustomText style={styles.subtitle}>
+                                Lisätyt tuotteet:
+                            </CustomText>
+                            {items.map((item, index) => (
+                                <View key={index} style={styles.itemRow}>
+                                    <CustomText>
+                                        {item.name} - {item.quantity}{' '}
+                                        {item.unit} - {item.estimatedPrice}€
+                                    </CustomText>
+                                </View>
+                            ))}
+                        </View>
+                    )}
+
+                    <View style={styles.buttonContainer}>
+                        <Button
+                            style={[
+                                styles.primaryButton,
+                                isDesktop && styles.desktopPrimaryButton,
+                            ]}
+                            textStyle={styles.buttonText}
+                            title="Tallenna ostoslista"
+                            onPress={handleSubmitForm}
+                        />
+                    </View>
+                </View>
+            </ScrollView>
 
             <ResponsiveModal
                 visible={pantryModalVisible}
@@ -319,9 +378,29 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: 15,
     },
-    formContainer: {
+    scrollView: {
         flex: 1,
-        padding: 15,
+        paddingHorizontal: 15,
+    },
+    formContainer: {
+        paddingBottom: 20,
+        paddingTop: 10,
+    },
+    label: {
+        paddingTop: 10,
+        fontWeight: 'bold',
+        textAlign: 'left',
+        marginBottom: 5,
+    },
+    formInput: {
+        backgroundColor: 'white',
+        borderColor: '#bbb',
+        borderStyle: 'solid',
+        borderWidth: 1,
+        height: 40,
+        padding: 10,
+        borderRadius: 4,
+        marginBottom: 15,
     },
     itemsList: {
         marginTop: 10,
@@ -395,12 +474,18 @@ const styles = StyleSheet.create({
         color: 'black',
         fontWeight: 'bold',
         textAlign: 'center',
-        width: 'auto',
+        width: '100%',
         marginTop: 10,
     },
     desktopPrimaryButton: {
         maxWidth: 300,
+        minWidth: 120,
         alignSelf: 'center',
+    },
+    desktopSecondaryButton: {
+        maxWidth: 300,
+        alignSelf: 'left',
+        marginRight: 'auto',
     },
     buttonContainer: {
         alignItems: 'center',
@@ -411,6 +496,22 @@ const styles = StyleSheet.create({
         color: '#000000',
         fontWeight: 'bold',
         textAlign: 'center',
+    },
+    inlineFoodFormContainer: {
+        backgroundColor: '#f8f9fa',
+        borderRadius: 12,
+        padding: 20,
+        marginVertical: 15,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: '#e9ecef',
+    },
+    inlineFoodFormTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 15,
+        textAlign: 'center',
+        color: '#333',
     },
     secondaryButton: {
         borderRadius: 25,
