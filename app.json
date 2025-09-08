@@ -22,7 +22,7 @@
         "expo-font",
         {
           "fonts": [
-            "./assets/fonts/FireSans-Regular.ttf"
+            "./src/assets/fonts/FiraSans-Regular.ttf"
           ]
         }
       ],
@@ -41,6 +41,11 @@
     },
     "web": {
       "favicon": "./assets/arkiapuri-logo.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "1bdb8dd2-eabf-4c1d-aa70-e6084a64f1ce"
+      }
     }
   }
 }
