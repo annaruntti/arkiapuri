@@ -13,10 +13,9 @@ import {
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
 import Button from './Button'
-import CustomModal from './CustomModal'
 import CustomText from './CustomText'
 import MealItemDetail from './MealItemDetail'
-import ResponsiveLayout from './ResponsiveLayout'
+import ResponsiveModal from './ResponsiveModal'
 
 const mealTypeTranslations = {
     breakfast: 'Aamiainen',
@@ -352,10 +351,11 @@ const Table = () => {
     }
 
     const renderMealSelectModal = () => (
-        <CustomModal
+        <ResponsiveModal
             visible={isModalVisible}
             onClose={() => setIsModalVisible(false)}
             title={`Valitse ateria päivälle ${selectedDate ? format(selectedDate, 'd.M.yyyy') : ''}`}
+            maxWidth={700}
         >
             {availableMeals.length === 0 ? (
                 <View style={styles.noMealsContainer}>
@@ -387,27 +387,25 @@ const Table = () => {
                     contentContainerStyle={styles.modalList}
                 />
             )}
-        </CustomModal>
+        </ResponsiveModal>
     )
 
     return (
-        <ResponsiveLayout>
-            <View style={styles.container}>
-                <FlatList
-                    data={dates}
-                    renderItem={renderDateSection}
-                    keyExtractor={(date) => format(date, 'yyyy-MM-dd')}
-                    contentContainerStyle={styles.contentContainer}
-                />
-                {renderMealSelectModal()}
-                <MealItemDetail
-                    meal={selectedMeal}
-                    visible={detailModalVisible}
-                    onClose={handleCloseDetail}
-                    onUpdate={handleMealUpdate}
-                />
-            </View>
-        </ResponsiveLayout>
+        <View style={styles.container}>
+            <FlatList
+                data={dates}
+                renderItem={renderDateSection}
+                keyExtractor={(date) => format(date, 'yyyy-MM-dd')}
+                contentContainerStyle={styles.contentContainer}
+            />
+            {renderMealSelectModal()}
+            <MealItemDetail
+                meal={selectedMeal}
+                visible={detailModalVisible}
+                onClose={handleCloseDetail}
+                onUpdate={handleMealUpdate}
+            />
+        </View>
     )
 }
 

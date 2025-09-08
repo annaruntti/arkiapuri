@@ -1,24 +1,28 @@
 import * as React from 'react'
-import { StyleSheet, View, ScrollView } from 'react-native'
-import TableWeek from '../components/TableWeek'
+import { ScrollView, StyleSheet, View } from 'react-native'
 import CustomText from '../components/CustomText'
+import ResponsiveLayout from '../components/ResponsiveLayout'
+import TableWeek from '../components/TableWeek'
 
 const ReadingOrderScreen = ({}) => {
     return (
-        <ScrollView contentContainerStyle={styles.scrollViewContent}>
-            <View style={styles.container}>
-                <CustomText style={styles.introText}>
-                    Täältä löydät viikon lukujärjestyksesi
-                </CustomText>
-                <CustomText style={styles.infoText}>
-                    Luo lukujärjestys ja suunnittele viikon ohjelma ja ateriat.
-                    Lisää ateriat lukujärjestykseen helpottaaksesi arkea.
-                </CustomText>
-                <View style={styles.tableContainer}>
-                    <TableWeek />
+        <ResponsiveLayout activeRoute="ReadingOrderStack">
+            <ScrollView contentContainerStyle={styles.scrollViewContent}>
+                <View style={styles.container}>
+                    <CustomText style={styles.introText}>
+                        Täältä löydät viikon lukujärjestyksesi
+                    </CustomText>
+                    <CustomText style={styles.infoText}>
+                        Luo lukujärjestys ja suunnittele viikon ohjelma ja
+                        ateriat. Lisää ateriat lukujärjestykseen helpottaaksesi
+                        arkea.
+                    </CustomText>
+                    <View style={styles.tableContainer}>
+                        <TableWeek />
+                    </View>
                 </View>
-            </View>
-        </ScrollView>
+            </ScrollView>
+        </ResponsiveLayout>
     )
 }
 
