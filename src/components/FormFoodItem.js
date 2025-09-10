@@ -4,6 +4,7 @@ import React, { forwardRef, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import {
     Alert,
+    Animated,
     Platform,
     ScrollView,
     StyleSheet,
@@ -12,14 +13,13 @@ import {
     View,
 } from 'react-native'
 // Cross-platform picker: web uses input[type=date], native uses community picker
-import { Picker } from '@react-native-picker/picker'
 import axios from 'axios'
 import { format } from 'date-fns'
 import { fi } from 'date-fns/locale'
-import { RadioButton } from 'react-native-paper'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
-import DateTimePicker from './DatePicker.web'
+import CustomRadioButton from './CustomRadioButton'
+import DateTimePicker from './DateTimePicker'
 
 import categories from '../data/categories'
 import { getServerUrl } from '../utils/getServerUrl'
@@ -52,7 +52,6 @@ const FormFoodItem = forwardRef(
             'shopping-list': '',
             pantry: '',
         })
-        const [isModalVisible, setIsModalVisible] = useState(false)
 
         const {
             control,
@@ -222,46 +221,166 @@ const FormFoodItem = forwardRef(
             selectedId,
             onSelect,
         }) => {
+            const [isExpanded, setIsExpanded] = useState(false)
+            const [animation] = useState(new Animated.Value(0))
+
             if (!shoppingLists || shoppingLists.length === 0) return null
 
+            // Animation functions
+            const animateIn = () => {
+                Animated.timing(animation, {
+                    toValue: 1,
+                    duration: 300,
+                    useNativeDriver: false,
+                }).start()
+            }
+
+            const animateOut = (callback) => {
+                Animated.timing(animation, {
+                    toValue: 0,
+                    duration: 200,
+                    useNativeDriver: false,
+                }).start(callback)
+            }
+
+            // Toggle expansion
+            const toggleExpansion = () => {
+                if (isExpanded) {
+                    animateOut(() => {
+                        setIsExpanded(false)
+                    })
+                } else {
+                    setIsExpanded(true)
+                    animateIn()
+                }
+            }
+
+            const selectedList = shoppingLists.find(
+                (list) => list._id === selectedId
+            )
+            const displayText = selectedList
+                ? selectedList.name
+                : 'Valitse ostoslista...'
+
             return (
-                <View style={styles.selectorContainer}>
+                <View style={styles.shoppingListContainer}>
                     <CustomText style={styles.label}>
                         Valitse ostoslista
                     </CustomText>
-                    <View style={styles.pickerContainer}>
-                        <Picker
-                            selectedValue={selectedId}
-                            onValueChange={onSelect}
-                            style={styles.picker}
-                            itemStyle={styles.pickerItem}
-                            dropdownIcon={
-                                <MaterialIcons
-                                    name="arrow-drop-down"
-                                    size={24}
-                                    color="#666"
-                                    style={{
-                                        marginRight: 15,
-                                        paddingRight: 10,
-                                    }}
-                                />
-                            }
+                    {/* Selection Button */}
+                    <TouchableOpacity
+                        style={[
+                            styles.shoppingListButton,
+                            isExpanded && styles.shoppingListButtonActive,
+                        ]}
+                        onPress={toggleExpansion}
+                    >
+                        <CustomText
+                            style={[
+                                styles.shoppingListButtonText,
+                                selectedList &&
+                                    styles.shoppingListButtonTextSelected,
+                            ]}
                         >
-                            <Picker.Item
-                                label="Valitse ostoslista..."
-                                value=""
-                                color="#666"
-                            />
-                            {shoppingLists.map((list) => (
-                                <Picker.Item
-                                    key={list._id}
-                                    label={list.name}
-                                    value={list._id}
-                                    color="#000"
-                                />
-                            ))}
-                        </Picker>
-                    </View>
+                            {displayText}
+                        </CustomText>
+                        <MaterialIcons
+                            name={
+                                isExpanded
+                                    ? 'keyboard-arrow-up'
+                                    : 'keyboard-arrow-down'
+                            }
+                            size={24}
+                            color="#666"
+                        />
+                    </TouchableOpacity>
+
+                    {/* Expandable Shopping List Selection */}
+                    {isExpanded && (
+                        <Animated.View
+                            style={[
+                                styles.shoppingListExpandableSection,
+                                {
+                                    maxHeight: animation.interpolate({
+                                        inputRange: [0, 1],
+                                        outputRange: [0, 300],
+                                    }),
+                                    opacity: animation,
+                                },
+                            ]}
+                        >
+                            <View style={styles.shoppingListHeader}>
+                                <CustomText style={styles.shoppingListTitle}>
+                                    Valitse ostoslista
+                                </CustomText>
+                                <TouchableOpacity
+                                    onPress={toggleExpansion}
+                                    style={styles.shoppingListCloseButton}
+                                >
+                                    <MaterialIcons
+                                        name="close"
+                                        size={24}
+                                        color="#666"
+                                    />
+                                </TouchableOpacity>
+                            </View>
+
+                            <ScrollView
+                                style={styles.shoppingListScrollContainer}
+                                showsVerticalScrollIndicator={true}
+                                nestedScrollEnabled={true}
+                            >
+                                <TouchableOpacity
+                                    style={[
+                                        styles.shoppingListOption,
+                                        !selectedId &&
+                                            styles.shoppingListOptionSelected,
+                                    ]}
+                                    onPress={() => {
+                                        onSelect('')
+                                        toggleExpansion()
+                                    }}
+                                >
+                                    <CustomText
+                                        style={[
+                                            styles.shoppingListOptionText,
+                                            !selectedId &&
+                                                styles.shoppingListOptionTextSelected,
+                                        ]}
+                                    >
+                                        Ei ostoslistaa
+                                    </CustomText>
+                                </TouchableOpacity>
+                                {shoppingLists.map((list) => {
+                                    const isSelected = selectedId === list._id
+                                    return (
+                                        <TouchableOpacity
+                                            key={list._id}
+                                            style={[
+                                                styles.shoppingListOption,
+                                                isSelected &&
+                                                    styles.shoppingListOptionSelected,
+                                            ]}
+                                            onPress={() => {
+                                                onSelect(list._id)
+                                                toggleExpansion()
+                                            }}
+                                        >
+                                            <CustomText
+                                                style={[
+                                                    styles.shoppingListOptionText,
+                                                    isSelected &&
+                                                        styles.shoppingListOptionTextSelected,
+                                                ]}
+                                            >
+                                                {list.name}
+                                            </CustomText>
+                                        </TouchableOpacity>
+                                    )
+                                })}
+                            </ScrollView>
+                        </Animated.View>
+                    )}
                 </View>
             )
         }
@@ -519,7 +638,7 @@ const FormFoodItem = forwardRef(
                                                 handleLocationToggle(loc)
                                             }
                                         >
-                                            <RadioButton
+                                            <CustomRadioButton
                                                 value={loc}
                                                 status={
                                                     selectedLocations.includes(
@@ -770,10 +889,6 @@ const styles = StyleSheet.create({
         color: '#000',
         fontWeight: 'bold',
     },
-    modalText: {
-        marginBottom: 15,
-        textAlign: 'center',
-    },
     errorMsg: {
         color: 'red',
         marginLeft: 5,
@@ -863,13 +978,6 @@ const styles = StyleSheet.create({
         marginTop: 10,
         marginBottom: 10,
     },
-    selectorContainer: {
-        marginBottom: 15,
-        overflow: 'hidden',
-        position: 'relative',
-        top: 0,
-        marginRight: 30,
-    },
     pickerContainer: {
         backgroundColor: 'white',
         marginTop: 5,
@@ -891,9 +999,105 @@ const styles = StyleSheet.create({
         marginLeft: 30,
         marginBottom: 5,
     },
-    modalBody: {
+    pickerButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: '#f8f9fa',
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderRadius: 8,
+        padding: 12,
+        minHeight: 48,
+    },
+    pickerButtonText: {
+        fontSize: 16,
+        color: '#000',
         flex: 1,
+    },
+    placeholderText: {
+        color: '#666',
+        fontStyle: 'italic',
+    },
+    // Shopping List Inline Selector Styles
+    shoppingListContainer: {
+        marginBottom: 10,
+    },
+    shoppingListButton: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        backgroundColor: 'white',
+        borderColor: '#bbb',
+        borderWidth: 1,
+        borderRadius: 4,
+        padding: 10,
+        minHeight: 40,
+    },
+    shoppingListButtonActive: {
+        borderColor: '#9C86FC',
+        borderWidth: 2,
+    },
+    shoppingListButtonText: {
+        flex: 1,
+        color: '#999',
+        fontSize: 16,
+    },
+    shoppingListButtonTextSelected: {
+        color: '#333',
+    },
+    shoppingListExpandableSection: {
+        backgroundColor: '#f8f9fa',
+        borderRadius: 8,
+        marginTop: 8,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: '#e9ecef',
+    },
+    shoppingListHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         padding: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#e9ecef',
+        backgroundColor: '#fff',
+    },
+    shoppingListTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#333',
+    },
+    shoppingListCloseButton: {
+        padding: 5,
+    },
+    shoppingListScrollContainer: {
+        maxHeight: 200,
+        padding: 15,
+    },
+    shoppingListOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 12,
+        paddingHorizontal: 15,
+        borderRadius: 6,
+        marginBottom: 4,
+        backgroundColor: 'white',
+        borderWidth: 1,
+        borderColor: '#e9ecef',
+    },
+    shoppingListOptionSelected: {
+        backgroundColor: '#f8f5ff',
+        borderColor: '#9C86FC',
+    },
+    shoppingListOptionText: {
+        fontSize: 16,
+        color: '#666',
+        flex: 1,
+    },
+    shoppingListOptionTextSelected: {
+        color: '#333',
+        fontWeight: '500',
     },
 })
 

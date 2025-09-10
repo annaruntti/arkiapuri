@@ -1,9 +1,9 @@
 import { Feather } from '@expo/vector-icons'
-import { Picker } from '@react-native-picker/picker'
 import { format } from 'date-fns'
 import { fi } from 'date-fns/locale'
 import React, { useEffect, useState } from 'react'
 import {
+    Modal,
     ScrollView,
     StyleSheet,
     TextInput,
@@ -13,7 +13,7 @@ import {
 import { getDifficultyText, getMealTypeText } from '../utils/mealUtils'
 import Button from './Button'
 import CustomText from './CustomText'
-import DateTimePicker from './DatePicker.web'
+import DateTimePicker from './DateTimePicker'
 import FoodItemRow from './FoodItemRow'
 import FormFoodItem from './FormFoodItem'
 import ResponsiveModal from './ResponsiveModal'
@@ -39,6 +39,8 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
     const [editingFoodItem, setEditingFoodItem] = useState(null)
     const [activeTab, setActiveTab] = useState('ingredients')
     const [showFoodItemForm, setShowFoodItemForm] = useState(false)
+    const [showDifficultyPicker, setShowDifficultyPicker] = useState(false)
+    const [showMealTypePicker, setShowMealTypePicker] = useState(false)
 
     useEffect(() => {
         if (meal) {
@@ -170,27 +172,18 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                 <View style={styles.detailRow}>
                     <CustomText style={styles.detailLabel}>{label}:</CustomText>
                     <View style={styles.valueContainer}>
-                        <View style={styles.pickerContainer}>
-                            <Picker
-                                selectedValue={editedValues[field] || 'MEDIUM'}
-                                onValueChange={(itemValue) => {
-                                    console.log(
-                                        'Selected difficulty level:',
-                                        itemValue
-                                    )
-                                    handleChange(field, itemValue)
-                                }}
-                                style={styles.picker}
-                            >
-                                {difficultyLevels.map((level) => (
-                                    <Picker.Item
-                                        key={level.value}
-                                        label={level.label}
-                                        value={level.value}
-                                    />
-                                ))}
-                            </Picker>
-                        </View>
+                        <TouchableOpacity
+                            style={styles.pickerButton}
+                            onPress={() => setShowDifficultyPicker(true)}
+                        >
+                            <CustomText style={styles.pickerButtonText}>
+                                {difficultyLevels.find(
+                                    (level) =>
+                                        level.value ===
+                                        (editedValues[field] || 'medium')
+                                )?.label || 'Valitse vaikeus'}
+                            </CustomText>
+                        </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.editIcon}
                             onPress={() => toggleEdit(field)}
@@ -213,30 +206,16 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                 <View style={styles.detailRow}>
                     <CustomText style={styles.detailLabel}>{label}:</CustomText>
                     <View style={styles.valueContainer}>
-                        <View style={styles.pickerContainer}>
-                            <Picker
-                                selectedValue={currentValue}
-                                onValueChange={(itemValue) => {
-                                    console.log(
-                                        'Changing field:',
-                                        field,
-                                        'to value:',
-                                        itemValue
-                                    )
-                                    // Store as array to maintain consistency
-                                    handleChange(field, [itemValue])
-                                }}
-                                style={styles.picker}
-                            >
-                                {mealTypes.map((type) => (
-                                    <Picker.Item
-                                        key={type.value}
-                                        label={type.label}
-                                        value={type.value}
-                                    />
-                                ))}
-                            </Picker>
-                        </View>
+                        <TouchableOpacity
+                            style={styles.pickerButton}
+                            onPress={() => setShowMealTypePicker(true)}
+                        >
+                            <CustomText style={styles.pickerButtonText}>
+                                {mealTypes.find(
+                                    (type) => type.value === currentValue
+                                )?.label || 'Valitse ateriatyyppi'}
+                            </CustomText>
+                        </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.editIcon}
                             onPress={() => toggleEdit(field)}
@@ -516,6 +495,111 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                     />
                 </ResponsiveModal>
             )}
+
+            {/* Difficulty Picker Modal */}
+            <Modal
+                visible={showDifficultyPicker}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setShowDifficultyPicker(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <CustomText style={styles.modalTitle}>
+                                Valitse vaikeus
+                            </CustomText>
+                            <TouchableOpacity
+                                style={styles.modalCloseButton}
+                                onPress={() => setShowDifficultyPicker(false)}
+                            >
+                                <CustomText style={styles.modalCloseText}>
+                                    ✕
+                                </CustomText>
+                            </TouchableOpacity>
+                        </View>
+                        <ScrollView style={styles.modalBody}>
+                            {difficultyLevels.map((level) => (
+                                <TouchableOpacity
+                                    key={level.value}
+                                    style={styles.modalOption}
+                                    onPress={() => {
+                                        handleChange(
+                                            'difficultyLevel',
+                                            level.value
+                                        )
+                                        setShowDifficultyPicker(false)
+                                    }}
+                                >
+                                    <CustomText
+                                        style={[
+                                            styles.modalOptionText,
+                                            (editedValues.difficultyLevel ||
+                                                'medium') === level.value &&
+                                                styles.selectedOptionText,
+                                        ]}
+                                    >
+                                        {level.label}
+                                    </CustomText>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Meal Type Picker Modal */}
+            <Modal
+                visible={showMealTypePicker}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setShowMealTypePicker(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <CustomText style={styles.modalTitle}>
+                                Valitse ateriatyyppi
+                            </CustomText>
+                            <TouchableOpacity
+                                style={styles.modalCloseButton}
+                                onPress={() => setShowMealTypePicker(false)}
+                            >
+                                <CustomText style={styles.modalCloseText}>
+                                    ✕
+                                </CustomText>
+                            </TouchableOpacity>
+                        </View>
+                        <ScrollView style={styles.modalBody}>
+                            {mealTypes.map((type) => (
+                                <TouchableOpacity
+                                    key={type.value}
+                                    style={styles.modalOption}
+                                    onPress={() => {
+                                        handleChange('mealType', [type.value])
+                                        setShowMealTypePicker(false)
+                                    }}
+                                >
+                                    <CustomText
+                                        style={[
+                                            styles.modalOptionText,
+                                            (Array.isArray(
+                                                editedValues.mealType
+                                            )
+                                                ? editedValues.mealType[0]
+                                                : editedValues.mealType) ===
+                                                type.value &&
+                                                styles.selectedOptionText,
+                                        ]}
+                                    >
+                                        {type.label}
+                                    </CustomText>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    </View>
+                </View>
+            </Modal>
         </>
     )
 }
@@ -663,6 +747,73 @@ const styles = StyleSheet.create({
     picker: {
         width: '100%',
         height: 40,
+    },
+    pickerButton: {
+        flex: 1,
+        backgroundColor: '#f8f9fa',
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderRadius: 8,
+        paddingVertical: 12,
+        paddingHorizontal: 15,
+        marginRight: 10,
+    },
+    pickerButtonText: {
+        fontSize: 16,
+        color: '#333',
+    },
+    placeholderText: {
+        color: '#999',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        backgroundColor: 'white',
+        borderRadius: 10,
+        padding: 0,
+        minWidth: 300,
+        maxWidth: 400,
+        maxHeight: '80%',
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#333',
+    },
+    modalCloseButton: {
+        padding: 5,
+    },
+    modalCloseText: {
+        fontSize: 20,
+        color: '#666',
+    },
+    modalBody: {
+        maxHeight: 300,
+    },
+    modalOption: {
+        padding: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f0f0f0',
+    },
+    modalOptionText: {
+        fontSize: 16,
+        color: '#333',
+    },
+    selectedOptionText: {
+        color: '#9C86FC',
+        fontWeight: 'bold',
     },
 })
 

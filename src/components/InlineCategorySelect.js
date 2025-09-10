@@ -271,12 +271,13 @@ const InlineCategorySelect = ({
                         <Button
                             title="Peruuta"
                             onPress={handleCancel}
+                            type="TERTIARY"
                             style={styles.cancelButton}
-                            textStyle={styles.cancelButtonText}
                         />
                         <Button
                             title="Tallenna"
                             onPress={handleSave}
+                            type="PRIMARY"
                             style={styles.saveButton}
                         />
                     </View>
@@ -415,16 +416,11 @@ const styles = StyleSheet.create({
     },
     cancelButton: {
         flex: 1,
-        backgroundColor: '#f8f9fa',
-        borderWidth: 1,
-        borderColor: '#dee2e6',
-    },
-    cancelButtonText: {
-        color: '#666',
+        borderRadius: 25,
     },
     saveButton: {
         flex: 1,
-        backgroundColor: '#9C86FC',
+        borderRadius: 25,
     },
 })
 

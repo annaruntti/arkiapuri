@@ -14,7 +14,7 @@ import Button from './Button'
 import CategorySelect from './CategorySelect'
 import CustomModal from './CustomModal'
 import CustomText from './CustomText'
-import DateTimePicker from './DatePicker.web'
+import DateTimePicker from './DateTimePicker'
 
 const PantryItemDetails = ({ item, visible, onClose, onUpdate }) => {
     const [editableFields, setEditableFields] = useState({})
