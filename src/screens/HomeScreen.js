@@ -32,6 +32,10 @@ const readingOrderImage = {
 const staticWavePathData =
     'M0,96L40,112C80,128,160,160,240,186.7C320,213,400,235,480,208C560,181,640,107,720,69.3C800,32,880,32,960,74.7C1040,117,1120,203,1200,229.3C1280,256,1360,224,1400,208L1440,192L1440,320L1400,320C1360,320,1280,320,1200,320C1120,320,1040,320,960,320C880,320,800,320,720,320C640,320,560,320,480,320C400,320,320,320,240,320C160,320,80,320,40,320L0,320Z'
 
+// Desktop-specific wave path with higher curves and smooth flow
+const desktopWavePathData =
+    'M0,80L48,85C96,90,192,100,288,125C384,150,480,190,576,210C672,230,768,210,864,185C960,160,1056,120,1152,135C1248,150,1344,210,1392,225L1440,240L1440,320L0,320Z'
+
 const HomeScreen = () => {
     const navigation = useNavigation()
     const { isDesktop, isTablet, responsivePadding } = useResponsiveDimensions()
@@ -122,11 +126,32 @@ const HomeScreen = () => {
                         </View>
                     </View>
 
+                    {/* Desktop SVG Wave */}
+                    <View style={styles.desktopSvgContainer}>
+                        <Svg
+                            height={200}
+                            width="100%"
+                            viewBox="0 0 1440 320"
+                            preserveAspectRatio="none"
+                            style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                            }}
+                        >
+                            <Path d={desktopWavePathData} fill="#9C86FC" />
+                        </Svg>
+                    </View>
+
                     {/* Desktop Navigation Grid */}
                     <View style={styles.desktopNavigationWrapper}>
                         <LinearGradient
                             colors={['#9C86FC', '#7B61F8']}
-                            style={styles.desktopNavigationGradient}
+                            style={[
+                                styles.desktopNavigationGradient,
+                                styles.desktopNavigationWithWave,
+                            ]}
                         >
                             {renderDesktopGrid()}
                         </LinearGradient>
@@ -160,22 +185,37 @@ const HomeScreen = () => {
                 </View>
             </View>
 
-            {/* Static SVG Wave */}
-            <View
-                style={[
-                    styles.svgContainer,
-                    isTablet && styles.tabletSvgContainer,
-                ]}
-            >
-                <Svg
-                    height={isTablet ? 120 : 80}
-                    width="100%"
-                    viewBox="0 0 1440 280"
-                    preserveAspectRatio="xMidYMax slice"
-                >
-                    <Path d={staticWavePathData} fill="#9C86FC" />
-                </Svg>
-            </View>
+            {isTablet ? (
+                // Tablet SVG Wave (responsive full-width)
+                <View style={styles.tabletSvgContainer}>
+                    <Svg
+                        height={160}
+                        width="100%"
+                        viewBox="0 0 1440 320"
+                        preserveAspectRatio="none"
+                        style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                        }}
+                    >
+                        <Path d={staticWavePathData} fill="#9C86FC" />
+                    </Svg>
+                </View>
+            ) : (
+                // Mobile Static Wave
+                <View style={styles.svgContainer}>
+                    <Svg
+                        height={80}
+                        width="100%"
+                        viewBox="0 0 1440 320"
+                        preserveAspectRatio="none"
+                    >
+                        <Path d={staticWavePathData} fill="#9C86FC" />
+                    </Svg>
+                </View>
+            )}
 
             {/* Gradient Area Below Static Wave */}
             <LinearGradient
@@ -311,8 +351,8 @@ const styles = StyleSheet.create({
     },
     svgContainer: {
         width: '100%',
-        aspectRatio: 1440 / (280 - 96),
-        minHeight: 100,
+        height: 80,
+        minHeight: 80,
         backgroundColor: 'transparent',
         zIndex: 1,
     },
@@ -321,15 +361,13 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-start',
         paddingTop: 25,
         paddingBottom: 30,
-        marginTop: -25,
     },
     tabletSvgContainer: {
-        minHeight: 140,
-        aspectRatio: 1440 / (280 - 60),
-    },
-    tabletLinkAreaGradient: {
-        paddingTop: 60,
-        marginTop: -40,
+        width: '100%',
+        position: 'relative',
+        overflow: 'hidden',
+        height: 160,
+        minHeight: 160,
     },
     tabletHomeViewTop: {
         paddingBottom: 30,
@@ -340,6 +378,32 @@ const styles = StyleSheet.create({
     tabletBox: {
         marginHorizontal: 15,
         marginVertical: 12,
+    },
+    // Desktop-specific styles
+    desktopSvgContainer: {
+        width: '100%',
+        minHeight: 200,
+        alignSelf: 'stretch',
+        position: 'relative',
+        overflow: 'hidden',
+    },
+    desktopLinkAreaGradient: {
+        paddingTop: 80,
+        marginTop: -60,
+        paddingBottom: 60,
+    },
+    desktopLinkAreaContent: {
+        paddingHorizontal: 60,
+        maxWidth: 1200,
+        alignSelf: 'center',
+    },
+    desktopBox: {
+        minWidth: 280,
+        maxWidth: 350,
+        flex: 1,
+        paddingVertical: 25,
+        paddingHorizontal: 25,
+        marginBottom: 0,
     },
     linkAreaContent: {
         backgroundColor: 'transparent',
@@ -407,40 +471,44 @@ const styles = StyleSheet.create({
     desktopHeaderCard: {
         backgroundColor: '#fff',
         borderRadius: 12,
-        padding: 30,
-        marginBottom: 15,
-        alignItems: 'center',
+        paddingTop: 20,
+        paddingHorizontal: 30,
+        alignItems: 'left',
     },
     desktopNavigationWrapper: {
         flex: 1,
     },
     desktopNavigationGradient: {
-        paddingVertical: 40,
-        paddingHorizontal: 50,
+        paddingHorizontal: 40,
         flex: 1,
+    },
+    desktopNavigationWithWave: {
+        paddingBottom: 60,
     },
     desktopIntroTitle: {
         fontSize: 32,
-        textAlign: 'center',
+        textAlign: 'left',
         marginBottom: 8,
     },
     desktopIntroText: {
         fontSize: 18,
-        textAlign: 'center',
+        textAlign: 'left',
         lineHeight: 26,
         maxWidth: 800,
     },
     desktopGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        justifyContent: 'space-between',
-        paddingVertical: 40,
-        paddingHorizontal: 20,
+        justifyContent: 'flex-start',
+        paddingBottom: 40,
+        paddingHorizontal: 40,
+        maxWidth: 960,
+        gap: 30,
     },
     desktopCard: {
         backgroundColor: '#fff',
         borderRadius: 12,
-        marginBottom: 24,
+        marginBottom: 0,
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
@@ -450,6 +518,9 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         elevation: 5,
         overflow: 'hidden',
+        minWidth: 280,
+        maxWidth: 350,
+        flex: 1,
     },
     desktopCardImage: {
         width: 120,

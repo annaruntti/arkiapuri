@@ -67,10 +67,7 @@ const App = () => {
 
     const dynamicStyles = {
         ...styles.root,
-        maxWidth: isDesktop ? 960 : containerMaxWidth,
         backgroundColor: '#fff',
-        marginTop: isDesktop ? 20 : 0,
-        marginBottom: isDesktop ? 20 : 0,
     }
 
     return (
@@ -91,7 +88,7 @@ const App = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: '#fff',
         alignItems: 'center',
         justifyContent: 'center',
     },
