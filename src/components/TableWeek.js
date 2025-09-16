@@ -124,7 +124,6 @@ const Table = () => {
                 },
             })
 
-            console.log('All meals from API:', response.data.meals)
 
             if (response.data && response.data.meals) {
                 // Show all meals for now, remove the filter temporarily
@@ -158,7 +157,6 @@ const Table = () => {
                 }
             )
 
-            console.log('Update response:', response.data)
 
             // Refresh the meal data
             fetchMealData(dates)
@@ -199,7 +197,6 @@ const Table = () => {
     const handleMealUpdate = async (mealId, updatedMeal) => {
         try {
             if (!mealId) {
-                console.error('No meal ID provided')
                 Alert.alert('Virhe', 'Aterian ID puuttuu')
                 return
             }
@@ -251,7 +248,6 @@ const Table = () => {
                 setDetailModalVisible(false)
                 setSelectedMeal(null)
 
-                console.log('Meal updated successfully')
             } else {
                 console.error('Failed to update meal:', response.data.message)
                 Alert.alert('Virhe', 'Aterian päivittäminen epäonnistui')

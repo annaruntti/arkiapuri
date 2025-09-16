@@ -8,10 +8,6 @@ import { getServerUrl } from './getServerUrl'
 // Process the Google Vision API results
 export const processVisionResults = (visionResponse) => {
     try {
-        console.log(
-            'Processing vision response:',
-            JSON.stringify(visionResponse, null, 2)
-        )
 
         // Extract all available information
         const text = visionResponse.text || ''
@@ -311,12 +307,10 @@ export const scanItems = async (location = 'pantry') => {
             throw new Error('No image data received from camera')
         }
 
-        console.log('Image captured, analyzing...')
 
         // Analyze the image
         const visionResponse = await analyzeImage(result.assets[0].base64)
 
-        console.log('Vision response:', JSON.stringify(visionResponse, null, 2))
 
         if (!visionResponse || !visionResponse.success) {
             throw new Error('Image analysis failed')
@@ -325,10 +319,6 @@ export const scanItems = async (location = 'pantry') => {
         // Process the results
         const detectedProducts = processVisionResults(visionResponse)
 
-        console.log(
-            'Detected products:',
-            JSON.stringify(detectedProducts, null, 2)
-        )
 
         if (!detectedProducts || !detectedProducts.length) {
             throw new Error('No products detected in image')
@@ -340,10 +330,6 @@ export const scanItems = async (location = 'pantry') => {
             location
         )
 
-        console.log(
-            'Add item response:',
-            JSON.stringify(addItemResponse, null, 2)
-        )
 
         if (!addItemResponse || !addItemResponse.success) {
             throw new Error('Failed to add scanned item')

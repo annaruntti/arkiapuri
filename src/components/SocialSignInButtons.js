@@ -13,7 +13,6 @@ const SocialSignInButtons = ({ onSocialSignIn }) => {
     const googleAuthUrl = `${getServerUrl('')}/auth/google`
 
     const handleGoogleSignIn = async () => {
-        console.log('Google button pressed!')
 
         Alert.alert(
             'Google Kirjautuminen',
@@ -26,7 +25,6 @@ const SocialSignInButtons = ({ onSocialSignIn }) => {
                 {
                     text: 'Demo',
                     onPress: () => {
-                        console.log('Demo login selected')
                         onSocialSignIn('demo', {
                             token: 'demo-token',
                             user: {
@@ -40,7 +38,6 @@ const SocialSignInButtons = ({ onSocialSignIn }) => {
                 {
                     text: 'Google OAuth',
                     onPress: async () => {
-                        console.log('Real OAuth selected')
                         try {
                             const result =
                                 await WebBrowser.openAuthSessionAsync(
@@ -50,7 +47,6 @@ const SocialSignInButtons = ({ onSocialSignIn }) => {
 
                             if (result.type === 'success') {
                                 const { url } = result
-                                console.log('OAuth callback URL:', url)
 
                                 if (url.includes('token=')) {
                                     const token = url

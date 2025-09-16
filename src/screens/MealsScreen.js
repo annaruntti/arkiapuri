@@ -182,10 +182,6 @@ const MealsScreen = () => {
                                               )
                                       )
                                       if (!category) {
-                                          console.warn(
-                                              'Category not found:',
-                                              cat
-                                          )
                                           return null
                                       }
                                       return category.id

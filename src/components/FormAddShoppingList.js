@@ -117,10 +117,6 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
 
                 // Remove the raw category field to avoid conflicts
                 delete processedItem.category
-                console.log(
-                    'Processed item categories:',
-                    processedItem.categories
-                )
                 return processedItem
             })
 
@@ -187,7 +183,6 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
 
     const addSelectedPantryItems = () => {
         // Add selected pantry items to the shopping list
-        console.log('Adding selected pantry items to shopping list')
         setPantryModalVisible(false)
     }
 

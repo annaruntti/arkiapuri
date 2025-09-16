@@ -15,7 +15,6 @@ const LoginProvider = ({ children }) => {
             setIsLoading(true)
             try {
                 const token = await storage.getItem('userToken')
-                console.log('Retrieved token:', token)
 
                 if (token) {
                     const response = await axios.get(getServerUrl('/profile'), {
@@ -24,7 +23,6 @@ const LoginProvider = ({ children }) => {
                         },
                     })
 
-                    console.log('Profile response:', response.data)
 
                     if (response.data.success) {
                         // Store complete user data including profile image URL

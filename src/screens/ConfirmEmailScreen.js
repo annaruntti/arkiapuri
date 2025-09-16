@@ -13,7 +13,6 @@ const ConfirmEmailScreen = () => {
     const navigation = useNavigation()
 
     const onConfirmPressed = (data) => {
-        console.log(data, 'data')
         navigation.navigate('Arkiapuri')
     }
 
@@ -22,7 +21,6 @@ const ConfirmEmailScreen = () => {
     }
 
     const onResendPress = () => {
-        console.warn('onResendPress')
     }
 
     return (

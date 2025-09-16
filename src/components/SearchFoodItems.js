@@ -71,8 +71,6 @@ const SearchFoodItems = ({ onSelectItem }) => {
 
     // Filter items based on search query
     useEffect(() => {
-        console.log('Search query changed:', searchQuery)
-        console.log('Current allFoodItems:', allFoodItems)
 
         if (searchQuery.trim() === '') {
             setFilteredItems([])
@@ -98,7 +96,6 @@ const SearchFoodItems = ({ onSelectItem }) => {
             return unique
         }, [])
 
-        console.log('Filtered unique results:', uniqueItems)
         setFilteredItems(uniqueItems)
     }, [searchQuery, allFoodItems])
 

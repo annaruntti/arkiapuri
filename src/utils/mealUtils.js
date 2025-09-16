@@ -12,7 +12,6 @@ export const getDifficultyText = (level) => {
         case 'hard':
             return 'Vaikea'
         default:
-            console.log('Unknown difficulty level:', level)
             return 'Ei määritelty'
     }
 }

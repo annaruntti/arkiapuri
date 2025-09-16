@@ -46,13 +46,11 @@ const ExpandableFoodItemSelector = ({
                 timeout: 10000,
             })
 
-            console.log('Pantry response:', response.data)
 
             if (response.data.success) {
                 const items =
                     response.data.pantry?.items || response.data.items || []
                 setPantryItems(items)
-                console.log('Set pantry items:', items.length)
             } else {
                 console.error('Failed to fetch pantry items:', response.data)
                 setPantryItems([])

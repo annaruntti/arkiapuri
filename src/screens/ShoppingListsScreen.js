@@ -21,7 +21,6 @@ const ShoppingListsScreen = () => {
     const fetchShoppingLists = async () => {
         try {
             const token = await storage.getItem('userToken')
-            console.log('Token for request:', token)
 
             const response = await axios.get(getServerUrl('/shopping-lists'), {
                 headers: {
@@ -90,7 +89,6 @@ const ShoppingListsScreen = () => {
     }
 
     const handleListUpdate = (updatedList) => {
-        console.log('Updating list in screen component:', updatedList)
         setShoppingLists((prev) =>
             prev.map((list) =>
                 list._id === updatedList._id ? updatedList : list

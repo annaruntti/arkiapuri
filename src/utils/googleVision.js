@@ -26,7 +26,6 @@ export const analyzeImage = async (base64Image) => {
             throw new Error('Authentication token not found')
         }
 
-        console.log('Sending image analysis request...')
 
         // Remove data URI prefix from base64
         const imageData = manipulatedImage.base64.replace(
@@ -34,7 +33,6 @@ export const analyzeImage = async (base64Image) => {
             ''
         )
 
-        console.log('Image size (bytes):', imageData.length)
 
         try {
             const response = await axios.post(
@@ -53,10 +51,6 @@ export const analyzeImage = async (base64Image) => {
                 }
             )
 
-            console.log(
-                'Raw Vision API response:',
-                JSON.stringify(response.data, null, 2)
-            )
 
             if (!response.data || !response.data.success) {
                 throw new Error('Vision API request failed')

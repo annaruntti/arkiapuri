@@ -77,11 +77,6 @@ const ImageUpload = (props) => {
                         type: 'image/jpeg',
                     })
 
-                    console.log('File details:', {
-                        name: file.name,
-                        size: file.size,
-                        type: file.type,
-                    })
 
                     formData.append('profileImage', file)
                 } catch (error) {
@@ -96,20 +91,6 @@ const ImageUpload = (props) => {
                 })
             }
 
-            // Log the full FormData contents
-            for (let pair of formData.entries()) {
-                console.log('FormData entry:', {
-                    key: pair[0],
-                    value:
-                        pair[1] instanceof File
-                            ? {
-                                  name: pair[1].name,
-                                  type: pair[1].type,
-                                  size: pair[1].size,
-                              }
-                            : pair[1],
-                })
-            }
 
             const response = await axios.post(
                 getServerUrl('/profile/image'),

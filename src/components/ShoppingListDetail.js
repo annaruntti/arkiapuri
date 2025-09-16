@@ -42,12 +42,9 @@ const ShoppingListDetail = ({
     const moveCheckedToPantry = async (checkedItemIds) => {
         try {
             const token = await storage.getItem('userToken')
-            console.log('Moving items:', checkedItemIds)
-            console.log('Shopping list ID:', shoppingList._id)
 
             // Process each checked item
             for (const itemId of checkedItemIds) {
-                console.log(`Processing item ${itemId}`)
                 try {
                     const response = await axios.post(
                         getServerUrl(
@@ -60,7 +57,6 @@ const ShoppingListDetail = ({
                             },
                         }
                     )
-                    console.log('Response for item:', response.data)
                 } catch (itemError) {
                     console.error(`Error processing item ${itemId}:`, itemError)
                     throw itemError
@@ -127,7 +123,6 @@ const ShoppingListDetail = ({
                 onUpdate(updatedList)
                 setShowItemForm(false)
 
-                console.log('Updated shopping list:', updatedList)
             }
         } catch (error) {
             console.error('Error adding item:', error?.response?.data || error)

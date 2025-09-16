@@ -181,7 +181,6 @@ const ProfileScreen = () => {
                                 style={styles.secondaryButton}
                                 textStyle={styles.buttonText}
                                 onPress={() => {
-                                    console.log('Edit profile pressed')
                                 }}
                             />
                             <Button
