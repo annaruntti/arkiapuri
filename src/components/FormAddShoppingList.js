@@ -319,7 +319,7 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
                 ) : (
                     <View style={styles.modalScrollContainer}>
                         <CustomText style={styles.foundItemsText}>
-                            {pantryItems.length} elintarviketta löydetty
+                            {`${pantryItems.length} elintarviketta löydetty`}
                         </CustomText>
                         <FlatList
                             data={pantryItems}

@@ -322,7 +322,7 @@ const ExpandableFoodItemSelector = ({
                     ) : (
                         <View style={styles.pantryContainer}>
                             <CustomText style={styles.foundItemsText}>
-                                {pantryItems.length} elintarviketta löydetty
+                                {`${pantryItems.length} elintarviketta löydetty`}
                             </CustomText>
 
                             <View style={styles.pantryListContainer}>
@@ -345,7 +345,7 @@ const ExpandableFoodItemSelector = ({
                             {selectedPantryItems.length > 0 && (
                                 <View style={styles.pantryActions}>
                                     <CustomText style={styles.selectedCount}>
-                                        {selectedPantryItems.length} valittu
+                                        {`${selectedPantryItems.length} valittu`}
                                     </CustomText>
                                     <Button
                                         title="Lisää valitut"

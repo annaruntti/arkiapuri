@@ -100,9 +100,15 @@ const UnifiedFoodSearch = ({
 
         try {
             // Search local items
-            const localFiltered = localFoodItems.filter((item) =>
-                item.name.toLowerCase().includes(searchQuery.toLowerCase())
-            )
+            const localFiltered = localFoodItems
+                .filter((item) => item.name && item.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                .map(item => ({
+                    ...item,
+                    // Ensure local items have proper structure
+                    name: item.name || 'Nimetön tuote',
+                    category: Array.isArray(item.category) ? item.category : (item.category ? [item.category] : []),
+                    calories: item.calories || 0
+                }))
             setFilteredLocalItems(localFiltered)
 
             // Search Open Food Facts
@@ -114,7 +120,18 @@ const UnifiedFoodSearch = ({
                     const data = await response.json()
 
                     if (data.success) {
-                        setOpenFoodFactsItems(data.products || [])
+                        // Ensure all Open Food Facts items have the proper structure
+                        const processedProducts = (data.products || []).map(product => ({
+                            ...product,
+                            source: 'openfoodfacts',
+                            // Ensure required fields exist
+                            name: product.name || 'Nimetön tuote',
+                            brands: product.brands || '',
+                            nutrition: product.nutrition || { calories: 0 },
+                            nutritionGrade: product.nutritionGrade || '',
+                            category: product.category || []
+                        }))
+                        setOpenFoodFactsItems(processedProducts)
                     }
                 } catch (offError) {
                     console.error('Error searching Open Food Facts:', offError)
@@ -359,17 +376,17 @@ const UnifiedFoodSearch = ({
                 <View style={styles.itemLeft}>
                     <View style={styles.itemNameContainer}>
                         <CustomText style={styles.itemName}>
-                            {item.name}
+                            {item.name || 'Nimetön tuote'}
                         </CustomText>
-                        {item.calories && (
+                        {item.calories && item.calories > 0 && (
                             <CustomText style={styles.itemCalories}>
-                                {item.calories} kcal
+                                {`${item.calories} kcal`}
                             </CustomText>
                         )}
                     </View>
                     <View style={styles.itemDetails}>
                         <CustomText style={styles.itemCategory}>
-                            {item.category?.join(', ') || 'Ei kategoriaa'}
+                            {item.category?.filter(Boolean).join(', ') || 'Ei kategoriaa'}
                         </CustomText>
                     </View>
                 </View>
@@ -408,14 +425,14 @@ const UnifiedFoodSearch = ({
                     )}
                     <View style={styles.itemInfo}>
                         <CustomText style={styles.itemName} numberOfLines={2}>
-                            {item.name}
+                            {item.name || 'Nimetön tuote'}
                         </CustomText>
                         {item.brands && (
                             <CustomText
                                 style={styles.itemBrand}
                                 numberOfLines={1}
                             >
-                                {item.brands}
+                                {item.brands || ''}
                             </CustomText>
                         )}
                         <View style={styles.productMeta}>
@@ -431,13 +448,13 @@ const UnifiedFoodSearch = ({
                                     ]}
                                 >
                                     <CustomText style={styles.gradeText}>
-                                        {item.nutritionGrade.toUpperCase()}
+                                        {(item.nutritionGrade || '').toUpperCase()}
                                     </CustomText>
                                 </View>
                             )}
-                            {item.nutrition.calories > 0 && (
+                            {item.nutrition?.calories > 0 && (
                                 <CustomText style={styles.itemCalories}>
-                                    {Math.round(item.nutrition.calories)} kcal
+                                    {`${Math.round(item.nutrition.calories || 0)} kcal`}
                                 </CustomText>
                             )}
                         </View>
@@ -467,7 +484,8 @@ const UnifiedFoodSearch = ({
     }
 
     const renderItem = ({ item }) => {
-        if (item.source === 'openfoodfacts' || item.barcode) {
+        // More robust detection of Open Food Facts items
+        if (item.source === 'openfoodfacts' || item.barcode || item.nutrition || item.nutritionGrade) {
             return renderOpenFoodFactsItem({ item })
         }
         return renderLocalItem({ item })
@@ -572,7 +590,7 @@ const UnifiedFoodSearch = ({
                             !loading ? (
                                 <View style={styles.emptyContainer}>
                                     <CustomText style={styles.emptyText}>
-                                        Ei tuloksia haulle "{searchQuery}"
+                                        {`Ei tuloksia haulle "${searchQuery}"`}
                                     </CustomText>
                                 </View>
                             ) : null
