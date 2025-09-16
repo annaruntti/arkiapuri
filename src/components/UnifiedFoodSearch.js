@@ -519,10 +519,8 @@ const UnifiedFoodSearch = ({
                                     activeTab === 'all' && styles.activeTabText,
                                 ]}
                             >
-                                Kaikki (
-                                {filteredLocalItems.length +
-                                    openFoodFactsItems.length}
-                                )
+                                {`Kaikki (${filteredLocalItems.length +
+                                    openFoodFactsItems.length})`}
                             </CustomText>
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -539,7 +537,7 @@ const UnifiedFoodSearch = ({
                                         styles.activeTabText,
                                 ]}
                             >
-                                Omat ({filteredLocalItems.length})
+                                {`Omat (${filteredLocalItems.length})`}
                             </CustomText>
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -557,7 +555,7 @@ const UnifiedFoodSearch = ({
                                         styles.activeTabText,
                                 ]}
                             >
-                                Tietokanta ({openFoodFactsItems.length})
+                                {`Tietokanta (${openFoodFactsItems.length})`}
                             </CustomText>
                         </TouchableOpacity>
                     </View>
