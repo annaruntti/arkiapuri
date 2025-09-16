@@ -109,8 +109,6 @@ const FormFoodItem = forwardRef(
 
         const handleFormSubmit = async (data) => {
             try {
-                console.log('Form data received:', data)
-
                 const quantity = parseFloat(data.quantity) || 0
 
                 // Get category names from IDs
@@ -167,7 +165,6 @@ const FormFoodItem = forwardRef(
                     }
                 }
 
-                console.log('Form data being submitted:', formData)
                 if (location === 'meal' || location === 'shopping-list') {
                     onSubmit(formData)
                     // Form reset and closing handled by parent component

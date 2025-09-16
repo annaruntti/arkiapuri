@@ -25,10 +25,7 @@ const SignInScreen = () => {
         formState: { errors },
     } = useForm()
 
-    console.log(errors, 'errors')
-
     const onSignInPressed = async (data) => {
-        console.log('Sign in data:', data)
         try {
             const response = await axios.post(getServerUrl('/sign-in'), {
                 email: data.email,
@@ -60,7 +57,6 @@ const SignInScreen = () => {
     }
 
     const onSocialSignIn = async (provider, data) => {
-        console.log('Social sign in:', provider, data)
         try {
             // Send the social auth token to your backend
             const response = await axios.post(getServerUrl('/auth/social'), {

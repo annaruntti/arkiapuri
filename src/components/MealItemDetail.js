@@ -80,7 +80,6 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
     }
 
     const handleChange = (field, value) => {
-        console.log('Changing field:', field, 'to value:', value)
         setEditedValues((prev) => ({
             ...prev,
             [field]: value,
@@ -154,10 +153,6 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                 __v: undefined,
             }
 
-            console.log(
-                'Saving meal with difficulty level:',
-                updatedMeal.difficultyLevel
-            )
             await onUpdate(meal._id, updatedMeal)
             setEditableFields({})
             setEditingFoodItem(null)

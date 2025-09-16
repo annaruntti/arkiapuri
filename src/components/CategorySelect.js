@@ -36,7 +36,6 @@ const CategorySelect = ({
     }
 
     useEffect(() => {
-        console.log('CategorySelect value changed:', value)
         // Initialize selected categories from the current value
         if (value && value.length > 0) {
             // Convert names to IDs if needed
@@ -45,10 +44,8 @@ const CategorySelect = ({
                 if (typeof cat === 'string' && !isNaN(cat)) return cat // It's already an ID
                 return getCategoryId(cat) // It's a name, convert to ID
             })
-            console.log('Setting selected categories:', cats)
             setSelectedCategories(cats)
         } else {
-            console.log('No categories to set')
             setSelectedCategories([])
         }
     }, [value])
@@ -69,7 +66,6 @@ const CategorySelect = ({
     }
 
     const handleSave = () => {
-        console.log('Saving categories:', selectedCategories)
         // Return just the IDs of selected categories
         onChange(selectedCategories)
         setIsModalVisible(false)

@@ -40,13 +40,10 @@ const PantryScreen = ({}) => {
                 timeout: 10000,
             })
 
-            console.log('Pantry response:', response.data)
-
             if (response.data.success) {
                 const items =
                     response.data.pantry?.items || response.data.items || []
                 setPantryItems(items)
-                console.log('Set pantry items:', items.length)
             } else {
                 console.error('Failed to fetch pantry items:', response.data)
                 Alert.alert('Virhe', 'Pentterin sisältöä ei voitu hakea')
@@ -99,8 +96,6 @@ const PantryScreen = ({}) => {
                     new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
             }
 
-            console.log('Creating FoodItem:', foodItemData)
-
             const foodItemResponse = await axios.post(
                 getServerUrl('/food-items'),
                 foodItemData,
@@ -127,8 +122,6 @@ const PantryScreen = ({}) => {
                     price: Number(itemData.price) || 0,
                     addedFrom: 'pantry',
                 }
-
-                console.log('Creating Pantry item:', pantryItemData)
 
                 const pantryResponse = await axios.post(
                     getServerUrl('/pantry/items'),
@@ -259,8 +252,6 @@ const PantryScreen = ({}) => {
             const token = await storage.getItem('userToken')
             setLoading(true)
 
-            console.log('Sending update to backend:', updatedData)
-
             const response = await axios.put(
                 getServerUrl(`/pantry/items/${itemId}`),
                 updatedData,
@@ -334,8 +325,6 @@ const PantryScreen = ({}) => {
             </View>
         </TouchableOpacity>
     )
-
-    console.log('Current pantryItems state:', pantryItems)
 
     return (
         <ResponsiveLayout>

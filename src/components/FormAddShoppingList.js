@@ -45,7 +45,6 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
     })
 
     const handleAddItem = (itemData) => {
-        console.log('Item data received in handleAddItem:', itemData)
         // Transform categories into an array of strings
         // FormFoodItem sends 'category' (singular), so we need to handle both cases
         const categoryData = itemData.category || itemData.categories || []
@@ -62,7 +61,6 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
             unit: itemData.unit || 'kpl',
             categories: transformedCategories,
         }
-        console.log('New item being added:', newItem)
         setItems([...items, newItem])
         setShowInlineFoodForm(false)
     }
@@ -70,7 +68,6 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
     const handleSubmitForm = async (data) => {
         try {
             const token = await storage.getItem('userToken')
-            console.log('Token for submit:', token)
 
             if (!token) {
                 console.error('No token found')
@@ -78,16 +75,8 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
                 return
             }
 
-            console.log('Items before processing:', items)
-
             // Process items to ensure quantities and categories are properly formatted
             const processedItems = items.map((item) => {
-                console.log('Processing item:', item)
-                console.log(
-                    'Item categories before processing:',
-                    item.categories
-                )
-
                 // Handle categories more robustly
                 let processedCategories = []
                 if (item.categories) {
@@ -98,7 +87,6 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
                             } else if (typeof cat === 'object' && cat.name) {
                                 return cat.name
                             } else {
-                                console.warn('Unexpected category format:', cat)
                                 return String(cat)
                             }
                         })
@@ -133,7 +121,6 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
                     'Processed item categories:',
                     processedItem.categories
                 )
-                console.log('Final processed item:', processedItem)
                 return processedItem
             })
 
@@ -143,11 +130,6 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
                 totalEstimatedPrice: totalEstimatedPrice || 0,
                 items: processedItems,
             }
-
-            console.log(
-                'Final shopping list data being sent:',
-                shoppingListData
-            )
 
             const response = await axios.post(
                 getServerUrl('/shopping-lists'),
@@ -159,8 +141,6 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
                     },
                 }
             )
-
-            console.log('Response:', response.data)
 
             if (response.data) {
                 onSubmit(response.data)

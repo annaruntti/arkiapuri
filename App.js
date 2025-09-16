@@ -11,7 +11,6 @@ import { useResponsiveDimensions } from './src/utils/responsive'
 SplashScreen.preventAutoHideAsync()
 
 const App = () => {
-    console.log('App component rendering')
     const [appIsReady, setAppIsReady] = useState(false)
     const [showSplash, setShowSplash] = useState(true)
     const { containerMaxWidth, responsivePadding, isDesktop, isWeb } =

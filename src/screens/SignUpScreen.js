@@ -25,7 +25,6 @@ const SignUpScreen = () => {
                 getServerUrl('/create-user'),
                 data
             )
-            console.log('response', response)
 
             if (response.data.success) {
                 const signInData = {
@@ -38,7 +37,6 @@ const SignUpScreen = () => {
                     signInData
                 )
                 const signInRes = signInResponse.data
-                console.log('signInRes', signInRes)
                 if (signInRes.success) {
                     await AsyncStorage.setItem('userToken', signInRes.token)
                     navigation.navigate('Lataa profiilikuva', {
@@ -70,13 +68,9 @@ const SignUpScreen = () => {
         navigation.navigate('Kirjaudu sisään')
     }
 
-    const onTermsOfUsePressed = () => {
-        console.warn('onTermsOfUsePressed')
-    }
+    const onTermsOfUsePressed = () => {}
 
-    const onPrivacyPressed = () => {
-        console.warn('onPrivacyPressed')
-    }
+    const onPrivacyPressed = () => {}
 
     return (
         <AuthLayout

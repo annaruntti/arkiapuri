@@ -1,17 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react'
+import { MaterialIcons } from '@expo/vector-icons'
+import axios from 'axios'
+import React, { useEffect, useRef, useState } from 'react'
 import {
-    View,
-    TextInput,
-    StyleSheet,
-    TouchableOpacity,
     FlatList,
     Platform,
+    StyleSheet,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native'
-import { MaterialIcons } from '@expo/vector-icons'
-import CustomText from './CustomText'
-import axios from 'axios'
-import storage from '../utils/storage'
 import { getServerUrl } from '../utils/getServerUrl'
+import storage from '../utils/storage'
+import CustomText from './CustomText'
 
 const SearchFoodItems = ({ onSelectItem }) => {
     const [searchQuery, setSearchQuery] = useState('')
@@ -61,7 +61,6 @@ const SearchFoodItems = ({ onSelectItem }) => {
                 },
             })
             const items = response.data.foodItems || response.data || []
-            console.log('Setting food items:', items)
             setAllFoodItems(items)
         } catch (error) {
             console.error('Error fetching food items:', error)

@@ -1,21 +1,19 @@
 import React, { useEffect } from 'react'
-import { View, StyleSheet, Image } from 'react-native'
+import { Image, StyleSheet, View } from 'react-native'
 import Animated, {
-    useAnimatedStyle,
-    withRepeat,
-    withTiming,
-    useSharedValue,
-    withSequence,
     Easing,
+    useAnimatedStyle,
+    useSharedValue,
+    withRepeat,
+    withSequence,
+    withTiming,
 } from 'react-native-reanimated'
 
 const AnimatedSplashScreen = () => {
-    console.log('AnimatedSplashScreen component rendering')
     const scale = useSharedValue(1)
     const opacity = useSharedValue(0)
 
     useEffect(() => {
-        console.log('Starting animation')
         // Start with a slight delay to ensure smooth transition from Expo splash
         const timer = setTimeout(() => {
             opacity.value = withTiming(1, {

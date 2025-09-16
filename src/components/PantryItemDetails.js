@@ -44,7 +44,6 @@ const PantryItemDetails = ({ item, visible, onClose, onUpdate }) => {
 
     useEffect(() => {
         if (item) {
-            console.log('Item categories:', item.category)
             // Convert category IDs to names when loading
             const categoryNames = item.category.map((id) => getCategoryName(id))
             setEditedValues({
@@ -85,7 +84,6 @@ const PantryItemDetails = ({ item, visible, onClose, onUpdate }) => {
     }
 
     const handleCategoryChange = (selectedItems) => {
-        console.log('Selected categories:', selectedItems)
         // selectedItems are IDs, convert them to names for display
         const categoryNames = selectedItems.map((id) => getCategoryName(id))
         setEditedValues((prev) => ({
@@ -106,7 +104,6 @@ const PantryItemDetails = ({ item, visible, onClose, onUpdate }) => {
                 category: categoryIds,
             }
 
-            console.log('Saving with values:', updatedValues)
             await onUpdate(item._id, updatedValues)
             setEditableFields({})
             setShowCategorySelect(false)

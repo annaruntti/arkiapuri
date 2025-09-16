@@ -66,9 +66,7 @@ const MealsScreen = () => {
     }
 
     const handleDeleteMeal = async (mealId) => {
-        console.log('handleDeleteMeal called with ID:', mealId)
         const token = await storage.getItem('userToken')
-        console.log('Got token:', token ? 'yes' : 'no')
 
         if (Platform.OS === 'web') {
             // For web, skipping the Alert and directly make the API call
@@ -82,7 +80,6 @@ const MealsScreen = () => {
                         },
                     }
                 )
-                console.log('Delete API response:', response.data)
 
                 if (response.data.success) {
                     setMeals((prevMeals) =>
@@ -167,7 +164,6 @@ const MealsScreen = () => {
     const handleUpdateMeal = async (mealId, updatedMeal) => {
         try {
             const token = await storage.getItem('userToken')
-            console.log('Token:', token ? 'Token exists' : 'No token found')
 
             // First, handle each food item
             const processedFoodItems = await Promise.all(
@@ -198,8 +194,6 @@ const MealsScreen = () => {
                               })
                               .filter((id) => id !== null) // Remove any null values
                         : []
-
-                    console.log('Processed category IDs:', categoryIds)
 
                     // Clean the food item data
                     const cleanedItem = {
@@ -266,14 +260,6 @@ const MealsScreen = () => {
                 foodItems: processedFoodItems.map((item) => item._id), // Only send the IDs
             }
 
-            console.log('Updating meal with ID:', mealId)
-            console.log('Cleaned meal data:', cleanedMeal)
-            console.log('Request URL:', getServerUrl(`/meals/${mealId}`))
-            console.log('Request headers:', {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            })
-
             const response = await axios.put(
                 getServerUrl(`/meals/${mealId}`),
                 cleanedMeal,
@@ -335,7 +321,6 @@ const MealsScreen = () => {
             <View style={styles.itemActions}>
                 <DeleteButton
                     onPress={() => {
-                        console.log('Delete button pressed for meal:', item._id)
                         handleDeleteMeal(item._id)
                     }}
                 />
@@ -345,7 +330,6 @@ const MealsScreen = () => {
 
     useEffect(() => {
         if (selectedMeal) {
-            console.log(selectedMeal.foodItems, 'fooditems')
         }
     }, [selectedMeal])
 

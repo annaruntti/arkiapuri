@@ -21,7 +21,7 @@ const LandingScreen = ({ navigation }) => {
             <View style={styles.loginView}>
                 <ImageBackground
                     imageStyle={{
-                        resizeMode: 'cover', // works only here!
+                        resizeMode: 'cover',
                     }}
                     style={styles.image}
                     source={image}
@@ -33,19 +33,6 @@ const LandingScreen = ({ navigation }) => {
                             isDesktop && styles.desktopBottomBox,
                         ]}
                     >
-                        {!isDesktop && !isTablet && (
-                            <Svg
-                                height={90}
-                                width="100%"
-                                viewBox="0 0 1440 280"
-                                style={styles.bottomWavy}
-                            >
-                                <Path
-                                    fill="#fff"
-                                    d="M0,320L40,288C80,256,160,192,240,165.3C320,139,400,149,480,165.3C560,181,640,203,720,213.3C800,224,880,224,960,192C1040,160,1120,96,1200,64C1280,32,1360,32,1400,32L1440,32L1440,320L1400,320C1360,320,1280,320,1200,320C1120,320,1040,320,960,320C880,320,800,320,720,320C640,320,560,320,480,320C400,320,320,320,240,320C160,320,80,320,40,320L0,320Z"
-                                />
-                            </Svg>
-                        )}
                         <View
                             style={[
                                 styles.bottomBoxContent,
@@ -53,44 +40,63 @@ const LandingScreen = ({ navigation }) => {
                                 isTablet && styles.tabletBottomBoxContent,
                             ]}
                         >
-                            <CustomText
-                                style={[
-                                    styles.introTextTitle,
-                                    isTablet && styles.tabletIntroTextTitle,
-                                    isDesktop && styles.desktopIntroTextTitle,
-                                ]}
-                            >
-                                Tervetuloa Arkiapuriin!
-                            </CustomText>
-                            <CustomText
-                                style={[
-                                    styles.introText,
-                                    isTablet && styles.tabletIntroText,
-                                    isDesktop && styles.desktopIntroText,
-                                ]}
-                            >
-                                Arkiapuri tuo apua jokaisen jokapäiväiseen
-                                elämään.
-                            </CustomText>
-                            <CustomText
-                                style={[
-                                    styles.bottomBoxText,
-                                    isTablet && styles.tabletBottomBoxText,
-                                    isDesktop && styles.desktopBottomBoxText,
-                                ]}
-                            >
-                                Kirjaudu sisään tai rekisteröidy. Se on helppoa,
-                                ilmaista ja vie vain hetken!
-                            </CustomText>
-                            <Button
-                                title="Aloitetaan!"
-                                onPress={onSignUpPress}
-                                style={[
-                                    styles.primaryButtonStart,
-                                    isDesktop && styles.desktopPrimaryButton,
-                                ]}
-                                textStyle={styles.buttonText}
-                            />
+                            {!isDesktop && !isTablet && (
+                                <Svg
+                                    height={90}
+                                    width="100%"
+                                    viewBox="0 0 1440 320"
+                                    preserveAspectRatio="none"
+                                    style={styles.bottomWavy}
+                                >
+                                    <Path
+                                        fill="#fff"
+                                        d="M0,320L40,288C80,256,160,192,240,165.3C320,139,400,149,480,165.3C560,181,640,203,720,213.3C800,224,880,224,960,192C1040,160,1120,96,1200,64C1280,32,1360,32,1400,32L1440,32L1440,320L1400,320C1360,320,1280,320,1200,320C1120,320,1040,320,960,320C880,320,800,320,720,320C640,320,560,320,480,320C400,320,320,320,240,320C160,320,80,320,40,320L0,320Z"
+                                    />
+                                </Svg>
+                            )}
+                            <View style={styles.contentPadding}>
+                                <CustomText
+                                    style={[
+                                        styles.introTextTitle,
+                                        isTablet && styles.tabletIntroTextTitle,
+                                        isDesktop &&
+                                            styles.desktopIntroTextTitle,
+                                    ]}
+                                >
+                                    Tervetuloa Arkiapuriin!
+                                </CustomText>
+                                <CustomText
+                                    style={[
+                                        styles.introText,
+                                        isTablet && styles.tabletIntroText,
+                                        isDesktop && styles.desktopIntroText,
+                                    ]}
+                                >
+                                    Arkiapuri tuo apua jokaisen jokapäiväiseen
+                                    elämään.
+                                </CustomText>
+                                <CustomText
+                                    style={[
+                                        styles.bottomBoxText,
+                                        isTablet && styles.tabletBottomBoxText,
+                                        isDesktop &&
+                                            styles.desktopBottomBoxText,
+                                    ]}
+                                >
+                                    Kirjaudu sisään tai rekisteröidy. Se on
+                                    helppoa, ilmaista ja vie vain hetken!
+                                </CustomText>
+                                <Button
+                                    title="Aloitetaan!"
+                                    onPress={onSignUpPress}
+                                    style={[
+                                        styles.primaryButtonStart,
+                                        isDesktop &&
+                                            styles.desktopPrimaryButton,
+                                    ]}
+                                    textStyle={styles.buttonText}
+                                />
+                            </View>
                         </View>
                     </View>
                 </ImageBackground>
@@ -161,13 +167,15 @@ const styles = StyleSheet.create({
     },
     bottomBoxContent: {
         paddingTop: 25,
-        paddingRight: 20,
+        paddingRight: 0,
         paddingBottom: 20,
-        paddingLeft: 20,
+        paddingLeft: 0,
         backgroundColor: '#fff',
         width: '100%',
         alignItems: 'center',
         alignSelf: 'center',
+        position: 'relative',
+        overflow: 'visible',
     },
     bottomBoxText: {
         fontSize: 15,
@@ -216,6 +224,17 @@ const styles = StyleSheet.create({
         color: '#000000',
         fontWeight: 'bold',
         textAlign: 'center',
+    },
+    bottomWavy: {
+        position: 'absolute',
+        top: -90,
+        left: 0,
+        right: 0,
+        width: '100%',
+        zIndex: 1,
+    },
+    contentPadding: {
+        paddingHorizontal: 20,
     },
     // Desktop responsive styles
     tabletBottomBox: {

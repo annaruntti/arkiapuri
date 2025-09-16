@@ -1,19 +1,25 @@
-import SignInScreen from './SignInScreen'
-import SignUpScreen from './SignUpScreen'
-import Home from './HomeScreen'
+import ConfirmEmailScreen from './ConfirmEmailScreen'
+import HomeScreen from './HomeScreen'
+import ImageUploadScreen from './ImageUploadScreen'
+import LandingScreen from './LandingScreen'
 import MealsScreen from './MealsScreen'
 import PantryScreen from './PantryScreen'
-import Profile from './ProfileScreen'
+import ProfileScreen from './ProfileScreen'
 import ReadingOrderScreen from './ReadingOrderScreen'
-import ShoppingListScreen from './ShoppingListScreen'
+import ShoppingListsScreen from './ShoppingListsScreen'
+import SignInScreen from './SignInScreen'
+import SignUpScreen from './SignUpScreen'
 
 export {
-    SignInScreen,
-    SignUpScreen,
-    Home,
+    ConfirmEmailScreen,
+    HomeScreen,
+    ImageUploadScreen,
+    LandingScreen,
     MealsScreen,
     PantryScreen,
-    Profile,
+    ProfileScreen,
     ReadingOrderScreen,
-    ShoppingListScreen,
+    ShoppingListsScreen,
+    SignInScreen,
+    SignUpScreen,
 }

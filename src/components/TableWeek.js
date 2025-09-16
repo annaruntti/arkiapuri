@@ -63,8 +63,6 @@ const Table = () => {
                 format(date, 'yyyy-MM-dd')
             )
 
-            console.log('Fetching meals for dates:', formattedDates)
-
             const response = await axios.get(
                 getServerUrl(`/meals?dates=${formattedDates.join(',')}`),
                 {
@@ -73,8 +71,6 @@ const Table = () => {
                     },
                 }
             )
-
-            console.log('API Response:', response.data)
 
             // Organize data by date
             const mealsByDate = {}
@@ -91,35 +87,26 @@ const Table = () => {
                     if (meal.plannedCookingDate || meal.date) {
                         const dateField = meal.plannedCookingDate || meal.date
                         const date = dateField.split('T')[0] // Get the date part
-                        console.log(
-                            `Processing meal: ${meal.name} for date: ${date}`
-                        )
 
                         if (mealsByDate[date]) {
                             mealsByDate[date].push(meal)
                         } else {
                             // For dates that might not be in initial array but have meals
-                            console.log(`Adding date ${date} to mealsByDate`)
                             mealsByDate[date] = [meal]
                         }
                     } else {
                         // Add the first meal (Muffinssit) to today's date if it has no date
                         if (meal.name === 'Muffinssit') {
                             const today = format(new Date(), 'yyyy-MM-dd')
-                            console.log(
-                                `Adding Muffinssit to today's date: ${today}`
-                            )
                             if (mealsByDate[today]) {
                                 mealsByDate[today].push(meal)
                             }
                         } else {
-                            console.warn('Meal missing date:', meal)
                         }
                     }
                 })
             }
 
-            console.log('Processed meal data by date:', mealsByDate)
             setMealsByDate(mealsByDate)
         } catch (error) {
             console.error('Error fetching meal data:', error)
@@ -142,7 +129,6 @@ const Table = () => {
             if (response.data && response.data.meals) {
                 // Show all meals for now, remove the filter temporarily
                 const availableMeals = response.data.meals
-                console.log('Available meals to show:', availableMeals)
                 setAvailableMeals(availableMeals)
                 setSelectedDate(date)
                 setIsModalVisible(true)
@@ -157,12 +143,6 @@ const Table = () => {
         try {
             const token = await storage.getItem('userToken')
             const formattedDate = new Date(selectedDate).toISOString()
-
-            console.log('Updating meal:', {
-                mealId: meal._id,
-                formattedDate,
-                url: getServerUrl(`/meals/${meal._id}`),
-            })
 
             // Use PUT with the meal._id
             const response = await axios.put(
@@ -218,13 +198,6 @@ const Table = () => {
 
     const handleMealUpdate = async (mealId, updatedMeal) => {
         try {
-            console.log(
-                'handleMealUpdate called with mealId:',
-                mealId,
-                'updatedMeal:',
-                updatedMeal
-            )
-
             if (!mealId) {
                 console.error('No meal ID provided')
                 Alert.alert('Virhe', 'Aterian ID puuttuu')
@@ -249,9 +222,6 @@ const Table = () => {
                     updatedMeal.foodItems?.map((item) => item._id || item) ||
                     [],
             }
-
-            console.log('Updating meal with ID:', mealId)
-            console.log('Cleaned meal data:', cleanedMeal)
 
             // Send API call to update the meal
             const response = await axios.put(
