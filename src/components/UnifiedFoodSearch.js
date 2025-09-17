@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons'
 import axios from 'axios'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
     ActivityIndicator,
     Alert,
@@ -34,24 +34,47 @@ const UnifiedFoodSearch = ({
     const [addedItems, setAddedItems] = useState(new Set())
     const [activeTab, setActiveTab] = useState('all') // 'all', 'local', 'openfoodfacts'
     const searchContainerRef = useRef(null)
+    const searchTimeoutRef = useRef(null)
+    const renderTimestampRef = useRef(Date.now())
 
     // Fetch local food items when component mounts
     useEffect(() => {
         fetchLocalFoodItems()
     }, [])
 
-    // Search effect - searches both local and Open Food Facts
+    // Search effect with debouncing
     useEffect(() => {
+        if (searchTimeoutRef.current) {
+            clearTimeout(searchTimeoutRef.current)
+        }
+
         if (searchQuery.length >= 2) {
-            searchItems()
+            // Clear previous results to prevent duplicates
+            setFilteredLocalItems([])
+            setOpenFoodFactsItems([])
+            setLoading(true)
+            setIsListVisible(true)
+            renderTimestampRef.current = Date.now()
+
+            // Debounce search by 300ms
+            searchTimeoutRef.current = setTimeout(() => {
+                searchItems(searchQuery)
+            }, 300)
         } else {
             setFilteredLocalItems([])
             setOpenFoodFactsItems([])
             setIsListVisible(false)
+            setLoading(false)
+        }
+
+        return () => {
+            if (searchTimeoutRef.current) {
+                clearTimeout(searchTimeoutRef.current)
+            }
         }
     }, [searchQuery])
 
-    // Click outside handler
+    // Click outside handler and cleanup
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (
@@ -71,6 +94,9 @@ const UnifiedFoodSearch = ({
         return () => {
             if (Platform.OS === 'web') {
                 document.removeEventListener('mousedown', handleClickOutside)
+            }
+            if (searchTimeoutRef.current) {
+                clearTimeout(searchTimeoutRef.current)
             }
         }
     }, [])
@@ -92,52 +118,83 @@ const UnifiedFoodSearch = ({
         }
     }
 
-    const searchItems = async () => {
-        if (searchQuery.length < 2) return
+    const searchItems = async (query) => {
+        if (query.length < 2) return
 
-        setLoading(true)
-        setIsListVisible(true)
+        renderTimestampRef.current = Date.now()
 
         try {
-            // Search local items
+            // Search local items with better filtering
+            const queryLower = query.toLowerCase().trim()
             const localFiltered = localFoodItems
-                .filter((item) => item.name && item.name.toLowerCase().includes(searchQuery.toLowerCase()))
-                .map(item => ({
+                .filter((item) => {
+                    if (!item.name) return false
+                    const nameLower = item.name.toLowerCase()
+                    return nameLower.includes(queryLower)
+                })
+                .sort((a, b) => {
+                    // Prioritize exact matches and starts-with matches
+                    const aName = a.name.toLowerCase()
+                    const bName = b.name.toLowerCase()
+                    const aExact = aName === queryLower
+                    const bExact = bName === queryLower
+                    const aStarts = aName.startsWith(queryLower)
+                    const bStarts = bName.startsWith(queryLower)
+
+                    if (aExact && !bExact) return -1
+                    if (!aExact && bExact) return 1
+                    if (aStarts && !bStarts) return -1
+                    if (!aStarts && bStarts) return 1
+                    return aName.localeCompare(bName)
+                })
+                .slice(0, 15) // Limit to 15 local items max
+                .map((item) => ({
                     ...item,
                     // Ensure local items have proper structure
                     name: item.name || 'Nimetön tuote',
-                    category: Array.isArray(item.category) ? item.category : (item.category ? [item.category] : []),
-                    calories: item.calories || 0
+                    category: Array.isArray(item.category)
+                        ? item.category
+                        : item.category
+                          ? [item.category]
+                          : [],
+                    calories: item.calories || 0,
                 }))
+
             setFilteredLocalItems(localFiltered)
 
             // Search Open Food Facts
             if (activeTab === 'all' || activeTab === 'openfoodfacts') {
                 try {
                     const response = await fetch(
-                        `${getServerUrl('')}/api/openfoodfacts/search?q=${encodeURIComponent(searchQuery)}&limit=10`
+                        `${getServerUrl('')}/api/openfoodfacts/search?q=${encodeURIComponent(query)}&limit=8`
                     )
                     const data = await response.json()
 
                     if (data.success) {
-                        // Ensure all Open Food Facts items have the proper structure
-                        const processedProducts = (data.products || []).map(product => ({
-                            ...product,
-                            source: 'openfoodfacts',
-                            // Ensure required fields exist
-                            name: product.name || 'Nimetön tuote',
-                            brands: product.brands || '',
-                            nutrition: product.nutrition || { calories: 0 },
-                            nutritionGrade: product.nutritionGrade || '',
-                            category: product.category || []
-                        }))
+                        const processedProducts = (data.products || []).map(
+                            (product) => ({
+                                ...product,
+                                source: 'openfoodfacts',
+                                name: String(product.name || 'Nimetön tuote'),
+                                brands: String(product.brands || ''),
+                                nutrition: product.nutrition || { calories: 0 },
+                                nutritionGrade: String(product.nutritionGrade || ''),
+                                category: Array.isArray(product.category)
+                                    ? product.category
+                                    : product.category
+                                      ? [product.category]
+                                      : [],
+                            })
+                        )
+
                         setOpenFoodFactsItems(processedProducts)
                     }
                 } catch (offError) {
                     console.error('Error searching Open Food Facts:', offError)
-                    // Don't fail the whole search if OFF is down
                     setOpenFoodFactsItems([])
                 }
+            } else {
+                setOpenFoodFactsItems([])
             }
         } catch (error) {
             console.error('Error searching items:', error)
@@ -366,111 +423,155 @@ const UnifiedFoodSearch = ({
         return colors[grade?.toLowerCase()] || '#ccc'
     }
 
-    const renderLocalItem = ({ item }) => (
-        <TouchableOpacity
-            style={[styles.item, addedItems.has(item._id) && styles.addedItem]}
-            onPress={() => handleSelectLocalItem(item)}
-            disabled={addedItems.has(item._id)}
-        >
-            <View style={styles.itemContent}>
-                <View style={styles.itemLeft}>
-                    <View style={styles.itemNameContainer}>
-                        <CustomText style={styles.itemName}>
-                            {item.name || 'Nimetön tuote'}
-                        </CustomText>
-                        {item.calories && item.calories > 0 && (
-                            <CustomText style={styles.itemCalories}>
-                                {`${item.calories} kcal`}
+    const renderLocalItem = ({ item }) => {
+        const categoryText = (() => {
+            if (Array.isArray(item.category)) {
+                const filtered = item.category.filter(Boolean)
+                const joined = filtered.join(', ')
+                return String(joined || 'Ei kategoriaa')
+            }
+            return String('Ei kategoriaa')
+        })()
+
+        const calorieText =
+            item.calories && item.calories > 0
+                ? String(`${item.calories} kcal`)
+                : null
+
+        return (
+            <TouchableOpacity
+                style={[
+                    styles.item,
+                    addedItems.has(item._id) && styles.addedItem,
+                ]}
+                onPress={() => handleSelectLocalItem(item)}
+                disabled={addedItems.has(item._id)}
+            >
+                <View style={styles.itemContent}>
+                    <View style={styles.itemLeft}>
+                        <View style={styles.itemNameContainer}>
+                            <CustomText style={styles.itemName}>
+                                {String(
+                                    item.name || 'Nimetön tuote'
+                                ).trim()}
                             </CustomText>
+                            {calorieText ? (
+                                <CustomText style={styles.itemCalories}>
+                                    {calorieText}
+                                </CustomText>
+                            ) : null}
+                        </View>
+                        <View style={styles.itemDetails}>
+                            <CustomText style={styles.itemCategory}>
+                                {categoryText}
+                            </CustomText>
+                        </View>
+                    </View>
+                    <View style={styles.itemRight}>
+                        <CustomText style={styles.sourceLabel}>
+                            {String('Oma')}
+                        </CustomText>
+                        {addedItems.has(item._id) ? (
+                            <Ionicons
+                                name="checkmark-circle"
+                                size={20}
+                                color="#00AA00"
+                            />
+                        ) : (
+                            <Ionicons
+                                name="add-circle-outline"
+                                size={20}
+                                color="#9C86FC"
+                            />
                         )}
                     </View>
-                    <View style={styles.itemDetails}>
-                        <CustomText style={styles.itemCategory}>
-                            {item.category?.filter(Boolean).join(', ') || 'Ei kategoriaa'}
-                        </CustomText>
-                    </View>
                 </View>
-                <View style={styles.itemRight}>
-                    <CustomText style={styles.sourceLabel}>Oma</CustomText>
-                    {addedItems.has(item._id) ? (
-                        <Ionicons
-                            name="checkmark-circle"
-                            size={20}
-                            color="#00AA00"
-                        />
-                    ) : (
+            </TouchableOpacity>
+        )
+    }
+
+    const renderOpenFoodFactsItem = ({ item }) => {
+        return (
+            <TouchableOpacity
+                style={styles.item}
+                onPress={() => handleSelectOpenFoodFactsItem(item)}
+            >
+                <View style={styles.itemContent}>
+                    <View style={styles.imageItemLeft}>
+                        {item.imageUrl && (
+                            <Image
+                                source={{ uri: item.imageUrl }}
+                                style={styles.productImage}
+                            />
+                        )}
+                        <View style={styles.itemInfo}>
+                            <CustomText
+                                style={styles.itemName}
+                                numberOfLines={2}
+                            >
+                                {String(
+                                    item.name || 'Nimetön tuote'
+                                ).trim()}
+                            </CustomText>
+                            {item.brands &&
+                            item.brands.trim().length > 0 &&
+                            String(item.brands).trim() !== '' ? (
+                                <CustomText
+                                    style={styles.itemBrand}
+                                    numberOfLines={1}
+                                >
+                                    {String(item.brands).trim()}
+                                </CustomText>
+                            ) : null}
+                            <View style={styles.productMeta}>
+                                {item.nutritionGrade &&
+                                item.nutritionGrade.trim().length > 0 &&
+                                String(item.nutritionGrade).trim() !==
+                                    '' ? (
+                                    <View
+                                        style={[
+                                            styles.gradeBox,
+                                            {
+                                                backgroundColor:
+                                                    getGradeColor(
+                                                        item.nutritionGrade
+                                                    ),
+                                            },
+                                        ]}
+                                    >
+                                        <CustomText
+                                            style={styles.gradeText}
+                                        >
+                                            {String(item.nutritionGrade)
+                                                .trim()
+                                                .toUpperCase()}
+                                        </CustomText>
+                                    </View>
+                                ) : null}
+                                {item.nutrition?.calories > 0 ? (
+                                    <CustomText style={styles.itemCalories}>
+                                        {String(
+                                            `${Math.round(item.nutrition.calories || 0)} kcal`
+                                        ).trim()}
+                                    </CustomText>
+                                ) : null}
+                            </View>
+                        </View>
+                    </View>
+                    <View style={styles.itemRight}>
+                        <CustomText style={styles.sourceLabelOFF}>
+                            {String('OFF')}
+                        </CustomText>
                         <Ionicons
                             name="add-circle-outline"
                             size={20}
                             color="#9C86FC"
                         />
-                    )}
-                </View>
-            </View>
-        </TouchableOpacity>
-    )
-
-    const renderOpenFoodFactsItem = ({ item }) => (
-        <TouchableOpacity
-            style={styles.item}
-            onPress={() => handleSelectOpenFoodFactsItem(item)}
-        >
-            <View style={styles.itemContent}>
-                <View style={styles.imageItemLeft}>
-                    {item.imageUrl && (
-                        <Image
-                            source={{ uri: item.imageUrl }}
-                            style={styles.productImage}
-                        />
-                    )}
-                    <View style={styles.itemInfo}>
-                        <CustomText style={styles.itemName} numberOfLines={2}>
-                            {item.name || 'Nimetön tuote'}
-                        </CustomText>
-                        {item.brands && (
-                            <CustomText
-                                style={styles.itemBrand}
-                                numberOfLines={1}
-                            >
-                                {item.brands || ''}
-                            </CustomText>
-                        )}
-                        <View style={styles.productMeta}>
-                            {item.nutritionGrade && (
-                                <View
-                                    style={[
-                                        styles.gradeBox,
-                                        {
-                                            backgroundColor: getGradeColor(
-                                                item.nutritionGrade
-                                            ),
-                                        },
-                                    ]}
-                                >
-                                    <CustomText style={styles.gradeText}>
-                                        {(item.nutritionGrade || '').toUpperCase()}
-                                    </CustomText>
-                                </View>
-                            )}
-                            {item.nutrition?.calories > 0 && (
-                                <CustomText style={styles.itemCalories}>
-                                    {`${Math.round(item.nutrition.calories || 0)} kcal`}
-                                </CustomText>
-                            )}
-                        </View>
                     </View>
                 </View>
-                <View style={styles.itemRight}>
-                    <CustomText style={styles.sourceLabelOFF}>OFF</CustomText>
-                    <Ionicons
-                        name="add-circle-outline"
-                        size={20}
-                        color="#9C86FC"
-                    />
-                </View>
-            </View>
-        </TouchableOpacity>
-    )
+            </TouchableOpacity>
+        )
+    }
 
     const getFilteredData = () => {
         switch (activeTab) {
@@ -479,17 +580,89 @@ const UnifiedFoodSearch = ({
             case 'openfoodfacts':
                 return openFoodFactsItems
             default:
-                return [...filteredLocalItems, ...openFoodFactsItems]
+                // Smart deduplication: prioritize local items, remove exact name duplicates
+                const seenNames = new Set()
+                const seenKeys = new Set()
+                const deduped = []
+
+                // First add local items (they have priority)
+                filteredLocalItems.forEach((item, index) => {
+                    const normalizedName = item.name?.toLowerCase().trim()
+                    const key = item._id || `local-${normalizedName}`
+
+                    if (!seenNames.has(normalizedName) && !seenKeys.has(key)) {
+                        seenNames.add(normalizedName)
+                        seenKeys.add(key)
+                        deduped.push(item)
+                    }
+                })
+
+                // Then add Open Food Facts items (only if name doesn't exist)
+                openFoodFactsItems.forEach((item) => {
+                    const normalizedName = item.name?.toLowerCase().trim()
+                    const key = item.barcode || `off-${normalizedName}`
+
+                    if (!seenNames.has(normalizedName) && !seenKeys.has(key)) {
+                        seenNames.add(normalizedName)
+                        seenKeys.add(key)
+                        deduped.push(item)
+                    }
+                })
+
+                return deduped
         }
     }
 
-    const renderItem = ({ item }) => {
-        // More robust detection of Open Food Facts items
-        if (item.source === 'openfoodfacts' || item.barcode || item.nutrition || item.nutritionGrade) {
-            return renderOpenFoodFactsItem({ item })
+    // Memoize the filtered data to prevent unnecessary re-renders
+    const memoizedData = useMemo(() => {
+        // Don't return any data if we're loading or have no search query
+        if (loading || searchQuery.length < 2) {
+            return []
         }
-        return renderLocalItem({ item })
-    }
+
+        const data = getFilteredData()
+        // Freeze the data to prevent mutations and ensure each item has a stable reference
+        return Object.freeze(
+            data.map((item, index) =>
+                Object.freeze({
+                    ...item,
+                    // Add a unique key with timestamp to prevent key conflicts across renders
+                    __searchKey: `${renderTimestampRef.current}-${activeTab}-${index}-${item._id || item.barcode || item.name || 'unknown'}`,
+                })
+            )
+        )
+    }, [
+        filteredLocalItems,
+        openFoodFactsItems,
+        activeTab,
+        searchQuery,
+        loading,
+    ])
+
+    // Memoize the renderItem function to prevent re-renders
+    const memoizedRenderItem = useCallback(
+        ({ item, index }) => {
+            // More robust detection of Open Food Facts items
+            if (
+                item.source === 'openfoodfacts' ||
+                item.barcode ||
+                item.nutrition ||
+                item.nutritionGrade
+            ) {
+                return (
+                    <React.Fragment key={item.__searchKey || index}>
+                        {renderOpenFoodFactsItem({ item })}
+                    </React.Fragment>
+                )
+            }
+            return (
+                <React.Fragment key={item.__searchKey || index}>
+                    {renderLocalItem({ item })}
+                </React.Fragment>
+            )
+        },
+        [addedItems]
+    )
 
     return (
         <View style={styles.container} ref={searchContainerRef}>
@@ -537,8 +710,12 @@ const UnifiedFoodSearch = ({
                                     activeTab === 'all' && styles.activeTabText,
                                 ]}
                             >
-                                {`Kaikki (${filteredLocalItems.length +
-                                    openFoodFactsItems.length})`}
+                                {String(
+                                    `Kaikki (${
+                                        filteredLocalItems.length +
+                                        openFoodFactsItems.length
+                                    })`
+                                )}
                             </CustomText>
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -555,7 +732,7 @@ const UnifiedFoodSearch = ({
                                         styles.activeTabText,
                                 ]}
                             >
-                                {`Omat (${filteredLocalItems.length})`}
+                                {String(`Omat (${filteredLocalItems.length})`)}
                             </CustomText>
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -573,29 +750,40 @@ const UnifiedFoodSearch = ({
                                         styles.activeTabText,
                                 ]}
                             >
-                                {`Tietokanta (${openFoodFactsItems.length})`}
+                                {String(
+                                    `Tietokanta (${openFoodFactsItems.length})`
+                                )}
                             </CustomText>
                         </TouchableOpacity>
                     </View>
 
-                    <FlatList
-                        data={getFilteredData()}
-                        renderItem={renderItem}
-                        keyExtractor={(item) =>
-                            item._id || item.barcode || Math.random().toString()
-                        }
-                        style={styles.resultsList}
-                        keyboardShouldPersistTaps="handled"
-                        ListEmptyComponent={
-                            !loading ? (
-                                <View style={styles.emptyContainer}>
-                                    <CustomText style={styles.emptyText}>
-                                        {`Ei tuloksia haulle "${searchQuery}"`}
-                                    </CustomText>
-                                </View>
-                            ) : null
-                        }
-                    />
+                    {memoizedData.length === 0 && !loading ? (
+                        <View style={styles.emptyContainer}>
+                            <CustomText style={styles.emptyText}>
+                                {String(`Ei tuloksia haulle "${searchQuery}"`)}
+                            </CustomText>
+                        </View>
+                    ) : (
+                        <FlatList
+                            key={`flatlist-${renderTimestampRef.current}`} // Force complete re-render
+                            data={memoizedData}
+                            renderItem={memoizedRenderItem}
+                            keyExtractor={(item, index) => {
+                                // Use the stable internal key we added in memoizedData
+                                return (
+                                    item.__searchKey ||
+                                    `fallback-${renderTimestampRef.current}-${index}`
+                                )
+                            }}
+                            style={styles.resultsList}
+                            keyboardShouldPersistTaps="handled"
+                            removeClippedSubviews={false} // Disable for better compatibility
+                            maxToRenderPerBatch={10}
+                            initialNumToRender={10}
+                            windowSize={5}
+                            getItemLayout={null} // Let FlatList calculate dynamically
+                        />
+                    )}
                 </View>
             )}
 
