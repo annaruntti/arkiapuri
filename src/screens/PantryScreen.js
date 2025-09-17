@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import {
     Alert,
     FlatList,
+    ScrollView,
     StyleSheet,
     TouchableOpacity,
     View,
@@ -337,101 +338,119 @@ const PantryScreen = ({}) => {
                 >
                     <FormFoodItem onSubmit={handleAddItem} location="pantry" />
                 </ResponsiveModal>
-                <CustomText style={styles.infoTitle}>
-                    Etsi ja lisää pentterisi tuotteita
-                </CustomText>
-                <View style={styles.instructionsContainer}>
-                    {showFullInstructions ? (
-                        <>
-                            <CustomText style={styles.infoText}>
-                                Täällä voit selata pentterisi eli ruokakomerosi
-                                sisältöä, sekä lisätä sinne uusia tuotteita.
-                                Pentterillä tarkoitetaan mitä tahansa kotisi
-                                elintarvikkeiden säilyttämiseen tarkoitettuja
-                                paikkoja. Esim. jääkaappi, pakastin ja
-                                kuiva-ainekaappi. Lisää ja ylläpidä pentterisi
-                                sisältöä täällä, jotta voit hyödyntää sen
-                                siältämiä elintarvikkeita ateriasuunnittelussa.
-                            </CustomText>
-                            <CustomText style={styles.infoText}>
-                                Etsi tuotteita nimellä tai skannaa viivakoodi.
-                                Tulokset sisältävät sekä itse lisäämäsi tuotteet
-                                että Open Food Facts -tietokannasta löytyvät
-                                elintarvikkeet.
-                            </CustomText>
-                        </>
-                    ) : (
-                        <CustomText style={styles.infoText}>
-                            Selaa ja hallitse pentterisi sisältöä. Etsi
-                            tuotteita nimellä tai skannaa viivakoodi.
-                        </CustomText>
-                    )}
-                    <TouchableOpacity
-                        style={styles.toggleInstructionsButton}
-                        onPress={() =>
-                            setShowFullInstructions(!showFullInstructions)
-                        }
-                    >
-                        <CustomText style={styles.toggleInstructionsText}>
-                            {showFullInstructions
-                                ? 'Näytä vähemmän'
-                                : 'Lue lisää'}
-                        </CustomText>
-                    </TouchableOpacity>
-                </View>
-                <View
-                    style={[
-                        styles.searchAndAddSection,
-                        isDesktop && styles.desktopSearchAndAddSection,
-                    ]}
-                >
-                    <View
-                        style={[
-                            styles.searchContainer,
-                            isDesktop && styles.desktopSearchContainer,
-                        ]}
-                    >
-                        <UnifiedFoodSearch
-                            onSelectItem={handleSearchItemSelect}
-                            location="pantry"
-                        />
-                    </View>
-                    <View
-                        style={[
-                            styles.manualAddContainer,
-                            isDesktop && styles.desktopManualAddContainer,
-                        ]}
-                    >
-                        <Button
-                            title="+ Tai lisää tuote manuaalisesti"
-                            onPress={() => setShowItemForm(true)}
-                            style={styles.tertiaryButton}
-                            textStyle={styles.buttonText}
-                        />
-                    </View>
-                </View>
 
-                <View style={styles.stats}>
-                    <CustomText>
-                        Tuotteita: {pantryItems?.length || 0} kpl
-                    </CustomText>
-                </View>
-                <FlatList
-                    data={pantryItems}
-                    renderItem={renderItem}
-                    keyExtractor={(item) => item._id}
-                    extraData={pantryItems}
-                    style={styles.list}
-                    contentContainerStyle={styles.listContent}
-                    ListEmptyComponent={
-                        !loading && (
-                            <CustomText style={styles.emptyText}>
-                                Pentterissäsi ei ole vielä lisätty
-                                elintarvikkeita.
+                <ScrollView
+                    style={styles.mainScrollView}
+                    stickyHeaderIndices={[1]}
+                    showsVerticalScrollIndicator={false}
+                >
+                    {/* Header section that scrolls away */}
+                    <View style={styles.headerSection}>
+                        <CustomText style={styles.introText}>
+                            Etsi ja lisää pentterisi tuotteita
+                        </CustomText>
+                        <View style={styles.instructionsContainer}>
+                            {showFullInstructions ? (
+                                <>
+                                    <CustomText style={styles.infoText}>
+                                        Täällä voit selata pentterisi eli
+                                        ruokakomerosi sisältöä, sekä lisätä
+                                        sinne uusia tuotteita. Pentterillä
+                                        tarkoitetaan mitä tahansa kotisi
+                                        elintarvikkeiden säilyttämiseen
+                                        tarkoitettuja paikkoja. Esim. jääkaappi,
+                                        pakastin ja kuiva-ainekaappi. Lisää ja
+                                        ylläpidä pentterisi sisältöä täällä,
+                                        jotta voit hyödyntää sen siältämiä
+                                        elintarvikkeita ateriasuunnittelussa.
+                                    </CustomText>
+                                    <CustomText style={styles.infoText}>
+                                        Etsi tuotteita nimellä tai skannaa
+                                        viivakoodi. Tulokset sisältävät sekä
+                                        itse lisäämäsi tuotteet että Open Food
+                                        Facts -tietokannasta löytyvät
+                                        elintarvikkeet.
+                                    </CustomText>
+                                </>
+                            ) : (
+                                <CustomText style={styles.infoText}>
+                                    Selaa ja hallitse pentterisi sisältöä. Etsi
+                                    tuotteita nimellä tai skannaa viivakoodi.
+                                </CustomText>
+                            )}
+                            <TouchableOpacity
+                                style={styles.toggleInstructionsButton}
+                                onPress={() =>
+                                    setShowFullInstructions(
+                                        !showFullInstructions
+                                    )
+                                }
+                            >
+                                <CustomText
+                                    style={styles.toggleInstructionsText}
+                                >
+                                    {showFullInstructions
+                                        ? 'Näytä vähemmän'
+                                        : 'Lue lisää'}
+                                </CustomText>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    {/* Sticky search section */}
+                    <View style={styles.stickySearchSection}>
+                        <View
+                            style={[
+                                styles.searchContainer,
+                                isDesktop && styles.desktopSearchContainer,
+                            ]}
+                        >
+                            <UnifiedFoodSearch
+                                onSelectItem={handleSearchItemSelect}
+                                location="pantry"
+                            />
+                        </View>
+                        <View
+                            style={[
+                                styles.manualAddContainer,
+                                isDesktop && styles.desktopManualAddContainer,
+                            ]}
+                        >
+                            <Button
+                                title="+ Tai lisää tuote manuaalisesti"
+                                onPress={() => setShowItemForm(true)}
+                                style={styles.tertiaryButton}
+                                textStyle={styles.buttonText}
+                            />
+                        </View>
+                        <View style={styles.stats}>
+                            <CustomText>
+                                Tuotteita: {pantryItems?.length || 0} kpl
                             </CustomText>
-                        )
-                    }
-                />
+                        </View>
+                    </View>
+
+                    {/* Product list container */}
+                    <View style={styles.productListContainer}>
+                        <FlatList
+                            data={pantryItems}
+                            renderItem={renderItem}
+                            keyExtractor={(item) => item._id}
+                            extraData={pantryItems}
+                            style={styles.productList}
+                            contentContainerStyle={styles.listContent}
+                            scrollEnabled={false}
+                            ListEmptyComponent={
+                                !loading && (
+                                    <CustomText style={styles.emptyText}>
+                                        Pentterissäsi ei ole vielä lisätty
+                                        elintarvikkeita.
+                                    </CustomText>
+                                )
+                            }
+                        />
+                    </View>
+                </ScrollView>
                 <PantryItemDetails
                     item={selectedItem}
                     visible={detailsVisible}
@@ -452,25 +471,45 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fff',
-        padding: 20,
+        padding: 15,
+    },
+    mainScrollView: {
+        flex: 1,
+    },
+    headerSection: {
+        backgroundColor: '#fff',
+        paddingHorizontal: 5,
+        paddingTop: 10,
+        paddingBottom: 10,
+    },
+    stickySearchSection: {
+        backgroundColor: '#fff',
+        paddingVertical: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+        elevation: 2,
+        marginBottom: 5,
+    },
+    productListContainer: {
+        flex: 1,
+        minHeight: 400,
+    },
+    productList: {
+        flex: 1,
     },
     introText: {
-        fontSize: 17,
-        textAlign: 'center',
-        padding: 20,
+        fontSize: 19,
+        textAlign: 'left',
+        marginBottom: 10,
     },
     infoText: {
-        fontSize: 15,
-        textAlign: 'center',
-        paddingTop: 5,
-        paddingBottom: 10,
-        paddingHorizontal: 15,
+        fontSize: 17,
+        textAlign: 'left',
+        marginBottom: 10,
     },
     toggleInstructionsButton: {
-        alignSelf: 'center',
-        paddingVertical: 8,
-        paddingHorizontal: 15,
-        marginBottom: 10,
+        alignSelf: 'left',
+        paddingVertical: 5,
     },
     toggleInstructionsText: {
         fontSize: 14,
@@ -490,6 +529,18 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: 'bold',
     },
+    manualAddContainer: {
+        marginBottom: 15,
+    },
+    desktopManualAddContainer: {
+        marginBottom: 0,
+        marginTop: 8,
+        flexShrink: 0,
+    },
+    stats: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
     buttonContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -508,7 +559,8 @@ const styles = StyleSheet.create({
         color: 'black',
         fontWeight: 'bold',
         textAlign: 'center',
-        width: '48%',
+        width: 'auto',
+        marginBottom: 20,
     },
     secondaryButton: {
         borderRadius: 25,
@@ -521,7 +573,26 @@ const styles = StyleSheet.create({
         color: 'black',
         fontWeight: 'bold',
         textAlign: 'center',
-        width: '48%',
+        width: 'auto',
+        marginTop: 10,
+        marginBottom: 10,
+    },
+    tertiaryButton: {
+        borderRadius: 25,
+        paddingTop: 7,
+        paddingBottom: 7,
+        paddingLeft: 10,
+        paddingRight: 10,
+        elevation: 2,
+        backgroundColor: '#fff',
+        width: 'auto',
+        borderWidth: 3,
+        borderColor: '#9C86FC',
+    },
+    buttonText: {
+        color: '#000000',
+        fontWeight: 'bold',
+        textAlign: 'center',
     },
     itemContainer: {
         backgroundColor: '#f8f8f8',
@@ -609,84 +680,5 @@ const styles = StyleSheet.create({
         paddingTop: 10,
         marginBottom: 0,
         zIndex: 9999,
-    },
-    manualAddContainer: {
-        marginBottom: 15,
-    },
-    desktopManualAddContainer: {
-        marginBottom: 0,
-        marginTop: 8,
-        flexShrink: 0,
-    },
-    infoTitle: {
-        paddingTop: 10,
-        marginBottom: 20,
-        fontWeight: 'bold',
-        textAlign: 'left',
-        fontSize: 16,
-    },
-    infoText: {
-        paddingTop: 10,
-        marginBottom: 20,
-        fontSize: 14,
-        textAlign: 'left',
-    },
-    manualAddContainer: {
-        marginBottom: 20,
-        alignItems: 'center',
-    },
-    stats: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 10,
-        paddingBottom: 5,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-    },
-    primaryButton: {
-        borderRadius: 25,
-        paddingTop: 7,
-        paddingBottom: 7,
-        paddingLeft: 10,
-        paddingRight: 10,
-        elevation: 2,
-        backgroundColor: '#9C86FC',
-        color: 'black',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        width: 'auto',
-        marginBottom: 20,
-    },
-    secondaryButton: {
-        borderRadius: 25,
-        paddingTop: 7,
-        paddingBottom: 7,
-        paddingLeft: 10,
-        paddingRight: 10,
-        elevation: 2,
-        backgroundColor: '#38E4D9',
-        color: 'black',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        width: 'auto',
-        marginTop: 10,
-        marginBottom: 10,
-    },
-    tertiaryButton: {
-        borderRadius: 25,
-        paddingTop: 7,
-        paddingBottom: 7,
-        paddingLeft: 10,
-        paddingRight: 10,
-        elevation: 2,
-        backgroundColor: '#fff',
-        width: 'auto',
-        borderWidth: 3,
-        borderColor: '#9C86FC',
-    },
-    buttonText: {
-        color: '#000000',
-        fontWeight: 'bold',
-        textAlign: 'center',
     },
 })

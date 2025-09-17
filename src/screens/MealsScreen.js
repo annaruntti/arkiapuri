@@ -334,6 +334,24 @@ const MealsScreen = () => {
         setDetailModalVisible(true)
     }
 
+    const renderHeader = () => (
+        <View style={styles.headerContainer}>
+            <CustomText style={styles.introText}>
+                Selaa ja hallinnoi aterioitasi. Voit lisätä uusia aterioita ja
+                muokata olemassa olevia.
+            </CustomText>
+
+            <View style={styles.buttonContainer}>
+                <Button
+                    title="Lisää ateria"
+                    onPress={() => setModalVisible(true)}
+                    style={styles.primaryButton}
+                    textStyle={styles.buttonText}
+                />
+            </View>
+        </View>
+    )
+
     const content = (
         <View style={styles.container}>
             <ResponsiveModal
@@ -348,37 +366,36 @@ const MealsScreen = () => {
                 />
             </ResponsiveModal>
 
-            <CustomText style={styles.introText}>
-                Selaa ja hallinnoi aterioitasi. Voit lisätä uusia aterioita ja
-                muokata olemassa olevia.
-            </CustomText>
-
-            <View style={styles.buttonContainer}>
-                <Button
-                    title="Lisää ateria"
-                    onPress={() => setModalVisible(true)}
-                    style={styles.primaryButton}
-                    textStyle={styles.buttonText}
+            {meals.length > 0 ? (
+                <FlatList
+                    data={meals}
+                    renderItem={renderItem}
+                    keyExtractor={(item) => item._id}
+                    style={styles.list}
+                    contentContainerStyle={styles.listContent}
+                    refreshing={loading}
+                    onRefresh={fetchMeals}
+                    ListHeaderComponent={renderHeader}
+                    ListEmptyComponent={
+                        !loading && (
+                            <CustomText style={styles.emptyText}>
+                                Ei vielä aterioita. Lisää ensimmäinen ateria
+                                painamalla "Lisää ateria" -nappia.
+                            </CustomText>
+                        )
+                    }
                 />
-            </View>
-
-            <FlatList
-                data={meals}
-                renderItem={renderItem}
-                keyExtractor={(item) => item._id}
-                style={styles.list}
-                contentContainerStyle={styles.listContent}
-                refreshing={loading}
-                onRefresh={fetchMeals}
-                ListEmptyComponent={
-                    !loading && (
+            ) : (
+                <>
+                    {renderHeader()}
+                    {!loading && (
                         <CustomText style={styles.emptyText}>
                             Ei vielä aterioita. Lisää ensimmäinen ateria
                             painamalla "Lisää ateria" -nappia.
                         </CustomText>
-                    )
-                }
-            />
+                    )}
+                </>
+            )}
 
             <MealItemDetail
                 meal={selectedMeal}
@@ -404,14 +421,19 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fff',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 20,
+        padding: 15,
+    },
+    headerContainer: {
+        alignItems: 'flex-start',
+        paddingTop: 15,
+        paddingBottom: 10,
+        paddingHorizontal: 5,
     },
     introText: {
         fontSize: 17,
-        textAlign: 'center',
-        padding: 20,
+        textAlign: 'left',
+        marginBottom: 20,
+        maxWidth: '100%',
     },
     itemContainer: {
         backgroundColor: '#f8f8f8',
@@ -477,6 +499,8 @@ const styles = StyleSheet.create({
     buttonContainer: {
         flexDirection: 'row',
         gap: 10,
+        marginBottom: 10,
+        alignItems: 'flex-start',
     },
     primaryButton: {
         borderRadius: 25,
@@ -486,8 +510,8 @@ const styles = StyleSheet.create({
         paddingRight: 10,
         elevation: 2,
         backgroundColor: '#9C86FC',
-        width: 'auto',
-        marginBottom: 20,
+        width: '100%',
+        marginBottom: 10,
     },
     buttonText: {
         color: '#000000',

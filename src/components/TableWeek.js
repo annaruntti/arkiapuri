@@ -124,7 +124,6 @@ const Table = () => {
                 },
             })
 
-
             if (response.data && response.data.meals) {
                 // Show all meals for now, remove the filter temporarily
                 const availableMeals = response.data.meals
@@ -156,7 +155,6 @@ const Table = () => {
                     },
                 }
             )
-
 
             // Refresh the meal data
             fetchMealData(dates)
@@ -247,7 +245,6 @@ const Table = () => {
                 // Close the detail modal
                 setDetailModalVisible(false)
                 setSelectedMeal(null)
-
             } else {
                 console.error('Failed to update meal:', response.data.message)
                 Alert.alert('Virhe', 'Aterian päivittäminen epäonnistui')
@@ -356,6 +353,18 @@ const Table = () => {
         </ResponsiveModal>
     )
 
+    const renderHeader = () => (
+        <View style={styles.headerContainer}>
+            <CustomText style={styles.introText}>
+                Täältä löydät viikon lukujärjestyksesi
+            </CustomText>
+            <CustomText style={styles.infoText}>
+                Luo lukujärjestys ja suunnittele viikon ohjelma ja ateriat.
+                Lisää ateriat lukujärjestykseen helpottaaksesi arkea.
+            </CustomText>
+        </View>
+    )
+
     return (
         <View style={styles.container}>
             <FlatList
@@ -363,6 +372,7 @@ const Table = () => {
                 renderItem={renderDateSection}
                 keyExtractor={(date) => format(date, 'yyyy-MM-dd')}
                 contentContainerStyle={styles.contentContainer}
+                ListHeaderComponent={renderHeader}
             />
             {renderMealSelectModal()}
             <MealItemDetail
@@ -385,14 +395,30 @@ const styles = StyleSheet.create({
         padding: 8,
         width: '100%',
     },
+    headerContainer: {
+        alignItems: 'flex-start',
+        paddingTop: 20,
+        paddingBottom: 10,
+        paddingHorizontal: 10,
+    },
+    introText: {
+        fontSize: 19,
+        textAlign: 'left',
+        marginBottom: 10,
+    },
+    infoText: {
+        fontSize: 17,
+        textAlign: 'left',
+        marginBottom: 20,
+    },
     dateSection: {
         marginBottom: 20,
-        width: '100%',
         borderWidth: 1,
         borderColor: '#ccc',
         borderRadius: 10,
         paddingHorizontal: 15,
         paddingVertical: 15,
+        marginHorizontal: 10,
     },
     dateHeaderContainer: {
         flexDirection: 'row',

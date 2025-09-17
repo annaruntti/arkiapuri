@@ -135,6 +135,32 @@ const ShoppingListsScreen = () => {
         </View>
     )
 
+    const renderHeader = () => (
+        <View style={styles.headerContainer}>
+            <CustomText style={styles.introText}>
+                Täällä voit luoda uusia ostoslistoja ja jakaa ne perheenjäsenten
+                kanssa. Voitte käyttää ja päivittää ostoslistoja reaaliajassa.
+            </CustomText>
+
+            <View
+                style={[
+                    styles.buttonContainer,
+                    isDesktop && styles.desktopButtonContainer,
+                ]}
+            >
+                <Button
+                    title="Luo uusi ostoslista"
+                    onPress={() => setModalVisible(true)}
+                    style={[
+                        styles.primaryButton,
+                        isDesktop && styles.desktopPrimaryButton,
+                    ]}
+                    textStyle={styles.buttonText}
+                />
+            </View>
+        </View>
+    )
+
     return (
         <ResponsiveLayout>
             <View style={styles.container}>
@@ -168,29 +194,6 @@ const ShoppingListsScreen = () => {
                 </ResponsiveModal>
 
                 <View style={styles.content}>
-                    <CustomText style={styles.introText}>
-                        Täällä voit luoda uusia ostoslistoja ja jakaa ne
-                        perheenjäsenten kanssa. Voitte käyttää ja päivittää
-                        ostoslistoja reaaliajassa.
-                    </CustomText>
-
-                    <View
-                        style={[
-                            styles.buttonContainer,
-                            isDesktop && styles.desktopButtonContainer,
-                        ]}
-                    >
-                        <Button
-                            title="Luo uusi ostoslista"
-                            onPress={() => setModalVisible(true)}
-                            style={[
-                                styles.primaryButton,
-                                isDesktop && styles.desktopPrimaryButton,
-                            ]}
-                            textStyle={styles.buttonText}
-                        />
-                    </View>
-
                     {shoppingLists.length > 0 ? (
                         <FlatList
                             style={styles.listContainer}
@@ -199,12 +202,16 @@ const ShoppingListsScreen = () => {
                             renderItem={renderShoppingList}
                             keyExtractor={(item) => item._id}
                             showsVerticalScrollIndicator={false}
+                            ListHeaderComponent={renderHeader}
                         />
                     ) : (
-                        <CustomText style={styles.emptyText}>
-                            Ei vielä ostoslistoja. Luo ensimmäinen lista
-                            painamalla "Luo uusi ostoslista" -nappia.
-                        </CustomText>
+                        <>
+                            {renderHeader()}
+                            <CustomText style={styles.emptyText}>
+                                Ei vielä ostoslistoja. Luo ensimmäinen lista
+                                painamalla "Luo uusi ostoslista" -nappia.
+                            </CustomText>
+                        </>
                     )}
                 </View>
             </View>
@@ -218,11 +225,17 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fff',
-        padding: 20,
+        padding: 10,
+    },
+    headerContainer: {
+        alignItems: 'flex-start',
+        paddingTop: 15,
+        paddingBottom: 10,
+        paddingHorizontal: 5,
     },
     introText: {
         fontSize: 17,
-        textAlign: 'center',
+        textAlign: 'left',
         marginBottom: 20,
         maxWidth: '100%',
     },
@@ -258,8 +271,8 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     listContainer: {
+        flex: 1,
         width: '100%',
-        maxHeight: '60%',
     },
     listItem: {
         backgroundColor: '#f8f8f8',
@@ -343,23 +356,24 @@ const styles = StyleSheet.create({
     },
     content: {
         flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
+        justifyContent: 'flex-start',
+        alignItems: 'flex-start',
         width: '100%',
-        padding: 10,
+        padding: 5,
     },
     buttonContainer: {
         flexDirection: 'row',
         gap: 10,
-        marginBottom: 20,
+        marginBottom: 10,
+        alignItems: 'flex-start',
     },
     desktopButtonContainer: {
-        justifyContent: 'center',
-        alignItems: 'center',
+        justifyContent: 'flex-start',
+        alignItems: 'flex-start',
     },
     listItemButton: {
         width: 120,
-        alignSelf: 'center',
+        marginRight: 'auto',
         marginTop: 10,
     },
     desktopListItemButton: {
