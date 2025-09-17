@@ -178,7 +178,9 @@ const UnifiedFoodSearch = ({
                                 name: String(product.name || 'Nimetön tuote'),
                                 brands: String(product.brands || ''),
                                 nutrition: product.nutrition || { calories: 0 },
-                                nutritionGrade: String(product.nutritionGrade || ''),
+                                nutritionGrade: String(
+                                    product.nutritionGrade || ''
+                                ),
                                 category: Array.isArray(product.category)
                                     ? product.category
                                     : product.category
@@ -451,9 +453,7 @@ const UnifiedFoodSearch = ({
                     <View style={styles.itemLeft}>
                         <View style={styles.itemNameContainer}>
                             <CustomText style={styles.itemName}>
-                                {String(
-                                    item.name || 'Nimetön tuote'
-                                ).trim()}
+                                {String(item.name || 'Nimetön tuote').trim()}
                             </CustomText>
                             {calorieText ? (
                                 <CustomText style={styles.itemCalories}>
@@ -509,9 +509,7 @@ const UnifiedFoodSearch = ({
                                 style={styles.itemName}
                                 numberOfLines={2}
                             >
-                                {String(
-                                    item.name || 'Nimetön tuote'
-                                ).trim()}
+                                {String(item.name || 'Nimetön tuote').trim()}
                             </CustomText>
                             {item.brands &&
                             item.brands.trim().length > 0 &&
@@ -526,22 +524,18 @@ const UnifiedFoodSearch = ({
                             <View style={styles.productMeta}>
                                 {item.nutritionGrade &&
                                 item.nutritionGrade.trim().length > 0 &&
-                                String(item.nutritionGrade).trim() !==
-                                    '' ? (
+                                String(item.nutritionGrade).trim() !== '' ? (
                                     <View
                                         style={[
                                             styles.gradeBox,
                                             {
-                                                backgroundColor:
-                                                    getGradeColor(
-                                                        item.nutritionGrade
-                                                    ),
+                                                backgroundColor: getGradeColor(
+                                                    item.nutritionGrade
+                                                ),
                                             },
                                         ]}
                                     >
-                                        <CustomText
-                                            style={styles.gradeText}
-                                        >
+                                        <CustomText style={styles.gradeText}>
                                             {String(item.nutritionGrade)
                                                 .trim()
                                                 .toUpperCase()}
