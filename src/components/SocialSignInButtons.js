@@ -13,7 +13,6 @@ const SocialSignInButtons = ({ onSocialSignIn }) => {
     const googleAuthUrl = `${getServerUrl('')}/auth/google`
 
     const handleGoogleSignIn = async () => {
-
         Alert.alert(
             'Google Kirjautuminen',
             'Haluatko kirjautua demo-tilillä vai yrittää todellista Google OAuth:ia?',
@@ -152,7 +151,6 @@ const SocialSignInButtons = ({ onSocialSignIn }) => {
 const styles = StyleSheet.create({
     container: {
         width: '100%',
-        marginVertical: 20,
     },
     dividerContainer: {
         flexDirection: 'row',

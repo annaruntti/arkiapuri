@@ -118,22 +118,22 @@ const styles = StyleSheet.create({
         }),
     },
     header: {
-        marginBottom: 32,
+        marginBottom: 25,
         alignItems: 'center',
     },
     desktopHeader: {
         marginBottom: 40,
     },
     title: {
-        fontSize: 28,
+        fontSize: 26,
         fontWeight: '700',
         color: '#1f2937',
         textAlign: 'center',
         marginBottom: 8,
     },
     subtitle: {
-        fontSize: 16,
-        color: '#6b7280',
+        fontSize: 19,
+        color: '#1f2937',
         textAlign: 'center',
         lineHeight: 24,
     },

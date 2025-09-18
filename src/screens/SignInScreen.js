@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
         textDecorationLine: 'underline',
     },
     buttonSection: {
-        gap: 20,
+        gap: 10,
     },
     signUpSection: {
         alignItems: 'center',
@@ -183,7 +183,6 @@ const styles = StyleSheet.create({
         elevation: 2,
         backgroundColor: '#9C86FC',
         width: '100%',
-        maxWidth: 300,
         alignSelf: 'center',
         marginBottom: 10,
     },
@@ -196,7 +195,6 @@ const styles = StyleSheet.create({
         elevation: 2,
         backgroundColor: '#fff',
         width: '100%',
-        maxWidth: 300,
         alignSelf: 'center',
         marginBottom: 10,
         borderWidth: 3,
