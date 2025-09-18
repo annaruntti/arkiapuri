@@ -401,27 +401,35 @@ const PantryScreen = ({}) => {
                     <View style={styles.stickySearchSection}>
                         <View
                             style={[
-                                styles.searchContainer,
-                                isDesktop && styles.desktopSearchContainer,
+                                styles.searchAndAddRow,
+                                isDesktop && styles.desktopSearchAndAddRow,
                             ]}
                         >
-                            <UnifiedFoodSearch
-                                onSelectItem={handleSearchItemSelect}
-                                location="pantry"
-                            />
-                        </View>
-                        <View
-                            style={[
-                                styles.manualAddContainer,
-                                isDesktop && styles.desktopManualAddContainer,
-                            ]}
-                        >
-                            <Button
-                                title="+ Tai lisää tuote manuaalisesti"
-                                onPress={() => setShowItemForm(true)}
-                                style={styles.tertiaryButton}
-                                textStyle={styles.buttonText}
-                            />
+                            <View
+                                style={[
+                                    styles.searchContainer,
+                                    isDesktop && styles.desktopSearchContainer,
+                                ]}
+                            >
+                                <UnifiedFoodSearch
+                                    onSelectItem={handleSearchItemSelect}
+                                    location="pantry"
+                                />
+                            </View>
+                            <View
+                                style={[
+                                    styles.manualAddContainer,
+                                    isDesktop &&
+                                        styles.desktopManualAddContainer,
+                                ]}
+                            >
+                                <Button
+                                    title="+ Luo uusi tuote"
+                                    onPress={() => setShowItemForm(true)}
+                                    style={styles.tertiaryButton}
+                                    textStyle={styles.buttonText}
+                                />
+                            </View>
                         </View>
                         <View style={styles.stats}>
                             <CustomText>
@@ -534,8 +542,9 @@ const styles = StyleSheet.create({
     },
     desktopManualAddContainer: {
         marginBottom: 0,
-        marginTop: 8,
+        marginTop: 0,
         flexShrink: 0,
+        alignSelf: 'flex-start',
     },
     stats: {
         flexDirection: 'row',
@@ -663,6 +672,16 @@ const styles = StyleSheet.create({
         marginBottom: 15,
         zIndex: 9998,
     },
+    searchAndAddRow: {
+        // Default mobile layout - vertical stacking
+    },
+    desktopSearchAndAddRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        justifyContent: 'flex-start',
+        gap: 15,
+        marginBottom: 20,
+    },
     searchAndAddSection: {
         paddingTop: 20,
         marginBottom: 15,
@@ -676,9 +695,9 @@ const styles = StyleSheet.create({
         zIndex: 9999,
     },
     desktopSearchContainer: {
-        flex: 1,
-        paddingTop: 10,
+        flexShrink: 0,
         marginBottom: 0,
         zIndex: 9999,
+        paddingTop: 5,
     },
 })
