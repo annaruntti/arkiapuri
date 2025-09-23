@@ -5,6 +5,7 @@ import React, { useState } from 'react'
 import {
     Alert,
     FlatList,
+    ScrollView,
     StyleSheet,
     TouchableOpacity,
     View,
@@ -122,7 +123,6 @@ const ShoppingListDetail = ({
                 const updatedList = response.data.shoppingList
                 onUpdate(updatedList)
                 setShowItemForm(false)
-
             }
         } catch (error) {
             console.error('Error adding item:', error?.response?.data || error)
@@ -275,86 +275,108 @@ const ShoppingListDetail = ({
                 </View>
             </CustomModal>
 
-            <View style={styles.header}>
-                <CustomText style={styles.title}>
-                    {shoppingList.name}
-                </CustomText>
-                <CustomText style={styles.description}>
-                    {shoppingList.description}
-                </CustomText>
-            </View>
+            <ScrollView
+                style={styles.mainScrollView}
+                stickyHeaderIndices={[1]}
+                showsVerticalScrollIndicator={false}
+            >
+                {/* Header section that scrolls away */}
+                <View style={styles.headerSection}>
+                    <View style={styles.header}>
+                        <CustomText style={styles.title}>
+                            {shoppingList.name}
+                        </CustomText>
+                        <CustomText style={styles.description}>
+                            {shoppingList.description}
+                        </CustomText>
+                    </View>
 
-            <CustomText style={styles.infoTitle}>
-                Hae ja lisää tuotteita
-            </CustomText>
-            <CustomText style={styles.infoText}>
-                Hae tuotteita nimellä tai skannaa viivakoodi. Tulokset
-                sisältävät sekä omat tuotteesi että Open Food Facts
-                -tietokannan.
-            </CustomText>
-            <View style={styles.searchContainer}>
-                <UnifiedFoodSearch
-                    onSelectItem={handleSearchItemSelect}
-                    location="shopping-list"
-                    shoppingListId={shoppingList._id}
-                />
-            </View>
-
-            <View style={styles.manualAddContainer}>
-                <Button
-                    title="+ Lisää tuote manuaalisesti"
-                    onPress={() => setShowItemForm(true)}
-                    style={[
-                        styles.tertiaryButton,
-                        isDesktop && styles.desktopPrimaryButton,
-                    ]}
-                    textStyle={styles.buttonText}
-                />
-            </View>
-
-            <View style={styles.stats}>
-                <CustomText>
-                    Tuotteita: {shoppingList.items?.length || 0} kpl
-                </CustomText>
-                <CustomText>
-                    Kokonaishinta:{' '}
-                    {shoppingList.items && shoppingList.items.length > 0
-                        ? shoppingList.items
-                              .reduce(
-                                  (sum, item) =>
-                                      sum + (parseFloat(item.price) || 0),
-                                  0
-                              )
-                              .toFixed(2)
-                        : shoppingList.totalEstimatedPrice || 0}
-                    €
-                </CustomText>
-            </View>
-            <FlatList
-                data={shoppingList.items}
-                renderItem={renderItem}
-                keyExtractor={(item) => item._id}
-                contentContainerStyle={styles.listContent}
-                showsVerticalScrollIndicator={true}
-            />
-            {checkedItems.length > 0 && (
-                <View
-                    style={[
-                        styles.buttonContainer,
-                        isDesktop && styles.desktopButtonContainer,
-                    ]}
-                >
-                    <Button
-                        title={`Siirrä ${checkedItems.length} tuotetta ruokavarastoon`}
-                        onPress={() => moveCheckedToPantry(checkedItems)}
-                        style={[
-                            styles.secondaryButton,
-                            isDesktop && styles.desktopPrimaryButton,
-                        ]}
-                        textStyle={styles.buttonText}
-                    />
+                    <CustomText style={styles.infoTitle}>
+                        Hae ja lisää tuotteita
+                    </CustomText>
+                    <CustomText style={styles.infoText}>
+                        Hae tuotteita nimellä tai skannaa viivakoodi. Tulokset
+                        sisältävät sekä omat tuotteesi että Open Food Facts
+                        -tietokannan.
+                    </CustomText>
                 </View>
-            )}
+
+                {/* Sticky search section */}
+                <View style={styles.stickySearchSection}>
+                    <View style={styles.searchAndAddContainer}>
+                        <UnifiedFoodSearch
+                            onSelectItem={handleSearchItemSelect}
+                            location="shopping-list"
+                            shoppingListId={shoppingList._id}
+                        />
+
+                        <View style={styles.manualAddContainer}>
+                            <Button
+                                title="+ Luo uusi tuote"
+                                onPress={() => setShowItemForm(true)}
+                                style={[
+                                    styles.tertiaryButton,
+                                    isDesktop && styles.desktopPrimaryButton,
+                                ]}
+                                textStyle={styles.buttonText}
+                            />
+                        </View>
+                    </View>
+                    <View style={styles.stats}>
+                        <CustomText>
+                            Tuotteita: {shoppingList.items?.length || 0} kpl
+                        </CustomText>
+                        <CustomText>
+                            Kokonaishinta:{' '}
+                            {shoppingList.items && shoppingList.items.length > 0
+                                ? shoppingList.items
+                                      .reduce(
+                                          (sum, item) =>
+                                              sum +
+                                              (parseFloat(item.price) || 0),
+                                          0
+                                      )
+                                      .toFixed(2)
+                                : shoppingList.totalEstimatedPrice || 0}
+                            €
+                        </CustomText>
+                    </View>
+                </View>
+
+                {/* Items list container */}
+                <View style={styles.itemsListContainer}>
+                    <FlatList
+                        data={shoppingList.items}
+                        renderItem={renderItem}
+                        keyExtractor={(item) => item._id}
+                        style={styles.itemsList}
+                        contentContainerStyle={styles.listContent}
+                        showsVerticalScrollIndicator={true}
+                        scrollEnabled={false}
+                        nestedScrollEnabled={true}
+                    />
+                    {checkedItems.length > 0 && (
+                        <View
+                            style={[
+                                styles.buttonContainer,
+                                isDesktop && styles.desktopButtonContainer,
+                            ]}
+                        >
+                            <Button
+                                title={`Siirrä ${checkedItems.length} tuotetta ruokavarastoon`}
+                                onPress={() =>
+                                    moveCheckedToPantry(checkedItems)
+                                }
+                                style={[
+                                    styles.secondaryButton,
+                                    isDesktop && styles.desktopPrimaryButton,
+                                ]}
+                                textStyle={styles.buttonText}
+                            />
+                        </View>
+                    )}
+                </View>
+            </ScrollView>
         </View>
     )
 }
@@ -362,6 +384,35 @@ const ShoppingListDetail = ({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: '#fff',
+    },
+    mainScrollView: {
+        flex: 1,
+        zIndex: 1,
+    },
+    headerSection: {
+        backgroundColor: '#fff',
+        paddingHorizontal: 5,
+        paddingTop: 10,
+        paddingBottom: 10,
+    },
+    stickySearchSection: {
+        backgroundColor: '#fff',
+        paddingVertical: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+        elevation: 2,
+        marginBottom: 5,
+        zIndex: 10000,
+        position: 'relative',
+    },
+    itemsListContainer: {
+        flex: 1,
+        minHeight: 400,
+    },
+    itemsList: {
+        width: '100%',
+        zIndex: 1,
     },
     header: {
         marginBottom: 5,
@@ -385,6 +436,8 @@ const styles = StyleSheet.create({
         paddingBottom: 5,
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
+        zIndex: 1,
+        position: 'relative',
     },
     listContent: {
         paddingBottom: 20,
@@ -508,12 +561,27 @@ const styles = StyleSheet.create({
         fontSize: 14,
         textAlign: 'left',
     },
-    searchContainer: {
+    searchAndAddContainer: {
         marginBottom: 15,
+        backgroundColor: '#F8F9FA',
+        borderRadius: 12,
+        padding: 15,
+        borderWidth: 1,
+        borderColor: '#E9ECEF',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 2,
         zIndex: 9998,
+        position: 'relative',
     },
     manualAddContainer: {
-        marginBottom: 15,
+        marginTop: 15,
+        marginBottom: 0,
         alignItems: 'center',
     },
     desktopPrimaryButton: {

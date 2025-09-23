@@ -3,10 +3,12 @@ import axios from 'axios'
 import React, { useEffect, useState } from 'react'
 import {
     Alert,
+    FlatList,
     Pressable,
     ScrollView,
     StyleSheet,
     TextInput,
+    TouchableOpacity,
     View,
 } from 'react-native'
 import { useLogin } from '../context/LoginProvider'
@@ -18,7 +20,9 @@ import Button from './Button'
 import CustomText from './CustomText'
 import DateTimePicker from './DateTimePicker'
 import DifficultySelector from './DifficultySelector'
-import ExpandableFoodItemSelector from './ExpandableFoodItemSelector'
+import FormFoodItem from './FormFoodItem'
+import ResponsiveModal from './ResponsiveModal'
+import UnifiedFoodSearch from './UnifiedFoodSearch'
 
 import Info from './Info'
 
@@ -36,6 +40,7 @@ const AddMealForm = ({ onSubmit, onClose }) => {
     const [showDatePicker, setShowDatePicker] = useState(false)
     const [shoppingLists, setShoppingLists] = useState([])
     const [selectedShoppingListId, setSelectedShoppingListId] = useState(null)
+    const [showItemForm, setShowItemForm] = useState(false)
 
     const fetchShoppingLists = async () => {
         try {
@@ -104,7 +109,14 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                         }
 
                         let response
-                        if (item._id) {
+                        // Check if item has a real MongoDB ObjectId (not temporary ID)
+                        const hasRealId =
+                            item._id &&
+                            !item._id.startsWith('openfoodfacts-') &&
+                            !item._id.startsWith('new-') &&
+                            item._id.length === 24 // MongoDB ObjectId length
+
+                        if (hasRealId) {
                             try {
                                 response = await axios.put(
                                     getServerUrl(`/food-items/${item._id}`),
@@ -227,16 +239,92 @@ const AddMealForm = ({ onSubmit, onClose }) => {
         }
     }
 
-    const handleAddFoodItem = (foodItemData) => {
+    const handleSelectItem = (selectedItem) => {
+        // Convert the selected item to the format expected by the meal form
         const newFoodItem = {
-            ...foodItemData,
+            ...selectedItem,
+            // Add a unique temporary ID for tracking
+            tempId: `${selectedItem._id || selectedItem.name}-${Date.now()}-${Math.random()}`,
             shoppingListId: selectedShoppingListId,
-            locations: foodItemData.locations,
-            quantities: foodItemData.quantities,
+            locations: selectedItem.locations || ['meal'],
+            quantities: {
+                meal:
+                    selectedItem.quantities?.meal || selectedItem.quantity || 1,
+                'shopping-list':
+                    selectedItem.quantities?.['shopping-list'] || 0,
+                pantry: selectedItem.quantities?.pantry || 0,
+            },
         }
 
-        setFoodItems([...foodItems, newFoodItem])
-        // Modal closing is now handled by ExpandableFoodItemSelector
+        // Use functional update to avoid stale closure
+        setFoodItems((prevItems) => [...prevItems, newFoodItem])
+    }
+
+    const handleAddNewItem = async (itemData) => {
+        try {
+            const token = await storage.getItem('userToken')
+
+            // Validate required fields
+            if (!itemData.name || !itemData.unit) {
+                Alert.alert('Virhe', 'Nimi ja yksikkö ovat pakollisia tietoja')
+                return
+            }
+
+            // Create the FoodItem
+            const foodItemData = {
+                name: itemData.name,
+                unit: itemData.unit,
+                category: Array.isArray(itemData.category)
+                    ? itemData.category.map((cat) =>
+                          typeof cat === 'object' ? cat.name : cat
+                      )
+                    : [],
+                calories: Number(itemData.calories) || 0,
+                price: Number(itemData.price) || 0,
+                locations: ['meal'],
+                quantities: {
+                    meal: Number(itemData.quantity) || 1,
+                    'shopping-list': 0,
+                    pantry: 0,
+                },
+                user: profile._id,
+            }
+
+            const response = await axios.post(
+                getServerUrl('/food-items'),
+                foodItemData,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+            )
+
+            if (response.data.success) {
+                const newFoodItem = {
+                    ...response.data.foodItem,
+                    tempId: `new-${response.data.foodItem._id || itemData.name}-${Date.now()}-${Math.random()}`,
+                    shoppingListId: selectedShoppingListId,
+                }
+
+                setFoodItems((prevItems) => [...prevItems, newFoodItem])
+                setShowItemForm(false)
+                Alert.alert(
+                    'Onnistui',
+                    `Tuote "${itemData.name}" lisätty aterialle`
+                )
+            }
+        } catch (error) {
+            console.error('Error adding new item:', error)
+            Alert.alert(
+                'Virhe',
+                'Tuotteen lisääminen epäonnistui: ' +
+                    (error.response?.data?.message ||
+                        error.response?.data?.error ||
+                        error.message)
+            )
+        }
     }
 
     const handleDateChange = (event, selectedDate) => {
@@ -251,22 +339,61 @@ const AddMealForm = ({ onSubmit, onClose }) => {
     }
 
     const handleUpdateQuantity = (index, newQuantity) => {
-        const updatedFoodItems = [...foodItems]
-        updatedFoodItems[index] = {
-            ...updatedFoodItems[index],
-            quantities: {
-                ...updatedFoodItems[index].quantities,
-                meal: newQuantity,
-            },
-            quantity: newQuantity, // This for backward compatibility
-        }
-        setFoodItems(updatedFoodItems)
+        setFoodItems((prevItems) => {
+            const updatedItems = [...prevItems]
+            if (updatedItems[index]) {
+                updatedItems[index] = {
+                    ...updatedItems[index],
+                    quantities: {
+                        ...updatedItems[index].quantities,
+                        meal: newQuantity,
+                    },
+                    quantity: newQuantity, // This for backward compatibility
+                }
+            }
+            return updatedItems
+        })
     }
 
     const handleRemoveFoodItem = (index) => {
-        const updatedFoodItems = foodItems.filter((_, i) => i !== index)
-        setFoodItems(updatedFoodItems)
+        setFoodItems((prevItems) => prevItems.filter((_, i) => i !== index))
     }
+
+    const renderSelectedItem = ({ item, index }) => (
+        <View style={styles.selectedItem}>
+            <View style={styles.itemInfo}>
+                <CustomText style={styles.itemName}>{item.name}</CustomText>
+                <CustomText style={styles.itemDetails}>
+                    {`${item.quantities?.meal || item.quantity || 1} ${item.unit || 'kpl'}`}
+                </CustomText>
+                <View style={styles.quantityRow}>
+                    <CustomText style={styles.quantityLabel}>Määrä:</CustomText>
+                    <TextInput
+                        style={styles.quantityInput}
+                        value={String(
+                            item.quantities?.meal || item.quantity || 1
+                        )}
+                        onChangeText={(text) =>
+                            handleUpdateQuantity(index, parseFloat(text) || 0)
+                        }
+                        keyboardType="numeric"
+                        placeholder="0"
+                    />
+                    <CustomText style={styles.unitText}>
+                        {item.unit || 'kpl'}
+                    </CustomText>
+                </View>
+            </View>
+            <View style={styles.itemActions}>
+                <TouchableOpacity
+                    style={styles.removeButton}
+                    onPress={() => handleRemoveFoodItem(index)}
+                >
+                    <MaterialIcons name="delete" size={20} color="#666" />
+                </TouchableOpacity>
+            </View>
+        </View>
+    )
 
     useEffect(() => {
         fetchShoppingLists()
@@ -377,21 +504,53 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                     )}
 
                     <View style={styles.foodItemSelectorContainer}>
-                        <ExpandableFoodItemSelector
-                            foodItems={foodItems}
-                            onSelectItem={(item) => {
-                                setFoodItems((prev) => [...prev, item])
-                            }}
-                            onSelectMultipleItems={(items) => {
-                                setFoodItems((prev) => [...prev, ...items])
-                            }}
-                            onAddFoodItem={handleAddFoodItem}
-                            onUpdateQuantity={handleUpdateQuantity}
-                            onRemoveItem={handleRemoveFoodItem}
-                            shoppingLists={shoppingLists}
-                            selectedShoppingListId={selectedShoppingListId}
-                            onShoppingListSelect={setSelectedShoppingListId}
+                        <CustomText style={styles.label}>
+                            Raaka-aineet
+                        </CustomText>
+                        <UnifiedFoodSearch
+                            onSelectItem={handleSelectItem}
+                            location="meal"
+                            allowDuplicates={true}
                         />
+
+                        <View style={styles.manualAddContainer}>
+                            <Button
+                                title="+ Luo uusi tuote"
+                                onPress={() => setShowItemForm(true)}
+                                style={[
+                                    styles.tertiaryButton,
+                                    isDesktop && styles.desktopPrimaryButton,
+                                ]}
+                                textStyle={styles.buttonText}
+                            />
+                        </View>
+
+                        {/* Display selected food items */}
+                        {foodItems.length > 0 && (
+                            <View style={styles.selectedItemsContainer}>
+                                <CustomText style={styles.selectedItemsTitle}>
+                                    Valitut raaka-aineet:
+                                </CustomText>
+                                <FlatList
+                                    data={foodItems}
+                                    renderItem={renderSelectedItem}
+                                    keyExtractor={(item, index) =>
+                                        item.tempId ||
+                                        `${item._id || item.name}-${index}`
+                                    }
+                                    style={styles.selectedItemsList}
+                                    showsVerticalScrollIndicator={true}
+                                    nestedScrollEnabled={true}
+                                    scrollEnabled={true}
+                                    removeClippedSubviews={false}
+                                    getItemLayout={(data, index) => ({
+                                        length: 100,
+                                        offset: 100 * index,
+                                        index,
+                                    })}
+                                />
+                            </View>
+                        )}
                     </View>
 
                     <View style={styles.buttonGroup}>
@@ -407,6 +566,15 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                     </View>
                 </View>
             </ScrollView>
+
+            <ResponsiveModal
+                visible={showItemForm}
+                onClose={() => setShowItemForm(false)}
+                title="Lisää uusi tuote"
+                maxWidth={600}
+            >
+                <FormFoodItem onSubmit={handleAddNewItem} location="meal" />
+            </ResponsiveModal>
         </View>
     )
 }
@@ -421,6 +589,7 @@ const styles = StyleSheet.create({
     },
     formContainer: {
         paddingVertical: 5,
+        zIndex: 1,
     },
     formScroll: {
         flexGrow: 1,
@@ -569,13 +738,12 @@ const styles = StyleSheet.create({
         marginLeft: 10,
     },
     itemName: {
-        fontSize: 16,
+        fontSize: 18,
         fontWeight: 'bold',
-        marginBottom: 4,
     },
     itemDetails: {
-        fontSize: 14,
         color: '#666',
+        fontSize: 14,
     },
     checkboxGroup: {
         backgroundColor: 'white',
@@ -657,6 +825,8 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 2,
         elevation: 2,
+        zIndex: 9998,
+        position: 'relative',
     },
     difficultyContainer: {
         flexDirection: 'row',
@@ -672,30 +842,22 @@ const styles = StyleSheet.create({
         color: '#666',
         minWidth: 100,
     },
-    quantityContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        backgroundColor: '#f5f5f5',
-        borderRadius: 8,
-        marginTop: 8,
-    },
     quantityLabel: {
         fontSize: 14,
         fontWeight: '500',
-        marginRight: 8,
+        marginRight: 10,
         color: '#333',
+        minWidth: 50,
     },
     quantityInput: {
-        flex: 1,
-        height: 36,
+        width: 60,
+        height: 32,
         borderWidth: 1,
         borderColor: '#ddd',
         borderRadius: 6,
         paddingHorizontal: 8,
         backgroundColor: 'white',
-        fontSize: 16,
+        fontSize: 14,
         textAlign: 'center',
         marginRight: 8,
     },
@@ -704,6 +866,81 @@ const styles = StyleSheet.create({
         color: '#666',
         fontWeight: '500',
         minWidth: 30,
+    },
+    selectedItemsContainer: {
+        marginTop: 15,
+        padding: 10,
+        backgroundColor: '#fff',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#e9ecef',
+    },
+    selectedItemsTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginBottom: 10,
+        color: '#333',
+    },
+    selectedItemsList: {
+        maxHeight: 400,
+        minHeight: 100,
+        flexGrow: 0,
+    },
+    selectedItem: {
+        backgroundColor: '#f8f8f8',
+        padding: 15,
+        borderRadius: 10,
+        marginBottom: 10,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 2,
+    },
+    itemInfo: {
+        flex: 1,
+        flexDirection: 'column',
+        marginRight: 10,
+    },
+    itemActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    quantityRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        marginTop: 8,
+    },
+    removeButton: {
+        backgroundColor: '#e0e0e0',
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    manualAddContainer: {
+        marginTop: 10,
+        marginBottom: 15,
+    },
+    tertiaryButton: {
+        borderRadius: 25,
+        paddingTop: 7,
+        paddingBottom: 7,
+        paddingLeft: 10,
+        paddingRight: 10,
+        elevation: 2,
+        backgroundColor: '#fff',
+        width: 'auto',
+        borderWidth: 3,
+        borderColor: '#9C86FC',
     },
 })
 

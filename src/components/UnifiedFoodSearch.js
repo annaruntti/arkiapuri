@@ -23,6 +23,7 @@ const UnifiedFoodSearch = ({
     location = 'shopping-list',
     shoppingListId = null,
     mealId = null,
+    allowDuplicates = false,
 }) => {
     const [searchQuery, setSearchQuery] = useState('')
     const [localFoodItems, setLocalFoodItems] = useState([])
@@ -345,6 +346,42 @@ const UnifiedFoodSearch = ({
 
     const addOpenFoodFactsProduct = async (product) => {
         try {
+            // For meal context, just add the item directly without API calls
+            if (location === 'meal') {
+                const foodItem = {
+                    _id: `openfoodfacts-${product.barcode}`,
+                    name: product.product_name || product.name,
+                    barcode: product.barcode,
+                    unit: 'kpl',
+                    category: (() => {
+                        if (!product.categories) return []
+                        if (Array.isArray(product.categories))
+                            return product.categories
+                        if (typeof product.categories === 'string') {
+                            return product.categories
+                                .split(',')
+                                .map((cat) => cat.trim())
+                        }
+                        return []
+                    })(),
+                    calories: product.nutriments?.['energy-kcal_100g'] || 0,
+                    price: 0,
+                    source: 'openfoodfacts',
+                    locations: ['meal'],
+                    quantities: {
+                        meal: 1,
+                        'shopping-list': 0,
+                        pantry: 0,
+                    },
+                }
+
+                onSelectItem(foodItem)
+                setSearchQuery('')
+                setIsListVisible(false)
+                return
+            }
+
+            // For other locations (shopping-list, pantry), use the API
             const token = await storage.getItem('userToken')
             const response = await fetch(
                 `${getServerUrl('')}/api/openfoodfacts/add/${product.barcode}`,
@@ -397,8 +434,11 @@ const UnifiedFoodSearch = ({
     }
 
     const handleSelectLocalItem = (item) => {
-        if (addedItems.has(item._id)) return
+        // For meal context: allow multiple selections but track for visual feedback
+        // For other contexts: prevent duplicate selections
+        if (!allowDuplicates && addedItems.has(item._id)) return
 
+        // Always track added items for visual feedback (but allow re-selection in meal context)
         setAddedItems((prev) => new Set(prev).add(item._id))
         onSelectItem(item)
 
@@ -406,7 +446,11 @@ const UnifiedFoodSearch = ({
         setTimeout(() => {
             setSearchQuery('')
             setIsListVisible(false)
-            setAddedItems(new Set())
+            // In meal context, clear added items to allow re-selection
+            // In other contexts, keep them to prevent duplicates
+            if (allowDuplicates) {
+                setAddedItems(new Set())
+            }
         }, 500)
     }
 
@@ -447,7 +491,7 @@ const UnifiedFoodSearch = ({
                     addedItems.has(item._id) && styles.addedItem,
                 ]}
                 onPress={() => handleSelectLocalItem(item)}
-                disabled={addedItems.has(item._id)}
+                disabled={!allowDuplicates && addedItems.has(item._id)}
             >
                 <View style={styles.itemContent}>
                     <View style={styles.itemLeft}>

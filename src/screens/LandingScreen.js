@@ -83,14 +83,16 @@ const LandingScreen = ({ navigation }) => {
                                             styles.desktopBottomBoxText,
                                     ]}
                                 >
-                                    Kirjaudu sisään tai rekisteröidy. Se on
-                                    helppoa, ilmaista ja vie vain hetken!
+                                    {isDesktop || isTablet
+                                        ? 'Käytättääksesi Arkiapuria, sinun on luotava itsellesi käyttäjätunnus.\nSe on helppoa, ilmaista ja vie vain hetken!'
+                                        : 'Käytättääksesi Arkiapuria, sinun on luotava itsellesi käyttäjätunnus. Se on helppoa, ilmaista ja vie vain hetken!'}
                                 </CustomText>
                                 <Button
                                     title="Aloitetaan!"
                                     onPress={onSignUpPress}
                                     style={[
                                         styles.primaryButtonStart,
+                                        isTablet && styles.tabletPrimaryButton,
                                         isDesktop &&
                                             styles.desktopPrimaryButton,
                                     ]}
@@ -236,13 +238,65 @@ const styles = StyleSheet.create({
     contentPadding: {
         paddingHorizontal: 20,
     },
-    // Desktop responsive styles
+    // Tablet responsive styles
     tabletBottomBox: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 40,
     },
+    tabletBottomBoxContent: {
+        paddingHorizontal: 40,
+        paddingVertical: 30,
+        borderRadius: 12,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 4,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+        elevation: 8,
+    },
+    tabletIntroTextTitle: {
+        fontSize: 30,
+        fontWeight: '600',
+        marginBottom: 12,
+        color: '#333',
+        paddingTop: 20,
+    },
+    tabletIntroText: {
+        fontSize: 20,
+        lineHeight: 28,
+        marginBottom: 20,
+        color: '#555',
+        fontWeight: '400',
+        paddingHorizontal: 20,
+    },
+    tabletBottomBoxText: {
+        fontSize: 16,
+        lineHeight: 24,
+        marginBottom: 28,
+        color: '#666',
+        fontWeight: '400',
+        paddingHorizontal: 20,
+    },
+    tabletPrimaryButton: {
+        paddingHorizontal: 40,
+        paddingVertical: 16,
+        borderRadius: 30,
+        backgroundColor: '#9C86FC',
+        shadowColor: '#9C86FC',
+        shadowOffset: {
+            width: 0,
+            height: 4,
+        },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 8,
+        width: '30%',
+    },
+    // Desktop responsive styles
     desktopBottomBox: {
         flex: 1,
         alignItems: 'center',
@@ -265,50 +319,18 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: 'rgba(255, 255, 255, 0.2)',
     },
-    tabletBottomBoxContent: {
-        paddingHorizontal: 40,
-        paddingVertical: 30,
-        borderRadius: 12,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 4,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 12,
-        elevation: 8,
-    },
-    tabletIntroTextTitle: {
-        fontSize: 30,
-        fontWeight: '600',
-        marginBottom: 12,
-        color: '#333',
-    },
-    tabletIntroText: {
-        fontSize: 20,
-        lineHeight: 28,
-        marginBottom: 20,
-        color: '#555',
-        fontWeight: '400',
-    },
-    tabletBottomBoxText: {
-        fontSize: 16,
-        lineHeight: 24,
-        marginBottom: 28,
-        color: '#666',
-        fontWeight: '400',
-    },
     desktopIntroTextTitle: {
         fontSize: 36,
         fontWeight: '700',
         marginBottom: 16,
         color: '#333',
         textAlign: 'center',
+        paddingTop: 20,
     },
     desktopIntroText: {
         fontSize: 22,
         lineHeight: 32,
-        marginBottom: 24,
+        marginBottom: 20,
         color: '#555',
         textAlign: 'center',
         fontWeight: '400',
@@ -320,6 +342,7 @@ const styles = StyleSheet.create({
         color: '#666',
         textAlign: 'center',
         fontWeight: '400',
+        paddingHorizontal: 20,
     },
     desktopPrimaryButton: {
         paddingHorizontal: 40,
@@ -334,6 +357,6 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3,
         shadowRadius: 8,
         elevation: 8,
-        minWidth: 200,
+        width: '30%',
     },
 })

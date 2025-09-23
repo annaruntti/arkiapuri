@@ -399,30 +399,13 @@ const PantryScreen = ({}) => {
 
                     {/* Sticky search section */}
                     <View style={styles.stickySearchSection}>
-                        <View
-                            style={[
-                                styles.searchAndAddRow,
-                                isDesktop && styles.desktopSearchAndAddRow,
-                            ]}
-                        >
-                            <View
-                                style={[
-                                    styles.searchContainer,
-                                    isDesktop && styles.desktopSearchContainer,
-                                ]}
-                            >
-                                <UnifiedFoodSearch
-                                    onSelectItem={handleSearchItemSelect}
-                                    location="pantry"
-                                />
-                            </View>
-                            <View
-                                style={[
-                                    styles.manualAddContainer,
-                                    isDesktop &&
-                                        styles.desktopManualAddContainer,
-                                ]}
-                            >
+                        <View style={styles.searchAndAddContainer}>
+                            <UnifiedFoodSearch
+                                onSelectItem={handleSearchItemSelect}
+                                location="pantry"
+                            />
+
+                            <View style={styles.manualAddContainer}>
                                 <Button
                                     title="+ Luo uusi tuote"
                                     onPress={() => setShowItemForm(true)}
@@ -483,6 +466,7 @@ const styles = StyleSheet.create({
     },
     mainScrollView: {
         flex: 1,
+        zIndex: 1,
     },
     headerSection: {
         backgroundColor: '#fff',
@@ -497,6 +481,8 @@ const styles = StyleSheet.create({
         borderBottomColor: '#eee',
         elevation: 2,
         marginBottom: 5,
+        zIndex: 10000,
+        position: 'relative',
     },
     productListContainer: {
         flex: 1,
@@ -538,17 +524,14 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     manualAddContainer: {
-        marginBottom: 15,
-    },
-    desktopManualAddContainer: {
+        marginTop: 15,
         marginBottom: 0,
-        marginTop: 0,
-        flexShrink: 0,
-        alignSelf: 'flex-start',
     },
     stats: {
         flexDirection: 'row',
         justifyContent: 'space-between',
+        zIndex: 1,
+        position: 'relative',
     },
     buttonContainer: {
         flexDirection: 'row',
@@ -668,36 +651,22 @@ const styles = StyleSheet.create({
     formContainer: {
         padding: 15,
     },
-    searchContainer: {
+    searchAndAddContainer: {
         marginBottom: 15,
+        backgroundColor: '#F8F9FA',
+        borderRadius: 12,
+        padding: 15,
+        borderWidth: 1,
+        borderColor: '#E9ECEF',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 2,
         zIndex: 9998,
-    },
-    searchAndAddRow: {
-        // Default mobile layout - vertical stacking
-    },
-    desktopSearchAndAddRow: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        justifyContent: 'flex-start',
-        gap: 15,
-        marginBottom: 20,
-    },
-    searchAndAddSection: {
-        paddingTop: 20,
-        marginBottom: 15,
-        zIndex: 9999,
-    },
-    desktopSearchAndAddSection: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        gap: 15,
-        marginBottom: 20,
-        zIndex: 9999,
-    },
-    desktopSearchContainer: {
-        flexShrink: 0,
-        marginBottom: 0,
-        zIndex: 9999,
-        paddingTop: 5,
+        position: 'relative',
     },
 })
