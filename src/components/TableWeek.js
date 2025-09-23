@@ -290,8 +290,8 @@ const Table = () => {
                     <Button
                         title="Lisää ateria"
                         onPress={() => handleAddMeal(date)}
-                        style={styles.addMealButton}
-                        textStyle={styles.addMealButtonText}
+                        style={styles.primaryButton}
+                        textStyle={styles.buttonText}
                     />
                 </View>
 
@@ -371,8 +371,10 @@ const Table = () => {
                 data={dates}
                 renderItem={renderDateSection}
                 keyExtractor={(date) => format(date, 'yyyy-MM-dd')}
-                contentContainerStyle={styles.contentContainer}
+                style={styles.list}
+                contentContainerStyle={styles.listContent}
                 ListHeaderComponent={renderHeader}
+                showsVerticalScrollIndicator={true}
             />
             {renderMealSelectModal()}
             <MealItemDetail
@@ -390,16 +392,20 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#fff',
         width: '100%',
+        padding: 10,
     },
-    contentContainer: {
-        padding: 8,
+    list: {
         width: '100%',
+        zIndex: 1,
+    },
+    listContent: {
+        paddingBottom: 20,
     },
     headerContainer: {
         alignItems: 'flex-start',
         paddingTop: 20,
         paddingBottom: 10,
-        paddingHorizontal: 10,
+        paddingHorizontal: 15,
     },
     introText: {
         fontSize: 19,
@@ -412,13 +418,19 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     dateSection: {
-        marginBottom: 20,
-        borderWidth: 1,
-        borderColor: '#ccc',
+        backgroundColor: '#f8f8f8',
+        padding: 15,
         borderRadius: 10,
-        paddingHorizontal: 15,
-        paddingVertical: 15,
+        marginBottom: 10,
         marginHorizontal: 10,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 2,
     },
     dateHeaderContainer: {
         flexDirection: 'row',
@@ -432,21 +444,26 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         flex: 1,
         flexWrap: 'wrap',
+        color: '#333',
     },
-    addMealButton: {
-        backgroundColor: '#9C86FC',
-        paddingHorizontal: 10,
-        paddingVertical: 5,
+    primaryButton: {
         borderRadius: 25,
+        paddingTop: 7,
+        paddingBottom: 7,
+        paddingLeft: 10,
+        paddingRight: 10,
+        elevation: 2,
+        backgroundColor: '#9C86FC',
         marginLeft: 10,
         alignItems: 'center',
     },
-    addMealButtonText: {
+    buttonText: {
         color: 'black',
         fontWeight: 'bold',
+        textAlign: 'center',
     },
     mealItem: {
-        backgroundColor: '#f8f8f8',
+        backgroundColor: '#ffffff',
         padding: 15,
         borderRadius: 8,
         marginBottom: 8,

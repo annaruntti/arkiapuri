@@ -100,11 +100,25 @@ const ShoppingListsScreen = () => {
 
     const renderShoppingList = ({ item }) => (
         <View style={styles.listItem}>
-            <View style={styles.listHeader}>
-                <CustomText style={styles.listTitle}>{item.name}</CustomText>
-                <CustomText style={styles.listDescription}>
-                    {item.description}
-                </CustomText>
+            <View style={styles.listItemHeader}>
+                <View style={styles.listHeader}>
+                    <CustomText style={styles.listTitle}>
+                        {item.name}
+                    </CustomText>
+                    <CustomText style={styles.listDescription}>
+                        {item.description}
+                    </CustomText>
+                </View>
+                <Button
+                    style={[
+                        styles.tertiaryButton,
+                        styles.listItemButton,
+                        isDesktop && styles.desktopListItemButton,
+                    ]}
+                    title="Näytä lista"
+                    onPress={() => handleViewList(item)}
+                    textStyle={styles.listItemButtonText}
+                />
             </View>
             <View style={styles.listStats}>
                 <CustomText>Tuotteita: {item.items?.length || 0}</CustomText>
@@ -122,16 +136,6 @@ const ShoppingListsScreen = () => {
                     €
                 </CustomText>
             </View>
-            <Button
-                style={[
-                    styles.secondaryButton,
-                    styles.listItemButton,
-                    isDesktop && styles.desktopListItemButton,
-                ]}
-                title="Näytä lista"
-                onPress={() => handleViewList(item)}
-                textStyle={styles.buttonText}
-            />
         </View>
     )
 
@@ -288,8 +292,15 @@ const styles = StyleSheet.create({
         shadowRadius: 2,
         elevation: 2,
     },
-    listHeader: {
+    listItemHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
         marginBottom: 10,
+    },
+    listHeader: {
+        flex: 1,
+        marginRight: 15,
     },
     listTitle: {
         fontSize: 18,
@@ -347,6 +358,12 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
     },
+    listItemButtonText: {
+        color: '#000000',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        fontSize: 14,
+    },
     closeButton: {
         position: 'absolute',
         right: 10,
@@ -372,16 +389,15 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
     },
     listItemButton: {
-        width: 120,
-        marginRight: 'auto',
-        marginTop: 10,
+        width: 100,
+        flexShrink: 0,
+        marginTop: 0,
     },
     desktopListItemButton: {
-        width: 140,
-        maxWidth: 140,
-        paddingHorizontal: 15,
-        alignSelf: 'flex-end',
-        marginTop: 10,
+        width: 120,
+        maxWidth: 120,
+        paddingHorizontal: 12,
+        marginTop: 0,
     },
     detailModalView: {
         backgroundColor: 'white',
