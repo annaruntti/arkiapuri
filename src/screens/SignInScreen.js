@@ -1,8 +1,8 @@
-import { Link, useNavigation } from '@react-navigation/native'
+import { useNavigation } from '@react-navigation/native'
 import axios from 'axios'
 import React from 'react'
 import { useForm } from 'react-hook-form'
-import { Alert, StyleSheet, View } from 'react-native'
+import { Alert, StyleSheet, TouchableOpacity, View } from 'react-native'
 import { useLogin } from '../context/LoginProvider'
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
@@ -116,11 +116,14 @@ const SignInScreen = () => {
                     }}
                 />
 
-                <Link
-                    to="/forgot-password"
-                    style={styles.forgotPassword}
-                    children="Unohditko salasanasi?"
-                />
+                <TouchableOpacity
+                    onPress={() => navigation.navigate('Unohtunut salasana')}
+                    style={styles.forgotPasswordContainer}
+                >
+                    <CustomText style={styles.forgotPassword}>
+                        Unohditko salasanasi?
+                    </CustomText>
+                </TouchableOpacity>
 
                 <View style={styles.buttonSection}>
                     <Button
@@ -153,12 +156,15 @@ const styles = StyleSheet.create({
     form: {
         width: '100%',
     },
+    forgotPasswordContainer: {
+        alignSelf: 'flex-end',
+        marginBottom: 24,
+    },
     forgotPassword: {
         color: '#9C86FC',
         fontSize: 14,
         fontWeight: '500',
         textAlign: 'right',
-        marginBottom: 24,
         textDecorationLine: 'underline',
     },
     buttonSection: {

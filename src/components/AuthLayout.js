@@ -11,11 +11,13 @@ const AuthLayout = ({
     showHeader = true,
     headerStyle,
     contentStyle,
+    centerContent = true,
 }) => {
     const { isDesktop, isTablet } = useResponsiveDimensions()
 
     const getContainerStyle = () => [
         styles.container,
+        !centerContent && styles.topAlignedContainer,
         isDesktop && styles.desktopContainer,
         isTablet && styles.tabletContainer,
     ]
@@ -79,6 +81,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingVertical: 40,
         minHeight: '100%',
+    },
+    topAlignedContainer: {
+        justifyContent: 'flex-start',
     },
     desktopContainer: {
         paddingHorizontal: 40,

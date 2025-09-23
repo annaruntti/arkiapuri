@@ -14,6 +14,7 @@ import { AntDesign, Feather, FontAwesome6 } from '@expo/vector-icons'
 
 import CustomText from '../components/CustomText'
 import ConfirmEmailScreen from '../screens/ConfirmEmailScreen'
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen'
 import HomeScreen from '../screens/HomeScreen'
 import ImageUploadScreen from '../screens/ImageUploadScreen'
 import LandingScreen from '../screens/LandingScreen'
@@ -21,6 +22,7 @@ import MealsScreen from '../screens/MealsScreen'
 import PantryScreen from '../screens/PantryScreen'
 import ProfileScreen from '../screens/ProfileScreen'
 import ReadingOrderScreen from '../screens/ReadingOrderScreen'
+import ResetPasswordScreen from '../screens/ResetPasswordScreen'
 import ShoppingListScreen from '../screens/ShoppingListsScreen'
 import SignInScreen from '../screens/SignInScreen'
 import SignUpScreen from '../screens/SignUpScreen'
@@ -510,12 +512,66 @@ function TabNavigator() {
 
 const RootStack = createNativeStackNavigator()
 
+// Web linking configuration
+const linking = {
+    prefixes: ['http://localhost:8081', 'https://yourdomain.com'], // Add your production domain later
+    config: {
+        screens: {
+            Auth: {
+                screens: {
+                    Tervetuloa: '',
+                    'Kirjaudu sisään': 'sign-in',
+                    'Luo tunnus': 'sign-up',
+                    'Unohtunut salasana': 'forgot-password',
+                    'Vaihda salasana': 'reset-password',
+                    'Vahvista sähköposti': 'confirm-email',
+                    'Lataa profiilikuva': 'upload-image',
+                },
+            },
+            Main: {
+                screens: {
+                    HomeStack: {
+                        screens: {
+                            Arkiapuri: 'home',
+                        },
+                    },
+                    MealsStack: {
+                        screens: {
+                            Ateriat: 'meals',
+                        },
+                    },
+                    PantryStack: {
+                        screens: {
+                            Pentteri: 'pantry',
+                        },
+                    },
+                    ShoppingListStack: {
+                        screens: {
+                            Ostoslista: 'shopping-list',
+                        },
+                    },
+                    ReadingOrderStack: {
+                        screens: {
+                            Lukujärjestys: 'reading-order',
+                        },
+                    },
+                    ProfileStack: {
+                        screens: {
+                            'Omat tiedot': 'profile',
+                        },
+                    },
+                },
+            },
+        },
+    },
+}
+
 export default function Navigation() {
     const { isLoggedIn } = useLogin()
 
     return (
         <NavigationHistoryProvider>
-            <NavigationContainer>
+            <NavigationContainer linking={linking}>
                 <RootStack.Navigator screenOptions={{ headerShown: false }}>
                     {isLoggedIn ? (
                         <RootStack.Screen
@@ -582,6 +638,22 @@ function AuthStackScreen() {
                     <>
                         <NavigationTracker screenName="Vahvista sähköposti" />
                         <ConfirmEmailScreen {...props} />
+                    </>
+                )}
+            </HomeStack.Screen>
+            <HomeStack.Screen name="Unohtunut salasana">
+                {(props) => (
+                    <>
+                        <NavigationTracker screenName="Unohtunut salasana" />
+                        <ForgotPasswordScreen {...props} />
+                    </>
+                )}
+            </HomeStack.Screen>
+            <HomeStack.Screen name="Vaihda salasana">
+                {(props) => (
+                    <>
+                        <NavigationTracker screenName="Vaihda salasana" />
+                        <ResetPasswordScreen {...props} />
                     </>
                 )}
             </HomeStack.Screen>
