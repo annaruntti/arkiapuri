@@ -31,7 +31,6 @@ const FormFoodItem = forwardRef(
     (
         {
             onSubmit,
-            onClose,
             location = 'meal',
             showLocationSelector = false,
             shoppingLists = [],
@@ -76,6 +75,8 @@ const FormFoodItem = forwardRef(
         })
 
         const currentUnit = watch('unit')
+
+        const unitOptions = ['kpl', 'g', 'kg', 'l', 'dl', 'ml', 'tl', 'rkl']
 
         const showMode = () => {
             if (Platform.OS === 'android') {
@@ -481,16 +482,67 @@ const FormFoodItem = forwardRef(
                         control={control}
                         rules={{
                             required: true,
-                            validate: (value) => value.trim() !== '',
                         }}
                         render={({ field: { onChange, value } }) => (
-                            <TextInput
-                                style={styles.unitFormInput}
-                                placeholder="kpl/kg/l"
-                                placeholderTextColor="#999"
-                                onChangeText={onChange}
-                                value={value}
-                            />
+                            <View style={styles.unitScrollPicker}>
+                                {/* Top scroll indicator */}
+                                <View style={styles.unitScrollIndicatorTop}>
+                                    <MaterialIcons
+                                        name="keyboard-arrow-up"
+                                        size={16}
+                                        color="#999"
+                                    />
+                                </View>
+
+                                <ScrollView
+                                    style={styles.unitScrollView}
+                                    contentContainerStyle={
+                                        styles.unitScrollContent
+                                    }
+                                    showsVerticalScrollIndicator={false}
+                                    snapToInterval={32}
+                                    decelerationRate="fast"
+                                    onMomentumScrollEnd={(event) => {
+                                        const y =
+                                            event.nativeEvent.contentOffset.y
+                                        const index = Math.round(y / 32)
+                                        const selectedUnit =
+                                            unitOptions[index] || unitOptions[0]
+                                        onChange(selectedUnit)
+                                    }}
+                                >
+                                    {unitOptions.map((unit) => (
+                                        <TouchableOpacity
+                                            key={unit}
+                                            style={[
+                                                styles.unitScrollOption,
+                                                value === unit &&
+                                                    styles.unitScrollOptionSelected,
+                                            ]}
+                                            onPress={() => onChange(unit)}
+                                        >
+                                            <CustomText
+                                                style={[
+                                                    styles.unitScrollOptionText,
+                                                    value === unit &&
+                                                        styles.unitScrollOptionTextSelected,
+                                                ]}
+                                            >
+                                                {unit}
+                                            </CustomText>
+                                        </TouchableOpacity>
+                                    ))}
+                                </ScrollView>
+
+                                {/* Bottom scroll indicator */}
+                                <View style={styles.unitScrollIndicatorBottom}>
+                                    <MaterialIcons
+                                        name="keyboard-arrow-down"
+                                        size={16}
+                                        color="#999"
+                                    />
+                                </View>
+                            </View>
                         )}
                         name="unit"
                         {...register('unit')}
@@ -745,20 +797,15 @@ FormFoodItem.displayName = 'FormFoodItem'
 
 const styles = StyleSheet.create({
     formContainer: {
-        padding: 10,
+        paddingTop: 5,
         paddingBottom: 20,
     },
     formScroll: {
         flexGrow: 1,
     },
-    form: {
-        flex: 1,
-        width: '100%',
-        marginBottom: 15,
-    },
     label: {
-        paddingTop: 5,
-        marginBottom: 3,
+        marginTop: 10,
+        marginBottom: 5,
     },
     labelTitle: {
         paddingTop: 25,
@@ -772,8 +819,8 @@ const styles = StyleSheet.create({
         borderColor: '#bbb',
         borderStyle: 'solid',
         borderWidth: 1,
-        height: 36,
-        padding: 8,
+        height: 40,
+        padding: 10,
         borderRadius: 4,
         marginBottom: 5,
         width: '100%',
@@ -783,10 +830,9 @@ const styles = StyleSheet.create({
         borderColor: '#bbb',
         borderStyle: 'solid',
         borderWidth: 1,
-        height: 36,
-        padding: 8,
+        height: 40,
+        padding: 10,
         borderRadius: 4,
-        marginBottom: 5,
         width: 120,
         flex: 0,
     },
@@ -795,17 +841,16 @@ const styles = StyleSheet.create({
         borderColor: '#bbb',
         borderStyle: 'solid',
         borderWidth: 1,
-        height: 36,
-        padding: 8,
+        height: 40,
+        padding: 10,
         borderRadius: 4,
-        marginBottom: 5,
         width: 65,
         marginLeft: 10,
     },
     inputAndIcon: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 8,
+        marginBottom: 5,
         width: '100%',
         minHeight: 36,
         position: 'relative',
@@ -858,60 +903,9 @@ const styles = StyleSheet.create({
         backgroundColor: '#38E4D9',
         width: '100%',
     },
-    tertiaryButton: {
-        borderRadius: 25,
-        paddingTop: 7,
-        paddingBottom: 7,
-        paddingLeft: 10,
-        paddingRight: 10,
-        elevation: 2,
-        backgroundColor: '#fff',
-        color: 'black',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        width: 'auto',
-        borderWidth: 3,
-        borderColor: '#9C86FC',
-    },
-    primaryButtonText: {
-        color: '#000',
-        fontWeight: 'bold',
-    },
-    cancelButton: {
-        position: 'absolute',
-        right: 20,
-        backgroundColor: 'transparent',
-    },
-    cancelButtonText: {
-        color: '#000',
-        fontWeight: 'bold',
-    },
     errorMsg: {
         color: 'red',
         marginLeft: 5,
-    },
-    multiSelectBackdrop: {
-        backgroundColor: 'rgba(0, 0, 0, 0.1)',
-    },
-    multiSelectBox: {
-        borderWidth: 1,
-        borderRadius: 4,
-        borderColor: '#bbb',
-        padding: 10,
-        marginBottom: 8,
-        backgroundColor: 'white',
-        minHeight: 40,
-    },
-    quantityContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 5,
-        width: '100%',
-    },
-    unitInput: {
-        flex: 1,
-        width: '100%',
     },
     locationSelector: {
         marginBottom: 15,
@@ -955,66 +949,22 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         borderColor: '#bbb',
         borderWidth: 1,
-        height: 36,
-        padding: 8,
+        height: 40,
+        padding: 10,
         borderRadius: 4,
         width: 120,
     },
     dateIcon: {
         padding: 8,
-        marginLeft: 130,
+        marginLeft: 124,
         position: 'absolute',
         justifyContent: 'center',
         alignItems: 'center',
         height: 36,
     },
-    iosDatePicker: {
-        backgroundColor: 'white',
-        width: '100%',
-        height: 120,
-        marginTop: 10,
-        marginBottom: 10,
-    },
-    pickerContainer: {
-        backgroundColor: 'white',
-        marginTop: 5,
-        marginBottom: 5,
-    },
-    picker: {
-        width: '100%',
-        height: 50,
-        backgroundColor: 'white',
-        borderRadius: 4,
-        borderColor: '#bbb',
-        padding: 5,
-    },
-    pickerItem: {
-        height: 40,
-        fontSize: 16,
-    },
     shoppingListSelectorContainer: {
         marginLeft: 30,
         marginBottom: 5,
-    },
-    pickerButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        backgroundColor: '#f8f9fa',
-        borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 8,
-        padding: 12,
-        minHeight: 48,
-    },
-    pickerButtonText: {
-        fontSize: 16,
-        color: '#000',
-        flex: 1,
-    },
-    placeholderText: {
-        color: '#666',
-        fontStyle: 'italic',
     },
     // Shopping List Inline Selector Styles
     shoppingListContainer: {
@@ -1095,6 +1045,54 @@ const styles = StyleSheet.create({
     shoppingListOptionTextSelected: {
         color: '#333',
         fontWeight: '500',
+    },
+    // Unit Scroll Picker Styles
+    unitScrollPicker: {
+        marginLeft: 10,
+        width: 55,
+        height: 40,
+        backgroundColor: 'white',
+        borderColor: '#bbb',
+        borderWidth: 1,
+        borderRadius: 4,
+        position: 'relative',
+    },
+    unitScrollIndicatorTop: {
+        position: 'absolute',
+        top: 2,
+        right: 2,
+        zIndex: 1,
+        padding: 1,
+    },
+    unitScrollIndicatorBottom: {
+        position: 'absolute',
+        bottom: 2,
+        right: 2,
+        zIndex: 1,
+        padding: 1,
+    },
+    unitScrollView: {
+        flex: 1,
+    },
+    unitScrollContent: {
+        paddingVertical: 4,
+    },
+    unitScrollOption: {
+        height: 32,
+        justifyContent: 'center',
+        alignItems: 'left',
+        paddingHorizontal: 8,
+    },
+    unitScrollOptionSelected: {
+        backgroundColor: '#f0f0f0',
+    },
+    unitScrollOptionText: {
+        fontSize: 14,
+        color: '#666',
+    },
+    unitScrollOptionTextSelected: {
+        color: '#000',
+        fontWeight: 'bold',
     },
 })
 

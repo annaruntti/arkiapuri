@@ -663,7 +663,6 @@ const styles = StyleSheet.create({
     },
     modalBody: {
         flex: 1,
-        paddingHorizontal: 15,
     },
     primaryButton: {
         borderRadius: 25,

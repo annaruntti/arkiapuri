@@ -289,7 +289,7 @@ const InlineCategorySelect = ({
 
 const styles = StyleSheet.create({
     container: {
-        marginBottom: 10,
+        marginBottom: 5,
     },
     selectButton: {
         flexDirection: 'row',
@@ -358,8 +358,8 @@ const styles = StyleSheet.create({
     },
     sectionTitle: {
         fontSize: 16,
-        fontWeight: 'bold',
-        color: '#333',
+        fontWeight: 'normal',
+        color: '#000',
     },
     closeButton: {
         padding: 5,

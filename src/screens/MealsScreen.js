@@ -26,9 +26,7 @@ const MealsScreen = () => {
     const [loading, setLoading] = useState(true)
     const [selectedMeal, setSelectedMeal] = useState(null)
     const [detailModalVisible, setDetailModalVisible] = useState(false)
-    const [categories, setCategories] = useState([])
-    const { isDesktop, responsivePadding, responsiveColumns } =
-        useResponsiveDimensions()
+    const { isDesktop } = useResponsiveDimensions()
 
     const fetchMeals = async () => {
         try {
@@ -168,27 +166,9 @@ const MealsScreen = () => {
             // First, handle each food item
             const processedFoodItems = await Promise.all(
                 updatedMeal.foodItems.map(async (item) => {
-                    // Convert category names to IDs if needed
+                    // Use category as-is (should already be in correct format)
                     const categoryIds = Array.isArray(item.category)
                         ? item.category
-                              .map((cat) => {
-                                  if (typeof cat === 'string') {
-                                      // If it's a category name, convert to ID
-                                      const category = categories.find(
-                                          (c) =>
-                                              c.name === cat ||
-                                              c.children.some(
-                                                  (child) => child.name === cat
-                                              )
-                                      )
-                                      if (!category) {
-                                          return null
-                                      }
-                                      return category.id
-                                  }
-                                  return cat
-                              })
-                              .filter((id) => id !== null) // Remove any null values
                         : []
 
                     // Clean the food item data
@@ -323,11 +303,6 @@ const MealsScreen = () => {
             </View>
         </View>
     )
-
-    useEffect(() => {
-        if (selectedMeal) {
-        }
-    }, [selectedMeal])
 
     const handleMealPress = (meal) => {
         setSelectedMeal(meal)
@@ -517,10 +492,6 @@ const styles = StyleSheet.create({
         color: '#000000',
         fontWeight: 'bold',
         textAlign: 'center',
-    },
-    modalBody: {
-        flex: 1,
-        padding: 15,
     },
 })
 
