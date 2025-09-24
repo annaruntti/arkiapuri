@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons'
+import { Feather, MaterialIcons } from '@expo/vector-icons'
 import { format } from 'date-fns'
 import { fi } from 'date-fns/locale'
 import React, { useEffect, useState } from 'react'
@@ -29,7 +29,9 @@ const mealTypes = [
     { value: 'lunch', label: 'Lounas' },
     { value: 'snack', label: 'Välipala' },
     { value: 'dinner', label: 'Päivällinen' },
+    { value: 'supper', label: 'Iltapala' },
     { value: 'dessert', label: 'Jälkiruoka' },
+    { value: 'other', label: 'Muu' },
 ]
 
 const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
@@ -40,7 +42,6 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
     const [activeTab, setActiveTab] = useState('ingredients')
     const [showFoodItemForm, setShowFoodItemForm] = useState(false)
     const [showDifficultyPicker, setShowDifficultyPicker] = useState(false)
-    const [showMealTypePicker, setShowMealTypePicker] = useState(false)
 
     useEffect(() => {
         if (meal) {
@@ -201,16 +202,66 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                 <View style={styles.detailRow}>
                     <CustomText style={styles.detailLabel}>{label}:</CustomText>
                     <View style={styles.valueContainer}>
-                        <TouchableOpacity
-                            style={styles.pickerButton}
-                            onPress={() => setShowMealTypePicker(true)}
-                        >
-                            <CustomText style={styles.pickerButtonText}>
-                                {mealTypes.find(
-                                    (type) => type.value === currentValue
-                                )?.label || 'Valitse ateriatyyppi'}
-                            </CustomText>
-                        </TouchableOpacity>
+                        <View style={styles.mealTypeScrollPicker}>
+                            {/* Top scroll indicator */}
+                            <View style={styles.mealTypeScrollIndicatorTop}>
+                                <MaterialIcons
+                                    name="keyboard-arrow-up"
+                                    size={16}
+                                    color="#999"
+                                />
+                            </View>
+
+                            <ScrollView
+                                style={styles.mealTypeScrollView}
+                                contentContainerStyle={
+                                    styles.mealTypeScrollContent
+                                }
+                                showsVerticalScrollIndicator={false}
+                                snapToInterval={32}
+                                decelerationRate="fast"
+                                onMomentumScrollEnd={(event) => {
+                                    const y = event.nativeEvent.contentOffset.y
+                                    const index = Math.round(y / 32)
+                                    const selectedType =
+                                        mealTypes[index] || mealTypes[0]
+                                    handleChange(field, [selectedType.value])
+                                }}
+                            >
+                                {mealTypes.map((type) => (
+                                    <TouchableOpacity
+                                        key={type.value}
+                                        style={[
+                                            styles.mealTypeScrollOption,
+                                            currentValue === type.value &&
+                                                styles.mealTypeScrollOptionSelected,
+                                        ]}
+                                        onPress={() =>
+                                            handleChange(field, [type.value])
+                                        }
+                                    >
+                                        <CustomText
+                                            style={[
+                                                styles.mealTypeScrollOptionText,
+                                                currentValue === type.value &&
+                                                    styles.mealTypeScrollOptionTextSelected,
+                                            ]}
+                                        >
+                                            {type.label}
+                                        </CustomText>
+                                    </TouchableOpacity>
+                                ))}
+                            </ScrollView>
+
+                            {/* Bottom scroll indicator */}
+                            <View style={styles.mealTypeScrollIndicatorBottom}>
+                                <MaterialIcons
+                                    name="keyboard-arrow-down"
+                                    size={16}
+                                    color="#999"
+                                />
+                            </View>
+                        </View>
                         <TouchableOpacity
                             style={styles.editIcon}
                             onPress={() => toggleEdit(field)}
@@ -542,59 +593,6 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                     </View>
                 </View>
             </Modal>
-
-            {/* Meal Type Picker Modal */}
-            <Modal
-                visible={showMealTypePicker}
-                transparent={true}
-                animationType="fade"
-                onRequestClose={() => setShowMealTypePicker(false)}
-            >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <View style={styles.modalHeader}>
-                            <CustomText style={styles.modalTitle}>
-                                Valitse ateriatyyppi
-                            </CustomText>
-                            <TouchableOpacity
-                                style={styles.modalCloseButton}
-                                onPress={() => setShowMealTypePicker(false)}
-                            >
-                                <CustomText style={styles.modalCloseText}>
-                                    ✕
-                                </CustomText>
-                            </TouchableOpacity>
-                        </View>
-                        <ScrollView style={styles.modalBody}>
-                            {mealTypes.map((type) => (
-                                <TouchableOpacity
-                                    key={type.value}
-                                    style={styles.modalOption}
-                                    onPress={() => {
-                                        handleChange('mealType', [type.value])
-                                        setShowMealTypePicker(false)
-                                    }}
-                                >
-                                    <CustomText
-                                        style={[
-                                            styles.modalOptionText,
-                                            (Array.isArray(
-                                                editedValues.mealType
-                                            )
-                                                ? editedValues.mealType[0]
-                                                : editedValues.mealType) ===
-                                                type.value &&
-                                                styles.selectedOptionText,
-                                        ]}
-                                    >
-                                        {type.label}
-                                    </CustomText>
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
-                    </View>
-                </View>
-            </Modal>
         </>
     )
 }
@@ -808,6 +806,53 @@ const styles = StyleSheet.create({
     },
     selectedOptionText: {
         color: '#9C86FC',
+        fontWeight: 'bold',
+    },
+    // Meal Type Scroll Picker Styles
+    mealTypeScrollPicker: {
+        width: 120,
+        height: 40,
+        backgroundColor: 'white',
+        borderColor: '#bbb',
+        borderWidth: 1,
+        borderRadius: 4,
+        position: 'relative',
+    },
+    mealTypeScrollIndicatorTop: {
+        position: 'absolute',
+        top: 2,
+        right: 2,
+        zIndex: 1,
+        padding: 1,
+    },
+    mealTypeScrollIndicatorBottom: {
+        position: 'absolute',
+        bottom: 2,
+        right: 2,
+        zIndex: 1,
+        padding: 1,
+    },
+    mealTypeScrollView: {
+        flex: 1,
+    },
+    mealTypeScrollContent: {
+        paddingVertical: 4,
+    },
+    mealTypeScrollOption: {
+        height: 32,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 8,
+    },
+    mealTypeScrollOptionSelected: {
+        backgroundColor: '#f0f0f0',
+    },
+    mealTypeScrollOptionText: {
+        fontSize: 14,
+        color: '#666',
+    },
+    mealTypeScrollOptionTextSelected: {
+        color: '#000',
         fontWeight: 'bold',
     },
 })

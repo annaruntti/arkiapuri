@@ -3,8 +3,9 @@ import axios from 'axios'
 import React, { useEffect, useState } from 'react'
 import {
     Alert,
-    FlatList,
     Platform,
+    RefreshControl,
+    ScrollView,
     StyleSheet,
     TouchableOpacity,
     View,
@@ -16,7 +17,7 @@ import MealItemDetail from '../components/MealItemDetail'
 import ResponsiveLayout from '../components/ResponsiveLayout'
 import ResponsiveModal from '../components/ResponsiveModal'
 import { getServerUrl } from '../utils/getServerUrl'
-import { getDifficultyText } from '../utils/mealUtils'
+import { getDifficultyText, getMealRoleText } from '../utils/mealUtils'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 
@@ -27,6 +28,41 @@ const MealsScreen = () => {
     const [selectedMeal, setSelectedMeal] = useState(null)
     const [detailModalVisible, setDetailModalVisible] = useState(false)
     const { isDesktop } = useResponsiveDimensions()
+
+    // Group meals by their default roles
+    const groupMealsByCategory = (meals) => {
+        const grouped = {}
+
+        meals.forEach((meal) => {
+            const roles = meal.defaultRoles || ['other']
+            roles.forEach((role) => {
+                if (!grouped[role]) {
+                    grouped[role] = []
+                }
+                grouped[role].push(meal)
+            })
+        })
+
+        // Sort categories by predefined order
+        const categoryOrder = [
+            'breakfast',
+            'lunch',
+            'snack',
+            'dinner',
+            'supper',
+            'dessert',
+            'other',
+        ]
+        const sortedGrouped = {}
+
+        categoryOrder.forEach((category) => {
+            if (grouped[category] && grouped[category].length > 0) {
+                sortedGrouped[category] = grouped[category]
+            }
+        })
+
+        return sortedGrouped
+    }
 
     const fetchMeals = async () => {
         try {
@@ -304,6 +340,22 @@ const MealsScreen = () => {
         </View>
     )
 
+    const renderCategorySection = (category, mealsInCategory) => (
+        <View key={category} style={styles.categorySection}>
+            <View style={styles.categoryHeader}>
+                <CustomText style={styles.categoryTitle}>
+                    {getMealRoleText(category)}
+                </CustomText>
+                <CustomText style={styles.categoryCount}>
+                    ({mealsInCategory.length})
+                </CustomText>
+            </View>
+            {mealsInCategory.map((meal, index) => (
+                <View key={meal._id}>{renderItem({ item: meal })}</View>
+            ))}
+        </View>
+    )
+
     const handleMealPress = (meal) => {
         setSelectedMeal(meal)
         setDetailModalVisible(true)
@@ -342,26 +394,33 @@ const MealsScreen = () => {
             </ResponsiveModal>
 
             {meals.length > 0 ? (
-                <FlatList
-                    data={meals}
-                    renderItem={renderItem}
-                    keyExtractor={(item) => item._id}
+                <ScrollView
                     style={styles.list}
                     contentContainerStyle={styles.listContent}
-                    refreshing={loading}
-                    onRefresh={fetchMeals}
-                    ListHeaderComponent={renderHeader}
-                    ListEmptyComponent={
-                        !loading && (
-                            <CustomText style={styles.emptyText}>
-                                Ei vielä aterioita. Lisää ensimmäinen ateria
-                                painamalla "Lisää ateria" -nappia.
-                            </CustomText>
-                        )
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={loading}
+                            onRefresh={fetchMeals}
+                        />
                     }
-                />
+                >
+                    {renderHeader()}
+                    {Object.entries(groupMealsByCategory(meals)).map(
+                        ([category, mealsInCategory]) =>
+                            renderCategorySection(category, mealsInCategory)
+                    )}
+                </ScrollView>
             ) : (
-                <>
+                <ScrollView
+                    style={styles.list}
+                    contentContainerStyle={styles.listContent}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={loading}
+                            onRefresh={fetchMeals}
+                        />
+                    }
+                >
                     {renderHeader()}
                     {!loading && (
                         <CustomText style={styles.emptyText}>
@@ -369,7 +428,7 @@ const MealsScreen = () => {
                             painamalla "Lisää ateria" -nappia.
                         </CustomText>
                     )}
-                </>
+                </ScrollView>
             )}
 
             <MealItemDetail
@@ -492,6 +551,25 @@ const styles = StyleSheet.create({
         color: '#000000',
         fontWeight: 'bold',
         textAlign: 'center',
+    },
+    categorySection: {
+        marginBottom: 20,
+    },
+    categoryHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 10,
+        paddingHorizontal: 5,
+    },
+    categoryTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#333',
+    },
+    categoryCount: {
+        fontSize: 16,
+        color: '#666',
+        marginLeft: 8,
     },
 })
 
