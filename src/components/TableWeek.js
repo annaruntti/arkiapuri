@@ -58,56 +58,42 @@ const Table = () => {
             setIsLoading(true)
             const token = await storage.getItem('userToken')
 
-            // Format dates for API request
+            // Format dates for filtering
             const formattedDates = datesToFetch.map((date) =>
                 format(date, 'yyyy-MM-dd')
             )
 
-            const response = await axios.get(
-                getServerUrl(`/meals?dates=${formattedDates.join(',')}`),
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            )
-
-            // Organize data by date
-            const mealsByDate = {}
-
-            // Initialize empty arrays for each date
-            formattedDates.forEach((date) => {
-                mealsByDate[date] = []
+            // Fetch all meals and filter by planned dates on frontend
+            const response = await axios.get(getServerUrl('/meals'), {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
             })
 
-            // Fill with actual data
-            if (response.data && response.data.meals) {
-                response.data.meals.forEach((meal) => {
-                    // Use plannedCookingDate if date is missing
-                    if (meal.plannedCookingDate || meal.date) {
-                        const dateField = meal.plannedCookingDate || meal.date
-                        const date = dateField.split('T')[0] // Get the date part
+            if (response.data.success) {
+                const allMeals = response.data.meals || []
+                const mealsByDate = {}
 
-                        if (mealsByDate[date]) {
-                            mealsByDate[date].push(meal)
-                        } else {
-                            // For dates that might not be in initial array but have meals
-                            mealsByDate[date] = [meal]
-                        }
-                    } else {
-                        // Add the first meal (Muffinssit) to today's date if it has no date
-                        if (meal.name === 'Muffinssit') {
-                            const today = format(new Date(), 'yyyy-MM-dd')
-                            if (mealsByDate[today]) {
-                                mealsByDate[today].push(meal)
-                            }
-                        } else {
+                // Initialize empty arrays for each date
+                formattedDates.forEach((date) => {
+                    mealsByDate[date] = []
+                })
+
+                // Group meals by their planned cooking date
+                allMeals.forEach((meal) => {
+                    if (meal.plannedCookingDate) {
+                        const mealDate = format(
+                            new Date(meal.plannedCookingDate),
+                            'yyyy-MM-dd'
+                        )
+                        if (mealsByDate.hasOwnProperty(mealDate)) {
+                            mealsByDate[mealDate].push(meal)
                         }
                     }
                 })
-            }
 
-            setMealsByDate(mealsByDate)
+                setMealsByDate(mealsByDate)
+            }
         } catch (error) {
             console.error('Error fetching meal data:', error)
         } finally {
