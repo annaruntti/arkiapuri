@@ -6,6 +6,7 @@ import React, { useEffect, useState } from 'react'
 import {
     Alert,
     FlatList,
+    Image,
     StyleSheet,
     TouchableOpacity,
     View,
@@ -16,6 +17,9 @@ import Button from './Button'
 import CustomText from './CustomText'
 import MealItemDetail from './MealItemDetail'
 import ResponsiveModal from './ResponsiveModal'
+
+const PLACEHOLDER_IMAGE_URL =
+    'https://images.ctfassets.net/2pij69ehhf4n/3b9imD6TDC4i68V4uHVgL1/1ac1194dccb086bb52ebd674c59983e3/undraw_breakfast_rgx5.png'
 
 const mealTypeTranslations = {
     breakfast: 'Aamiainen',
@@ -246,13 +250,22 @@ const Table = () => {
             onPress={() => handleMealPress(item)}
             style={styles.mealItem}
         >
-            <CustomText style={styles.mealName}>{item.name}</CustomText>
-            <CustomText style={styles.mealType}>
-                {item.defaultRoles?.[0]
-                    ? mealTypeTranslations[item.defaultRoles[0]] ||
-                      item.defaultRoles[0]
-                    : 'Ateria'}
-            </CustomText>
+            <Image
+                source={{
+                    uri: item.image?.url || PLACEHOLDER_IMAGE_URL,
+                }}
+                style={styles.mealImage}
+                resizeMode="cover"
+            />
+            <View style={styles.mealTextContainer}>
+                <CustomText style={styles.mealName}>{item.name}</CustomText>
+                <CustomText style={styles.mealType}>
+                    {item.defaultRoles?.[0]
+                        ? mealTypeTranslations[item.defaultRoles[0]] ||
+                          item.defaultRoles[0]
+                        : 'Ateria'}
+                </CustomText>
+            </View>
         </TouchableOpacity>
     )
 
@@ -320,16 +333,27 @@ const Table = () => {
                             style={styles.modalMealItem}
                             onPress={() => handleSelectMeal(item)}
                         >
-                            <CustomText style={styles.modalMealName}>
-                                {item.name}
-                            </CustomText>
-                            <CustomText style={styles.modalMealType}>
-                                {item.defaultRoles?.[0]
-                                    ? mealTypeTranslations[
-                                          item.defaultRoles[0]
-                                      ] || item.defaultRoles[0]
-                                    : 'Ateria'}
-                            </CustomText>
+                            <Image
+                                source={{
+                                    uri:
+                                        item.image?.url ||
+                                        PLACEHOLDER_IMAGE_URL,
+                                }}
+                                style={styles.modalMealImage}
+                                resizeMode="cover"
+                            />
+                            <View style={styles.modalMealTextContainer}>
+                                <CustomText style={styles.modalMealName}>
+                                    {item.name}
+                                </CustomText>
+                                <CustomText style={styles.modalMealType}>
+                                    {item.defaultRoles?.[0]
+                                        ? mealTypeTranslations[
+                                              item.defaultRoles[0]
+                                          ] || item.defaultRoles[0]
+                                        : 'Ateria'}
+                                </CustomText>
+                            </View>
                         </TouchableOpacity>
                     )}
                     keyExtractor={(item) => item._id}
@@ -454,7 +478,8 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         marginBottom: 8,
         width: '100%',
-        flexDirection: 'column',
+        flexDirection: 'row',
+        alignItems: 'center',
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
@@ -463,6 +488,16 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 2,
         elevation: 2,
+    },
+    mealImage: {
+        width: 50,
+        height: 50,
+        borderRadius: 6,
+        marginRight: 12,
+    },
+    mealTextContainer: {
+        flex: 1,
+        flexDirection: 'column',
     },
     mealName: {
         fontSize: 16,
@@ -523,6 +558,8 @@ const styles = StyleSheet.create({
         padding: 15,
         borderRadius: 8,
         marginBottom: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
@@ -531,6 +568,16 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 2,
         elevation: 2,
+    },
+    modalMealImage: {
+        width: 50,
+        height: 50,
+        borderRadius: 6,
+        marginRight: 12,
+    },
+    modalMealTextContainer: {
+        flex: 1,
+        flexDirection: 'column',
     },
     modalMealName: {
         fontSize: 16,

@@ -180,8 +180,7 @@ const ProfileScreen = () => {
                                 title="Muokkaa tietoja"
                                 style={styles.secondaryButton}
                                 textStyle={styles.buttonText}
-                                onPress={() => {
-                                }}
+                                onPress={() => {}}
                             />
                             <Button
                                 title="Kirjaudu ulos"
@@ -346,7 +345,6 @@ const styles = StyleSheet.create({
         elevation: 2,
         backgroundColor: '#38E4D9',
         width: '80%',
-        marginBottom: 10,
     },
     tertiaryButton: {
         borderRadius: 25,

@@ -3,6 +3,7 @@ import axios from 'axios'
 import React, { useEffect, useState } from 'react'
 import {
     Alert,
+    Image,
     Platform,
     RefreshControl,
     ScrollView,
@@ -20,6 +21,9 @@ import { getServerUrl } from '../utils/getServerUrl'
 import { getDifficultyText, getMealRoleText } from '../utils/mealUtils'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
+
+const PLACEHOLDER_IMAGE_URL =
+    'https://images.ctfassets.net/2pij69ehhf4n/3b9imD6TDC4i68V4uHVgL1/1ac1194dccb086bb52ebd674c59983e3/undraw_breakfast_rgx5.png'
 
 const MealsScreen = () => {
     const [modalVisible, setModalVisible] = useState(false)
@@ -202,9 +206,26 @@ const MealsScreen = () => {
             // First, handle each food item
             const processedFoodItems = await Promise.all(
                 updatedMeal.foodItems.map(async (item) => {
-                    // Use category as-is (should already be in correct format)
-                    const categoryIds = Array.isArray(item.category)
-                        ? item.category
+                    // Process category data properly
+                    let categoryArray = item.category
+                    if (typeof item.category === 'string') {
+                        try {
+                            categoryArray = JSON.parse(item.category)
+                        } catch (e) {
+                            categoryArray = []
+                        }
+                    }
+
+                    // Ensure we have an array and extract category names
+                    const categoryIds = Array.isArray(categoryArray)
+                        ? categoryArray
+                              .map((cat) => {
+                                  if (typeof cat === 'object' && cat !== null) {
+                                      return cat.name || cat.id || String(cat)
+                                  }
+                                  return String(cat)
+                              })
+                              .filter((cat) => cat && cat.trim() !== '')
                         : []
 
                     // Clean the food item data
@@ -324,11 +345,20 @@ const MealsScreen = () => {
                 style={styles.itemInfo}
                 onPress={() => handleMealPress(item)}
             >
-                <CustomText style={styles.itemName}>{item.name}</CustomText>
-                <CustomText style={styles.itemDetails}>
-                    {getDifficultyText(item.difficultyLevel)} •{' '}
-                    {item.cookingTime} min
-                </CustomText>
+                <Image
+                    source={{
+                        uri: item.image?.url || PLACEHOLDER_IMAGE_URL,
+                    }}
+                    style={styles.mealImage}
+                    resizeMode="cover"
+                />
+                <View style={styles.mealTextContainer}>
+                    <CustomText style={styles.itemName}>{item.name}</CustomText>
+                    <CustomText style={styles.itemDetails}>
+                        {getDifficultyText(item.difficultyLevel)} •{' '}
+                        {item.cookingTime} min
+                    </CustomText>
+                </View>
             </TouchableOpacity>
             <View style={styles.itemActions}>
                 <DeleteButton
@@ -488,8 +518,19 @@ const styles = StyleSheet.create({
     },
     itemInfo: {
         flex: 1,
-        flexDirection: 'column',
+        flexDirection: 'row',
         marginRight: 10,
+        alignItems: 'center',
+    },
+    mealImage: {
+        width: 60,
+        height: 60,
+        borderRadius: 8,
+        marginRight: 12,
+    },
+    mealTextContainer: {
+        flex: 1,
+        flexDirection: 'column',
     },
     itemName: {
         fontSize: 18,

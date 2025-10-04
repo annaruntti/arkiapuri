@@ -13,6 +13,7 @@ import { fi } from 'date-fns/locale'
 import React, { useEffect, useState } from 'react'
 import {
     Alert,
+    Image,
     ScrollView,
     StyleSheet,
     TouchableOpacity,
@@ -23,6 +24,9 @@ import storage from '../utils/storage'
 import CustomText from './CustomText'
 import MealItemDetail from './MealItemDetail'
 import ResponsiveModal from './ResponsiveModal'
+
+const PLACEHOLDER_IMAGE_URL =
+    'https://images.ctfassets.net/2pij69ehhf4n/3b9imD6TDC4i68V4uHVgL1/1ac1194dccb086bb52ebd674c59983e3/undraw_breakfast_rgx5.png'
 
 const mealTypeTranslations = {
     breakfast: 'Aamiainen',
@@ -254,6 +258,15 @@ const TableMonth = () => {
                             style={styles.mealItem}
                             onPress={() => handleMealPress(meal)}
                         >
+                            <Image
+                                source={{
+                                    uri:
+                                        meal.image?.url ||
+                                        PLACEHOLDER_IMAGE_URL,
+                                }}
+                                style={styles.mealImage}
+                                resizeMode="cover"
+                            />
                             <CustomText
                                 style={styles.mealText}
                                 numberOfLines={2}
@@ -376,17 +389,29 @@ const TableMonth = () => {
                             style={styles.mealOption}
                             onPress={() => handleMealSelection(meal)}
                         >
-                            <CustomText style={styles.mealOptionName}>
-                                {meal.name}
-                            </CustomText>
-                            <CustomText style={styles.mealOptionDetails}>
-                                {meal.defaultRoles
-                                    ?.map(
-                                        (role) =>
-                                            mealTypeTranslations[role] || role
-                                    )
-                                    .join(', ')}
-                            </CustomText>
+                            <Image
+                                source={{
+                                    uri:
+                                        meal.image?.url ||
+                                        PLACEHOLDER_IMAGE_URL,
+                                }}
+                                style={styles.mealOptionImage}
+                                resizeMode="cover"
+                            />
+                            <View style={styles.mealOptionTextContainer}>
+                                <CustomText style={styles.mealOptionName}>
+                                    {meal.name}
+                                </CustomText>
+                                <CustomText style={styles.mealOptionDetails}>
+                                    {meal.defaultRoles
+                                        ?.map(
+                                            (role) =>
+                                                mealTypeTranslations[role] ||
+                                                role
+                                        )
+                                        .join(', ')}
+                                </CustomText>
+                            </View>
                         </TouchableOpacity>
                     ))}
                 </ScrollView>
@@ -491,7 +516,14 @@ const styles = StyleSheet.create({
         padding: 6,
         marginBottom: 3,
         minHeight: 24,
-        justifyContent: 'center',
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    mealImage: {
+        width: 20,
+        height: 20,
+        borderRadius: 2,
+        marginRight: 6,
     },
     mealText: {
         fontSize: 11,
@@ -516,6 +548,8 @@ const styles = StyleSheet.create({
         padding: 15,
         borderRadius: 8,
         marginBottom: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
@@ -524,6 +558,16 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 2,
         elevation: 2,
+    },
+    mealOptionImage: {
+        width: 50,
+        height: 50,
+        borderRadius: 6,
+        marginRight: 12,
+    },
+    mealOptionTextContainer: {
+        flex: 1,
+        flexDirection: 'column',
     },
     mealOptionName: {
         fontSize: 16,

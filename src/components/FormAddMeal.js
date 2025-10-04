@@ -1,9 +1,12 @@
 import { MaterialIcons } from '@expo/vector-icons'
 import axios from 'axios'
+import * as ImagePicker from 'expo-image-picker'
 import React, { useEffect, useState } from 'react'
 import {
     Alert,
     FlatList,
+    Image,
+    Platform,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -41,6 +44,7 @@ const AddMealForm = ({ onSubmit, onClose }) => {
     const [shoppingLists, setShoppingLists] = useState([])
     const [selectedShoppingListId, setSelectedShoppingListId] = useState(null)
     const [showItemForm, setShowItemForm] = useState(false)
+    const [mealImage, setMealImage] = useState(null)
 
     const fetchShoppingLists = async () => {
         try {
@@ -64,6 +68,88 @@ const AddMealForm = ({ onSubmit, onClose }) => {
         }
     }
 
+    const pickImage = async () => {
+        try {
+            // Request permissions
+            if (Platform.OS !== 'web') {
+                const { status } =
+                    await ImagePicker.requestMediaLibraryPermissionsAsync()
+                if (status !== 'granted') {
+                    Alert.alert(
+                        'Sorry, we need camera roll permissions to make this work!'
+                    )
+                    return
+                }
+            }
+
+            // Pick the image
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [4, 3],
+                quality: 1,
+            })
+
+            if (!result.canceled) {
+                setMealImage(result.assets[0])
+            }
+        } catch (error) {
+            console.error('Error picking image:', error)
+            Alert.alert('Error', 'Failed to pick image')
+        }
+    }
+
+    const uploadMealImage = async (mealId, imageFile) => {
+        try {
+            const token = await storage.getItem('userToken')
+            if (!token) {
+                throw new Error('No token found')
+            }
+
+            const formData = new FormData()
+
+            // Handle web blob URLs differently
+            if (Platform.OS === 'web' && imageFile.uri.startsWith('blob:')) {
+                // For web, we need to fetch the blob and convert it to a File
+                const response = await fetch(imageFile.uri)
+                const blob = await response.blob()
+                const file = new File([blob], 'meal.jpg', {
+                    type: 'image/jpeg',
+                })
+                formData.append('mealImage', file)
+            } else {
+                // For mobile platforms
+                formData.append('mealImage', {
+                    uri: imageFile.uri,
+                    type: 'image/jpeg',
+                    name: 'meal.jpg',
+                })
+            }
+
+            const url = getServerUrl(`/meals/${mealId}/image`)
+            console.log('Uploading to URL:', url)
+            console.log('Meal ID:', mealId)
+            console.log('Image file:', imageFile)
+            console.log('Platform:', Platform.OS)
+
+            const response = await axios.post(url, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    Authorization: `Bearer ${token}`,
+                },
+            })
+
+            if (response.data.success) {
+                console.log('Meal image uploaded successfully')
+            }
+        } catch (error) {
+            console.error('Error uploading meal image:', error)
+            console.error('Error response:', error.response?.data)
+            console.error('Error status:', error.response?.status)
+            throw error
+        }
+    }
+
     const handleFormSubmit = async () => {
         try {
             if (!selectedRoles || selectedRoles.length === 0) {
@@ -84,11 +170,41 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                         const foodItemData = {
                             name: item.name,
                             unit: item.unit || 'kpl',
-                            category: Array.isArray(item.category)
-                                ? item.category.map((cat) =>
-                                      typeof cat === 'object' ? cat.name : cat
-                                  )
-                                : [],
+                            category: (() => {
+                                // Handle case where category might be a stringified array
+                                let categoryArray = item.category
+                                if (typeof item.category === 'string') {
+                                    try {
+                                        categoryArray = JSON.parse(
+                                            item.category
+                                        )
+                                    } catch (e) {
+                                        categoryArray = []
+                                    }
+                                }
+
+                                // Ensure we have an array
+                                if (!Array.isArray(categoryArray)) {
+                                    return []
+                                }
+
+                                // Extract category names from objects or use strings directly
+                                return categoryArray
+                                    .map((cat) => {
+                                        if (
+                                            typeof cat === 'object' &&
+                                            cat !== null
+                                        ) {
+                                            return (
+                                                cat.name ||
+                                                cat.id ||
+                                                String(cat)
+                                            )
+                                        }
+                                        return String(cat)
+                                    })
+                                    .filter((cat) => cat && cat.trim() !== '')
+                            })(),
                             calories: parseInt(item.calories) || 0,
                             price: parseFloat(item.price) || 0,
                             locations: item.locations || ['meal'],
@@ -169,13 +285,43 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                                         item.quantities['shopping-list']
                                     ) || 0,
                                 unit: item.unit || 'kpl',
-                                category: Array.isArray(item.category)
-                                    ? item.category.map((cat) =>
-                                          typeof cat === 'object'
-                                              ? cat.name
-                                              : cat
-                                      )
-                                    : [],
+                                category: (() => {
+                                    // Handle case where category might be a stringified array
+                                    let categoryArray = item.category
+                                    if (typeof item.category === 'string') {
+                                        try {
+                                            categoryArray = JSON.parse(
+                                                item.category
+                                            )
+                                        } catch (e) {
+                                            categoryArray = []
+                                        }
+                                    }
+
+                                    // Ensure we have an array
+                                    if (!Array.isArray(categoryArray)) {
+                                        return []
+                                    }
+
+                                    // Extract category names from objects or use strings directly
+                                    return categoryArray
+                                        .map((cat) => {
+                                            if (
+                                                typeof cat === 'object' &&
+                                                cat !== null
+                                            ) {
+                                                return (
+                                                    cat.name ||
+                                                    cat.id ||
+                                                    String(cat)
+                                                )
+                                            }
+                                            return String(cat)
+                                        })
+                                        .filter(
+                                            (cat) => cat && cat.trim() !== ''
+                                        )
+                                })(),
                                 calories: parseInt(item.calories) || 0,
                                 price: parseFloat(item.price) || 0,
                             }
@@ -225,7 +371,28 @@ const AddMealForm = ({ onSubmit, onClose }) => {
             )
 
             if (response.data.success) {
-                onSubmit(response.data.meal)
+                const createdMeal = response.data.meal
+                console.log('Meal created successfully:', createdMeal._id)
+
+                // Upload image if one was selected
+                if (mealImage) {
+                    try {
+                        console.log(
+                            'Uploading image for meal:',
+                            createdMeal._id
+                        )
+                        await uploadMealImage(createdMeal._id, mealImage)
+                        console.log('Image uploaded successfully')
+                    } catch (imageError) {
+                        console.error('Error uploading meal image:', imageError)
+                        Alert.alert(
+                            'Warning',
+                            'Meal created but image upload failed'
+                        )
+                    }
+                }
+
+                onSubmit(createdMeal)
             }
         } catch (error) {
             console.error('Error creating meal:', error)
@@ -264,6 +431,10 @@ const AddMealForm = ({ onSubmit, onClose }) => {
         try {
             const token = await storage.getItem('userToken')
 
+            console.log('Received itemData:', itemData)
+            console.log('Category from itemData:', itemData.category)
+            console.log('Category type:', typeof itemData.category)
+
             // Validate required fields
             if (!itemData.name || !itemData.unit) {
                 Alert.alert('Virhe', 'Nimi ja yksikkö ovat pakollisia tietoja')
@@ -274,11 +445,46 @@ const AddMealForm = ({ onSubmit, onClose }) => {
             const foodItemData = {
                 name: itemData.name,
                 unit: itemData.unit,
-                category: Array.isArray(itemData.category)
-                    ? itemData.category.map((cat) =>
-                          typeof cat === 'object' ? cat.name : cat
-                      )
-                    : [],
+                category: (() => {
+                    console.log('Processing category:', itemData.category)
+                    console.log('Is array:', Array.isArray(itemData.category))
+
+                    // Handle case where category might be a stringified array
+                    let categoryArray = itemData.category
+                    if (typeof itemData.category === 'string') {
+                        try {
+                            categoryArray = JSON.parse(itemData.category)
+                            console.log(
+                                'Parsed category from string:',
+                                categoryArray
+                            )
+                        } catch (e) {
+                            console.log('Failed to parse category string:', e)
+                            categoryArray = []
+                        }
+                    }
+
+                    // Ensure we have an array
+                    if (!Array.isArray(categoryArray)) {
+                        console.log(
+                            'Category is not an array, defaulting to empty array'
+                        )
+                        return []
+                    }
+
+                    // Extract category names from objects or use strings directly
+                    const processedCategories = categoryArray
+                        .map((cat) => {
+                            if (typeof cat === 'object' && cat !== null) {
+                                return cat.name || cat.id || String(cat)
+                            }
+                            return String(cat)
+                        })
+                        .filter((cat) => cat && cat.trim() !== '')
+
+                    console.log('Processed categories:', processedCategories)
+                    return processedCategories
+                })(),
                 calories: Number(itemData.calories) || 0,
                 price: Number(itemData.price) || 0,
                 locations: ['meal'],
@@ -289,6 +495,10 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                 },
                 user: profile._id,
             }
+
+            console.log('Creating food item with data:', foodItemData)
+            console.log('Category type:', typeof foodItemData.category)
+            console.log('Category value:', foodItemData.category)
 
             const response = await axios.post(
                 getServerUrl('/food-items'),
@@ -424,6 +634,30 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                         multiline
                         numberOfLines={4}
                     />
+
+                    <CustomText style={styles.label}>Aterian kuva</CustomText>
+                    <TouchableOpacity
+                        style={styles.imagePicker}
+                        onPress={pickImage}
+                    >
+                        {mealImage ? (
+                            <Image
+                                source={{ uri: mealImage.uri }}
+                                style={styles.selectedImage}
+                            />
+                        ) : (
+                            <View style={styles.imagePlaceholder}>
+                                <MaterialIcons
+                                    name="add-a-photo"
+                                    size={40}
+                                    color="#9C86FC"
+                                />
+                                <CustomText style={styles.imagePlaceholderText}>
+                                    Lisää kuva
+                                </CustomText>
+                            </View>
+                        )}
+                    </TouchableOpacity>
 
                     <CustomText style={styles.label}>
                         Vaikeustaso (1-5)
@@ -940,6 +1174,31 @@ const styles = StyleSheet.create({
         width: 'auto',
         borderWidth: 3,
         borderColor: '#9C86FC',
+    },
+    imagePicker: {
+        borderWidth: 2,
+        borderColor: '#9C86FC',
+        borderStyle: 'dashed',
+        borderRadius: 8,
+        marginBottom: 20,
+        overflow: 'hidden',
+    },
+    imagePlaceholder: {
+        height: 120,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#f8f9fa',
+    },
+    imagePlaceholderText: {
+        marginTop: 8,
+        color: '#9C86FC',
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    selectedImage: {
+        width: '100%',
+        height: 200,
+        resizeMode: 'cover',
     },
 })
 
