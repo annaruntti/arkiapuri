@@ -696,6 +696,61 @@ const FormFoodItem = forwardRef(
                     )}
                     name="calories"
                 />
+                <CustomText style={styles.label}>
+                    Viimeinen käyttöpäivä
+                </CustomText>
+                {Platform.OS === 'web' ? (
+                    <DateTimePicker
+                        testID="dateTimePicker"
+                        value={date}
+                        mode={mode}
+                        display="default"
+                        onChange={(event, selectedDate) => {
+                            if (selectedDate) {
+                                setDate(selectedDate)
+                            }
+                        }}
+                        minimumDate={new Date()}
+                    />
+                ) : (
+                    <>
+                        <View style={styles.inputAndIcon}>
+                            <TouchableOpacity
+                                style={styles.dateInputContainer}
+                                onPress={showMode}
+                            >
+                                <TextInput
+                                    style={styles.dateInput}
+                                    value={formatDate(date)}
+                                    editable={false}
+                                    placeholder="Valitse päivämäärä"
+                                    placeholderTextColor="#999"
+                                />
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                onPress={showMode}
+                                style={styles.dateIcon}
+                            >
+                                <Fontisto name="date" size={24} color="#666" />
+                            </TouchableOpacity>
+                        </View>
+                        {show && (
+                            <DateTimePicker
+                                testID="dateTimePicker"
+                                value={date}
+                                mode={mode}
+                                display="default"
+                                onChange={(event, selectedDate) => {
+                                    if (selectedDate) {
+                                        setDate(selectedDate)
+                                    }
+                                    setShow(Platform.OS === 'ios')
+                                }}
+                                minimumDate={new Date()}
+                            />
+                        )}
+                    </>
+                )}
 
                 {location === 'shopping-list' && (
                     <>
@@ -746,45 +801,6 @@ const FormFoodItem = forwardRef(
                             </View>
                         )}
                     </>
-                )}
-
-                <CustomText style={styles.label}>
-                    Viimeinen käyttöpäivä
-                </CustomText>
-                <View style={styles.inputAndIcon}>
-                    <TouchableOpacity
-                        style={styles.dateInputContainer}
-                        onPress={showMode}
-                    >
-                        <TextInput
-                            style={styles.dateInput}
-                            value={formatDate(date)}
-                            editable={false}
-                            placeholder="Valitse päivämäärä"
-                            placeholderTextColor="#999"
-                        />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        onPress={showMode}
-                        style={styles.dateIcon}
-                    >
-                        <Fontisto name="date" size={24} color="#666" />
-                    </TouchableOpacity>
-                </View>
-                {show && (
-                    <DateTimePicker
-                        testID="dateTimePicker"
-                        value={date}
-                        mode={mode}
-                        display="default"
-                        onChange={(event, selectedDate) => {
-                            if (selectedDate) {
-                                setDate(selectedDate)
-                            }
-                            setShow(Platform.OS === 'ios')
-                        }}
-                        minimumDate={new Date()}
-                    />
                 )}
 
                 {showLocationSelector && location === 'meal' && (

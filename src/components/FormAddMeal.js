@@ -747,16 +747,7 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                                 content="Tässä voit valita päivän, jolloin aiot valmistaa tämän aterian. Valittuasi suunnitellun valmistuspäivän, ateria ilmestyy lukujärjestykseesi kyseisen päivän kohdalle. Voit muuttaa päivämäärää myöhemmin tarvittaessa. Luotu ateria jää myös talteen Ateriat-listaasi ja voit asettaa aina uudelleen suunnitellun valmistuspäivämää sille kun haluat taas valmistaa kyseisen aterian."
                             />
                         </View>
-                        <Pressable
-                            style={styles.dateButton}
-                            onPress={() => setShowDatePicker(true)}
-                        >
-                            <CustomText>
-                                {formatDate(plannedCookingDate)}
-                            </CustomText>
-                        </Pressable>
-
-                        {showDatePicker && (
+                        {Platform.OS === 'web' ? (
                             <DateTimePicker
                                 value={plannedCookingDate}
                                 mode="date"
@@ -764,6 +755,27 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                                 onChange={handleDateChange}
                                 minimumDate={new Date()}
                             />
+                        ) : (
+                            <>
+                                <Pressable
+                                    style={styles.dateButton}
+                                    onPress={() => setShowDatePicker(true)}
+                                >
+                                    <CustomText>
+                                        {formatDate(plannedCookingDate)}
+                                    </CustomText>
+                                </Pressable>
+
+                                {showDatePicker && (
+                                    <DateTimePicker
+                                        value={plannedCookingDate}
+                                        mode="date"
+                                        display="default"
+                                        onChange={handleDateChange}
+                                        minimumDate={new Date()}
+                                    />
+                                )}
+                            </>
                         )}
 
                         <View style={styles.foodItemSelectorContainer}>

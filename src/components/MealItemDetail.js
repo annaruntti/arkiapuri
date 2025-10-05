@@ -626,35 +626,60 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                                 <CustomText style={styles.detailLabel}>
                                     Suunniteltu valmistuspäivä:
                                 </CustomText>
-                                <View style={styles.valueContainer}>
-                                    <TouchableOpacity
-                                        onPress={() => setShowDatePicker(true)}
-                                    >
-                                        <CustomText>
-                                            {format(
-                                                new Date(
-                                                    editedValues.plannedCookingDate ||
-                                                        meal.plannedCookingDate
-                                                ),
-                                                'dd.MM.yyyy',
-                                                { locale: fi }
-                                            )}
-                                        </CustomText>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        style={styles.editIcon}
-                                        onPress={() => setShowDatePicker(true)}
-                                    >
-                                        <Feather
-                                            name="calendar"
-                                            size={18}
-                                            color="#666"
-                                        />
-                                    </TouchableOpacity>
-                                </View>
+                                {Platform.OS === 'web' ? (
+                                    <DateTimePicker
+                                        value={
+                                            new Date(
+                                                editedValues.plannedCookingDate ||
+                                                    meal.plannedCookingDate
+                                            )
+                                        }
+                                        mode="date"
+                                        display="default"
+                                        onChange={(event, selectedDate) => {
+                                            if (selectedDate) {
+                                                handleChange(
+                                                    'plannedCookingDate',
+                                                    selectedDate
+                                                )
+                                            }
+                                        }}
+                                    />
+                                ) : (
+                                    <View style={styles.valueContainer}>
+                                        <TouchableOpacity
+                                            onPress={() =>
+                                                setShowDatePicker(true)
+                                            }
+                                        >
+                                            <CustomText>
+                                                {format(
+                                                    new Date(
+                                                        editedValues.plannedCookingDate ||
+                                                            meal.plannedCookingDate
+                                                    ),
+                                                    'dd.MM.yyyy',
+                                                    { locale: fi }
+                                                )}
+                                            </CustomText>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={styles.editIcon}
+                                            onPress={() =>
+                                                setShowDatePicker(true)
+                                            }
+                                        >
+                                            <Feather
+                                                name="calendar"
+                                                size={18}
+                                                color="#666"
+                                            />
+                                        </TouchableOpacity>
+                                    </View>
+                                )}
                             </View>
 
-                            {showDatePicker && (
+                            {Platform.OS !== 'web' && showDatePicker && (
                                 <DateTimePicker
                                     value={
                                         new Date(
