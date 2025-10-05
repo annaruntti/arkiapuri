@@ -1,10 +1,12 @@
 import { MaterialIcons } from '@expo/vector-icons'
 import Fontisto from '@expo/vector-icons/Fontisto'
+import * as ImagePicker from 'expo-image-picker'
 import React, { forwardRef, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import {
     Alert,
     Animated,
+    Image,
     Platform,
     ScrollView,
     StyleSheet,
@@ -51,6 +53,7 @@ const FormFoodItem = forwardRef(
             'shopping-list': '',
             pantry: '',
         })
+        const [foodItemImage, setFoodItemImage] = useState(null)
 
         const {
             control,
@@ -106,6 +109,88 @@ const FormFoodItem = forwardRef(
                     return [...prev, location]
                 }
             })
+        }
+
+        const pickImage = async () => {
+            try {
+                // Request permissions
+                if (Platform.OS !== 'web') {
+                    const { status } =
+                        await ImagePicker.requestMediaLibraryPermissionsAsync()
+                    if (status !== 'granted') {
+                        Alert.alert(
+                            'Sorry, we need camera roll permissions to make this work!'
+                        )
+                        return
+                    }
+                }
+
+                // Pick the image
+                const result = await ImagePicker.launchImageLibraryAsync({
+                    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                    allowsEditing: true,
+                    aspect: [4, 3],
+                    quality: 1,
+                })
+
+                if (!result.canceled) {
+                    setFoodItemImage(result.assets[0])
+                }
+            } catch (error) {
+                console.error('Error picking image:', error)
+                Alert.alert('Error', 'Failed to pick image')
+            }
+        }
+
+        const uploadFoodItemImage = async (foodItemId, imageFile) => {
+            try {
+                const token = await storage.getItem('userToken')
+                if (!token) {
+                    throw new Error('No token found')
+                }
+
+                const formData = new FormData()
+
+                // Handle web blob URLs differently
+                if (
+                    Platform.OS === 'web' &&
+                    imageFile.uri.startsWith('blob:')
+                ) {
+                    // For web, we need to fetch the blob and convert it to a File
+                    const response = await fetch(imageFile.uri)
+                    const blob = await response.blob()
+                    const file = new File([blob], 'food-item.jpg', {
+                        type: 'image/jpeg',
+                    })
+                    formData.append('mealImage', file)
+                } else {
+                    // For mobile platforms
+                    formData.append('mealImage', {
+                        uri: imageFile.uri,
+                        type: 'image/jpeg',
+                        name: 'food-item.jpg',
+                    })
+                }
+
+                const url = getServerUrl(`/food-items/${foodItemId}/image`)
+                console.log('Uploading food item image to URL:', url)
+
+                const response = await axios.post(url, formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                        Authorization: `Bearer ${token}`,
+                    },
+                })
+
+                if (response.data.success) {
+                    console.log('Food item image uploaded successfully')
+                }
+            } catch (error) {
+                console.error('Error uploading food item image:', error)
+                console.error('Error response:', error.response?.data)
+                console.error('Error status:', error.response?.status)
+                throw error
+            }
         }
 
         const handleFormSubmit = async (data) => {
@@ -183,7 +268,37 @@ const FormFoodItem = forwardRef(
                     )
 
                     if (response.data.success) {
-                        onSubmit(response.data.foodItem)
+                        const createdFoodItem = response.data.foodItem
+                        console.log(
+                            'Food item created successfully:',
+                            createdFoodItem._id
+                        )
+
+                        // Upload image if one was selected
+                        if (foodItemImage) {
+                            try {
+                                console.log(
+                                    'Uploading image for food item:',
+                                    createdFoodItem._id
+                                )
+                                await uploadFoodItemImage(
+                                    createdFoodItem._id,
+                                    foodItemImage
+                                )
+                                console.log('Image uploaded successfully')
+                            } catch (imageError) {
+                                console.error(
+                                    'Error uploading food item image:',
+                                    imageError
+                                )
+                                Alert.alert(
+                                    'Warning',
+                                    'Food item created but image upload failed'
+                                )
+                            }
+                        }
+
+                        onSubmit(createdFoodItem)
                         reset()
                         // Reset quantities and locations except 'meal'
                         setQuantities({
@@ -192,6 +307,7 @@ const FormFoodItem = forwardRef(
                             pantry: '',
                         })
                         setSelectedLocations(['meal'])
+                        setFoodItemImage(null)
                     } else {
                         Alert.alert(
                             'Virhe',
@@ -763,6 +879,32 @@ const FormFoodItem = forwardRef(
                         </View>
                     </View>
                 )}
+
+                {/* Image picker */}
+                <CustomText style={styles.label}>Tuotteen kuva</CustomText>
+                <TouchableOpacity
+                    style={styles.imagePicker}
+                    onPress={pickImage}
+                >
+                    {foodItemImage ? (
+                        <Image
+                            source={{ uri: foodItemImage.uri }}
+                            style={styles.selectedImage}
+                        />
+                    ) : (
+                        <View style={styles.imagePlaceholder}>
+                            <MaterialIcons
+                                name="add-a-photo"
+                                size={40}
+                                color="#9C86FC"
+                            />
+                            <CustomText style={styles.imagePlaceholderText}>
+                                Lisää kuva
+                            </CustomText>
+                        </View>
+                    )}
+                </TouchableOpacity>
+
                 <View style={styles.buttonContainer}>
                     <Button
                         style={[
@@ -1093,6 +1235,31 @@ const styles = StyleSheet.create({
     unitScrollOptionTextSelected: {
         color: '#000',
         fontWeight: 'bold',
+    },
+    imagePicker: {
+        borderWidth: 2,
+        borderColor: '#9C86FC',
+        borderStyle: 'dashed',
+        borderRadius: 8,
+        marginBottom: 20,
+        overflow: 'hidden',
+    },
+    imagePlaceholder: {
+        height: 120,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#f8f9fa',
+    },
+    imagePlaceholderText: {
+        marginTop: 8,
+        color: '#9C86FC',
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    selectedImage: {
+        width: '100%',
+        height: 200,
+        resizeMode: 'cover',
     },
 })
 

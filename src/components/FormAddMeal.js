@@ -141,6 +141,7 @@ const AddMealForm = ({ onSubmit, onClose }) => {
 
             if (response.data.success) {
                 console.log('Meal image uploaded successfully')
+                return response.data.meal // Return the updated meal with image
             }
         } catch (error) {
             console.error('Error uploading meal image:', error)
@@ -375,13 +376,20 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                 console.log('Meal created successfully:', createdMeal._id)
 
                 // Upload image if one was selected
+                let finalMeal = createdMeal
                 if (mealImage) {
                     try {
                         console.log(
                             'Uploading image for meal:',
                             createdMeal._id
                         )
-                        await uploadMealImage(createdMeal._id, mealImage)
+                        const updatedMeal = await uploadMealImage(
+                            createdMeal._id,
+                            mealImage
+                        )
+                        if (updatedMeal) {
+                            finalMeal = updatedMeal
+                        }
                         console.log('Image uploaded successfully')
                     } catch (imageError) {
                         console.error('Error uploading meal image:', imageError)
@@ -392,7 +400,7 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                     }
                 }
 
-                onSubmit(createdMeal)
+                onSubmit(finalMeal)
             }
         } catch (error) {
             console.error('Error creating meal:', error)
