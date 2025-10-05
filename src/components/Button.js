@@ -21,11 +21,12 @@ export default function Button(props) {
         styles[`${type.toLowerCase()}Button`],
         styles[`${variant}Button`],
         styles[`${size}Button`],
-        isDesktop && styles.desktopButton,
-        isDesktop && styles[`desktop${type}Button`],
-        isTablet && styles.tabletButton,
+        isDesktop && type !== 'TERTIARY' && styles.desktopButton,
+        isTablet && styles[`tablet${type}Button`],
+        isTablet && type !== 'TERTIARY' && styles.tabletButton,
         disabled && styles.disabledButton,
         pressed && !disabled && styles.pressed,
+        isDesktop && styles[`desktop${type}Button`],
         style,
     ]
 
@@ -128,16 +129,39 @@ const styles = StyleSheet.create({
         backgroundColor: 'transparent',
         borderWidth: 2,
         borderColor: '#9C86FC',
+        borderRadius: 25,
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        minHeight: 32,
     },
     desktopTertiaryButton: {
         backgroundColor: 'transparent',
         borderColor: '#9C86FC',
+        borderRadius: 25,
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        minHeight: 32,
+        minWidth: 32,
+        paddingTop: 6,
+        paddingBottom: 6,
+        paddingLeft: 12,
+        paddingRight: 12,
+        fontSize: 14,
+        // Force override of any inherited desktop styles
         ...(Platform.OS === 'web' && {
             '&:hover': {
                 backgroundColor: 'rgba(156, 134, 252, 0.05)',
                 borderColor: '#8B75FA',
             },
         }),
+    },
+    tabletTertiaryButton: {
+        backgroundColor: 'transparent',
+        borderColor: '#9C86FC',
+        borderRadius: 25,
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        minHeight: 32,
     },
 
     // Variant styles
@@ -151,7 +175,6 @@ const styles = StyleSheet.create({
     desktopButton: {
         paddingVertical: 14,
         paddingHorizontal: 28,
-        borderRadius: 10,
         minHeight: 52,
         minWidth: 120,
         ...(Platform.OS === 'web' && {
@@ -159,9 +182,8 @@ const styles = StyleSheet.create({
         }),
     },
     tabletButton: {
-        paddingVertical: 13,
-        paddingHorizontal: 26,
-        borderRadius: 9,
+        paddingVertical: 7,
+        paddingHorizontal: 10,
         minHeight: 50,
     },
 

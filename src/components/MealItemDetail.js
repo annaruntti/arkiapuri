@@ -467,12 +467,12 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                         <CustomText style={styles.sectionTitle}>
                             Raaka-aineet:
                         </CustomText>
-                        <TouchableOpacity
-                            style={styles.addButton}
+                        <Button
+                            title="+ Lisää"
                             onPress={handleAddFoodItem}
-                        >
-                            <Feather name="plus" size={20} color="#666" />
-                        </TouchableOpacity>
+                            type="TERTIARY"
+                            size="small"
+                        />
                     </View>
                     {editedValues.foodItems?.map((item, index) => (
                         <FoodItemRow
@@ -536,210 +536,204 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
             <ResponsiveModal
                 visible={visible}
                 onClose={onClose}
-                title={meal.name}
+                title={showFoodItemForm ? 'Lisää uusi raaka-aine' : meal.name}
                 maxWidth={700}
             >
-                <ScrollView style={styles.detailScroll}>
-                    <View style={styles.mealDetails}>
-                        {meal.image && meal.image.url && (
-                            <View style={styles.mealImageContainer}>
-                                <Image
-                                    source={{ uri: meal.image.url }}
-                                    style={styles.mealImage}
-                                    resizeMode="cover"
-                                />
-                                <View style={styles.imageActions}>
-                                    <TouchableOpacity
-                                        style={styles.imageActionButton}
-                                        onPress={pickImage}
-                                        disabled={isUploadingImage}
-                                    >
-                                        <MaterialIcons
-                                            name="edit"
-                                            size={20}
-                                            color="#9C86FC"
-                                        />
-                                        <CustomText
-                                            style={styles.imageActionText}
-                                        >
-                                            Change
-                                        </CustomText>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        style={styles.imageActionButton}
-                                        onPress={removeMealImage}
-                                        disabled={isUploadingImage}
-                                    >
-                                        <MaterialIcons
-                                            name="delete"
-                                            size={20}
-                                            color="#ff4444"
-                                        />
-                                        <CustomText
-                                            style={styles.imageActionText}
-                                        >
-                                            Remove
-                                        </CustomText>
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-                        )}
-                        {(!meal.image || !meal.image.url) && (
-                            <View style={styles.noImageContainer}>
-                                <TouchableOpacity
-                                    style={styles.addImageButton}
-                                    onPress={pickImage}
-                                    disabled={isUploadingImage}
-                                >
-                                    <MaterialIcons
-                                        name="add-a-photo"
-                                        size={40}
-                                        color="#9C86FC"
-                                    />
-                                    <CustomText style={styles.addImageText}>
-                                        Add Image
-                                    </CustomText>
-                                </TouchableOpacity>
-                            </View>
-                        )}
-                        {renderEditableField('name', 'Nimi', meal.name)}
-                        {renderEditableField(
-                            'difficultyLevel',
-                            'Vaikeustaso',
-                            getDifficultyText(meal.difficultyLevel)
-                        )}
-                        {renderEditableField(
-                            'cookingTime',
-                            'Valmistusaika',
-                            `${meal.cookingTime} min`,
-                            'number'
-                        )}
-
-                        <View style={styles.detailRow}>
-                            <CustomText style={styles.detailLabel}>
-                                Suunniteltu valmistuspäivä:
-                            </CustomText>
-                            <View style={styles.valueContainer}>
-                                <TouchableOpacity
-                                    onPress={() => setShowDatePicker(true)}
-                                >
-                                    <CustomText>
-                                        {format(
-                                            new Date(
-                                                editedValues.plannedCookingDate ||
-                                                    meal.plannedCookingDate
-                                            ),
-                                            'dd.MM.yyyy',
-                                            { locale: fi }
-                                        )}
-                                    </CustomText>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={styles.editIcon}
-                                    onPress={() => setShowDatePicker(true)}
-                                >
-                                    <Feather
-                                        name="calendar"
-                                        size={18}
-                                        color="#666"
-                                    />
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-
-                        {showDatePicker && (
-                            <DateTimePicker
-                                value={
-                                    new Date(
-                                        editedValues.plannedCookingDate ||
-                                            meal.plannedCookingDate
-                                    )
-                                }
-                                mode="date"
-                                display="default"
-                                onChange={(event, selectedDate) => {
-                                    setShowDatePicker(false)
-                                    if (selectedDate) {
-                                        handleChange(
-                                            'plannedCookingDate',
-                                            selectedDate
-                                        )
-                                    }
-                                }}
-                            />
-                        )}
-
-                        {renderEditableField(
-                            'defaultRoles',
-                            'Aterian tyyppi',
-                            getMealTypeText(meal.defaultRoles)
-                        )}
-
-                        <View style={styles.tabsContainer}>
-                            <TouchableOpacity
-                                style={[
-                                    styles.tab,
-                                    activeTab === 'ingredients' &&
-                                        styles.activeTab,
-                                ]}
-                                onPress={() => setActiveTab('ingredients')}
-                            >
-                                <CustomText
-                                    style={[
-                                        styles.tabText,
-                                        activeTab === 'ingredients' &&
-                                            styles.activeTabText,
-                                    ]}
-                                >
-                                    Raaka-aineet
-                                </CustomText>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[
-                                    styles.tab,
-                                    activeTab === 'recipe' && styles.activeTab,
-                                ]}
-                                onPress={() => setActiveTab('recipe')}
-                            >
-                                <CustomText
-                                    style={[
-                                        styles.tabText,
-                                        activeTab === 'recipe' &&
-                                            styles.activeTabText,
-                                    ]}
-                                >
-                                    Valmistusohje
-                                </CustomText>
-                            </TouchableOpacity>
-                        </View>
-
-                        {renderTabContent()}
-
-                        <View style={styles.buttonContainer}>
-                            <Button
-                                title="Tallenna muutokset"
-                                onPress={handleSave}
-                                style={styles.saveButton}
-                            />
-                        </View>
-                    </View>
-                </ScrollView>
-            </ResponsiveModal>
-
-            {showFoodItemForm && (
-                <ResponsiveModal
-                    visible={showFoodItemForm}
-                    onClose={() => setShowFoodItemForm(false)}
-                    title="Lisää uusi raaka-aine"
-                    maxWidth={650}
-                >
+                {showFoodItemForm ? (
                     <FormFoodItem
                         onSubmit={handleNewFoodItem}
                         onClose={() => setShowFoodItemForm(false)}
                         location="meal"
                     />
-                </ResponsiveModal>
-            )}
+                ) : (
+                    <ScrollView style={styles.detailScroll}>
+                        <View style={styles.mealDetails}>
+                            {meal.image && meal.image.url && (
+                                <View style={styles.mealImageContainer}>
+                                    <Image
+                                        source={{ uri: meal.image.url }}
+                                        style={styles.mealImage}
+                                        resizeMode="cover"
+                                    />
+                                    <View style={styles.imageActions}>
+                                        <TouchableOpacity
+                                            style={styles.imageActionButton}
+                                            onPress={pickImage}
+                                            disabled={isUploadingImage}
+                                        >
+                                            <MaterialIcons
+                                                name="edit"
+                                                size={20}
+                                                color="#9C86FC"
+                                            />
+                                            <CustomText
+                                                style={styles.imageActionText}
+                                            >
+                                                Change
+                                            </CustomText>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={styles.imageActionButton}
+                                            onPress={removeMealImage}
+                                            disabled={isUploadingImage}
+                                        >
+                                            <MaterialIcons
+                                                name="delete"
+                                                size={20}
+                                                color="#ff4444"
+                                            />
+                                            <CustomText
+                                                style={styles.imageActionText}
+                                            >
+                                                Remove
+                                            </CustomText>
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                            )}
+                            {(!meal.image || !meal.image.url) && (
+                                <View style={styles.noImageContainer}>
+                                    <TouchableOpacity
+                                        style={styles.addImageButton}
+                                        onPress={pickImage}
+                                        disabled={isUploadingImage}
+                                    >
+                                        <MaterialIcons
+                                            name="add-a-photo"
+                                            size={40}
+                                            color="#9C86FC"
+                                        />
+                                        <CustomText style={styles.addImageText}>
+                                            Add Image
+                                        </CustomText>
+                                    </TouchableOpacity>
+                                </View>
+                            )}
+                            {renderEditableField('name', 'Nimi', meal.name)}
+                            {renderEditableField(
+                                'difficultyLevel',
+                                'Vaikeustaso',
+                                getDifficultyText(meal.difficultyLevel)
+                            )}
+                            {renderEditableField(
+                                'cookingTime',
+                                'Valmistusaika',
+                                `${meal.cookingTime} min`,
+                                'number'
+                            )}
+
+                            <View style={styles.detailRow}>
+                                <CustomText style={styles.detailLabel}>
+                                    Suunniteltu valmistuspäivä:
+                                </CustomText>
+                                <View style={styles.valueContainer}>
+                                    <TouchableOpacity
+                                        onPress={() => setShowDatePicker(true)}
+                                    >
+                                        <CustomText>
+                                            {format(
+                                                new Date(
+                                                    editedValues.plannedCookingDate ||
+                                                        meal.plannedCookingDate
+                                                ),
+                                                'dd.MM.yyyy',
+                                                { locale: fi }
+                                            )}
+                                        </CustomText>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={styles.editIcon}
+                                        onPress={() => setShowDatePicker(true)}
+                                    >
+                                        <Feather
+                                            name="calendar"
+                                            size={18}
+                                            color="#666"
+                                        />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+
+                            {showDatePicker && (
+                                <DateTimePicker
+                                    value={
+                                        new Date(
+                                            editedValues.plannedCookingDate ||
+                                                meal.plannedCookingDate
+                                        )
+                                    }
+                                    mode="date"
+                                    display="default"
+                                    onChange={(event, selectedDate) => {
+                                        setShowDatePicker(false)
+                                        if (selectedDate) {
+                                            handleChange(
+                                                'plannedCookingDate',
+                                                selectedDate
+                                            )
+                                        }
+                                    }}
+                                />
+                            )}
+
+                            {renderEditableField(
+                                'defaultRoles',
+                                'Aterian tyyppi',
+                                getMealTypeText(meal.defaultRoles)
+                            )}
+
+                            <View style={styles.tabsContainer}>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.tab,
+                                        activeTab === 'ingredients' &&
+                                            styles.activeTab,
+                                    ]}
+                                    onPress={() => setActiveTab('ingredients')}
+                                >
+                                    <CustomText
+                                        style={[
+                                            styles.tabText,
+                                            activeTab === 'ingredients' &&
+                                                styles.activeTabText,
+                                        ]}
+                                    >
+                                        Raaka-aineet
+                                    </CustomText>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.tab,
+                                        activeTab === 'recipe' &&
+                                            styles.activeTab,
+                                    ]}
+                                    onPress={() => setActiveTab('recipe')}
+                                >
+                                    <CustomText
+                                        style={[
+                                            styles.tabText,
+                                            activeTab === 'recipe' &&
+                                                styles.activeTabText,
+                                        ]}
+                                    >
+                                        Valmistusohje
+                                    </CustomText>
+                                </TouchableOpacity>
+                            </View>
+
+                            {renderTabContent()}
+
+                            <View style={styles.buttonContainer}>
+                                <Button
+                                    title="Tallenna muutokset"
+                                    onPress={handleSave}
+                                    style={styles.saveButton}
+                                />
+                            </View>
+                        </View>
+                    </ScrollView>
+                )}
+            </ResponsiveModal>
 
             {/* Difficulty Picker Modal */}
             <Modal
@@ -882,6 +876,9 @@ const styles = StyleSheet.create({
     },
     sectionHeader: {
         flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 10,
     },
     mealImageContainer: {
         marginBottom: 20,
@@ -936,9 +933,6 @@ const styles = StyleSheet.create({
         color: '#9C86FC',
         fontSize: 16,
         fontWeight: '500',
-    },
-    addButton: {
-        padding: 5,
     },
     buttonContainer: {
         marginTop: 20,

@@ -24,7 +24,6 @@ import CustomText from './CustomText'
 import DateTimePicker from './DateTimePicker'
 import DifficultySelector from './DifficultySelector'
 import FormFoodItem from './FormFoodItem'
-import ResponsiveModal from './ResponsiveModal'
 import UnifiedFoodSearch from './UnifiedFoodSearch'
 
 import Info from './Info'
@@ -619,204 +618,221 @@ const AddMealForm = ({ onSubmit, onClose }) => {
 
     return (
         <View style={styles.container}>
-            <ScrollView
-                style={styles.scrollView}
-                contentContainerStyle={styles.formScroll}
-                showsVerticalScrollIndicator={true}
-                bounces={false}
-                keyboardShouldPersistTaps="handled"
-            >
-                <View style={styles.formContainer}>
-                    <CustomText style={styles.label}>Aterian nimi</CustomText>
-                    <TextInput
-                        style={styles.formInput}
-                        value={name}
-                        onChangeText={setName}
-                    />
+            {showItemForm ? (
+                <FormFoodItem
+                    onSubmit={handleAddNewItem}
+                    onClose={() => setShowItemForm(false)}
+                    location="meal"
+                />
+            ) : (
+                <ScrollView
+                    style={styles.scrollView}
+                    contentContainerStyle={styles.formScroll}
+                    showsVerticalScrollIndicator={true}
+                    bounces={false}
+                    keyboardShouldPersistTaps="handled"
+                >
+                    <View style={styles.formContainer}>
+                        <CustomText style={styles.label}>
+                            Aterian nimi
+                        </CustomText>
+                        <TextInput
+                            style={styles.formInput}
+                            value={name}
+                            onChangeText={setName}
+                        />
 
-                    <CustomText style={styles.label}>Resepti</CustomText>
-                    <TextInput
-                        style={[styles.formInput, styles.multilineInput]}
-                        value={recipe}
-                        onChangeText={setRecipe}
-                        multiline
-                        numberOfLines={4}
-                    />
+                        <CustomText style={styles.label}>Resepti</CustomText>
+                        <TextInput
+                            style={[styles.formInput, styles.multilineInput]}
+                            value={recipe}
+                            onChangeText={setRecipe}
+                            multiline
+                            numberOfLines={4}
+                        />
 
-                    <CustomText style={styles.label}>Aterian kuva</CustomText>
-                    <TouchableOpacity
-                        style={styles.imagePicker}
-                        onPress={pickImage}
-                    >
-                        {mealImage ? (
-                            <Image
-                                source={{ uri: mealImage.uri }}
-                                style={styles.selectedImage}
-                            />
-                        ) : (
-                            <View style={styles.imagePlaceholder}>
-                                <MaterialIcons
-                                    name="add-a-photo"
-                                    size={40}
-                                    color="#9C86FC"
+                        <CustomText style={styles.label}>
+                            Aterian kuva
+                        </CustomText>
+                        <TouchableOpacity
+                            style={styles.imagePicker}
+                            onPress={pickImage}
+                        >
+                            {mealImage ? (
+                                <Image
+                                    source={{ uri: mealImage.uri }}
+                                    style={styles.selectedImage}
                                 />
-                                <CustomText style={styles.imagePlaceholderText}>
-                                    Lisää kuva
-                                </CustomText>
-                            </View>
-                        )}
-                    </TouchableOpacity>
-
-                    <CustomText style={styles.label}>
-                        Vaikeustaso (1-5)
-                    </CustomText>
-                    <DifficultySelector
-                        value={difficultyLevel}
-                        onSelect={setDifficultyLevel}
-                    />
-                    <CustomText style={styles.label}>
-                        Valmistusaika (min)
-                    </CustomText>
-                    <TextInput
-                        style={styles.formInput}
-                        value={cookingTime}
-                        onChangeText={setCookingTime}
-                        keyboardType="numeric"
-                    />
-
-                    <CustomText style={styles.label}>Aterian tyyppi</CustomText>
-                    <View style={styles.checkboxGroup}>
-                        <View style={styles.checkboxGrid}>
-                            {Object.entries(mealRoles).map(([value, label]) => (
-                                <Pressable
-                                    key={value}
-                                    style={styles.checkboxGridItem}
-                                    onPress={() => {
-                                        setSelectedRoles([value])
-                                    }}
-                                >
-                                    <View
-                                        style={[
-                                            styles.checkbox,
-                                            selectedRoles.includes(value) &&
-                                                styles.checkboxChecked,
-                                        ]}
+                            ) : (
+                                <View style={styles.imagePlaceholder}>
+                                    <MaterialIcons
+                                        name="add-a-photo"
+                                        size={40}
+                                        color="#9C86FC"
+                                    />
+                                    <CustomText
+                                        style={styles.imagePlaceholderText}
                                     >
-                                        {selectedRoles.includes(value) && (
-                                            <MaterialIcons
-                                                name="check"
-                                                size={16}
-                                                color="white"
-                                            />
-                                        )}
-                                    </View>
-                                    <CustomText style={styles.checkboxLabel}>
-                                        {label}
+                                        Lisää kuva
                                     </CustomText>
-                                </Pressable>
-                            ))}
+                                </View>
+                            )}
+                        </TouchableOpacity>
+
+                        <CustomText style={styles.label}>
+                            Vaikeustaso (1-5)
+                        </CustomText>
+                        <DifficultySelector
+                            value={difficultyLevel}
+                            onSelect={setDifficultyLevel}
+                        />
+                        <CustomText style={styles.label}>
+                            Valmistusaika (min)
+                        </CustomText>
+                        <TextInput
+                            style={styles.formInput}
+                            value={cookingTime}
+                            onChangeText={setCookingTime}
+                            keyboardType="numeric"
+                        />
+
+                        <CustomText style={styles.label}>
+                            Aterian tyyppi
+                        </CustomText>
+                        <View style={styles.checkboxGroup}>
+                            <View style={styles.checkboxGrid}>
+                                {Object.entries(mealRoles).map(
+                                    ([value, label]) => (
+                                        <Pressable
+                                            key={value}
+                                            style={styles.checkboxGridItem}
+                                            onPress={() => {
+                                                setSelectedRoles([value])
+                                            }}
+                                        >
+                                            <View
+                                                style={[
+                                                    styles.checkbox,
+                                                    selectedRoles.includes(
+                                                        value
+                                                    ) && styles.checkboxChecked,
+                                                ]}
+                                            >
+                                                {selectedRoles.includes(
+                                                    value
+                                                ) && (
+                                                    <MaterialIcons
+                                                        name="check"
+                                                        size={16}
+                                                        color="white"
+                                                    />
+                                                )}
+                                            </View>
+                                            <CustomText
+                                                style={styles.checkboxLabel}
+                                            >
+                                                {label}
+                                            </CustomText>
+                                        </Pressable>
+                                    )
+                                )}
+                            </View>
                         </View>
-                    </View>
-                    <View style={styles.labelWithInfo}>
-                        <CustomText style={styles.label}>
-                            Suunniteltu valmistuspäivä
-                        </CustomText>
-                        <Info
-                            title="Suunniteltu valmistuspäivä"
-                            content="Tässä voit valita päivän, jolloin aiot valmistaa tämän aterian. Valittuasi suunnitellun valmistuspäivän, ateria ilmestyy lukujärjestykseesi kyseisen päivän kohdalle. Voit muuttaa päivämäärää myöhemmin tarvittaessa. Luotu ateria jää myös talteen Ateriat-listaasi ja voit asettaa aina uudelleen suunnitellun valmistuspäivämää sille kun haluat taas valmistaa kyseisen aterian."
-                        />
-                    </View>
-                    <Pressable
-                        style={styles.dateButton}
-                        onPress={() => setShowDatePicker(true)}
-                    >
-                        <CustomText>
-                            {formatDate(plannedCookingDate)}
-                        </CustomText>
-                    </Pressable>
+                        <View style={styles.labelWithInfo}>
+                            <CustomText style={styles.label}>
+                                Suunniteltu valmistuspäivä
+                            </CustomText>
+                            <Info
+                                title="Suunniteltu valmistuspäivä"
+                                content="Tässä voit valita päivän, jolloin aiot valmistaa tämän aterian. Valittuasi suunnitellun valmistuspäivän, ateria ilmestyy lukujärjestykseesi kyseisen päivän kohdalle. Voit muuttaa päivämäärää myöhemmin tarvittaessa. Luotu ateria jää myös talteen Ateriat-listaasi ja voit asettaa aina uudelleen suunnitellun valmistuspäivämää sille kun haluat taas valmistaa kyseisen aterian."
+                            />
+                        </View>
+                        <Pressable
+                            style={styles.dateButton}
+                            onPress={() => setShowDatePicker(true)}
+                        >
+                            <CustomText>
+                                {formatDate(plannedCookingDate)}
+                            </CustomText>
+                        </Pressable>
 
-                    {showDatePicker && (
-                        <DateTimePicker
-                            value={plannedCookingDate}
-                            mode="date"
-                            display="default"
-                            onChange={handleDateChange}
-                            minimumDate={new Date()}
-                        />
-                    )}
+                        {showDatePicker && (
+                            <DateTimePicker
+                                value={plannedCookingDate}
+                                mode="date"
+                                display="default"
+                                onChange={handleDateChange}
+                                minimumDate={new Date()}
+                            />
+                        )}
 
-                    <View style={styles.foodItemSelectorContainer}>
-                        <CustomText style={styles.label}>
-                            Raaka-aineet
-                        </CustomText>
-                        <UnifiedFoodSearch
-                            onSelectItem={handleSelectItem}
-                            location="meal"
-                            allowDuplicates={true}
-                        />
+                        <View style={styles.foodItemSelectorContainer}>
+                            <CustomText style={styles.label}>
+                                Raaka-aineet
+                            </CustomText>
+                            <UnifiedFoodSearch
+                                onSelectItem={handleSelectItem}
+                                location="meal"
+                                allowDuplicates={true}
+                            />
 
-                        <View style={styles.manualAddContainer}>
+                            <View style={styles.manualAddContainer}>
+                                <Button
+                                    title="+ Luo uusi tuote"
+                                    onPress={() => setShowItemForm(true)}
+                                    style={[
+                                        styles.tertiaryButton,
+                                        isDesktop &&
+                                            styles.desktopPrimaryButton,
+                                    ]}
+                                    textStyle={styles.buttonText}
+                                />
+                            </View>
+
+                            {/* Display selected food items */}
+                            {foodItems.length > 0 && (
+                                <View style={styles.selectedItemsContainer}>
+                                    <CustomText
+                                        style={styles.selectedItemsTitle}
+                                    >
+                                        Valitut raaka-aineet:
+                                    </CustomText>
+                                    <FlatList
+                                        data={foodItems}
+                                        renderItem={renderSelectedItem}
+                                        keyExtractor={(item, index) =>
+                                            item.tempId ||
+                                            `${item._id || item.name}-${index}`
+                                        }
+                                        style={styles.selectedItemsList}
+                                        showsVerticalScrollIndicator={true}
+                                        nestedScrollEnabled={true}
+                                        scrollEnabled={true}
+                                        removeClippedSubviews={false}
+                                        getItemLayout={(data, index) => ({
+                                            length: 100,
+                                            offset: 100 * index,
+                                            index,
+                                        })}
+                                    />
+                                </View>
+                            )}
+                        </View>
+
+                        <View style={styles.buttonGroup}>
                             <Button
-                                title="+ Luo uusi tuote"
-                                onPress={() => setShowItemForm(true)}
+                                title="Tallenna ateria"
+                                onPress={handleFormSubmit}
                                 style={[
-                                    styles.tertiaryButton,
+                                    styles.primaryButton,
                                     isDesktop && styles.desktopPrimaryButton,
                                 ]}
                                 textStyle={styles.buttonText}
                             />
                         </View>
-
-                        {/* Display selected food items */}
-                        {foodItems.length > 0 && (
-                            <View style={styles.selectedItemsContainer}>
-                                <CustomText style={styles.selectedItemsTitle}>
-                                    Valitut raaka-aineet:
-                                </CustomText>
-                                <FlatList
-                                    data={foodItems}
-                                    renderItem={renderSelectedItem}
-                                    keyExtractor={(item, index) =>
-                                        item.tempId ||
-                                        `${item._id || item.name}-${index}`
-                                    }
-                                    style={styles.selectedItemsList}
-                                    showsVerticalScrollIndicator={true}
-                                    nestedScrollEnabled={true}
-                                    scrollEnabled={true}
-                                    removeClippedSubviews={false}
-                                    getItemLayout={(data, index) => ({
-                                        length: 100,
-                                        offset: 100 * index,
-                                        index,
-                                    })}
-                                />
-                            </View>
-                        )}
                     </View>
-
-                    <View style={styles.buttonGroup}>
-                        <Button
-                            title="Tallenna ateria"
-                            onPress={handleFormSubmit}
-                            style={[
-                                styles.primaryButton,
-                                isDesktop && styles.desktopPrimaryButton,
-                            ]}
-                            textStyle={styles.buttonText}
-                        />
-                    </View>
-                </View>
-            </ScrollView>
-
-            <ResponsiveModal
-                visible={showItemForm}
-                onClose={() => setShowItemForm(false)}
-                title="Lisää uusi tuote"
-                maxWidth={600}
-            >
-                <FormFoodItem onSubmit={handleAddNewItem} location="meal" />
-            </ResponsiveModal>
+                </ScrollView>
+            )}
         </View>
     )
 }
