@@ -172,29 +172,90 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
 
     const pickImage = async () => {
         try {
-            // Request permissions
-            if (Platform.OS !== 'web') {
-                const { status } =
-                    await ImagePicker.requestMediaLibraryPermissionsAsync()
-                if (status !== 'granted') {
-                    Alert.alert(
-                        'Sorry, we need camera roll permissions to make this work!'
-                    )
-                    return
+            if (Platform.OS === 'web') {
+                // For web, only show library option
+                const result = await ImagePicker.launchImageLibraryAsync({
+                    mediaTypes: ['images'],
+                    allowsEditing: true,
+                    aspect: [4, 3],
+                    quality: 1,
+                })
+
+                if (!result.canceled) {
+                    await uploadMealImage(result.assets[0])
                 }
+                return
             }
 
-            // Pick the image
-            const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                allowsEditing: true,
-                aspect: [4, 3],
-                quality: 1,
-            })
+            // For mobile, show action sheet with options
+            Alert.alert('Select Image', 'Choose how you want to add an image', [
+                {
+                    text: 'Camera',
+                    onPress: async () => {
+                        try {
+                            console.log('Requesting camera permissions...')
+                            const { status } =
+                                await ImagePicker.requestCameraPermissionsAsync()
+                            console.log('Camera permission status:', status)
 
-            if (!result.canceled) {
-                await uploadMealImage(result.assets[0])
-            }
+                            if (status !== 'granted') {
+                                Alert.alert(
+                                    'Sorry, we need camera permissions to make this work!'
+                                )
+                                return
+                            }
+
+                            console.log('Launching camera...')
+                            const result = await ImagePicker.launchCameraAsync({
+                                mediaTypes: ['images'],
+                                allowsEditing: true,
+                                aspect: [4, 3],
+                                quality: 1,
+                            })
+
+                            console.log('Camera result:', result)
+                            if (!result.canceled) {
+                                await uploadMealImage(result.assets[0])
+                            }
+                        } catch (error) {
+                            console.error('Camera error:', error)
+                            Alert.alert(
+                                'Error',
+                                'Failed to open camera: ' + error.message
+                            )
+                        }
+                    },
+                },
+                {
+                    text: 'Photo Library',
+                    onPress: async () => {
+                        const { status } =
+                            await ImagePicker.requestMediaLibraryPermissionsAsync()
+                        if (status !== 'granted') {
+                            Alert.alert(
+                                'Sorry, we need camera roll permissions to make this work!'
+                            )
+                            return
+                        }
+
+                        const result =
+                            await ImagePicker.launchImageLibraryAsync({
+                                mediaTypes: ['images'],
+                                allowsEditing: true,
+                                aspect: [4, 3],
+                                quality: 1,
+                            })
+
+                        if (!result.canceled) {
+                            await uploadMealImage(result.assets[0])
+                        }
+                    },
+                },
+                {
+                    text: 'Cancel',
+                    style: 'cancel',
+                },
+            ])
         } catch (error) {
             console.error('Error picking image:', error)
             Alert.alert('Error', 'Failed to pick image')

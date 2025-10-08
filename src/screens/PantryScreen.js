@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import {
     Alert,
     FlatList,
+    Image,
     ScrollView,
     StyleSheet,
     TouchableOpacity,
@@ -20,6 +21,9 @@ import { getServerUrl } from '../utils/getServerUrl'
 import { useResponsiveDimensions } from '../utils/responsive'
 import { scanItems } from '../utils/scanItems'
 import storage from '../utils/storage'
+
+const PANTRY_PLACEHOLDER_IMAGE_URL =
+    'https://images.ctfassets.net/2pij69ehhf4n/1YIQLI04JJpf76ARo3k0b9/87322f1b9ccec07d2f2af66f7d61d53d/undraw_online-groceries_n03y.png'
 
 const PantryScreen = ({}) => {
     const [showItemForm, setShowItemForm] = useState(false)
@@ -300,19 +304,47 @@ const PantryScreen = ({}) => {
     }
 
     const renderItem = ({ item }) => (
-        <TouchableOpacity
-            style={styles.itemContainer}
-            onPress={() => {
-                setSelectedItem(item)
-                setDetailsVisible(true)
-            }}
-        >
-            <View style={styles.itemInfo}>
-                <CustomText style={styles.itemName}>{item.name}</CustomText>
-                <CustomText style={styles.itemDetails}>
-                    {item.quantity} {item.unit}
-                </CustomText>
-            </View>
+        <View style={styles.itemContainer}>
+            <TouchableOpacity
+                style={styles.itemInfo}
+                onPress={() => {
+                    console.log('Selected food item:', item)
+                    console.log('Food item ID:', item._id)
+                    console.log('Food item name:', item.name)
+                    setSelectedItem(item)
+                    setDetailsVisible(true)
+                }}
+            >
+                <Image
+                    source={{
+                        uri: item.image?.url || PANTRY_PLACEHOLDER_IMAGE_URL,
+                    }}
+                    style={styles.itemImage}
+                    resizeMode="cover"
+                    onError={(error) => {
+                        console.log(
+                            'Image load error:',
+                            error.nativeEvent.error
+                        )
+                        console.log(
+                            'Image URI:',
+                            item.image?.url || PANTRY_PLACEHOLDER_IMAGE_URL
+                        )
+                    }}
+                    onLoad={() => {
+                        console.log(
+                            'Image loaded successfully:',
+                            item.image?.url || PANTRY_PLACEHOLDER_IMAGE_URL
+                        )
+                    }}
+                />
+                <View style={styles.itemTextContainer}>
+                    <CustomText style={styles.itemName}>{item.name}</CustomText>
+                    <CustomText style={styles.itemDetails}>
+                        {item.quantity} {item.unit}
+                    </CustomText>
+                </View>
+            </TouchableOpacity>
             <View style={styles.itemActions}>
                 <TouchableOpacity
                     style={styles.deleteButton}
@@ -324,7 +356,7 @@ const PantryScreen = ({}) => {
                     <MaterialIcons name="delete" size={20} color="#666" />
                 </TouchableOpacity>
             </View>
-        </TouchableOpacity>
+        </View>
     )
 
     return (
@@ -448,6 +480,8 @@ const PantryScreen = ({}) => {
                     onClose={() => {
                         setDetailsVisible(false)
                         setSelectedItem(null)
+                        // Refresh pantry items to ensure we have latest data
+                        fetchPantryItems()
                     }}
                     onUpdate={handleUpdateItem}
                 />
@@ -603,10 +637,21 @@ const styles = StyleSheet.create({
         shadowRadius: 2,
         elevation: 2,
     },
+    itemImage: {
+        width: 60,
+        height: 60,
+        borderRadius: 8,
+        marginRight: 12,
+    },
     itemInfo: {
         flex: 1,
-        flexDirection: 'column',
+        flexDirection: 'row',
         marginRight: 10,
+        alignItems: 'center',
+    },
+    itemTextContainer: {
+        flex: 1,
+        flexDirection: 'column',
     },
     itemName: {
         fontSize: 18,

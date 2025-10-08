@@ -69,32 +69,89 @@ const AddMealForm = ({ onSubmit, onClose }) => {
 
     const pickImage = async () => {
         try {
-            // Request permissions
-            if (Platform.OS !== 'web') {
-                const { status } =
-                    await ImagePicker.requestMediaLibraryPermissionsAsync()
-                if (status !== 'granted') {
-                    Alert.alert(
-                        'Sorry, we need camera roll permissions to make this work!'
-                    )
-                    return
+            if (Platform.OS === 'web') {
+                // For web, only show library option
+                const result = await ImagePicker.launchImageLibraryAsync({
+                    mediaTypes: ['images'],
+                    allowsEditing: true,
+                    aspect: [4, 3],
+                    quality: 1,
+                })
+
+                if (!result.canceled) {
+                    setMealImage(result.assets[0])
                 }
+                return
             }
 
-            // Pick the image
-            const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                allowsEditing: true,
-                aspect: [4, 3],
-                quality: 1,
-            })
+            // For mobile, show action sheet with options
+            Alert.alert('Valitse kuva', 'valitse, miten haluat lisätä kuvan', [
+                {
+                    text: 'Camera',
+                    onPress: async () => {
+                        try {
+                            const { status } =
+                                await ImagePicker.requestCameraPermissionsAsync()
 
-            if (!result.canceled) {
-                setMealImage(result.assets[0])
-            }
+                            if (status !== 'granted') {
+                                Alert.alert(
+                                    'Tämä toiminto vaatii kameran käyttöoikeuden.'
+                                )
+                                return
+                            }
+
+                            const result = await ImagePicker.launchCameraAsync({
+                                mediaTypes: ['images'],
+                                allowsEditing: true,
+                                aspect: [4, 3],
+                                quality: 1,
+                            })
+                            if (!result.canceled) {
+                                setMealImage(result.assets[0])
+                            }
+                        } catch (error) {
+                            console.error('Camera error:', error)
+                            Alert.alert(
+                                'Virhe',
+                                'Kameran avaaminen epäonnistui: ' +
+                                    error.message
+                            )
+                        }
+                    },
+                },
+                {
+                    text: 'Photo Library',
+                    onPress: async () => {
+                        const { status } =
+                            await ImagePicker.requestMediaLibraryPermissionsAsync()
+                        if (status !== 'granted') {
+                            Alert.alert(
+                                'Tämä toiminto vaatii kameran käyttöoikeuden.'
+                            )
+                            return
+                        }
+
+                        const result =
+                            await ImagePicker.launchImageLibraryAsync({
+                                mediaTypes: ['images'],
+                                allowsEditing: true,
+                                aspect: [4, 3],
+                                quality: 1,
+                            })
+
+                        if (!result.canceled) {
+                            setMealImage(result.assets[0])
+                        }
+                    },
+                },
+                {
+                    text: 'Cancel',
+                    style: 'cancel',
+                },
+            ])
         } catch (error) {
             console.error('Error picking image:', error)
-            Alert.alert('Error', 'Failed to pick image')
+            Alert.alert('Virhe', 'kuvan valitseminen epäonnistui')
         }
     }
 
@@ -126,10 +183,6 @@ const AddMealForm = ({ onSubmit, onClose }) => {
             }
 
             const url = getServerUrl(`/meals/${mealId}/image`)
-            console.log('Uploading to URL:', url)
-            console.log('Meal ID:', mealId)
-            console.log('Image file:', imageFile)
-            console.log('Platform:', Platform.OS)
 
             const response = await axios.post(url, formData, {
                 headers: {
@@ -139,7 +192,6 @@ const AddMealForm = ({ onSubmit, onClose }) => {
             })
 
             if (response.data.success) {
-                console.log('Meal image uploaded successfully')
                 return response.data.meal // Return the updated meal with image
             }
         } catch (error) {
@@ -372,16 +424,11 @@ const AddMealForm = ({ onSubmit, onClose }) => {
 
             if (response.data.success) {
                 const createdMeal = response.data.meal
-                console.log('Meal created successfully:', createdMeal._id)
 
                 // Upload image if one was selected
                 let finalMeal = createdMeal
                 if (mealImage) {
                     try {
-                        console.log(
-                            'Uploading image for meal:',
-                            createdMeal._id
-                        )
                         const updatedMeal = await uploadMealImage(
                             createdMeal._id,
                             mealImage
@@ -389,12 +436,11 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                         if (updatedMeal) {
                             finalMeal = updatedMeal
                         }
-                        console.log('Image uploaded successfully')
                     } catch (imageError) {
                         console.error('Error uploading meal image:', imageError)
                         Alert.alert(
-                            'Warning',
-                            'Meal created but image upload failed'
+                            'Varoitus',
+                            'Ateria luotu, mutta kuvan lähetys epäonnistui'
                         )
                     }
                 }
@@ -438,10 +484,6 @@ const AddMealForm = ({ onSubmit, onClose }) => {
         try {
             const token = await storage.getItem('userToken')
 
-            console.log('Received itemData:', itemData)
-            console.log('Category from itemData:', itemData.category)
-            console.log('Category type:', typeof itemData.category)
-
             // Validate required fields
             if (!itemData.name || !itemData.unit) {
                 Alert.alert('Virhe', 'Nimi ja yksikkö ovat pakollisia tietoja')
@@ -453,29 +495,18 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                 name: itemData.name,
                 unit: itemData.unit,
                 category: (() => {
-                    console.log('Processing category:', itemData.category)
-                    console.log('Is array:', Array.isArray(itemData.category))
-
                     // Handle case where category might be a stringified array
                     let categoryArray = itemData.category
                     if (typeof itemData.category === 'string') {
                         try {
                             categoryArray = JSON.parse(itemData.category)
-                            console.log(
-                                'Parsed category from string:',
-                                categoryArray
-                            )
                         } catch (e) {
-                            console.log('Failed to parse category string:', e)
                             categoryArray = []
                         }
                     }
 
                     // Ensure we have an array
                     if (!Array.isArray(categoryArray)) {
-                        console.log(
-                            'Category is not an array, defaulting to empty array'
-                        )
                         return []
                     }
 
@@ -489,7 +520,6 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                         })
                         .filter((cat) => cat && cat.trim() !== '')
 
-                    console.log('Processed categories:', processedCategories)
                     return processedCategories
                 })(),
                 calories: Number(itemData.calories) || 0,
@@ -502,10 +532,6 @@ const AddMealForm = ({ onSubmit, onClose }) => {
                 },
                 user: profile._id,
             }
-
-            console.log('Creating food item with data:', foodItemData)
-            console.log('Category type:', typeof foodItemData.category)
-            console.log('Category value:', foodItemData.category)
 
             const response = await axios.post(
                 getServerUrl('/food-items'),
