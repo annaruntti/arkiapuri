@@ -274,10 +274,17 @@ const UnifiedFoodSearch = ({
     const addToPantry = async (foodItem, collectionData) => {
         try {
             const token = await storage.getItem('userToken')
+
+            // Add error handling for undefined collectionData
+            if (!collectionData) {
+                console.error('collectionData is undefined in addToPantry')
+                throw new Error('Collection data is missing')
+            }
+
             const pantryItemData = {
                 name: foodItem.name,
-                quantity: collectionData.quantity,
-                unit: collectionData.unit,
+                quantity: collectionData.quantity || 1,
+                unit: collectionData.unit || 'kpl',
                 expirationDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
                 foodId: foodItem._id,
                 category: foodItem.category || [],
@@ -405,16 +412,26 @@ const UnifiedFoodSearch = ({
 
             if (data.success) {
                 // Now add to the specific collection using the same flow as manual addition
-                if (data.collectionData.location === 'pantry') {
+                if (
+                    data.collectionData &&
+                    data.collectionData.location === 'pantry'
+                ) {
                     await addToPantry(data.foodItem, data.collectionData)
                 } else if (
+                    data.collectionData &&
                     data.collectionData.location === 'shopping-list' &&
                     data.collectionData.shoppingListId
                 ) {
                     await addToShoppingList(data.foodItem, data.collectionData)
+                } else {
+                    console.error(
+                        'Invalid collectionData:',
+                        data.collectionData
+                    )
+                    throw new Error(
+                        'Invalid collection data received from server'
+                    )
                 }
-
-                Alert.alert('Onnistui!', 'Tuote lisätty listaan.')
                 onSelectItem(data.foodItem)
                 setSearchQuery('')
                 setIsListVisible(false)
