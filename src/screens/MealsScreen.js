@@ -17,6 +17,7 @@ import AddMealForm from '../components/FormAddMeal'
 import MealItemDetail from '../components/MealItemDetail'
 import ResponsiveLayout from '../components/ResponsiveLayout'
 import ResponsiveModal from '../components/ResponsiveModal'
+import categoriesData from '../data/categories.json'
 import { getServerUrl } from '../utils/getServerUrl'
 import { getDifficultyText, getMealRoleText } from '../utils/mealUtils'
 import { useResponsiveDimensions } from '../utils/responsive'
@@ -31,7 +32,106 @@ const MealsScreen = () => {
     const [loading, setLoading] = useState(true)
     const [selectedMeal, setSelectedMeal] = useState(null)
     const [detailModalVisible, setDetailModalVisible] = useState(false)
+    const [selectedDietFilters, setSelectedDietFilters] = useState([])
+    const [showFilters, setShowFilters] = useState(false)
     const { isDesktop } = useResponsiveDimensions()
+
+    // Get diet categories from categories.json
+    const dietCategories =
+        categoriesData.find((cat) => cat.id === 'diets')?.children || []
+
+    // Create a mapping of category names to IDs and vice versa
+    const categoryNameToId = {}
+    const categoryIdToName = {}
+    dietCategories.forEach((cat) => {
+        categoryNameToId[cat.name] = String(cat.id)
+        categoryIdToName[String(cat.id)] = cat.name
+    })
+
+    // Determine which dietary categories a meal qualifies for
+    // A meal qualifies if ALL its food items have that category
+    const getMealDietaryCategories = (meal) => {
+        if (!meal.foodItems || meal.foodItems.length === 0) {
+            console.log(`Meal "${meal.name}" has no foodItems`)
+            return []
+        }
+
+        console.log(
+            `Checking meal "${meal.name}" with ${meal.foodItems.length} food items`
+        )
+
+        const qualifiedCategories = []
+
+        dietCategories.forEach((dietCategory) => {
+            const categoryId = String(dietCategory.id)
+            const categoryName = dietCategory.name
+
+            // Check if ALL food items have this dietary category
+            const allItemsHaveCategory = meal.foodItems.every((foodItem) => {
+                // Check if foodItem is just an ID (not populated)
+                if (typeof foodItem === 'string' || !foodItem.category) {
+                    console.log(
+                        `Food item is not populated (ID only or no category):`,
+                        foodItem
+                    )
+                    return false
+                }
+
+                const itemCategories = foodItem.category || []
+                // Check if the category exists as either ID or name
+                const hasCategory = itemCategories.some((cat) => {
+                    const catStr = String(cat).trim()
+                    // Compare both as ID and as name
+                    return catStr === categoryId || catStr === categoryName
+                })
+
+                console.log(
+                    `  Item "${foodItem.name}" has ${categoryName} (${categoryId}):`,
+                    hasCategory
+                )
+                return hasCategory
+            })
+
+            if (allItemsHaveCategory) {
+                console.log(
+                    `  ✓ Meal qualifies for: ${dietCategory.name} (${categoryId})`
+                )
+                qualifiedCategories.push(categoryId)
+            }
+        })
+
+        console.log(
+            `Meal "${meal.name}" qualified categories:`,
+            qualifiedCategories
+        )
+        return qualifiedCategories
+    }
+
+    // Filter meals based on selected dietary filters
+    const filterMealsByDiet = (meals) => {
+        if (selectedDietFilters.length === 0) {
+            return meals
+        }
+
+        return meals.filter((meal) => {
+            const mealCategories = getMealDietaryCategories(meal)
+
+            // Meal must have ALL selected diet filters
+            return selectedDietFilters.every((filterId) =>
+                mealCategories.includes(filterId)
+            )
+        })
+    }
+
+    const toggleDietFilter = (categoryId) => {
+        setSelectedDietFilters((prev) => {
+            if (prev.includes(categoryId)) {
+                return prev.filter((id) => id !== categoryId)
+            } else {
+                return [...prev, categoryId]
+            }
+        })
+    }
 
     // Group meals by their default roles
     const groupMealsByCategory = (meals) => {
@@ -78,6 +178,10 @@ const MealsScreen = () => {
                 },
             })
             if (response.data.success) {
+                console.log(
+                    'Fetched meals:',
+                    JSON.stringify(response.data.meals, null, 2)
+                )
                 setMeals(response.data.meals)
             }
         } catch (error) {
@@ -391,6 +495,119 @@ const MealsScreen = () => {
         setDetailModalVisible(true)
     }
 
+    const renderDietFilters = () => {
+        // Count meals for each diet category
+        const getMealCountForCategory = (categoryId) => {
+            return meals.filter((meal) => {
+                const mealCategories = getMealDietaryCategories(meal)
+                return mealCategories.includes(String(categoryId))
+            }).length
+        }
+
+        return (
+            <View style={styles.filterSection}>
+                {/* Filter Toggle Button */}
+                <TouchableOpacity
+                    style={styles.filterToggleButton}
+                    onPress={() => setShowFilters(!showFilters)}
+                >
+                    <View style={styles.filterToggleContent}>
+                        <MaterialIcons
+                            name="filter-list"
+                            size={20}
+                            color="#9C86FC"
+                        />
+                        <CustomText style={styles.filterToggleText}>
+                            Suodattimet
+                        </CustomText>
+                        {selectedDietFilters.length > 0 && (
+                            <View style={styles.filterBadge}>
+                                <CustomText style={styles.filterBadgeText}>
+                                    {selectedDietFilters.length}
+                                </CustomText>
+                            </View>
+                        )}
+                    </View>
+                    <MaterialIcons
+                        name={showFilters ? 'expand-less' : 'expand-more'}
+                        size={24}
+                        color="#9C86FC"
+                    />
+                </TouchableOpacity>
+
+                {/* Collapsible Filter Content */}
+                {showFilters && (
+                    <View style={styles.filterContainer}>
+                        <CustomText style={styles.filterTitle}>
+                            Suodata ruokavalioin mukaan:
+                        </CustomText>
+                        <View style={styles.filterChipsContainer}>
+                            {dietCategories.map((category) => {
+                                const isSelected = selectedDietFilters.includes(
+                                    String(category.id)
+                                )
+                                const mealCount = getMealCountForCategory(
+                                    category.id
+                                )
+
+                                return (
+                                    <TouchableOpacity
+                                        key={category.id}
+                                        style={[
+                                            styles.filterChip,
+                                            isSelected &&
+                                                styles.filterChipSelected,
+                                            mealCount === 0 &&
+                                                styles.filterChipDisabled,
+                                        ]}
+                                        onPress={() =>
+                                            toggleDietFilter(
+                                                String(category.id)
+                                            )
+                                        }
+                                        disabled={mealCount === 0}
+                                    >
+                                        <CustomText
+                                            style={[
+                                                styles.filterChipText,
+                                                isSelected &&
+                                                    styles.filterChipTextSelected,
+                                                mealCount === 0 &&
+                                                    styles.filterChipTextDisabled,
+                                            ]}
+                                        >
+                                            {category.name} ({mealCount})
+                                        </CustomText>
+                                        {isSelected && (
+                                            <MaterialIcons
+                                                name="check"
+                                                size={16}
+                                                color="#fff"
+                                                style={styles.filterChipIcon}
+                                            />
+                                        )}
+                                    </TouchableOpacity>
+                                )
+                            })}
+                        </View>
+                        {selectedDietFilters.length > 0 && (
+                            <TouchableOpacity
+                                style={styles.clearFiltersButton}
+                                onPress={() => {
+                                    setSelectedDietFilters([])
+                                }}
+                            >
+                                <CustomText style={styles.clearFiltersText}>
+                                    Tyhjennä suodattimet
+                                </CustomText>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                )}
+            </View>
+        )
+    }
+
     const renderHeader = () => (
         <View style={styles.headerContainer}>
             <CustomText style={styles.introText}>
@@ -406,6 +623,8 @@ const MealsScreen = () => {
                     textStyle={styles.buttonText}
                 />
             </View>
+
+            {renderDietFilters()}
         </View>
     )
 
@@ -435,10 +654,27 @@ const MealsScreen = () => {
                     }
                 >
                     {renderHeader()}
-                    {Object.entries(groupMealsByCategory(meals)).map(
-                        ([category, mealsInCategory]) =>
-                            renderCategorySection(category, mealsInCategory)
-                    )}
+                    {(() => {
+                        const filteredMeals = filterMealsByDiet(meals)
+                        const groupedMeals = groupMealsByCategory(filteredMeals)
+
+                        if (
+                            Object.keys(groupedMeals).length === 0 &&
+                            selectedDietFilters.length > 0
+                        ) {
+                            return (
+                                <CustomText style={styles.emptyText}>
+                                    Ei aterioita valituilla suodattimilla.
+                                    Kokeile eri suodatinyhdistelmää.
+                                </CustomText>
+                            )
+                        }
+
+                        return Object.entries(groupedMeals).map(
+                            ([category, mealsInCategory]) =>
+                                renderCategorySection(category, mealsInCategory)
+                        )
+                    })()}
                 </ScrollView>
             ) : (
                 <ScrollView
@@ -611,6 +847,107 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#666',
         marginLeft: 8,
+    },
+    filterSection: {
+        marginTop: 15,
+        marginBottom: 15,
+    },
+    filterToggleButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: 15,
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: '#9C86FC',
+        marginBottom: 10,
+    },
+    filterToggleContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+    },
+    filterToggleText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#9C86FC',
+    },
+    filterBadge: {
+        backgroundColor: '#9C86FC',
+        borderRadius: 12,
+        minWidth: 24,
+        height: 24,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 6,
+    },
+    filterBadgeText: {
+        color: '#fff',
+        fontSize: 12,
+        fontWeight: 'bold',
+    },
+    filterContainer: {
+        padding: 15,
+        backgroundColor: '#f8f9fa',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#e9ecef',
+    },
+    filterTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginBottom: 10,
+        color: '#333',
+    },
+    filterChipsContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+    },
+    filterChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 20,
+        backgroundColor: '#fff',
+        borderWidth: 2,
+        borderColor: '#9C86FC',
+        marginBottom: 8,
+    },
+    filterChipSelected: {
+        backgroundColor: '#9C86FC',
+        borderColor: '#9C86FC',
+    },
+    filterChipText: {
+        fontSize: 14,
+        color: '#9C86FC',
+        fontWeight: '500',
+    },
+    filterChipTextSelected: {
+        color: '#fff',
+    },
+    filterChipDisabled: {
+        backgroundColor: '#f0f0f0',
+        borderColor: '#ccc',
+        opacity: 0.5,
+    },
+    filterChipTextDisabled: {
+        color: '#999',
+    },
+    filterChipIcon: {
+        marginLeft: 4,
+    },
+    clearFiltersButton: {
+        marginTop: 10,
+        alignSelf: 'flex-start',
+    },
+    clearFiltersText: {
+        fontSize: 14,
+        color: '#9C86FC',
+        fontWeight: '600',
+        textDecorationLine: 'underline',
     },
 })
 

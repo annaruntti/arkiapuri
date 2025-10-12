@@ -20,7 +20,6 @@ import ResponsiveModal from '../components/ResponsiveModal'
 import UnifiedFoodSearch from '../components/UnifiedFoodSearch'
 import categoriesData from '../data/categories.json'
 import { getServerUrl } from '../utils/getServerUrl'
-import { useResponsiveDimensions } from '../utils/responsive'
 import { scanItems } from '../utils/scanItems'
 import storage from '../utils/storage'
 
@@ -36,7 +35,6 @@ const PantryScreen = ({}) => {
     const [showFullInstructions, setShowFullInstructions] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
     const [showAddItemSearch, setShowAddItemSearch] = useState(false)
-    const { isDesktop } = useResponsiveDimensions()
 
     // Filter pantry items based on search query
     const filteredPantryItems = pantryItems.filter((item) =>
