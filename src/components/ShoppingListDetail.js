@@ -4,12 +4,13 @@ import * as ImagePicker from 'expo-image-picker'
 import React, { useState } from 'react'
 import {
     Alert,
-    FlatList,
     ScrollView,
+    SectionList,
     StyleSheet,
     TouchableOpacity,
     View,
 } from 'react-native'
+import categoriesData from '../data/categories.json'
 import { getServerUrl } from '../utils/getServerUrl'
 import { analyzeImage } from '../utils/googleVision'
 import { useResponsiveDimensions } from '../utils/responsive'
@@ -31,6 +32,68 @@ const ShoppingListDetail = ({
     const [scannedProduct, setScannedProduct] = useState(null)
     const [loading, setLoading] = useState(false)
     const { isDesktop } = useResponsiveDimensions()
+
+    // Group items by category for section list
+    const groupItemsByCategory = (items) => {
+        // Get all ingredient categories from categories.json
+        const ingredientCategories =
+            categoriesData.find((cat) => cat.id === 'ingredients')?.children ||
+            []
+
+        // Create a map of category id to category name
+        const categoryMap = {}
+        ingredientCategories.forEach((cat) => {
+            categoryMap[cat.id] = cat.name
+        })
+
+        // Group items by their first ingredient category
+        const grouped = {}
+        const uncategorized = []
+
+        items.forEach((item) => {
+            if (item.category && item.category.length > 0) {
+                // Find the first matching ingredient category
+                let foundCategory = false
+                for (const categoryId of item.category) {
+                    if (categoryMap[categoryId]) {
+                        const categoryName = categoryMap[categoryId]
+                        if (!grouped[categoryName]) {
+                            grouped[categoryName] = []
+                        }
+                        grouped[categoryName].push(item)
+                        foundCategory = true
+                        break
+                    }
+                }
+
+                if (!foundCategory) {
+                    uncategorized.push(item)
+                }
+            } else {
+                uncategorized.push(item)
+            }
+        })
+
+        // Convert to section list format
+        const sections = Object.keys(grouped)
+            .sort()
+            .map((categoryName) => ({
+                title: categoryName,
+                data: grouped[categoryName],
+            }))
+
+        // Add uncategorized items at the end if any
+        if (uncategorized.length > 0) {
+            sections.push({
+                title: 'Muut',
+                data: uncategorized,
+            })
+        }
+
+        return sections
+    }
+
+    const itemSections = groupItemsByCategory(shoppingList.items || [])
 
     const handleCheckItem = (item) => {
         setCheckedItems((prev) =>
@@ -345,15 +408,23 @@ const ShoppingListDetail = ({
 
                 {/* Items list container */}
                 <View style={styles.itemsListContainer}>
-                    <FlatList
-                        data={shoppingList.items}
+                    <SectionList
+                        sections={itemSections}
                         renderItem={renderItem}
+                        renderSectionHeader={({ section: { title } }) => (
+                            <View style={styles.sectionHeader}>
+                                <CustomText style={styles.sectionHeaderText}>
+                                    {title}
+                                </CustomText>
+                            </View>
+                        )}
                         keyExtractor={(item) => item._id}
                         style={styles.itemsList}
                         contentContainerStyle={styles.listContent}
                         showsVerticalScrollIndicator={true}
                         scrollEnabled={false}
                         nestedScrollEnabled={true}
+                        stickySectionHeadersEnabled={false}
                     />
                     {checkedItems.length > 0 && (
                         <View
@@ -596,6 +667,23 @@ const styles = StyleSheet.create({
     desktopButtonContainer: {
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    sectionHeader: {
+        backgroundColor: '#F0EBFF',
+        paddingVertical: 10,
+        paddingHorizontal: 15,
+        borderRadius: 8,
+        marginTop: 15,
+        marginBottom: 8,
+        borderLeftWidth: 4,
+        borderLeftColor: '#9C86FC',
+    },
+    sectionHeaderText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#333',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
     },
 })
 
