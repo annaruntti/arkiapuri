@@ -4,6 +4,7 @@ import * as ImagePicker from 'expo-image-picker'
 import React, { useState } from 'react'
 import {
     Alert,
+    Image,
     ScrollView,
     SectionList,
     StyleSheet,
@@ -19,6 +20,7 @@ import Button from './Button'
 import CustomModal from './CustomModal'
 import CustomText from './CustomText'
 import FormFoodItem from './FormFoodItem'
+import PantryItemDetails from './PantryItemDetails'
 import UnifiedFoodSearch from './UnifiedFoodSearch'
 
 const ShoppingListDetail = ({
@@ -31,7 +33,12 @@ const ShoppingListDetail = ({
     const [showItemForm, setShowItemForm] = useState(false)
     const [scannedProduct, setScannedProduct] = useState(null)
     const [loading, setLoading] = useState(false)
+    const [selectedItem, setSelectedItem] = useState(null)
+    const [showItemDetails, setShowItemDetails] = useState(false)
     const { isDesktop } = useResponsiveDimensions()
+
+    const SHOPPING_LIST_PLACEHOLDER_IMAGE_URL =
+        'https://images.ctfassets.net/2pij69ehhf4n/1YIQLI04JJpf76ARo3k0b9/87322f1b9ccec07d2f2af66f7d61d53d/undraw_online-groceries_n03y.png'
 
     // Group items by category for section list
     const groupItemsByCategory = (items) => {
@@ -163,16 +170,64 @@ const ShoppingListDetail = ({
     const handleAddItem = async (itemData) => {
         try {
             const token = await storage.getItem('userToken')
+
+            // Create a FoodItem first so we can attach images later
+            let foodItemId = itemData.foodId
+
+            if (!foodItemId) {
+                try {
+                    const foodItemData = {
+                        name: itemData.name,
+                        category: itemData.category || [],
+                        unit: itemData.unit || 'kpl',
+                        price: itemData.price || 0,
+                        calories: itemData.calories || 0,
+                        location: 'shopping-list',
+                        locations: ['shopping-list'],
+                        quantity: itemData.quantity || 1,
+                        quantities: {
+                            meal: 0,
+                            'shopping-list': itemData.quantity || 1,
+                            pantry: 0,
+                        },
+                    }
+
+                    const foodItemResponse = await axios.post(
+                        getServerUrl('/food-items'),
+                        foodItemData,
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                            },
+                        }
+                    )
+
+                    if (foodItemResponse.data.success) {
+                        foodItemId = foodItemResponse.data.foodItem._id
+                    }
+                } catch (foodItemError) {
+                    console.error('Error creating food item:', foodItemError)
+                    // Continue without foodId
+                }
+            }
+
             const newItem = {
                 ...itemData,
+                foodId: foodItemId,
                 location: 'shopping-list',
             }
+
+            // Clean existing items to ensure foodId is just an ID
+            const cleanedExistingItems = shoppingList.items.map((item) => ({
+                ...item,
+                foodId: item.foodId?._id || item.foodId,
+            }))
 
             const response = await axios.put(
                 getServerUrl(`/shopping-lists/${shoppingList._id}`),
                 {
-                    ...shoppingList,
-                    items: [...shoppingList.items, newItem],
+                    items: [...cleanedExistingItems, newItem],
+                    totalEstimatedPrice: shoppingList.totalEstimatedPrice || 0,
                 },
                 {
                     headers: {
@@ -280,28 +335,158 @@ const ShoppingListDetail = ({
         }
     }
 
+    const handleItemPress = (item) => {
+        setSelectedItem(item)
+        setShowItemDetails(true)
+    }
+
+    const handleUpdateItem = async (itemId, updatedData) => {
+        try {
+            const token = await storage.getItem('userToken')
+
+            // Find the item in the shopping list
+            const itemIndex = shoppingList.items.findIndex(
+                (item) => item._id === itemId
+            )
+            if (itemIndex === -1) {
+                Alert.alert('Virhe', 'Tuotetta ei löytynyt')
+                return
+            }
+
+            const currentItem = shoppingList.items[itemIndex]
+            let foodItemId = currentItem.foodId?._id || currentItem.foodId
+
+            // If foodId is being updated (from image upload), extract the ID
+            if (updatedData.foodId && typeof updatedData.foodId === 'object') {
+                foodItemId = updatedData.foodId._id || updatedData.foodId
+                updatedData.foodId = foodItemId
+            }
+
+            // If there's no foodId but we need one (e.g., for image upload), create a FoodItem
+            if (!foodItemId && (updatedData.image || updatedData.category)) {
+                try {
+                    const foodItemData = {
+                        name: updatedData.name || currentItem.name,
+                        category:
+                            updatedData.category || currentItem.category || [],
+                        unit: updatedData.unit || currentItem.unit || 'kpl',
+                        price: updatedData.price || currentItem.price || 0,
+                        calories:
+                            updatedData.calories || currentItem.calories || 0,
+                        location: 'shopping-list',
+                        locations: ['shopping-list'],
+                        quantity:
+                            updatedData.quantity || currentItem.quantity || 1,
+                        quantities: {
+                            meal: 0,
+                            'shopping-list':
+                                updatedData.quantity ||
+                                currentItem.quantity ||
+                                1,
+                            pantry: 0,
+                        },
+                    }
+
+                    const foodItemResponse = await axios.post(
+                        getServerUrl('/food-items'),
+                        foodItemData,
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                            },
+                        }
+                    )
+
+                    if (foodItemResponse.data.success) {
+                        foodItemId = foodItemResponse.data.foodItem._id
+                        updatedData.foodId = foodItemId
+                    }
+                } catch (foodItemError) {
+                    console.error('Error creating food item:', foodItemError)
+                    // Continue with update even if food item creation fails
+                }
+            }
+
+            // Update the items array
+            const updatedItems = [...shoppingList.items]
+            updatedItems[itemIndex] = {
+                ...updatedItems[itemIndex],
+                ...updatedData,
+            }
+
+            // Clean items to ensure foodId is just an ID, not a populated object
+            const cleanedItems = updatedItems.map((item) => ({
+                ...item,
+                foodId: item.foodId?._id || item.foodId,
+            }))
+
+            // Calculate total estimated price
+            const totalEstimatedPrice = cleanedItems.reduce(
+                (total, item) => total + (parseFloat(item.price) || 0),
+                0
+            )
+
+            // Update the shopping list - send only items and totalEstimatedPrice
+            const response = await axios.put(
+                getServerUrl(`/shopping-lists/${shoppingList._id}`),
+                {
+                    items: cleanedItems,
+                    totalEstimatedPrice: totalEstimatedPrice,
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            )
+
+            if (response.data.success) {
+                console.log(
+                    'Update response:',
+                    JSON.stringify(
+                        response.data.shoppingList.items[itemIndex],
+                        null,
+                        2
+                    )
+                )
+                onUpdate(response.data.shoppingList)
+                setShowItemDetails(false)
+                Alert.alert('Onnistui', 'Tuotteen tiedot päivitetty')
+            }
+        } catch (error) {
+            console.error('Error updating item:', error)
+            console.error('Error response:', error.response?.data)
+            Alert.alert('Virhe', 'Tuotteen päivitys epäonnistui')
+        }
+    }
+
     const renderItem = ({ item }) => (
         <View style={styles.itemRow}>
             <TouchableOpacity
                 style={styles.itemContainer}
-                onPress={() => handleCheckItem(item)}
+                onPress={() => handleItemPress(item)}
+                onLongPress={() => handleCheckItem(item)}
             >
+                <Image
+                    source={{
+                        uri:
+                            item.image?.url ||
+                            SHOPPING_LIST_PLACEHOLDER_IMAGE_URL,
+                    }}
+                    style={styles.itemImage}
+                    resizeMode="cover"
+                />
                 <View style={styles.itemContent}>
                     <CustomText style={styles.itemName}>{item.name}</CustomText>
                     <CustomText style={styles.itemDetails}>
                         {item.quantity} {item.unit}
                     </CustomText>
-                    {item.categories && item.categories.length > 0 && (
-                        <View style={styles.itemCategories}>
-                            {item.categories.map((category, index) => (
-                                <CustomText key={index} style={styles.category}>
-                                    {category}
-                                </CustomText>
-                            ))}
-                        </View>
-                    )}
                 </View>
-                <View style={styles.checkboxContainer}>
+                <TouchableOpacity
+                    style={styles.checkboxContainer}
+                    onPress={() => handleCheckItem(item)}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
                     <MaterialIcons
                         name={
                             checkedItems.includes(item._id)
@@ -313,7 +498,7 @@ const ShoppingListDetail = ({
                             checkedItems.includes(item._id) ? '#38E4D9' : '#666'
                         }
                     />
-                </View>
+                </TouchableOpacity>
             </TouchableOpacity>
         </View>
     )
@@ -448,6 +633,17 @@ const ShoppingListDetail = ({
                     )}
                 </View>
             </ScrollView>
+
+            {/* Item Details Modal */}
+            <PantryItemDetails
+                item={selectedItem}
+                visible={showItemDetails}
+                onClose={() => {
+                    setShowItemDetails(false)
+                    setSelectedItem(null)
+                }}
+                onUpdate={handleUpdateItem}
+            />
         </View>
     )
 }
@@ -531,6 +727,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+    },
+    itemImage: {
+        width: 60,
+        height: 60,
+        borderRadius: 8,
+        marginRight: 12,
     },
     itemContent: {
         flex: 1,
