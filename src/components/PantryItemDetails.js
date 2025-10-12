@@ -298,11 +298,15 @@ const PantryItemDetails = ({ item, visible, onClose, onUpdate }) => {
             })
 
             if (response.data.success) {
+                // Update with both foodId reference AND temporary image for immediate display
                 const updatedItem = {
                     ...item,
-                    image: response.data.foodItem.image,
-                    foodId: response.data.foodItem, // Update the foodId reference
+                    foodId: {
+                        ...response.data.foodItem, // Include full FoodItem data temporarily for display
+                    },
+                    image: response.data.foodItem.image, // Temporary image for immediate display
                 }
+
                 onUpdate(item._id, updatedItem)
             }
         } catch (error) {

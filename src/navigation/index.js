@@ -211,10 +211,12 @@ const UserProfile = ({ isActive = false }) => {
 
 const styles = StyleSheet.create({
     iconButton: {
-        paddingRight: 10,
+        paddingRight: 0,
+        marginRight: -48,
+        marginLeft: -10,
     },
     backButton: {
-        marginLeft: 10,
+        marginLeft: -10,
         paddingRight: 0,
     },
 })
@@ -231,7 +233,12 @@ function HomeStackScreen() {
                 headerRight: () => <UserProfile />,
             }}
         >
-            <HomeStack.Screen name="Arkiapuri">
+            <HomeStack.Screen
+                name="Arkiapuri"
+                options={{
+                    headerLeft: () => null, // Remove back button for home screen
+                }}
+            >
                 {(props) => (
                     <>
                         <NavigationTracker screenName="HomeStack" />
@@ -601,7 +608,12 @@ function AuthStackScreen() {
                 headerLeft: () => <ConditionalBackButton />,
             }}
         >
-            <HomeStack.Screen name="Tervetuloa">
+            <HomeStack.Screen
+                name="Tervetuloa"
+                options={{
+                    headerLeft: () => null, // Remove back button for landing screen
+                }}
+            >
                 {(props) => (
                     <>
                         <NavigationTracker screenName="Tervetuloa" />

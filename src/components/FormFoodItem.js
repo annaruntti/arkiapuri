@@ -216,6 +216,9 @@ const FormFoodItem = forwardRef(
 
         const uploadFoodItemImage = async (foodItemId, imageFile) => {
             try {
+                console.log('Starting image upload for food item:', foodItemId)
+                console.log('Image file received:', imageFile)
+
                 const token = await storage.getItem('userToken')
                 if (!token) {
                     throw new Error('No token found')
@@ -228,6 +231,7 @@ const FormFoodItem = forwardRef(
                     Platform.OS === 'web' &&
                     imageFile.uri.startsWith('blob:')
                 ) {
+                    console.log('Processing web blob image')
                     // For web, we need to fetch the blob and convert it to a File
                     const response = await fetch(imageFile.uri)
                     const blob = await response.blob()
@@ -235,17 +239,21 @@ const FormFoodItem = forwardRef(
                         type: 'image/jpeg',
                     })
                     formData.append('mealImage', file)
+                    console.log('Web blob processed, file created:', file)
                 } else {
+                    console.log('Processing mobile image')
                     // For mobile platforms
                     formData.append('mealImage', {
                         uri: imageFile.uri,
                         type: 'image/jpeg',
                         name: 'food-item.jpg',
                     })
+                    console.log('Mobile image added to FormData')
                 }
 
                 const url = getServerUrl(`/food-items/${foodItemId}/image`)
                 console.log('Uploading food item image to URL:', url)
+                console.log('FormData contents:', formData)
 
                 const response = await axios.post(url, formData, {
                     headers: {
@@ -254,9 +262,12 @@ const FormFoodItem = forwardRef(
                     },
                 })
 
+                console.log('Upload response:', response.data)
                 if (response.data.success) {
                     console.log('Food item image uploaded successfully')
                     return response.data.foodItem // Return the updated food item with image
+                } else {
+                    throw new Error('Upload failed: ' + response.data.message)
                 }
             } catch (error) {
                 console.error('Error uploading food item image:', error)
@@ -403,23 +414,41 @@ const FormFoodItem = forwardRef(
                                     'Uploading image for food item:',
                                     createdFoodItem._id
                                 )
+                                console.log('Image file details:', {
+                                    uri: foodItemImage.uri,
+                                    type: foodItemImage.type,
+                                    name:
+                                        foodItemImage.fileName ||
+                                        'food-item.jpg',
+                                })
                                 const updatedFoodItem =
                                     await uploadFoodItemImage(
                                         createdFoodItem._id,
                                         foodItemImage
                                     )
-                                console.log('Image uploaded successfully')
+                                console.log(
+                                    'Image uploaded successfully:',
+                                    updatedFoodItem
+                                )
                                 finalFoodItem = updatedFoodItem // Use the updated food item with image
                             } catch (imageError) {
                                 console.error(
                                     'Error uploading food item image:',
                                     imageError
                                 )
+                                console.error('Full error details:', {
+                                    message: imageError.message,
+                                    response: imageError.response?.data,
+                                    status: imageError.response?.status,
+                                })
                                 Alert.alert(
                                     'Warning',
-                                    'Food item created but image upload failed'
+                                    'Food item created but image upload failed: ' +
+                                        imageError.message
                                 )
                             }
+                        } else {
+                            console.log('No image selected for food item')
                         }
 
                         onSubmit(finalFoodItem)

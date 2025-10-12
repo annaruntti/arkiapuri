@@ -278,8 +278,8 @@ const PantryScreen = ({}) => {
 
             if (response.data.success) {
                 // Update the local state with the response data
-                setPantryItems((prevItems) =>
-                    prevItems.map((item) =>
+                setPantryItems((prevItems) => {
+                    const updatedItems = prevItems.map((item) =>
                         item._id === itemId
                             ? {
                                   ...item,
@@ -288,7 +288,8 @@ const PantryScreen = ({}) => {
                               }
                             : item
                     )
-                )
+                    return updatedItems
+                })
                 setDetailsVisible(false)
                 Alert.alert('Onnistui', 'Tuotteen tiedot päivitetty')
             } else {
@@ -324,9 +325,6 @@ const PantryScreen = ({}) => {
             <TouchableOpacity
                 style={styles.itemInfo}
                 onPress={() => {
-                    console.log('Selected food item:', item)
-                    console.log('Food item ID:', item._id)
-                    console.log('Food item name:', item.name)
                     setSelectedItem(item)
                     setDetailsVisible(true)
                 }}
@@ -337,22 +335,6 @@ const PantryScreen = ({}) => {
                     }}
                     style={styles.itemImage}
                     resizeMode="cover"
-                    onError={(error) => {
-                        console.log(
-                            'Image load error:',
-                            error.nativeEvent.error
-                        )
-                        console.log(
-                            'Image URI:',
-                            item.image?.url || PANTRY_PLACEHOLDER_IMAGE_URL
-                        )
-                    }}
-                    onLoad={() => {
-                        console.log(
-                            'Image loaded successfully:',
-                            item.image?.url || PANTRY_PLACEHOLDER_IMAGE_URL
-                        )
-                    }}
                 />
                 <View style={styles.itemTextContainer}>
                     <CustomText style={styles.itemName}>{item.name}</CustomText>
