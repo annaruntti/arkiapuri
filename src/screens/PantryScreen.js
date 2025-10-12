@@ -3,9 +3,9 @@ import axios from 'axios'
 import React, { useEffect, useState } from 'react'
 import {
     Alert,
-    FlatList,
     Image,
     ScrollView,
+    SectionList,
     StyleSheet,
     TextInput,
     TouchableOpacity,
@@ -18,6 +18,7 @@ import PantryItemDetails from '../components/PantryItemDetails'
 import ResponsiveLayout from '../components/ResponsiveLayout'
 import ResponsiveModal from '../components/ResponsiveModal'
 import UnifiedFoodSearch from '../components/UnifiedFoodSearch'
+import categoriesData from '../data/categories.json'
 import { getServerUrl } from '../utils/getServerUrl'
 import { useResponsiveDimensions } from '../utils/responsive'
 import { scanItems } from '../utils/scanItems'
@@ -40,6 +41,71 @@ const PantryScreen = ({}) => {
     // Filter pantry items based on search query
     const filteredPantryItems = pantryItems.filter((item) =>
         item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+
+    // Group items by category for section list
+    const groupItemsByCategory = (items) => {
+        // Get all ingredient categories from categories.json
+        const ingredientCategories =
+            categoriesData.find((cat) => cat.id === 'ingredients')?.children ||
+            []
+
+        // Create a map of category id to category name
+        const categoryMap = {}
+        ingredientCategories.forEach((cat) => {
+            categoryMap[cat.id] = cat.name
+        })
+
+        // Group items by their ingredient category
+        const grouped = {}
+        const uncategorized = []
+
+        items.forEach((item) => {
+            if (item.category && item.category.length > 0) {
+                // Find the first matching ingredient category
+                let foundCategory = false
+                for (const categoryId of item.category) {
+                    if (categoryMap[categoryId]) {
+                        const categoryName = categoryMap[categoryId]
+                        if (!grouped[categoryName]) {
+                            grouped[categoryName] = []
+                        }
+                        grouped[categoryName].push(item)
+                        foundCategory = true
+                        break // Only add to the first matching ingredient category
+                    }
+                }
+
+                // If no ingredient category was found, add to uncategorized
+                if (!foundCategory) {
+                    uncategorized.push(item)
+                }
+            } else {
+                uncategorized.push(item)
+            }
+        })
+
+        // Convert to section list format
+        const sections = Object.keys(grouped)
+            .sort()
+            .map((categoryName) => ({
+                title: categoryName,
+                data: grouped[categoryName],
+            }))
+
+        // Add uncategorized items at the end if any
+        if (uncategorized.length > 0) {
+            sections.push({
+                title: 'Muut',
+                data: uncategorized,
+            })
+        }
+
+        return sections
+    }
+
+    const pantryItemSections = groupItemsByCategory(
+        searchQuery.length > 0 ? filteredPantryItems : pantryItems
     )
 
     const fetchPantryItems = async () => {
@@ -277,19 +343,8 @@ const PantryScreen = ({}) => {
             )
 
             if (response.data.success) {
-                // Update the local state with the response data
-                setPantryItems((prevItems) => {
-                    const updatedItems = prevItems.map((item) =>
-                        item._id === itemId
-                            ? {
-                                  ...item,
-                                  ...updatedData, // Use the updatedData directly
-                                  category: updatedData.category, // check is category is updated
-                              }
-                            : item
-                    )
-                    return updatedItems
-                })
+                // Fetch fresh data from server to ensure sync
+                await fetchPantryItems()
                 setDetailsVisible(false)
                 Alert.alert('Onnistui', 'Tuotteen tiedot päivitetty')
             } else {
@@ -538,13 +593,18 @@ const PantryScreen = ({}) => {
 
                     {/* Product list container */}
                     <View style={styles.productListContainer}>
-                        <FlatList
-                            data={
-                                searchQuery.length > 0
-                                    ? filteredPantryItems
-                                    : pantryItems
-                            }
+                        <SectionList
+                            sections={pantryItemSections}
                             renderItem={renderItem}
+                            renderSectionHeader={({ section: { title } }) => (
+                                <View style={styles.sectionHeader}>
+                                    <CustomText
+                                        style={styles.sectionHeaderText}
+                                    >
+                                        {title}
+                                    </CustomText>
+                                </View>
+                            )}
                             keyExtractor={(item) => item._id}
                             extraData={[
                                 pantryItems,
@@ -554,6 +614,7 @@ const PantryScreen = ({}) => {
                             style={styles.productList}
                             contentContainerStyle={styles.listContent}
                             scrollEnabled={false}
+                            stickySectionHeadersEnabled={false}
                             ListEmptyComponent={
                                 !loading && (
                                     <CustomText style={styles.emptyText}>
@@ -880,5 +941,22 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         marginBottom: 15,
         color: '#333',
+    },
+    sectionHeader: {
+        backgroundColor: '#F0EBFF',
+        paddingVertical: 10,
+        paddingHorizontal: 15,
+        borderRadius: 8,
+        marginTop: 15,
+        marginBottom: 8,
+        borderLeftWidth: 4,
+        borderLeftColor: '#9C86FC',
+    },
+    sectionHeaderText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#333',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
     },
 })
