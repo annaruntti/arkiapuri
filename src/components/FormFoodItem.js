@@ -1213,6 +1213,7 @@ const styles = StyleSheet.create({
         borderRadius: 4,
         width: '100%',
         flex: 1,
+        marginBottom: 5,
     },
     unitFormInput: {
         backgroundColor: 'white',

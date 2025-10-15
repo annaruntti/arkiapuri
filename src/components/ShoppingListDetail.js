@@ -17,7 +17,6 @@ import { analyzeImage } from '../utils/googleVision'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 import Button from './Button'
-import CustomModal from './CustomModal'
 import CustomText from './CustomText'
 import FormFoodItem from './FormFoodItem'
 import PantryItemDetails from './PantryItemDetails'
@@ -505,12 +504,26 @@ const ShoppingListDetail = ({
 
     return (
         <View style={styles.container}>
-            <CustomModal
-                visible={showItemForm}
-                onClose={() => setShowItemForm(false)}
-                title="Lisää tuote ostoslistaan"
-            >
-                <View style={styles.formContainer}>
+            {showItemForm ? (
+                <View style={styles.formWrapper}>
+                    <View style={styles.formHeader}>
+                        <TouchableOpacity
+                            onPress={() => {
+                                setShowItemForm(false)
+                                setScannedProduct(null)
+                            }}
+                            style={styles.backButton}
+                        >
+                            <MaterialIcons
+                                name="arrow-back"
+                                size={24}
+                                color="#000"
+                            />
+                        </TouchableOpacity>
+                        <CustomText style={styles.formTitle}>
+                            Lisää tuote ostoslistaan
+                        </CustomText>
+                    </View>
                     <FormFoodItem
                         onSubmit={handleAddItem}
                         location="shopping-list"
@@ -521,120 +534,125 @@ const ShoppingListDetail = ({
                         }}
                     />
                 </View>
-            </CustomModal>
+            ) : (
+                <ScrollView
+                    style={styles.mainScrollView}
+                    stickyHeaderIndices={[1]}
+                    showsVerticalScrollIndicator={false}
+                >
+                    {/* Header section that scrolls away */}
+                    <View style={styles.headerSection}>
+                        <View style={styles.header}>
+                            <CustomText style={styles.title}>
+                                {shoppingList.name}
+                            </CustomText>
+                            <CustomText style={styles.description}>
+                                {shoppingList.description}
+                            </CustomText>
+                        </View>
 
-            <ScrollView
-                style={styles.mainScrollView}
-                stickyHeaderIndices={[1]}
-                showsVerticalScrollIndicator={false}
-            >
-                {/* Header section that scrolls away */}
-                <View style={styles.headerSection}>
-                    <View style={styles.header}>
-                        <CustomText style={styles.title}>
-                            {shoppingList.name}
+                        <CustomText style={styles.infoTitle}>
+                            Hae ja lisää tuotteita
                         </CustomText>
-                        <CustomText style={styles.description}>
-                            {shoppingList.description}
+                        <CustomText style={styles.infoText}>
+                            Hae tuotteita nimellä tai skannaa viivakoodi.
+                            Tulokset sisältävät sekä omat tuotteesi että Open
+                            Food Facts -tietokannan.
                         </CustomText>
                     </View>
 
-                    <CustomText style={styles.infoTitle}>
-                        Hae ja lisää tuotteita
-                    </CustomText>
-                    <CustomText style={styles.infoText}>
-                        Hae tuotteita nimellä tai skannaa viivakoodi. Tulokset
-                        sisältävät sekä omat tuotteesi että Open Food Facts
-                        -tietokannan.
-                    </CustomText>
-                </View>
+                    {/* Sticky search section */}
+                    <View style={styles.stickySearchSection}>
+                        <View style={styles.searchAndAddContainer}>
+                            <View style={styles.searchContainer}>
+                                <UnifiedFoodSearch
+                                    onSelectItem={handleSearchItemSelect}
+                                    location="shopping-list"
+                                    shoppingListId={shoppingList._id}
+                                />
+                            </View>
 
-                {/* Sticky search section */}
-                <View style={styles.stickySearchSection}>
-                    <View style={styles.searchAndAddContainer}>
-                        <View style={styles.searchContainer}>
-                            <UnifiedFoodSearch
-                                onSelectItem={handleSearchItemSelect}
-                                location="shopping-list"
-                                shoppingListId={shoppingList._id}
-                            />
+                            <View style={styles.manualAddContainer}>
+                                <Button
+                                    title="+ Luo uusi tuote"
+                                    onPress={() => setShowItemForm(true)}
+                                    style={[
+                                        styles.tertiaryButton,
+                                        isDesktop &&
+                                            styles.desktopPrimaryButton,
+                                    ]}
+                                    textStyle={styles.buttonText}
+                                />
+                            </View>
                         </View>
+                        <View style={styles.stats}>
+                            <CustomText>
+                                Tuotteita: {shoppingList.items?.length || 0} kpl
+                            </CustomText>
+                            <CustomText>
+                                Kokonaishinta:{' '}
+                                {shoppingList.items &&
+                                shoppingList.items.length > 0
+                                    ? shoppingList.items
+                                          .reduce(
+                                              (sum, item) =>
+                                                  sum +
+                                                  (parseFloat(item.price) || 0),
+                                              0
+                                          )
+                                          .toFixed(2)
+                                    : shoppingList.totalEstimatedPrice || 0}
+                                €
+                            </CustomText>
+                        </View>
+                    </View>
 
-                        <View style={styles.manualAddContainer}>
-                            <Button
-                                title="+ Luo uusi tuote"
-                                onPress={() => setShowItemForm(true)}
+                    {/* Items list container */}
+                    <View style={styles.itemsListContainer}>
+                        <SectionList
+                            sections={itemSections}
+                            renderItem={renderItem}
+                            renderSectionHeader={({ section: { title } }) => (
+                                <View style={styles.sectionHeader}>
+                                    <CustomText
+                                        style={styles.sectionHeaderText}
+                                    >
+                                        {title}
+                                    </CustomText>
+                                </View>
+                            )}
+                            keyExtractor={(item) => item._id}
+                            style={styles.itemsList}
+                            contentContainerStyle={styles.listContent}
+                            showsVerticalScrollIndicator={true}
+                            scrollEnabled={false}
+                            nestedScrollEnabled={true}
+                            stickySectionHeadersEnabled={false}
+                        />
+                        {checkedItems.length > 0 && (
+                            <View
                                 style={[
-                                    styles.tertiaryButton,
-                                    isDesktop && styles.desktopPrimaryButton,
+                                    styles.buttonContainer,
+                                    isDesktop && styles.desktopButtonContainer,
                                 ]}
-                                textStyle={styles.buttonText}
-                            />
-                        </View>
-                    </View>
-                    <View style={styles.stats}>
-                        <CustomText>
-                            Tuotteita: {shoppingList.items?.length || 0} kpl
-                        </CustomText>
-                        <CustomText>
-                            Kokonaishinta:{' '}
-                            {shoppingList.items && shoppingList.items.length > 0
-                                ? shoppingList.items
-                                      .reduce(
-                                          (sum, item) =>
-                                              sum +
-                                              (parseFloat(item.price) || 0),
-                                          0
-                                      )
-                                      .toFixed(2)
-                                : shoppingList.totalEstimatedPrice || 0}
-                            €
-                        </CustomText>
-                    </View>
-                </View>
-
-                {/* Items list container */}
-                <View style={styles.itemsListContainer}>
-                    <SectionList
-                        sections={itemSections}
-                        renderItem={renderItem}
-                        renderSectionHeader={({ section: { title } }) => (
-                            <View style={styles.sectionHeader}>
-                                <CustomText style={styles.sectionHeaderText}>
-                                    {title}
-                                </CustomText>
+                            >
+                                <Button
+                                    title={`Siirrä ${checkedItems.length} tuotetta ruokavarastoon`}
+                                    onPress={() =>
+                                        moveCheckedToPantry(checkedItems)
+                                    }
+                                    style={[
+                                        styles.secondaryButton,
+                                        isDesktop &&
+                                            styles.desktopPrimaryButton,
+                                    ]}
+                                    textStyle={styles.buttonText}
+                                />
                             </View>
                         )}
-                        keyExtractor={(item) => item._id}
-                        style={styles.itemsList}
-                        contentContainerStyle={styles.listContent}
-                        showsVerticalScrollIndicator={true}
-                        scrollEnabled={false}
-                        nestedScrollEnabled={true}
-                        stickySectionHeadersEnabled={false}
-                    />
-                    {checkedItems.length > 0 && (
-                        <View
-                            style={[
-                                styles.buttonContainer,
-                                isDesktop && styles.desktopButtonContainer,
-                            ]}
-                        >
-                            <Button
-                                title={`Siirrä ${checkedItems.length} tuotetta ruokavarastoon`}
-                                onPress={() =>
-                                    moveCheckedToPantry(checkedItems)
-                                }
-                                style={[
-                                    styles.secondaryButton,
-                                    isDesktop && styles.desktopPrimaryButton,
-                                ]}
-                                textStyle={styles.buttonText}
-                            />
-                        </View>
-                    )}
-                </View>
-            </ScrollView>
+                    </View>
+                </ScrollView>
+            )}
 
             {/* Item Details Modal */}
             <PantryItemDetails
@@ -654,6 +672,26 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fff',
+    },
+    formWrapper: {
+        flex: 1,
+        backgroundColor: '#fff',
+    },
+    formHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+        gap: 15,
+    },
+    backButton: {
+        padding: 5,
+    },
+    formTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#333',
     },
     mainScrollView: {
         flex: 1,
@@ -798,9 +836,6 @@ const styles = StyleSheet.create({
         borderWidth: 3,
         borderColor: '#9C86FC',
         whiteSpace: 'nowrap',
-    },
-    formContainer: {
-        padding: 15,
     },
     buttonContainer: {
         width: '100%',

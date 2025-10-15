@@ -689,6 +689,7 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         paddingHorizontal: 20,
         minWidth: 200,
+        width: '100%',
     },
     categoryButton: {
         flex: 1,

@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
     modalHeader: {
         width: '100%',
         paddingTop: 10,
-        paddingHorizontal: 10,
+        paddingHorizontal: 20,
         alignItems: 'center',
         marginBottom: 5,
     },
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
     },
     modalBody: {
         flex: 1,
-        paddingHorizontal: 10,
+        paddingHorizontal: 20,
     },
     closeButton: {
         position: 'absolute',
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
         elevation: 20,
     },
     desktopModalHeader: {
-        paddingHorizontal: 10,
+        paddingHorizontal: 20,
         marginBottom: 10,
     },
     desktopModalTitle: {
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
         color: '#333',
     },
     desktopModalBody: {
-        paddingHorizontal: 10,
+        paddingHorizontal: 20,
         paddingBottom: 30,
     },
     desktopCloseButton: {

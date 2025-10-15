@@ -247,20 +247,6 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
                         keyboardType="numeric"
                     />
 
-                    <View style={styles.buttonContainer}>
-                        <Button
-                            style={[
-                                styles.secondaryButton,
-                                isDesktop && styles.desktopSecondaryButton,
-                            ]}
-                            textStyle={styles.buttonText}
-                            title="Lisää ostoslistalle tuote"
-                            onPress={() =>
-                                setShowInlineFoodForm(!showInlineFoodForm)
-                            }
-                        />
-                    </View>
-
                     {showInlineFoodForm && (
                         <View style={styles.inlineFoodFormContainer}>
                             <CustomText style={styles.inlineFoodFormTitle}>
@@ -292,7 +278,24 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
                         </View>
                     )}
 
-                    <View style={styles.buttonContainer}>
+                    <View
+                        style={
+                            isDesktop
+                                ? styles.buttonsRowDesktop
+                                : styles.buttonsColumnMobile
+                        }
+                    >
+                        <Button
+                            style={[
+                                styles.secondaryButton,
+                                isDesktop && styles.desktopSecondaryButton,
+                            ]}
+                            textStyle={styles.buttonText}
+                            title="Lisää ostoslistalle tuote"
+                            onPress={() =>
+                                setShowInlineFoodForm(!showInlineFoodForm)
+                            }
+                        />
                         <Button
                             style={[
                                 styles.primaryButton,
@@ -450,22 +453,44 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         width: '100%',
-        marginTop: 10,
     },
     desktopPrimaryButton: {
-        maxWidth: 300,
-        minWidth: 120,
-        alignSelf: 'center',
+        flex: 1,
+        width: 'auto',
+    },
+    secondaryButton: {
+        borderRadius: 25,
+        paddingTop: 7,
+        paddingBottom: 7,
+        paddingLeft: 10,
+        paddingRight: 10,
+        elevation: 2,
+        backgroundColor: '#38E4D9',
+        color: 'black',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        width: '100%',
     },
     desktopSecondaryButton: {
-        maxWidth: 300,
-        alignSelf: 'left',
-        marginRight: 'auto',
+        flex: 1,
+        width: 'auto',
     },
     buttonContainer: {
         alignItems: 'center',
         width: '100%',
         marginTop: 10,
+    },
+    buttonsRowDesktop: {
+        flexDirection: 'row',
+        gap: 15,
+        width: '100%',
+        paddingTop: 20,
+    },
+    buttonsColumnMobile: {
+        flexDirection: 'column',
+        gap: 15,
+        width: '100%',
+        paddingTop: 20,
     },
     buttonText: {
         color: '#000000',
@@ -488,20 +513,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         color: '#333',
     },
-    secondaryButton: {
-        borderRadius: 25,
-        paddingTop: 7,
-        paddingBottom: 7,
-        paddingLeft: 10,
-        paddingRight: 10,
-        elevation: 2,
-        backgroundColor: '#38E4D9',
-        color: 'black',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        width: 'auto',
-        marginBottom: 10,
-    },
+
     errorMsg: {
         color: 'red',
         marginTop: -5,
