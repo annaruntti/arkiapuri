@@ -840,6 +840,7 @@ const styles = StyleSheet.create({
         elevation: 2,
         backgroundColor: '#fff',
         minHeight: 48,
+        minWidth: 200,
         borderWidth: 3,
         borderColor: '#9C86FC',
         whiteSpace: 'nowrap',

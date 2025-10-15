@@ -8,6 +8,7 @@ import {
     RefreshControl,
     ScrollView,
     StyleSheet,
+    TextInput,
     TouchableOpacity,
     View,
 } from 'react-native'
@@ -34,6 +35,7 @@ const MealsScreen = () => {
     const [detailModalVisible, setDetailModalVisible] = useState(false)
     const [selectedDietFilters, setSelectedDietFilters] = useState([])
     const [showFilters, setShowFilters] = useState(false)
+    const [searchQuery, setSearchQuery] = useState('')
     const { isDesktop } = useResponsiveDimensions()
 
     // Get diet categories from categories.json
@@ -105,6 +107,17 @@ const MealsScreen = () => {
             qualifiedCategories
         )
         return qualifiedCategories
+    }
+
+    // Filter meals by search query
+    const filterMealsBySearch = (meals) => {
+        if (!searchQuery.trim()) {
+            return meals
+        }
+
+        return meals.filter((meal) =>
+            meal.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
+        )
     }
 
     // Filter meals based on selected dietary filters
@@ -498,7 +511,8 @@ const MealsScreen = () => {
     const renderDietFilters = () => {
         // Count meals for each diet category
         const getMealCountForCategory = (categoryId) => {
-            return meals.filter((meal) => {
+            const searchedMeals = filterMealsBySearch(meals)
+            return searchedMeals.filter((meal) => {
                 const mealCategories = getMealDietaryCategories(meal)
                 return mealCategories.includes(String(categoryId))
             }).length
@@ -589,35 +603,69 @@ const MealsScreen = () => {
                 muokata olemassa olevia.
             </CustomText>
 
-            <View style={styles.buttonContainer}>
-                <Button
-                    title="Lisää ateria"
-                    onPress={() => setModalVisible(true)}
-                    style={styles.primaryButton}
-                    textStyle={styles.buttonText}
-                />
-
-                <TouchableOpacity
-                    style={styles.tertiaryButton}
-                    onPress={() => setShowFilters(!showFilters)}
-                >
-                    <MaterialIcons name="filter-list" size={20} color="#000" />
-                    <CustomText style={styles.tertiaryButtonText}>
-                        Suodata
-                    </CustomText>
-                    {selectedDietFilters.length > 0 && (
-                        <View style={styles.filterBadge}>
-                            <CustomText style={styles.filterBadgeText}>
-                                {selectedDietFilters.length}
-                            </CustomText>
-                        </View>
-                    )}
+            <View style={styles.searchAndButtonWrapper}>
+                <View style={styles.searchContainer}>
                     <MaterialIcons
-                        name={showFilters ? 'expand-less' : 'expand-more'}
+                        name="search"
                         size={20}
-                        color="#000"
+                        color="#999"
+                        style={styles.searchIcon}
                     />
-                </TouchableOpacity>
+                    <TextInput
+                        style={styles.searchInput}
+                        placeholder="Hae aterioita nimellä..."
+                        placeholderTextColor="#999"
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                    />
+                    {searchQuery.length > 0 && (
+                        <TouchableOpacity
+                            style={styles.clearButton}
+                            onPress={() => setSearchQuery('')}
+                        >
+                            <MaterialIcons
+                                name="close"
+                                size={20}
+                                color="#666"
+                            />
+                        </TouchableOpacity>
+                    )}
+                </View>
+
+                <View style={styles.buttonContainer}>
+                    <Button
+                        title="Lisää ateria"
+                        onPress={() => setModalVisible(true)}
+                        style={styles.primaryButton}
+                        textStyle={styles.buttonText}
+                    />
+
+                    <TouchableOpacity
+                        style={styles.tertiaryButton}
+                        onPress={() => setShowFilters(!showFilters)}
+                    >
+                        <MaterialIcons
+                            name="filter-list"
+                            size={20}
+                            color="#000"
+                        />
+                        <CustomText style={styles.tertiaryButtonText}>
+                            Suodata
+                        </CustomText>
+                        {selectedDietFilters.length > 0 && (
+                            <View style={styles.filterBadge}>
+                                <CustomText style={styles.filterBadgeText}>
+                                    {selectedDietFilters.length}
+                                </CustomText>
+                            </View>
+                        )}
+                        <MaterialIcons
+                            name={showFilters ? 'expand-less' : 'expand-more'}
+                            size={20}
+                            color="#000"
+                        />
+                    </TouchableOpacity>
+                </View>
             </View>
 
             {renderDietFilters()}
@@ -651,19 +699,37 @@ const MealsScreen = () => {
                 >
                     {renderHeader()}
                     {(() => {
-                        const filteredMeals = filterMealsByDiet(meals)
+                        const searchedMeals = filterMealsBySearch(meals)
+                        const filteredMeals = filterMealsByDiet(searchedMeals)
                         const groupedMeals = groupMealsByCategory(filteredMeals)
 
-                        if (
-                            Object.keys(groupedMeals).length === 0 &&
-                            selectedDietFilters.length > 0
-                        ) {
-                            return (
-                                <CustomText style={styles.emptyText}>
-                                    Ei aterioita valituilla suodattimilla.
-                                    Kokeile eri suodatinyhdistelmää.
-                                </CustomText>
-                            )
+                        if (Object.keys(groupedMeals).length === 0) {
+                            if (
+                                searchQuery.trim() &&
+                                selectedDietFilters.length > 0
+                            ) {
+                                return (
+                                    <CustomText style={styles.emptyText}>
+                                        Ei aterioita hakusanalla "{searchQuery}"
+                                        ja valituilla suodattimilla. Kokeile eri
+                                        hakusanaa tai suodatinyhdistelmää.
+                                    </CustomText>
+                                )
+                            } else if (searchQuery.trim()) {
+                                return (
+                                    <CustomText style={styles.emptyText}>
+                                        Ei aterioita hakusanalla "{searchQuery}
+                                        ". Kokeile eri hakusanaa.
+                                    </CustomText>
+                                )
+                            } else if (selectedDietFilters.length > 0) {
+                                return (
+                                    <CustomText style={styles.emptyText}>
+                                        Ei aterioita valituilla suodattimilla.
+                                        Kokeile eri suodatinyhdistelmää.
+                                    </CustomText>
+                                )
+                            }
                         }
 
                         return Object.entries(groupedMeals).map(
@@ -734,6 +800,43 @@ const styles = StyleSheet.create({
     desktopIntroText: {
         fontSize: 21,
         paddingVertical: 16,
+    },
+    searchAndButtonWrapper: {
+        backgroundColor: 'rgb(248, 248, 248)',
+        borderRadius: 10,
+        padding: 15,
+        marginBottom: 15,
+        boxShadow: 'rgba(0, 0, 0, 0.1) 0px 1px 2px',
+        elevation: 2,
+        width: '100%',
+    },
+    searchContainer: {
+        position: 'relative',
+        width: '100%',
+        marginBottom: 15,
+    },
+    searchIcon: {
+        position: 'absolute',
+        left: 15,
+        top: 12,
+        zIndex: 1,
+    },
+    searchInput: {
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderRadius: 8,
+        paddingLeft: 45,
+        paddingRight: 40,
+        paddingVertical: 12,
+        fontSize: 16,
+        backgroundColor: '#fff',
+        width: '100%',
+    },
+    clearButton: {
+        position: 'absolute',
+        right: 12,
+        top: 12,
+        padding: 4,
     },
     itemContainer: {
         backgroundColor: '#f8f8f8',
@@ -810,7 +913,6 @@ const styles = StyleSheet.create({
     buttonContainer: {
         flexDirection: 'row',
         gap: 10,
-        marginBottom: 10,
         alignItems: 'flex-start',
         justifyContent: 'space-between',
         width: '100%',
