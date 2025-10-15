@@ -14,6 +14,7 @@ import {
     View,
 } from 'react-native'
 import { getServerUrl } from '../utils/getServerUrl'
+import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 import BarcodeScanner from './BarcodeScanner'
 import CustomText from './CustomText'
@@ -25,6 +26,7 @@ const UnifiedFoodSearch = ({
     mealId = null,
     allowDuplicates = false,
 }) => {
+    const { isDesktop } = useResponsiveDimensions()
     const [searchQuery, setSearchQuery] = useState('')
     const [localFoodItems, setLocalFoodItems] = useState([])
     const [openFoodFactsItems, setOpenFoodFactsItems] = useState([])
@@ -720,7 +722,10 @@ const UnifiedFoodSearch = ({
     )
 
     return (
-        <View style={styles.container} ref={searchContainerRef}>
+        <View
+            style={[styles.container, isDesktop && styles.desktopContainer]}
+            ref={searchContainerRef}
+        >
             <View style={styles.searchRow}>
                 <View style={styles.searchInputContainer}>
                     <TextInput
@@ -859,7 +864,6 @@ const styles = StyleSheet.create({
         position: 'relative',
         zIndex: 9998,
         width: '100%',
-        maxWidth: 400,
         alignSelf: 'center',
     },
     searchRow: {
@@ -867,14 +871,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 10,
         width: '100%',
-        maxWidth: 400,
+
         alignSelf: 'center',
     },
     searchInputContainer: {
         flex: 1,
         position: 'relative',
         width: '100%',
-        maxWidth: 400,
         alignSelf: 'center',
     },
     searchInput: {
@@ -1050,6 +1053,10 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#666',
         textAlign: 'center',
+    },
+    desktopContainer: {
+        alignSelf: 'flex-start',
+        width: '100%',
     },
 })
 

@@ -300,7 +300,8 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderRadius: 4,
         padding: 10,
-        minHeight: 40,
+        maxHeight: 40,
+        minHeight: 5,
     },
     selectButtonActive: {
         borderColor: '#9C86FC',
@@ -309,7 +310,7 @@ const styles = StyleSheet.create({
     selectText: {
         flex: 1,
         color: '#999',
-        fontSize: 16,
+        fontSize: 14,
     },
     selectTextSelected: {
         color: '#333',

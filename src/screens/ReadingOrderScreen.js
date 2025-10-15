@@ -4,8 +4,10 @@ import CustomText from '../components/CustomText'
 import ResponsiveLayout from '../components/ResponsiveLayout'
 import TableMonth from '../components/TableMonth'
 import TableWeek from '../components/TableWeek'
+import { useResponsiveDimensions } from '../utils/responsive'
 
 const ReadingOrderScreen = ({}) => {
+    const { isDesktop } = useResponsiveDimensions()
     const [activeTab, setActiveTab] = useState('week')
 
     const renderTabButton = (tabKey, title) => (
@@ -30,16 +32,22 @@ const ReadingOrderScreen = ({}) => {
 
     return (
         <ResponsiveLayout activeRoute="ReadingOrderStack">
-            <View style={styles.container}>
-                {/* Tab Navigation */}
-                <View style={styles.tabContainer}>
-                    {renderTabButton('week', 'Viikko')}
-                    {renderTabButton('month', 'Kuukausi')}
-                </View>
+            <View
+                style={
+                    isDesktop ? styles.desktopContentWrapper : styles.fullWidth
+                }
+            >
+                <View style={styles.container}>
+                    {/* Tab Navigation */}
+                    <View style={styles.tabContainer}>
+                        {renderTabButton('week', 'Viikko')}
+                        {renderTabButton('month', 'Kuukausi')}
+                    </View>
 
-                {/* Content */}
-                <View style={styles.contentContainer}>
-                    {activeTab === 'week' ? <TableWeek /> : <TableMonth />}
+                    {/* Content */}
+                    <View style={styles.contentContainer}>
+                        {activeTab === 'week' ? <TableWeek /> : <TableMonth />}
+                    </View>
                 </View>
             </View>
         </ResponsiveLayout>
@@ -82,5 +90,15 @@ const styles = StyleSheet.create({
     },
     contentContainer: {
         flex: 1,
+    },
+    desktopContentWrapper: {
+        flex: 1,
+        width: '100%',
+        maxWidth: 960,
+        alignSelf: 'center',
+    },
+    fullWidth: {
+        flex: 1,
+        width: '100%',
     },
 })

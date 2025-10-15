@@ -6,7 +6,13 @@ import {
 } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import * as React from 'react'
-import { Image, StyleSheet, TouchableOpacity, View } from 'react-native'
+import {
+    Image,
+    Platform,
+    StyleSheet,
+    TouchableOpacity,
+    View,
+} from 'react-native'
 import { useLogin } from '../context/LoginProvider'
 import { useResponsiveDimensions } from '../utils/responsive'
 
@@ -519,9 +525,42 @@ function TabNavigator() {
 
 const RootStack = createNativeStackNavigator()
 
+// Navigation state persistence (for mobile only - web uses URL-based linking)
+const NAVIGATION_STATE_KEY = '@navigation_state'
+
+const getStoredState = async () => {
+    // Only use state persistence on mobile (web uses URL-based linking)
+    if (Platform.OS !== 'web') {
+        try {
+            const state = sessionStorage.getItem(NAVIGATION_STATE_KEY)
+            return state ? JSON.parse(state) : undefined
+        } catch (e) {
+            console.warn('Failed to get navigation state', e)
+            return undefined
+        }
+    }
+    return undefined
+}
+
+const setStoredState = async (state) => {
+    // Only persist state on mobile (web uses URL-based linking)
+    if (Platform.OS !== 'web') {
+        try {
+            sessionStorage.setItem(NAVIGATION_STATE_KEY, JSON.stringify(state))
+        } catch (e) {
+            console.warn('Failed to save navigation state', e)
+        }
+    }
+}
+
 // Web linking configuration
 const linking = {
-    prefixes: ['http://localhost:8081', 'https://yourdomain.com'], // Add your production domain later
+    prefixes: [
+        'http://localhost:8081',
+        'http://localhost:19006',
+        'https://yourdomain.com',
+    ], // Add your production domain later
+    enabled: true,
     config: {
         screens: {
             Auth: {
@@ -574,11 +613,44 @@ const linking = {
 }
 
 export default function Navigation() {
-    const { isLoggedIn } = useLogin()
+    const { isLoggedIn, isLoading } = useLogin()
+    const [isReady, setIsReady] = React.useState(Platform.OS === 'web') // Web is ready immediately (uses linking)
+    const [initialState, setInitialState] = React.useState()
+
+    React.useEffect(() => {
+        const restoreState = async () => {
+            try {
+                // Only restore state on mobile (web uses URL-based linking)
+                if (Platform.OS !== 'web') {
+                    const savedState = await getStoredState()
+                    if (savedState !== undefined) {
+                        setInitialState(savedState)
+                    }
+                }
+            } catch (e) {
+                console.warn('Failed to restore navigation state', e)
+            } finally {
+                setIsReady(true)
+            }
+        }
+
+        if (!isReady) {
+            restoreState()
+        }
+    }, [isReady])
+
+    // Wait for auth loading to complete before rendering navigation
+    if (!isReady || isLoading) {
+        return null
+    }
 
     return (
         <NavigationHistoryProvider>
-            <NavigationContainer linking={linking}>
+            <NavigationContainer
+                linking={linking}
+                initialState={Platform.OS === 'web' ? undefined : initialState}
+                onStateChange={(state) => setStoredState(state)}
+            >
                 <RootStack.Navigator screenOptions={{ headerShown: false }}>
                     {isLoggedIn ? (
                         <RootStack.Screen

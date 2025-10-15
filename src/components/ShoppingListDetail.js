@@ -552,11 +552,13 @@ const ShoppingListDetail = ({
                 {/* Sticky search section */}
                 <View style={styles.stickySearchSection}>
                     <View style={styles.searchAndAddContainer}>
-                        <UnifiedFoodSearch
-                            onSelectItem={handleSearchItemSelect}
-                            location="shopping-list"
-                            shoppingListId={shoppingList._id}
-                        />
+                        <View style={styles.searchContainer}>
+                            <UnifiedFoodSearch
+                                onSelectItem={handleSearchItemSelect}
+                                location="shopping-list"
+                                shoppingListId={shoppingList._id}
+                            />
+                        </View>
 
                         <View style={styles.manualAddContainer}>
                             <Button
@@ -792,10 +794,10 @@ const styles = StyleSheet.create({
         paddingRight: 10,
         elevation: 2,
         backgroundColor: '#fff',
-        width: '100%',
-        marginBottom: 10,
+        minHeight: 48,
         borderWidth: 3,
         borderColor: '#9C86FC',
+        whiteSpace: 'nowrap',
     },
     formContainer: {
         padding: 15,
@@ -835,27 +837,23 @@ const styles = StyleSheet.create({
         textAlign: 'left',
     },
     searchAndAddContainer: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 10,
         marginBottom: 15,
-        backgroundColor: '#F8F9FA',
-        borderRadius: 12,
+        backgroundColor: 'rgb(248, 248, 248)',
+        borderRadius: 10,
         padding: 15,
-        borderWidth: 1,
-        borderColor: '#E9ECEF',
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 1,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
+        boxShadow: 'rgba(0, 0, 0, 0.1) 0px 1px 2px',
         elevation: 2,
         zIndex: 9998,
         position: 'relative',
     },
+    searchContainer: {
+        flex: 1,
+    },
     manualAddContainer: {
-        marginTop: 15,
-        marginBottom: 0,
-        alignItems: 'center',
+        justifyContent: 'center',
     },
     desktopPrimaryButton: {
         maxWidth: 300,
@@ -881,10 +879,9 @@ const styles = StyleSheet.create({
         borderLeftColor: '#9C86FC',
     },
     sectionHeaderText: {
-        fontSize: 16,
+        fontSize: 19,
         fontWeight: 'bold',
         color: '#333',
-        textTransform: 'uppercase',
         letterSpacing: 0.5,
     },
 })

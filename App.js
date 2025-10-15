@@ -10,9 +10,23 @@ import { useResponsiveDimensions } from './src/utils/responsive'
 // Splash screen is keep visible while we fetch resources
 SplashScreen.preventAutoHideAsync()
 
+// Check if splash has been shown in this session (for web)
+const hasShownSplash = () => {
+    if (Platform.OS === 'web') {
+        return sessionStorage.getItem('splashShown') === 'true'
+    }
+    return false
+}
+
+const markSplashShown = () => {
+    if (Platform.OS === 'web') {
+        sessionStorage.setItem('splashShown', 'true')
+    }
+}
+
 const App = () => {
     const [appIsReady, setAppIsReady] = useState(false)
-    const [showSplash, setShowSplash] = useState(true)
+    const [showSplash, setShowSplash] = useState(!hasShownSplash())
     const { containerMaxWidth, responsivePadding, isDesktop, isWeb } =
         useResponsiveDimensions()
     const [fontsLoaded] = useFonts({
@@ -51,12 +65,19 @@ const App = () => {
         if (appIsReady) {
             // Hide the native splash screen
             await SplashScreen.hideAsync()
-            // Start our custom splash screen animation
-            setShowSplash(true)
-            // Hide our custom splash screen after animation
-            setTimeout(() => {
+
+            // Only show custom splash if it hasn't been shown yet
+            if (!hasShownSplash()) {
+                setShowSplash(true)
+                markSplashShown()
+                // Hide our custom splash screen after animation
+                setTimeout(() => {
+                    setShowSplash(false)
+                }, 3000)
+            } else {
+                // Skip splash screen on subsequent loads
                 setShowSplash(false)
-            }, 3000)
+            }
         }
     }
 

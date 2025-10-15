@@ -19,9 +19,9 @@ import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
 import Button from './Button'
 import CategorySelect from './CategorySelect'
-import CustomModal from './CustomModal'
 import CustomText from './CustomText'
 import DateTimePicker from './DateTimePicker'
+import ResponsiveModal from './ResponsiveModal'
 
 const PANTRY_PLACEHOLDER_IMAGE_URL =
     'https://images.ctfassets.net/2pij69ehhf4n/1YIQLI04JJpf76ARo3k0b9/87322f1b9ccec07d2f2af66f7d61d53d/undraw_online-groceries_n03y.png'
@@ -401,13 +401,14 @@ const PantryItemDetails = ({ item, visible, onClose, onUpdate }) => {
     }
 
     return (
-        <CustomModal
+        <ResponsiveModal
             visible={visible}
             onClose={onClose}
             title="Elintarvikkeen tiedot"
+            maxWidth={700}
         >
-            <View style={styles.modalBody}>
-                <ScrollView style={styles.detailsContainer}>
+            <ScrollView style={styles.detailScroll}>
+                <View style={styles.itemDetails}>
                     {item.image && item.image.url && (
                         <View style={styles.imageContainer}>
                             <Image
@@ -508,31 +509,52 @@ const PantryItemDetails = ({ item, visible, onClose, onUpdate }) => {
                         <CustomText style={styles.label}>
                             Viimeinen käyttöpäivä:
                         </CustomText>
-                        <View style={styles.valueContainer}>
-                            <TouchableOpacity
-                                onPress={() => setShowDatePicker(true)}
-                            >
-                                <CustomText>
-                                    {formatDate(
+                        {Platform.OS === 'web' ? (
+                            <DateTimePicker
+                                value={
+                                    new Date(
                                         editedValues.expirationDate ||
                                             item.expirationDate
-                                    )}
-                                </CustomText>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={styles.editIcon}
-                                onPress={() => setShowDatePicker(true)}
-                            >
-                                <Feather
-                                    name="calendar"
-                                    size={18}
-                                    color="#666"
-                                />
-                            </TouchableOpacity>
-                        </View>
+                                    )
+                                }
+                                mode="date"
+                                display="default"
+                                onChange={(event, selectedDate) => {
+                                    if (selectedDate) {
+                                        handleChange(
+                                            'expirationDate',
+                                            selectedDate
+                                        )
+                                    }
+                                }}
+                            />
+                        ) : (
+                            <View style={styles.valueContainer}>
+                                <TouchableOpacity
+                                    onPress={() => setShowDatePicker(true)}
+                                >
+                                    <CustomText>
+                                        {formatDate(
+                                            editedValues.expirationDate ||
+                                                item.expirationDate
+                                        )}
+                                    </CustomText>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={styles.editIcon}
+                                    onPress={() => setShowDatePicker(true)}
+                                >
+                                    <Feather
+                                        name="calendar"
+                                        size={18}
+                                        color="#666"
+                                    />
+                                </TouchableOpacity>
+                            </View>
+                        )}
                     </View>
 
-                    {showDatePicker && (
+                    {Platform.OS !== 'web' && showDatePicker && (
                         <DateTimePicker
                             value={
                                 new Date(
@@ -552,38 +574,41 @@ const PantryItemDetails = ({ item, visible, onClose, onUpdate }) => {
                     )}
 
                     {Object.keys(editedValues).length > 0 && (
-                        <Button
-                            title="Tallenna muutokset"
-                            onPress={handleSave}
-                            style={styles.saveButton}
-                        />
+                        <View style={styles.buttonContainer}>
+                            <Button
+                                title="Tallenna muutokset"
+                                onPress={handleSave}
+                                style={styles.saveButton}
+                            />
+                        </View>
                     )}
-                </ScrollView>
-            </View>
-        </CustomModal>
+                </View>
+            </ScrollView>
+        </ResponsiveModal>
     )
 }
 
 const styles = StyleSheet.create({
-    modalBody: {
-        flex: 1,
-        padding: 15,
+    detailScroll: {
+        paddingTop: 20,
+        paddingHorizontal: 20,
     },
-    detailsContainer: {
-        marginTop: 10,
+    itemDetails: {
+        paddingTop: 10,
     },
     imageContainer: {
-        alignItems: 'center',
         marginBottom: 20,
+        borderRadius: 8,
+        overflow: 'hidden',
     },
     noImageContainer: {
         marginBottom: 20,
         alignItems: 'center',
     },
     itemImage: {
-        width: 120,
-        height: 120,
-        borderRadius: 8,
+        width: '100%',
+        height: 200,
+        resizeMode: 'cover',
     },
     imageActions: {
         flexDirection: 'row',
@@ -628,19 +653,18 @@ const styles = StyleSheet.create({
     detailRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 15,
+        paddingVertical: 8,
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
-        paddingBottom: 5,
     },
     label: {
         fontWeight: 'bold',
-        marginRight: 10,
+        flex: 1,
     },
     valueContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        flex: 1,
+        flex: 2,
         justifyContent: 'flex-end',
     },
     editIcon: {
@@ -654,10 +678,17 @@ const styles = StyleSheet.create({
         minWidth: 50,
         textAlign: 'right',
     },
-    saveButton: {
+    buttonContainer: {
         marginTop: 20,
+        marginBottom: 20,
+        alignItems: 'center',
+    },
+    saveButton: {
         backgroundColor: '#9C86FC',
         borderRadius: 25,
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        minWidth: 200,
     },
     categoryButton: {
         flex: 1,

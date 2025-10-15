@@ -1,6 +1,7 @@
 const ENV = {
     development: {
         // For mobile device testing with Expo Go, use your computer's IP
+        // apiUrl: 'http://192.168.50.179:3000',
         // For web testing, use:
         apiUrl: 'http://localhost:3000',
     },

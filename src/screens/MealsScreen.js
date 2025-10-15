@@ -504,38 +504,10 @@ const MealsScreen = () => {
             }).length
         }
 
+        if (!showFilters) return null
+
         return (
             <View style={styles.filterSection}>
-                {/* Filter Toggle Button */}
-                <TouchableOpacity
-                    style={styles.filterToggleButton}
-                    onPress={() => setShowFilters(!showFilters)}
-                >
-                    <View style={styles.filterToggleContent}>
-                        <MaterialIcons
-                            name="filter-list"
-                            size={20}
-                            color="#9C86FC"
-                        />
-                        <CustomText style={styles.filterToggleText}>
-                            Suodattimet
-                        </CustomText>
-                        {selectedDietFilters.length > 0 && (
-                            <View style={styles.filterBadge}>
-                                <CustomText style={styles.filterBadgeText}>
-                                    {selectedDietFilters.length}
-                                </CustomText>
-                            </View>
-                        )}
-                    </View>
-                    <MaterialIcons
-                        name={showFilters ? 'expand-less' : 'expand-more'}
-                        size={24}
-                        color="#9C86FC"
-                    />
-                </TouchableOpacity>
-
-                {/* Collapsible Filter Content */}
                 {showFilters && (
                     <View style={styles.filterContainer}>
                         <CustomText style={styles.filterTitle}>
@@ -610,7 +582,9 @@ const MealsScreen = () => {
 
     const renderHeader = () => (
         <View style={styles.headerContainer}>
-            <CustomText style={styles.introText}>
+            <CustomText
+                style={[styles.introText, isDesktop && styles.desktopIntroText]}
+            >
                 Selaa ja hallinnoi aterioitasi. Voit lisätä uusia aterioita ja
                 muokata olemassa olevia.
             </CustomText>
@@ -622,6 +596,28 @@ const MealsScreen = () => {
                     style={styles.primaryButton}
                     textStyle={styles.buttonText}
                 />
+
+                <TouchableOpacity
+                    style={styles.tertiaryButton}
+                    onPress={() => setShowFilters(!showFilters)}
+                >
+                    <MaterialIcons name="filter-list" size={20} color="#000" />
+                    <CustomText style={styles.tertiaryButtonText}>
+                        Suodata
+                    </CustomText>
+                    {selectedDietFilters.length > 0 && (
+                        <View style={styles.filterBadge}>
+                            <CustomText style={styles.filterBadgeText}>
+                                {selectedDietFilters.length}
+                            </CustomText>
+                        </View>
+                    )}
+                    <MaterialIcons
+                        name={showFilters ? 'expand-less' : 'expand-more'}
+                        size={20}
+                        color="#000"
+                    />
+                </TouchableOpacity>
             </View>
 
             {renderDietFilters()}
@@ -709,7 +705,7 @@ const MealsScreen = () => {
     if (isDesktop) {
         return (
             <ResponsiveLayout activeRoute="MealsStack">
-                {content}
+                <View style={styles.desktopContentWrapper}>{content}</View>
             </ResponsiveLayout>
         )
     }
@@ -734,6 +730,10 @@ const styles = StyleSheet.create({
         textAlign: 'left',
         marginBottom: 20,
         maxWidth: '100%',
+    },
+    desktopIntroText: {
+        fontSize: 21,
+        paddingVertical: 16,
     },
     itemContainer: {
         backgroundColor: '#f8f8f8',
@@ -812,6 +812,8 @@ const styles = StyleSheet.create({
         gap: 10,
         marginBottom: 10,
         alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        width: '100%',
     },
     primaryButton: {
         borderRadius: 25,
@@ -821,8 +823,7 @@ const styles = StyleSheet.create({
         paddingRight: 10,
         elevation: 2,
         backgroundColor: '#9C86FC',
-        width: '100%',
-        marginBottom: 10,
+        minWidth: 150,
     },
     buttonText: {
         color: '#000000',
@@ -852,47 +853,45 @@ const styles = StyleSheet.create({
         marginTop: 15,
         marginBottom: 15,
     },
-    filterToggleButton: {
+    tertiaryButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: 15,
-        backgroundColor: '#fff',
-        borderRadius: 12,
+        justifyContent: 'center',
+        paddingTop: 7,
+        paddingBottom: 7,
+        paddingLeft: 10,
+        paddingRight: 10,
+        backgroundColor: 'transparent',
+        borderRadius: 25,
         borderWidth: 2,
         borderColor: '#9C86FC',
-        marginBottom: 10,
+        minHeight: 48,
+        gap: 6,
     },
-    filterToggleContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-    },
-    filterToggleText: {
+    tertiaryButtonText: {
         fontSize: 16,
         fontWeight: 'bold',
-        color: '#9C86FC',
+        color: '#000',
     },
     filterBadge: {
         backgroundColor: '#9C86FC',
-        borderRadius: 12,
-        minWidth: 24,
-        height: 24,
+        borderRadius: 10,
+        minWidth: 20,
+        height: 20,
         justifyContent: 'center',
         alignItems: 'center',
-        paddingHorizontal: 6,
+        paddingHorizontal: 5,
     },
     filterBadgeText: {
         color: '#fff',
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: 'bold',
     },
     filterContainer: {
         padding: 15,
-        backgroundColor: '#f8f9fa',
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#e9ecef',
+        backgroundColor: 'rgb(248, 248, 248)',
+        boxShadow: 'rgba(0, 0, 0, 0.1) 0px 1px 2px',
+        borderRadius: 10,
     },
     filterTitle: {
         fontSize: 16,
@@ -911,18 +910,15 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingVertical: 8,
         borderRadius: 20,
-        backgroundColor: '#fff',
-        borderWidth: 2,
-        borderColor: '#9C86FC',
+        backgroundColor: 'rgb(224, 224, 224)',
         marginBottom: 8,
     },
     filterChipSelected: {
         backgroundColor: '#9C86FC',
-        borderColor: '#9C86FC',
     },
     filterChipText: {
         fontSize: 14,
-        color: '#9C86FC',
+        color: '#000',
         fontWeight: '500',
     },
     filterChipTextSelected: {
@@ -930,11 +926,10 @@ const styles = StyleSheet.create({
     },
     filterChipDisabled: {
         backgroundColor: '#f0f0f0',
-        borderColor: '#ccc',
         opacity: 0.5,
     },
     filterChipTextDisabled: {
-        color: '#999',
+        color: '#666',
     },
     filterChipIcon: {
         marginLeft: 4,
@@ -948,6 +943,12 @@ const styles = StyleSheet.create({
         color: '#9C86FC',
         fontWeight: '600',
         textDecorationLine: 'underline',
+    },
+    desktopContentWrapper: {
+        flex: 1,
+        width: '100%',
+        maxWidth: 960,
+        alignSelf: 'center',
     },
 })
 

@@ -491,10 +491,12 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     desktopIntroText: {
-        fontSize: 18,
+        fontSize: 21,
         textAlign: 'left',
         lineHeight: 26,
         maxWidth: 800,
+        paddingLeft: 0,
+        paddingVertical: 16,
     },
     desktopGrid: {
         flexDirection: 'row',

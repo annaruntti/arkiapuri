@@ -328,12 +328,13 @@ const styles = StyleSheet.create({
         paddingTop: 20,
     },
     desktopIntroText: {
-        fontSize: 22,
+        fontSize: 21,
         lineHeight: 32,
         marginBottom: 20,
         color: '#555',
         textAlign: 'center',
         fontWeight: '400',
+        paddingVertical: 16,
     },
     desktopBottomBoxText: {
         fontSize: 18,

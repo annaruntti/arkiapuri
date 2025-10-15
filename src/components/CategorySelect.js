@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
         marginRight: 40,
     },
     categoryChip: {
-        backgroundColor: '#9C86FC',
+        backgroundColor: 'rgb(224, 224, 224)',
         paddingHorizontal: 8,
         paddingVertical: 4,
         borderRadius: 12,

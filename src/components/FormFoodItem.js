@@ -654,240 +654,254 @@ const FormFoodItem = forwardRef(
 
         const renderForm = () => (
             <View style={styles.formContainer}>
-                <CustomText style={styles.label}>
-                    Elintarvikkeen nimi
-                </CustomText>
-                <Controller
-                    control={control}
-                    rules={{
-                        required: true,
-                    }}
-                    render={({ field: { onChange, onBlur, value } }) => (
-                        <TextInput
-                            style={styles.formInput}
-                            placeholder="Esim. leivinpaperi"
-                            placeholderTextColor="#999"
-                            onBlur={onBlur}
-                            onChangeText={onChange}
-                            value={value}
-                        />
-                    )}
-                    name="name"
-                    {...register('name')}
-                />
-                {errors.name && (
-                    <View style={styles.messageSection}>
-                        <MaterialIcons name="error" color="red" size={14} />
-                        <CustomText style={styles.errorMsg}>
-                            Tämä on pakollinen tieto
+                {/* Row 1: Name and Category */}
+                <View style={styles.formSingleColumn}>
+                    <View style={styles.fullWidth}>
+                        <CustomText style={styles.label}>
+                            Elintarvikkeen nimi
                         </CustomText>
-                    </View>
-                )}
-
-                <CustomText style={styles.label}>
-                    Elintarvikkeen tyyppi
-                </CustomText>
-                <Controller
-                    control={control}
-                    rules={{
-                        maxLength: 100,
-                        required: true,
-                    }}
-                    render={({ field: { value, onChange } }) => (
-                        <InlineCategorySelect
-                            value={value}
-                            onChange={onChange}
-                            categories={categories}
-                            placeholder="Valitse elintarvikkeen kategoriat"
+                        <Controller
+                            control={control}
+                            rules={{
+                                required: true,
+                            }}
+                            render={({
+                                field: { onChange, onBlur, value },
+                            }) => (
+                                <TextInput
+                                    style={styles.formInput}
+                                    placeholder="Esim. leivinpaperi"
+                                    placeholderTextColor="#999"
+                                    onBlur={onBlur}
+                                    onChangeText={onChange}
+                                    value={value}
+                                />
+                            )}
+                            name="name"
+                            {...register('name')}
                         />
-                    )}
-                    name="category"
-                    {...register('category')}
-                />
-                {errors.category && (
-                    <View style={styles.messageSection}>
-                        <MaterialIcons name="error" color="red" size={14} />
-                        <CustomText style={styles.errorMsg}>
-                            Tämä on pakollinen tieto
-                        </CustomText>
-                    </View>
-                )}
-
-                <CustomText style={styles.label}>Kappalemäärä</CustomText>
-                <View style={styles.inputAndIcon}>
-                    <Controller
-                        control={control}
-                        rules={{
-                            required: true,
-                            valueAsNumber: true,
-                            pattern: {
-                                value: /^(0|[1-9]\d*)([.,]\d+)?$/,
-                            },
-                        }}
-                        render={({ field: { onChange, onBlur, value } }) => (
-                            <TextInput
-                                style={styles.quantityFormInput}
-                                placeholder="Esim. 0,5"
-                                placeholderTextColor="#999"
-                                onChangeText={(text) => {
-                                    // Allow empty string or numbers with optional decimal point
-                                    if (
-                                        text === '' ||
-                                        /^(0|[1-9]\d*)([.,]\d+)?$/.test(text)
-                                    ) {
-                                        onChange(text)
-                                    }
-                                }}
-                                onBlur={onBlur}
-                                value={value}
-                                keyboardType="numeric"
-                            />
-                        )}
-                        name="quantity"
-                        {...register('quantity')}
-                    />
-
-                    <Controller
-                        control={control}
-                        rules={{
-                            required: true,
-                        }}
-                        render={({ field: { onChange, value } }) => (
-                            <View style={styles.unitScrollPicker}>
-                                {/* Top scroll indicator */}
-                                <View style={styles.unitScrollIndicatorTop}>
-                                    <MaterialIcons
-                                        name="keyboard-arrow-up"
-                                        size={16}
-                                        color="#999"
-                                    />
-                                </View>
-
-                                <ScrollView
-                                    style={styles.unitScrollView}
-                                    contentContainerStyle={
-                                        styles.unitScrollContent
-                                    }
-                                    showsVerticalScrollIndicator={false}
-                                    snapToInterval={32}
-                                    decelerationRate="fast"
-                                    onMomentumScrollEnd={(event) => {
-                                        const y =
-                                            event.nativeEvent.contentOffset.y
-                                        const index = Math.round(y / 32)
-                                        const selectedUnit =
-                                            unitOptions[index] || unitOptions[0]
-                                        onChange(selectedUnit)
-                                    }}
-                                >
-                                    {unitOptions.map((unit) => (
-                                        <TouchableOpacity
-                                            key={unit}
-                                            style={[
-                                                styles.unitScrollOption,
-                                                value === unit &&
-                                                    styles.unitScrollOptionSelected,
-                                            ]}
-                                            onPress={() => onChange(unit)}
-                                        >
-                                            <CustomText
-                                                style={[
-                                                    styles.unitScrollOptionText,
-                                                    value === unit &&
-                                                        styles.unitScrollOptionTextSelected,
-                                                ]}
-                                            >
-                                                {unit}
-                                            </CustomText>
-                                        </TouchableOpacity>
-                                    ))}
-                                </ScrollView>
-
-                                {/* Bottom scroll indicator */}
-                                <View style={styles.unitScrollIndicatorBottom}>
-                                    <MaterialIcons
-                                        name="keyboard-arrow-down"
-                                        size={16}
-                                        color="#999"
-                                    />
-                                </View>
+                        {errors.name && (
+                            <View style={styles.messageSection}>
+                                <MaterialIcons
+                                    name="error"
+                                    color="red"
+                                    size={14}
+                                />
+                                <CustomText style={styles.errorMsg}>
+                                    Tämä on pakollinen tieto
+                                </CustomText>
                             </View>
                         )}
-                        name="unit"
-                        {...register('unit')}
-                    />
-                </View>
-                {(errors.quantity || errors.unit) && (
-                    <View style={styles.messageSection}>
-                        <MaterialIcons name="error" color="red" size={14} />
-                        <CustomText style={styles.errorMsg}>
-                            Määrä ja yksikkö ovat pakollisia tietoja
-                        </CustomText>
                     </View>
-                )}
 
-                <CustomText style={styles.label}>
-                    Kalorit (per 100g/100ml)
-                </CustomText>
-                <Controller
-                    control={control}
-                    render={({ field: { onChange, onBlur, value } }) => (
-                        <View style={styles.inputAndIcon}>
-                            <TextInput
-                                style={styles.quantityFormInput}
-                                placeholder="Esim. 250"
-                                placeholderTextColor="#999"
-                                onChangeText={onChange}
-                                onBlur={onBlur}
-                                value={value}
-                                keyboardType="numeric"
-                            />
-                            <CustomText style={styles.inputMetric}>
-                                kcal
-                            </CustomText>
-                        </View>
-                    )}
-                    name="calories"
-                />
-                <CustomText style={styles.label}>
-                    Viimeinen käyttöpäivä
-                </CustomText>
-                {Platform.OS === 'web' ? (
-                    <DateTimePicker
-                        testID="dateTimePicker"
-                        value={date}
-                        mode={mode}
-                        display="default"
-                        onChange={(event, selectedDate) => {
-                            if (selectedDate) {
-                                setDate(selectedDate)
-                            }
-                        }}
-                        minimumDate={new Date()}
-                    />
-                ) : (
-                    <>
-                        <View style={styles.inputAndIcon}>
-                            <TouchableOpacity
-                                style={styles.dateInputContainer}
-                                onPress={showMode}
-                            >
-                                <TextInput
-                                    style={styles.dateInput}
-                                    value={formatDate(date)}
-                                    editable={false}
-                                    placeholder="Valitse päivämäärä"
-                                    placeholderTextColor="#999"
+                    <View style={styles.fullWidth}>
+                        <CustomText style={styles.label}>
+                            Elintarvikkeen tyyppi
+                        </CustomText>
+                        <Controller
+                            control={control}
+                            rules={{
+                                maxLength: 100,
+                                required: true,
+                            }}
+                            render={({ field: { value, onChange } }) => (
+                                <InlineCategorySelect
+                                    value={value}
+                                    onChange={onChange}
+                                    categories={categories}
+                                    placeholder="Valitse elintarvikkeen kategoriat"
                                 />
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                onPress={showMode}
-                                style={styles.dateIcon}
-                            >
-                                <Fontisto name="date" size={24} color="#666" />
-                            </TouchableOpacity>
+                            )}
+                            name="category"
+                            {...register('category')}
+                        />
+                        {errors.category && (
+                            <View style={styles.messageSection}>
+                                <MaterialIcons
+                                    name="error"
+                                    color="red"
+                                    size={14}
+                                />
+                                <CustomText style={styles.errorMsg}>
+                                    Tämä on pakollinen tieto
+                                </CustomText>
+                            </View>
+                        )}
+                    </View>
+                </View>
+
+                {/* Row 2: Quantity, Calories, and Date */}
+                <View style={styles.formSingleColumn}>
+                    <View style={styles.fullWidth}>
+                        <CustomText style={styles.label}>
+                            Kappalemäärä
+                        </CustomText>
+                        <View style={styles.inputAndIcon}>
+                            <Controller
+                                control={control}
+                                rules={{
+                                    required: true,
+                                    valueAsNumber: true,
+                                    pattern: {
+                                        value: /^(0|[1-9]\d*)([.,]\d+)?$/,
+                                    },
+                                }}
+                                render={({
+                                    field: { onChange, onBlur, value },
+                                }) => (
+                                    <TextInput
+                                        style={styles.formInput}
+                                        placeholder="Esim. 0,5"
+                                        placeholderTextColor="#999"
+                                        onChangeText={(text) => {
+                                            // Allow empty string or numbers with optional decimal point
+                                            if (
+                                                text === '' ||
+                                                /^(0|[1-9]\d*)([.,]\d+)?$/.test(
+                                                    text
+                                                )
+                                            ) {
+                                                onChange(text)
+                                            }
+                                        }}
+                                        onBlur={onBlur}
+                                        value={value}
+                                        keyboardType="numeric"
+                                    />
+                                )}
+                                name="quantity"
+                                {...register('quantity')}
+                            />
+
+                            <Controller
+                                control={control}
+                                rules={{
+                                    required: true,
+                                }}
+                                render={({ field: { onChange, value } }) => (
+                                    <View style={styles.unitScrollPicker}>
+                                        {/* Top scroll indicator */}
+                                        <View
+                                            style={
+                                                styles.unitScrollIndicatorTop
+                                            }
+                                        >
+                                            <MaterialIcons
+                                                name="keyboard-arrow-up"
+                                                size={16}
+                                                color="#999"
+                                            />
+                                        </View>
+
+                                        <ScrollView
+                                            style={styles.unitScrollView}
+                                            contentContainerStyle={
+                                                styles.unitScrollContent
+                                            }
+                                            showsVerticalScrollIndicator={false}
+                                            snapToInterval={32}
+                                            decelerationRate="fast"
+                                            onMomentumScrollEnd={(event) => {
+                                                const y =
+                                                    event.nativeEvent
+                                                        .contentOffset.y
+                                                const index = Math.round(y / 32)
+                                                const selectedUnit =
+                                                    unitOptions[index] ||
+                                                    unitOptions[0]
+                                                onChange(selectedUnit)
+                                            }}
+                                        >
+                                            {unitOptions.map((unit) => (
+                                                <TouchableOpacity
+                                                    key={unit}
+                                                    style={[
+                                                        styles.unitScrollOption,
+                                                        value === unit &&
+                                                            styles.unitScrollOptionSelected,
+                                                    ]}
+                                                    onPress={() =>
+                                                        onChange(unit)
+                                                    }
+                                                >
+                                                    <CustomText
+                                                        style={[
+                                                            styles.unitScrollOptionText,
+                                                            value === unit &&
+                                                                styles.unitScrollOptionTextSelected,
+                                                        ]}
+                                                    >
+                                                        {unit}
+                                                    </CustomText>
+                                                </TouchableOpacity>
+                                            ))}
+                                        </ScrollView>
+
+                                        {/* Bottom scroll indicator */}
+                                        <View
+                                            style={
+                                                styles.unitScrollIndicatorBottom
+                                            }
+                                        >
+                                            <MaterialIcons
+                                                name="keyboard-arrow-down"
+                                                size={16}
+                                                color="#999"
+                                            />
+                                        </View>
+                                    </View>
+                                )}
+                                name="unit"
+                                {...register('unit')}
+                            />
                         </View>
-                        {show && (
+                        {(errors.quantity || errors.unit) && (
+                            <View style={styles.messageSection}>
+                                <MaterialIcons
+                                    name="error"
+                                    color="red"
+                                    size={14}
+                                />
+                                <CustomText style={styles.errorMsg}>
+                                    Määrä ja yksikkö ovat pakollisia tietoja
+                                </CustomText>
+                            </View>
+                        )}
+                    </View>
+
+                    <View style={styles.fullWidth}>
+                        <CustomText style={styles.label}>
+                            Kalorit (per 100g/100ml)
+                        </CustomText>
+                        <Controller
+                            control={control}
+                            render={({
+                                field: { onChange, onBlur, value },
+                            }) => (
+                                <View style={styles.inputAndIcon}>
+                                    <TextInput
+                                        style={styles.formInput}
+                                        placeholder="Esim. 250"
+                                        placeholderTextColor="#999"
+                                        onChangeText={onChange}
+                                        onBlur={onBlur}
+                                        value={value}
+                                        keyboardType="numeric"
+                                    />
+                                    <CustomText style={styles.inputMetric}>
+                                        kcal
+                                    </CustomText>
+                                </View>
+                            )}
+                            name="calories"
+                        />
+                    </View>
+
+                    <View style={styles.fullWidth}>
+                        <CustomText style={styles.label}>
+                            Viimeinen käyttöpäivä
+                        </CustomText>
+                        {Platform.OS === 'web' ? (
                             <DateTimePicker
                                 testID="dateTimePicker"
                                 value={date}
@@ -897,63 +911,107 @@ const FormFoodItem = forwardRef(
                                     if (selectedDate) {
                                         setDate(selectedDate)
                                     }
-                                    setShow(Platform.OS === 'ios')
                                 }}
                                 minimumDate={new Date()}
                             />
-                        )}
-                    </>
-                )}
-
-                {location === 'shopping-list' && (
-                    <>
-                        <CustomText style={styles.label}>
-                            Arvioitu hinta
-                        </CustomText>
-                        <Controller
-                            control={control}
-                            rules={{
-                                maxLength: 4,
-                                valueAsNumber: true,
-                                pattern: {
-                                    value: /^(0|[1-9]\d*)(\.\d+)?$/,
-                                },
-                            }}
-                            render={({
-                                field: { onChange, onBlur, value },
-                            }) => (
+                        ) : (
+                            <>
                                 <View style={styles.inputAndIcon}>
-                                    <TextInput
-                                        style={styles.quantityFormInput}
-                                        placeholder="Esim. 4"
-                                        placeholderTextColor="#999"
-                                        onChangeText={onChange}
-                                        onBlur={onBlur}
-                                        value={value}
-                                        keyboardType="numeric"
+                                    <TouchableOpacity
+                                        style={styles.dateInputContainer}
+                                        onPress={showMode}
+                                    >
+                                        <TextInput
+                                            style={styles.dateInput}
+                                            value={formatDate(date)}
+                                            editable={false}
+                                            placeholder="Valitse päivämäärä"
+                                            placeholderTextColor="#999"
+                                        />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        onPress={showMode}
+                                        style={styles.dateIcon}
+                                    >
+                                        <Fontisto
+                                            name="date"
+                                            size={24}
+                                            color="#666"
+                                        />
+                                    </TouchableOpacity>
+                                </View>
+                                {show && (
+                                    <DateTimePicker
+                                        testID="dateTimePicker"
+                                        value={date}
+                                        mode={mode}
+                                        display="default"
+                                        onChange={(event, selectedDate) => {
+                                            if (selectedDate) {
+                                                setDate(selectedDate)
+                                            }
+                                            setShow(Platform.OS === 'ios')
+                                        }}
+                                        minimumDate={new Date()}
                                     />
-                                    <CustomText style={styles.inputMetric}>
-                                        €
+                                )}
+                            </>
+                        )}
+                    </View>
+                </View>
+
+                {/* Row 3: Price (if shopping-list) */}
+                {location === 'shopping-list' && (
+                    <View style={styles.formSingleColumn}>
+                        <View style={styles.fullWidth}>
+                            <CustomText style={styles.label}>
+                                Arvioitu hinta
+                            </CustomText>
+                            <Controller
+                                control={control}
+                                rules={{
+                                    maxLength: 4,
+                                    valueAsNumber: true,
+                                    pattern: {
+                                        value: /^(0|[1-9]\d*)(\.\d+)?$/,
+                                    },
+                                }}
+                                render={({
+                                    field: { onChange, onBlur, value },
+                                }) => (
+                                    <View style={styles.inputAndIcon}>
+                                        <TextInput
+                                            style={styles.formInput}
+                                            placeholder="Esim. 4"
+                                            placeholderTextColor="#999"
+                                            onChangeText={onChange}
+                                            onBlur={onBlur}
+                                            value={value}
+                                            keyboardType="numeric"
+                                        />
+                                        <CustomText style={styles.inputMetric}>
+                                            €
+                                        </CustomText>
+                                    </View>
+                                )}
+                                name="price"
+                                {...register('price')}
+                            />
+                            {errors.price && (
+                                <View style={styles.messageSection}>
+                                    <MaterialIcons
+                                        name="error"
+                                        color="red"
+                                        size={14}
+                                    />
+                                    <CustomText style={styles.errorMsg}>
+                                        Täytä arvioitu hinta numerona. Syötä
+                                        vähintään 1 ja maksimissaan 4 lukua.
                                     </CustomText>
                                 </View>
                             )}
-                            name="price"
-                            {...register('price')}
-                        />
-                        {errors.price && (
-                            <View style={styles.messageSection}>
-                                <MaterialIcons
-                                    name="error"
-                                    color="red"
-                                    size={14}
-                                />
-                                <CustomText style={styles.errorMsg}>
-                                    Täytä arvioitu hinta numerona. Syötä
-                                    vähintään 1 ja maksimissaan 4 lukua.
-                                </CustomText>
-                            </View>
-                        )}
-                    </>
+                        </View>
+                    </View>
                 )}
 
                 {showLocationSelector && location === 'meal' && (
@@ -1049,43 +1107,51 @@ const FormFoodItem = forwardRef(
                     </View>
                 )}
 
-                {/* Image picker */}
-                <CustomText style={styles.label}>Tuotteen kuva</CustomText>
-                <TouchableOpacity
-                    style={styles.imagePicker}
-                    onPress={pickImage}
-                >
-                    {foodItemImage ? (
-                        <Image
-                            source={{ uri: foodItemImage.uri }}
-                            style={styles.selectedImage}
-                        />
-                    ) : (
-                        <View style={styles.imagePlaceholder}>
-                            <MaterialIcons
-                                name="add-a-photo"
-                                size={40}
-                                color="#9C86FC"
-                            />
-                            <CustomText style={styles.imagePlaceholderText}>
-                                Lisää kuva
-                            </CustomText>
-                        </View>
-                    )}
-                </TouchableOpacity>
+                {/* Row 4: Image Picker and Submit Button */}
+                <View style={styles.formSingleColumn}>
+                    <View style={styles.fullWidth}>
+                        <CustomText style={styles.label}>
+                            Tuotteen kuva
+                        </CustomText>
+                        <TouchableOpacity
+                            style={styles.imagePicker}
+                            onPress={pickImage}
+                        >
+                            {foodItemImage ? (
+                                <Image
+                                    source={{ uri: foodItemImage.uri }}
+                                    style={styles.selectedImage}
+                                />
+                            ) : (
+                                <View style={styles.imagePlaceholder}>
+                                    <MaterialIcons
+                                        name="add-a-photo"
+                                        size={40}
+                                        color="#9C86FC"
+                                    />
+                                    <CustomText
+                                        style={styles.imagePlaceholderText}
+                                    >
+                                        Lisää kuva
+                                    </CustomText>
+                                </View>
+                            )}
+                        </TouchableOpacity>
+                    </View>
 
-                <View style={styles.buttonContainer}>
-                    <Button
-                        style={[
-                            buttonStyle === 'secondary'
-                                ? styles.secondaryButton
-                                : styles.primaryButton,
-                            isDesktop && styles.desktopButton,
-                        ]}
-                        textStyle={styles.buttonText}
-                        title="Tallenna tuote"
-                        onPress={handleSubmit(handleFormSubmit)}
-                    />
+                    <View style={styles.buttonContainer}>
+                        <Button
+                            style={[
+                                buttonStyle === 'secondary'
+                                    ? styles.secondaryButton
+                                    : styles.primaryButton,
+                                isDesktop && styles.desktopButton,
+                            ]}
+                            textStyle={styles.buttonText}
+                            title="Tallenna tuote"
+                            onPress={handleSubmit(handleFormSubmit)}
+                        />
+                    </View>
                 </View>
             </View>
         )
@@ -1093,6 +1159,7 @@ const FormFoodItem = forwardRef(
         return (
             <ScrollView
                 ref={ref}
+                style={styles.formScrollView}
                 contentContainerStyle={styles.formScroll}
                 showsVerticalScrollIndicator={true}
                 bounces={false}
@@ -1110,9 +1177,20 @@ const styles = StyleSheet.create({
     formContainer: {
         paddingTop: 5,
         paddingBottom: 20,
+        width: '100%',
+    },
+    formSingleColumn: {
+        width: '100%',
+    },
+    fullWidth: {
+        width: '100%',
+    },
+    formScrollView: {
+        width: '100%',
     },
     formScroll: {
         flexGrow: 1,
+        width: '100%',
     },
     label: {
         marginTop: 10,
@@ -1133,19 +1211,8 @@ const styles = StyleSheet.create({
         height: 40,
         padding: 10,
         borderRadius: 4,
-        marginBottom: 5,
         width: '100%',
-    },
-    quantityFormInput: {
-        backgroundColor: 'white',
-        borderColor: '#bbb',
-        borderStyle: 'solid',
-        borderWidth: 1,
-        height: 40,
-        padding: 10,
-        borderRadius: 4,
-        width: 120,
-        flex: 0,
+        flex: 1,
     },
     unitFormInput: {
         backgroundColor: 'white',
@@ -1196,7 +1263,7 @@ const styles = StyleSheet.create({
         width: '100%',
     },
     desktopButton: {
-        maxWidth: 300,
+        width: '100%',
         alignSelf: 'center',
     },
     buttonText: {
@@ -1370,7 +1437,6 @@ const styles = StyleSheet.create({
     },
     unitScrollIndicatorTop: {
         position: 'absolute',
-        top: 2,
         right: 2,
         zIndex: 1,
         padding: 1,
