@@ -1,4 +1,3 @@
-import { useNavigation } from '@react-navigation/native'
 import axios from 'axios'
 import { addDays, format } from 'date-fns'
 import { fi } from 'date-fns/locale'
@@ -32,10 +31,8 @@ const mealTypeTranslations = {
 }
 
 const Table = () => {
-    const navigation = useNavigation()
     const [dates, setDates] = useState([])
     const [mealsByDate, setMealsByDate] = useState({})
-    const [isLoading, setIsLoading] = useState(true)
     const [isModalVisible, setIsModalVisible] = useState(false)
     const [selectedDate, setSelectedDate] = useState(null)
     const [availableMeals, setAvailableMeals] = useState([])
@@ -59,7 +56,6 @@ const Table = () => {
     // Fetch meal data for the dates
     const fetchMealData = async (datesToFetch) => {
         try {
-            setIsLoading(true)
             const token = await storage.getItem('userToken')
 
             // Format dates for filtering
@@ -83,25 +79,40 @@ const Table = () => {
                     mealsByDate[date] = []
                 })
 
-                // Group meals by their planned cooking date
+                // Group meals by their planned eating dates (or cooking date if no eating dates)
                 allMeals.forEach((meal) => {
-                    if (meal.plannedCookingDate) {
-                        const mealDate = format(
-                            new Date(meal.plannedCookingDate),
-                            'yyyy-MM-dd'
-                        )
-                        if (mealsByDate.hasOwnProperty(mealDate)) {
-                            mealsByDate[mealDate].push(meal)
-                        }
+                    // Use plannedEatingDates if available and not empty, otherwise fall back to plannedCookingDate
+                    let datesToDisplay = []
+
+                    if (
+                        meal.plannedEatingDates &&
+                        Array.isArray(meal.plannedEatingDates) &&
+                        meal.plannedEatingDates.length > 0
+                    ) {
+                        // Use eating dates
+                        datesToDisplay = meal.plannedEatingDates
+                    } else if (meal.plannedCookingDate) {
+                        // Fall back to cooking date
+                        datesToDisplay = [meal.plannedCookingDate]
                     }
+
+                    datesToDisplay.forEach((dateValue) => {
+                        if (dateValue) {
+                            const mealDate = format(
+                                new Date(dateValue),
+                                'yyyy-MM-dd'
+                            )
+                            if (mealsByDate.hasOwnProperty(mealDate)) {
+                                mealsByDate[mealDate].push(meal)
+                            }
+                        }
+                    })
                 })
 
                 setMealsByDate(mealsByDate)
             }
         } catch (error) {
             console.error('Error fetching meal data:', error)
-        } finally {
-            setIsLoading(false)
         }
     }
 
@@ -133,7 +144,7 @@ const Table = () => {
             const formattedDate = new Date(selectedDate).toISOString()
 
             // Use PUT with the meal._id
-            const response = await axios.put(
+            await axios.put(
                 getServerUrl(`/meals/${meal._id}`),
                 {
                     plannedCookingDate: formattedDate,
@@ -201,6 +212,7 @@ const Table = () => {
                     ? updatedMeal.defaultRoles
                     : [updatedMeal.defaultRoles?.toString() || 'dinner'],
                 plannedCookingDate: updatedMeal.plannedCookingDate,
+                plannedEatingDates: updatedMeal.plannedEatingDates || [],
                 recipe: updatedMeal.recipe || '',
                 // Keep existing food items unchanged for now
                 foodItems:

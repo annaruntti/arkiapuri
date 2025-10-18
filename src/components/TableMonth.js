@@ -92,17 +92,34 @@ const TableMonth = () => {
                     mealsByDateObj[dateStr] = []
                 })
 
-                // Group meals by their planned cooking date
+                // Group meals by their planned eating dates (or cooking date if no eating dates)
                 allMeals.forEach((meal) => {
-                    if (meal.plannedCookingDate) {
-                        const mealDate = format(
-                            new Date(meal.plannedCookingDate),
-                            'yyyy-MM-dd'
-                        )
-                        if (mealsByDateObj.hasOwnProperty(mealDate)) {
-                            mealsByDateObj[mealDate].push(meal)
-                        }
+                    // Use plannedEatingDates if available and not empty, otherwise fall back to plannedCookingDate
+                    let datesToDisplay = []
+
+                    if (
+                        meal.plannedEatingDates &&
+                        Array.isArray(meal.plannedEatingDates) &&
+                        meal.plannedEatingDates.length > 0
+                    ) {
+                        // Use eating dates
+                        datesToDisplay = meal.plannedEatingDates
+                    } else if (meal.plannedCookingDate) {
+                        // Fall back to cooking date
+                        datesToDisplay = [meal.plannedCookingDate]
                     }
+
+                    datesToDisplay.forEach((dateValue) => {
+                        if (dateValue) {
+                            const mealDate = format(
+                                new Date(dateValue),
+                                'yyyy-MM-dd'
+                            )
+                            if (mealsByDateObj.hasOwnProperty(mealDate)) {
+                                mealsByDateObj[mealDate].push(meal)
+                            }
+                        }
+                    })
                 })
 
                 setMealsByDate(mealsByDateObj)
@@ -204,6 +221,7 @@ const TableMonth = () => {
                     ? updatedMeal.defaultRoles
                     : [updatedMeal.defaultRoles?.toString() || 'dinner'],
                 plannedCookingDate: updatedMeal.plannedCookingDate,
+                plannedEatingDates: updatedMeal.plannedEatingDates || [],
                 recipe: updatedMeal.recipe || '',
                 foodItems:
                     updatedMeal.foodItems?.map((item) => item._id || item) ||
