@@ -54,13 +54,8 @@ const MealsScreen = () => {
     // A meal qualifies if ALL its food items have that category
     const getMealDietaryCategories = (meal) => {
         if (!meal.foodItems || meal.foodItems.length === 0) {
-            console.log(`Meal "${meal.name}" has no foodItems`)
             return []
         }
-
-        console.log(
-            `Checking meal "${meal.name}" with ${meal.foodItems.length} food items`
-        )
 
         const qualifiedCategories = []
 
@@ -72,10 +67,6 @@ const MealsScreen = () => {
             const allItemsHaveCategory = meal.foodItems.every((foodItem) => {
                 // Check if foodItem is just an ID (not populated)
                 if (typeof foodItem === 'string' || !foodItem.category) {
-                    console.log(
-                        `Food item is not populated (ID only or no category):`,
-                        foodItem
-                    )
                     return false
                 }
 
@@ -86,26 +77,14 @@ const MealsScreen = () => {
                     // Compare both as ID and as name
                     return catStr === categoryId || catStr === categoryName
                 })
-
-                console.log(
-                    `  Item "${foodItem.name}" has ${categoryName} (${categoryId}):`,
-                    hasCategory
-                )
                 return hasCategory
             })
 
             if (allItemsHaveCategory) {
-                console.log(
-                    `  ✓ Meal qualifies for: ${dietCategory.name} (${categoryId})`
-                )
                 qualifiedCategories.push(categoryId)
             }
         })
 
-        console.log(
-            `Meal "${meal.name}" qualified categories:`,
-            qualifiedCategories
-        )
         return qualifiedCategories
     }
 
@@ -191,10 +170,6 @@ const MealsScreen = () => {
                 },
             })
             if (response.data.success) {
-                console.log(
-                    'Fetched meals:',
-                    JSON.stringify(response.data.meals, null, 2)
-                )
                 setMeals(response.data.meals)
             }
         } catch (error) {
@@ -438,9 +413,6 @@ const MealsScreen = () => {
                     'Meal not found or unauthorized. Meal ID:',
                     mealId
                 )
-                console.error('Error response:', error.response?.data)
-                console.error('Request config:', error.config)
-                console.error('Full error:', error)
             }
         }
     }

@@ -56,7 +56,6 @@ const AddMealForm = ({ onSubmit }) => {
                 },
             })
             if (response.data.success) {
-                setShoppingLists(response.data.shoppingLists)
                 if (response.data.shoppingLists.length === 1) {
                     setSelectedShoppingListId(
                         response.data.shoppingLists[0]._id
@@ -198,8 +197,6 @@ const AddMealForm = ({ onSubmit }) => {
             }
         } catch (error) {
             console.error('Error uploading meal image:', error)
-            console.error('Error response:', error.response?.data)
-            console.error('Error status:', error.response?.status)
             throw error
         }
     }
@@ -912,19 +909,21 @@ const AddMealForm = ({ onSubmit }) => {
                             />
 
                             {showEatingDatePicker && (
-                                <DateTimePicker
-                                    value={
-                                        editingEatingDateIndex !== null
-                                            ? plannedEatingDates[
-                                                  editingEatingDateIndex
-                                              ]
-                                            : new Date()
-                                    }
-                                    mode="date"
-                                    display="default"
-                                    onChange={handleEatingDateChange}
-                                    minimumDate={new Date()}
-                                />
+                                <View style={styles.datePickerContainer}>
+                                    <DateTimePicker
+                                        value={
+                                            editingEatingDateIndex !== null
+                                                ? plannedEatingDates[
+                                                      editingEatingDateIndex
+                                                  ]
+                                                : new Date()
+                                        }
+                                        mode="date"
+                                        display="default"
+                                        onChange={handleEatingDateChange}
+                                        minimumDate={new Date()}
+                                    />
+                                </View>
                             )}
                         </View>
 
@@ -1388,7 +1387,7 @@ const styles = StyleSheet.create({
     },
     eatingDatesContainer: {
         marginBottom: 15,
-        padding: 10,
+        padding: 15,
         backgroundColor: '#f8f8f8',
         borderRadius: 8,
     },
@@ -1418,6 +1417,10 @@ const styles = StyleSheet.create({
     },
     removeDateButton: {
         padding: 4,
+    },
+    datePickerContainer: {
+        marginTop: 10,
+        marginLeft: -10,
     },
 })
 

@@ -47,6 +47,7 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
     const [showDatePicker, setShowDatePicker] = useState(false)
     const [showEatingDatePicker, setShowEatingDatePicker] = useState(false)
     const [editingEatingDateIndex, setEditingEatingDateIndex] = useState(null)
+    const [plannedEatingDates, setPlannedEatingDates] = useState([])
     const [editingFoodItem, setEditingFoodItem] = useState(null)
     const [activeTab, setActiveTab] = useState('ingredients')
     const [showFoodItemForm, setShowFoodItemForm] = useState(false)
@@ -59,6 +60,7 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                 ...meal,
                 foodItems: [...meal.foodItems],
             })
+            setPlannedEatingDates(meal.plannedEatingDates || [])
         }
     }, [meal])
 
@@ -677,7 +679,7 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                                             <CustomText
                                                 style={styles.imageActionText}
                                             >
-                                                Change
+                                                Vaihda
                                             </CustomText>
                                         </TouchableOpacity>
                                         <TouchableOpacity
@@ -693,7 +695,7 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                                             <CustomText
                                                 style={styles.imageActionText}
                                             >
-                                                Remove
+                                                Poista
                                             </CustomText>
                                         </TouchableOpacity>
                                     </View>
@@ -810,7 +812,7 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                             )}
 
                             {/* Planned Eating Dates Section */}
-                            <View style={styles.detailRow}>
+                            <View style={styles.eatingDatesContainer}>
                                 <CustomText style={styles.label}>
                                     Suunnitellut syöntipäivät
                                 </CustomText>
@@ -875,42 +877,58 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                                             ))}
                                         </View>
                                     ) : (
-                                        <CustomText
-                                            style={styles.emptyDatesText}
-                                        >
-                                            Ei lisättyjä syöntipäiviä (käytetään
-                                            valmistuspäivää)
-                                        </CustomText>
+                                        <View style={styles.emptyDatesRow}>
+                                            <CustomText
+                                                style={styles.emptyDatesText}
+                                            >
+                                                Ei lisättyjä syöntipäiviä
+                                                (käytetään valmistuspäivää)
+                                            </CustomText>
+                                            <Button
+                                                title="+ Lisää syöntipäivä"
+                                                onPress={addEatingDate}
+                                                type="TERTIARY"
+                                                size="small"
+                                            />
+                                        </View>
                                     )}
 
-                                    <Button
-                                        title="+ Lisää syöntipäivä"
-                                        onPress={addEatingDate}
-                                        style={styles.addDateButton}
-                                        textStyle={styles.addDateButtonText}
-                                    />
+                                    {plannedEatingDates.length > 0 && (
+                                        <Button
+                                            title="+ Lisää syöntipäivä"
+                                            onPress={addEatingDate}
+                                            type="TERTIARY"
+                                            size="small"
+                                        />
+                                    )}
 
                                     {showEatingDatePicker && (
-                                        <DateTimePicker
-                                            value={
-                                                editingEatingDateIndex !==
-                                                    null &&
-                                                editedValues
-                                                    .plannedEatingDates?.[
-                                                    editingEatingDateIndex
-                                                ]
-                                                    ? new Date(
-                                                          editedValues.plannedEatingDates[
-                                                              editingEatingDateIndex
-                                                          ]
-                                                      )
-                                                    : new Date()
-                                            }
-                                            mode="date"
-                                            display="default"
-                                            onChange={handleEatingDateChange}
-                                            minimumDate={new Date()}
-                                        />
+                                        <View
+                                            style={styles.datePickerContainer}
+                                        >
+                                            <DateTimePicker
+                                                value={
+                                                    editingEatingDateIndex !==
+                                                        null &&
+                                                    editedValues
+                                                        .plannedEatingDates?.[
+                                                        editingEatingDateIndex
+                                                    ]
+                                                        ? new Date(
+                                                              editedValues.plannedEatingDates[
+                                                                  editingEatingDateIndex
+                                                              ]
+                                                          )
+                                                        : new Date()
+                                                }
+                                                mode="date"
+                                                display="default"
+                                                onChange={
+                                                    handleEatingDateChange
+                                                }
+                                                minimumDate={new Date()}
+                                            />
+                                        </View>
                                     )}
                                 </View>
                             </View>
@@ -1369,23 +1387,26 @@ const styles = StyleSheet.create({
     removeDateButton: {
         padding: 4,
     },
+    eatingDatesContainer: {
+        paddingTop: 10,
+        marginBottom: 15,
+    },
+    datePickerContainer: {
+        marginTop: 5,
+        marginLeft: -10,
+    },
+    emptyDatesRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 10,
+    },
     emptyDatesText: {
         fontSize: 14,
         color: '#999',
         fontStyle: 'italic',
-        marginBottom: 10,
-    },
-    addDateButton: {
-        backgroundColor: '#38E4D9',
-        borderRadius: 8,
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        alignSelf: 'flex-start',
-    },
-    addDateButtonText: {
-        color: '#000',
-        fontSize: 14,
-        fontWeight: '600',
+        flex: 1,
+        marginRight: 10,
     },
 })
 
