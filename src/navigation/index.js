@@ -217,13 +217,14 @@ const UserProfile = ({ isActive = false }) => {
 
 const styles = StyleSheet.create({
     iconButton: {
-        paddingRight: 0,
-        marginRight: -48,
-        marginLeft: -10,
+        paddingRight: Platform.OS === 'web' ? 8 : 0,
+        marginRight: Platform.OS === 'web' ? 16 : -48,
+        marginLeft: Platform.OS === 'web' ? 0 : -10,
     },
     backButton: {
-        marginLeft: -10,
-        paddingRight: 0,
+        marginLeft: Platform.OS === 'web' ? 8 : 5,
+        paddingRight: Platform.OS === 'web' ? 8 : 0,
+        marginRight: Platform.OS === 'web' ? 0 : 0,
     },
 })
 

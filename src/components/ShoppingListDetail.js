@@ -563,7 +563,13 @@ const ShoppingListDetail = ({
 
                     {/* Sticky search section */}
                     <View style={styles.stickySearchSection}>
-                        <View style={styles.searchAndAddContainer}>
+                        <View
+                            style={
+                                isDesktop
+                                    ? styles.searchAndAddContainerDesktop
+                                    : styles.searchAndAddContainerMobile
+                            }
+                        >
                             <View style={styles.searchContainer}>
                                 <UnifiedFoodSearch
                                     onSelectItem={handleSearchItemSelect}
@@ -585,6 +591,10 @@ const ShoppingListDetail = ({
                                 />
                             </View>
                         </View>
+                    </View>
+
+                    {/* Items list container */}
+                    <View style={styles.itemsListContainer}>
                         <View style={styles.stats}>
                             <CustomText>
                                 Tuotteita: {shoppingList.items?.length || 0} kpl
@@ -605,10 +615,6 @@ const ShoppingListDetail = ({
                                 €
                             </CustomText>
                         </View>
-                    </View>
-
-                    {/* Items list container */}
-                    <View style={styles.itemsListContainer}>
                         <SectionList
                             sections={itemSections}
                             renderItem={renderItem}
@@ -840,6 +846,7 @@ const styles = StyleSheet.create({
     buttonContainer: {
         width: '100%',
         marginTop: 10,
+        marginBottom: 30,
     },
     addItemButtonsContainer: {
         flexDirection: 'row',
@@ -867,14 +874,27 @@ const styles = StyleSheet.create({
     },
     infoText: {
         paddingTop: 10,
-        marginBottom: 20,
+        marginBottom: 10,
         fontSize: 14,
         textAlign: 'left',
     },
-    searchAndAddContainer: {
+    searchAndAddContainerDesktop: {
         flexDirection: 'row',
         alignItems: 'flex-start',
         gap: 10,
+        marginBottom: 15,
+        backgroundColor: 'rgb(248, 248, 248)',
+        borderRadius: 10,
+        padding: 15,
+        boxShadow: 'rgba(0, 0, 0, 0.1) 0px 1px 2px',
+        elevation: 2,
+        zIndex: 9998,
+        position: 'relative',
+    },
+    searchAndAddContainerMobile: {
+        flexDirection: 'column',
+        alignItems: 'stretch',
+        gap: 15,
         marginBottom: 15,
         backgroundColor: 'rgb(248, 248, 248)',
         borderRadius: 10,

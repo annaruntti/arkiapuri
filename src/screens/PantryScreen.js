@@ -641,6 +641,10 @@ const PantryScreen = ({}) => {
                                     />
                                 </View>
                             </View>
+                        </View>
+
+                        {/* Product list container */}
+                        <View style={styles.productListContainer}>
                             <View style={styles.stats}>
                                 <CustomText>
                                     Tuotteita:{' '}
@@ -649,10 +653,6 @@ const PantryScreen = ({}) => {
                                         : `${pantryItems?.length || 0} kpl`}
                                 </CustomText>
                             </View>
-                        </View>
-
-                        {/* Product list container */}
-                        <View style={styles.productListContainer}>
                             <SectionList
                                 sections={pantryItemSections}
                                 renderItem={renderItem}

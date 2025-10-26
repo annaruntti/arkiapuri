@@ -28,7 +28,7 @@ import UnifiedFoodSearch from './UnifiedFoodSearch'
 
 import Info from './Info'
 
-const AddMealForm = ({ onSubmit, onClose }) => {
+const AddMealForm = ({ onSubmit }) => {
     const { profile } = useLogin()
     const { isDesktop } = useResponsiveDimensions()
     const [name, setName] = useState('')
@@ -43,7 +43,6 @@ const AddMealForm = ({ onSubmit, onClose }) => {
     const [showDatePicker, setShowDatePicker] = useState(false)
     const [showEatingDatePicker, setShowEatingDatePicker] = useState(false)
     const [editingEatingDateIndex, setEditingEatingDateIndex] = useState(null)
-    const [shoppingLists, setShoppingLists] = useState([])
     const [selectedShoppingListId, setSelectedShoppingListId] = useState(null)
     const [showItemForm, setShowItemForm] = useState(false)
     const [mealImage, setMealImage] = useState(null)
