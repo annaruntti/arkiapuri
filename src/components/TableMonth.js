@@ -1,3 +1,4 @@
+import { MaterialIcons } from '@expo/vector-icons'
 import axios from 'axios'
 import {
     addDays,
@@ -14,6 +15,7 @@ import React, { useEffect, useState } from 'react'
 import {
     Alert,
     Image,
+    Platform,
     ScrollView,
     SectionList,
     StyleSheet,
@@ -107,7 +109,7 @@ const TableMonth = () => {
     }
 
     // Fetch meal data for the month dates
-    const fetchMealData = async (datesToFetch) => {
+    const fetchMealData = async (datesToFetch, debugMealId = null) => {
         try {
             setIsLoading(true)
             const token = await storage.getItem('userToken')
@@ -258,10 +260,127 @@ const TableMonth = () => {
         setSelectedDates([])
     }
 
+    const removeMealFromDate = async (meal, date) => {
+        try {
+            // Get current plannedEatingDates
+            const currentDates = meal.plannedEatingDates || []
+
+            // If meal has no plannedEatingDates, it's using plannedCookingDate
+            if (currentDates.length === 0 && meal.plannedCookingDate) {
+                const cookingDate = format(
+                    new Date(meal.plannedCookingDate),
+                    'yyyy-MM-dd'
+                )
+                const targetDate = format(date, 'yyyy-MM-dd')
+
+                // If trying to remove the cooking date, set plannedEatingDates to empty array
+                if (cookingDate === targetDate) {
+                    await updateMealDates(meal._id, [])
+                    return
+                } else {
+                    // Date doesn't match cooking date, nothing to remove
+                    return
+                }
+            }
+
+            // Remove the specific date from the array
+            const updatedDates = currentDates.filter((dateStr) => {
+                const mealDate = format(new Date(dateStr), 'yyyy-MM-dd')
+                const targetDate = format(date, 'yyyy-MM-dd')
+                return mealDate !== targetDate
+            })
+
+            // Update with remaining dates (or empty array if no dates left)
+            await updateMealDates(meal._id, updatedDates)
+        } catch (error) {
+            console.error('Error removing meal from date:', error)
+        }
+    }
+
+    const updateMealDates = async (mealId, newDates) => {
+        try {
+            const token = await storage.getItem('userToken')
+
+            await axios.put(
+                getServerUrl(`/meals/${mealId}`),
+                {
+                    plannedEatingDates: newDates,
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+            )
+
+            // Refresh the meal data
+            await fetchMealData(monthDates, mealId)
+        } catch (error) {
+            console.error('Error updating meal dates:', error)
+            if (Platform.OS === 'web') {
+                alert('Virhe: Aterian päivitys epäonnistui')
+            } else {
+                Alert.alert('Virhe', 'Aterian päivitys epäonnistui')
+            }
+        }
+    }
+
+    const deleteMealCompletely = async (mealId) => {
+        try {
+            const token = await storage.getItem('userToken')
+
+            await axios.delete(getServerUrl(`/meals/${mealId}`), {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            })
+
+            // Refresh the meal data
+            generateMonthDates(currentMonth)
+        } catch (error) {
+            console.error('Error deleting meal:', error)
+            Alert.alert('Virhe', 'Aterian poistaminen epäonnistui')
+        }
+    }
+
     const handleCloseDetail = () => {
         setDetailModalVisible(false)
         setSelectedMeal(null)
     }
+
+    const renderMealItemWithRemove = (meal, date) => (
+        <View style={styles.mealItemContainer}>
+            <View style={styles.imageAndButtonRow}>
+                <Image
+                    source={{
+                        uri: meal.image?.url || PLACEHOLDER_IMAGE_URL,
+                    }}
+                    style={styles.mealImage}
+                    resizeMode="cover"
+                />
+                <TouchableOpacity
+                    style={styles.deleteButton}
+                    onPress={(e) => {
+                        e.stopPropagation()
+                        removeMealFromDate(meal, date)
+                    }}
+                    activeOpacity={0.7}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                    <MaterialIcons name="delete" size={14} color="#666" />
+                </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+                style={styles.mealNameContainer}
+                onPress={() => handleMealPress(meal)}
+            >
+                <CustomText style={styles.mealText} numberOfLines={2}>
+                    {meal.name}
+                </CustomText>
+            </TouchableOpacity>
+        </View>
+    )
 
     const handleMealUpdate = async (mealId, updatedMeal) => {
         try {
@@ -331,27 +450,9 @@ const TableMonth = () => {
                 </View>
                 <View style={styles.mealsContainer}>
                     {meals.slice(0, 2).map((meal, index) => (
-                        <TouchableOpacity
-                            key={meal._id}
-                            style={styles.mealItem}
-                            onPress={() => handleMealPress(meal)}
-                        >
-                            <Image
-                                source={{
-                                    uri:
-                                        meal.image?.url ||
-                                        PLACEHOLDER_IMAGE_URL,
-                                }}
-                                style={styles.mealImage}
-                                resizeMode="cover"
-                            />
-                            <CustomText
-                                style={styles.mealText}
-                                numberOfLines={2}
-                            >
-                                {meal.name}
-                            </CustomText>
-                        </TouchableOpacity>
+                        <View key={meal._id}>
+                            {renderMealItemWithRemove(meal, date)}
+                        </View>
                     ))}
                     {meals.length > 2 && (
                         <TouchableOpacity
@@ -812,6 +913,46 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#666',
         marginTop: 4,
+    },
+    mealItemContainer: {
+        backgroundColor: '#fff',
+        padding: 8,
+        borderRadius: 8,
+        marginBottom: 4,
+        flexDirection: 'column',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 2,
+    },
+    imageAndButtonRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 4,
+    },
+    mealNameContainer: {
+        width: '100%',
+    },
+    deleteButton: {
+        backgroundColor: '#e0e0e0',
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.2,
+        shadowRadius: 1.41,
     },
 })
 
