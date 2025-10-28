@@ -207,7 +207,7 @@ const HomeScreen = () => {
                 // Mobile Static Wave
                 <View style={styles.svgContainer}>
                     <Svg
-                        height={80}
+                        height={81}
                         width="100%"
                         viewBox="0 0 1440 320"
                         preserveAspectRatio="none"
@@ -341,8 +341,8 @@ const styles = StyleSheet.create({
     },
     homeViewTop: {
         backgroundColor: '#fff',
-        paddingHorizontal: 20,
-        paddingTop: 20,
+        paddingHorizontal: 25,
+        paddingTop: 25,
         paddingBottom: 0,
     },
     header: {
@@ -351,16 +351,16 @@ const styles = StyleSheet.create({
     },
     svgContainer: {
         width: '100%',
-        height: 80,
-        minHeight: 80,
+        height: 81,
+        minHeight: 81,
         backgroundColor: 'transparent',
         zIndex: 1,
     },
     linkAreaGradient: {
         flex: 1,
-        justifyContent: 'flex-start',
         paddingTop: 25,
         paddingBottom: 30,
+        justifyContent: 'center',
     },
     tabletSvgContainer: {
         width: '100%',

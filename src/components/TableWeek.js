@@ -6,6 +6,7 @@ import {
     Alert,
     FlatList,
     Image,
+    SectionList,
     StyleSheet,
     TouchableOpacity,
     View,
@@ -30,11 +31,47 @@ const mealTypeTranslations = {
     other: 'Muu',
 }
 
+// Group meals by their default roles
+const groupMealsByCategory = (meals) => {
+    const grouped = {}
+
+    meals.forEach((meal) => {
+        const roles = meal.defaultRoles || ['other']
+        roles.forEach((role) => {
+            if (!grouped[role]) {
+                grouped[role] = []
+            }
+            grouped[role].push(meal)
+        })
+    })
+
+    // Sort categories by predefined order
+    const categoryOrder = [
+        'breakfast',
+        'lunch',
+        'snack',
+        'dinner',
+        'supper',
+        'dessert',
+        'other',
+    ]
+    const sortedGrouped = {}
+
+    categoryOrder.forEach((category) => {
+        if (grouped[category] && grouped[category].length > 0) {
+            sortedGrouped[category] = grouped[category]
+        }
+    })
+
+    return sortedGrouped
+}
+
 const Table = () => {
     const [dates, setDates] = useState([])
     const [mealsByDate, setMealsByDate] = useState({})
     const [isModalVisible, setIsModalVisible] = useState(false)
     const [selectedDate, setSelectedDate] = useState(null)
+    const [selectedDates, setSelectedDates] = useState([])
     const [availableMeals, setAvailableMeals] = useState([])
     const [selectedMeal, setSelectedMeal] = useState(null)
     const [detailModalVisible, setDetailModalVisible] = useState(false)
@@ -130,6 +167,8 @@ const Table = () => {
                 const availableMeals = response.data.meals
                 setAvailableMeals(availableMeals)
                 setSelectedDate(date)
+                // Always start fresh with the clicked date
+                setSelectedDates([date])
                 setIsModalVisible(true)
             }
         } catch (error) {
@@ -141,13 +180,17 @@ const Table = () => {
     const handleSelectMeal = async (meal) => {
         try {
             const token = await storage.getItem('userToken')
-            const formattedDate = new Date(selectedDate).toISOString()
+            const formattedDates = selectedDates.map(
+                (date) =>
+                    new Date(date).toISOString().split('T')[0] +
+                    'T00:00:00.000Z'
+            )
 
             // Use PUT with the meal._id
-            await axios.put(
+            const response = await axios.put(
                 getServerUrl(`/meals/${meal._id}`),
                 {
-                    plannedCookingDate: formattedDate,
+                    plannedEatingDates: formattedDates,
                 },
                 {
                     headers: {
@@ -162,10 +205,11 @@ const Table = () => {
             setIsModalVisible(false)
 
             // Show success message
-            Alert.alert(
-                'Onnistui',
-                'Ateria lisätty päivälle ' + format(selectedDate, 'd.M.yyyy')
-            )
+            const dateText =
+                selectedDates.length === 1
+                    ? format(selectedDates[0], 'd.M.yyyy')
+                    : `${selectedDates.length} päivälle`
+            Alert.alert('Onnistui', `Ateria lisätty ${dateText}`)
         } catch (error) {
             console.error('Error updating meal:', error.response?.data || error)
             if (error.response?.status === 404) {
@@ -186,6 +230,21 @@ const Table = () => {
     const handleMealPress = (meal) => {
         setSelectedMeal(meal)
         setDetailModalVisible(true)
+    }
+
+    const toggleDateSelection = (date) => {
+        setSelectedDates((prev) => {
+            const isSelected = prev.some((d) => d.getTime() === date.getTime())
+            if (isSelected) {
+                return prev.filter((d) => d.getTime() !== date.getTime())
+            } else {
+                return [...prev, date]
+            }
+        })
+    }
+
+    const clearDateSelection = () => {
+        setSelectedDates([])
     }
 
     const handleCloseDetail = () => {
@@ -327,10 +386,57 @@ const Table = () => {
     const renderMealSelectModal = () => (
         <ResponsiveModal
             visible={isModalVisible}
-            onClose={() => setIsModalVisible(false)}
-            title={`Valitse ateria päivälle ${selectedDate ? format(selectedDate, 'd.M.yyyy') : ''}`}
+            onClose={() => {
+                setIsModalVisible(false)
+                setSelectedDates([]) // Clear selected dates when modal closes
+            }}
+            title={`Valitse ateria ja päivät`}
             maxWidth={700}
         >
+            {/* Date Selection Section */}
+            <View style={styles.dateSelectionContainer}>
+                <CustomText style={styles.dateSelectionTitle}>
+                    Valitse päivät ({selectedDates.length} valittu)
+                </CustomText>
+                <View style={styles.dateGrid}>
+                    {dates.map((date) => {
+                        const isSelected = selectedDates.some(
+                            (d) => d.getTime() === date.getTime()
+                        )
+                        return (
+                            <TouchableOpacity
+                                key={date.toISOString()}
+                                style={[
+                                    styles.dateButton,
+                                    isSelected && styles.selectedDateButton,
+                                ]}
+                                onPress={() => toggleDateSelection(date)}
+                            >
+                                <CustomText
+                                    style={[
+                                        styles.dateButtonText,
+                                        isSelected &&
+                                            styles.selectedDateButtonText,
+                                    ]}
+                                >
+                                    {format(date, 'd.M')}
+                                </CustomText>
+                            </TouchableOpacity>
+                        )
+                    })}
+                </View>
+                {selectedDates.length > 0 && (
+                    <TouchableOpacity
+                        style={styles.clearDatesButton}
+                        onPress={clearDateSelection}
+                    >
+                        <CustomText style={styles.clearDatesButtonText}>
+                            Tyhjennä valinnat
+                        </CustomText>
+                    </TouchableOpacity>
+                )}
+            </View>
+
             {availableMeals.length === 0 ? (
                 <View style={styles.noMealsContainer}>
                     <CustomText style={styles.noMealsText}>
@@ -338,39 +444,71 @@ const Table = () => {
                     </CustomText>
                 </View>
             ) : (
-                <FlatList
-                    data={availableMeals}
-                    renderItem={({ item }) => (
-                        <TouchableOpacity
-                            style={styles.modalMealItem}
-                            onPress={() => handleSelectMeal(item)}
-                        >
-                            <Image
-                                source={{
-                                    uri:
-                                        item.image?.url ||
-                                        PLACEHOLDER_IMAGE_URL,
-                                }}
-                                style={styles.modalMealImage}
-                                resizeMode="cover"
-                            />
-                            <View style={styles.modalMealTextContainer}>
-                                <CustomText style={styles.modalMealName}>
-                                    {item.name}
-                                </CustomText>
-                                <CustomText style={styles.modalMealType}>
-                                    {item.defaultRoles?.[0]
-                                        ? mealTypeTranslations[
-                                              item.defaultRoles[0]
-                                          ] || item.defaultRoles[0]
-                                        : 'Ateria'}
-                                </CustomText>
-                            </View>
-                        </TouchableOpacity>
-                    )}
-                    keyExtractor={(item) => item._id}
-                    contentContainerStyle={styles.modalList}
-                />
+                (() => {
+                    const groupedMeals = groupMealsByCategory(availableMeals)
+                    const sections = Object.entries(groupedMeals).map(
+                        ([category, meals]) => ({
+                            title: mealTypeTranslations[category] || category,
+                            data: meals,
+                        })
+                    )
+
+                    return (
+                        <SectionList
+                            sections={sections}
+                            renderItem={({ item }) => (
+                                <TouchableOpacity
+                                    style={[
+                                        styles.modalMealItem,
+                                        selectedDates.length === 0 &&
+                                            styles.disabledMealItem,
+                                    ]}
+                                    onPress={() =>
+                                        selectedDates.length > 0
+                                            ? handleSelectMeal(item)
+                                            : null
+                                    }
+                                    disabled={selectedDates.length === 0}
+                                >
+                                    <Image
+                                        source={{
+                                            uri:
+                                                item.image?.url ||
+                                                PLACEHOLDER_IMAGE_URL,
+                                        }}
+                                        style={styles.modalMealImage}
+                                        resizeMode="cover"
+                                    />
+                                    <View style={styles.modalMealTextContainer}>
+                                        <CustomText
+                                            style={styles.modalMealName}
+                                        >
+                                            {item.name}
+                                        </CustomText>
+                                        <CustomText
+                                            style={styles.modalMealType}
+                                        >
+                                            {item.defaultRoles?.[0]
+                                                ? mealTypeTranslations[
+                                                      item.defaultRoles[0]
+                                                  ] || item.defaultRoles[0]
+                                                : 'Ateria'}
+                                        </CustomText>
+                                    </View>
+                                </TouchableOpacity>
+                            )}
+                            renderSectionHeader={({ section: { title } }) => (
+                                <View style={styles.sectionHeader}>
+                                    <CustomText style={styles.sectionTitle}>
+                                        {title}
+                                    </CustomText>
+                                </View>
+                            )}
+                            keyExtractor={(item) => item._id}
+                            contentContainerStyle={styles.modalList}
+                        />
+                    )
+                })()
             )}
         </ResponsiveModal>
     )
@@ -564,6 +702,74 @@ const styles = StyleSheet.create({
     modalList: {
         padding: 15,
         flexGrow: 1,
+    },
+    sectionHeader: {
+        backgroundColor: '#F0EBFF',
+        paddingVertical: 10,
+        paddingHorizontal: 15,
+        borderRadius: 8,
+        marginTop: 15,
+        marginBottom: 8,
+        borderLeftWidth: 4,
+        borderLeftColor: '#9C86FC',
+        boxShadow: 'rgba(0, 0, 0, 0.1) 0px 1px 2px',
+    },
+    sectionTitle: {
+        fontSize: 19,
+        fontWeight: 'bold',
+        color: '#333',
+        letterSpacing: 0.5,
+    },
+    dateSelectionContainer: {
+        padding: 15,
+        backgroundColor: '#f8f9fa',
+        borderRadius: 8,
+        marginBottom: 15,
+    },
+    dateSelectionTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginBottom: 10,
+        color: '#333',
+    },
+    dateGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+        marginBottom: 10,
+    },
+    dateButton: {
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderRadius: 6,
+        borderWidth: 1,
+        borderColor: '#ddd',
+        backgroundColor: '#fff',
+    },
+    selectedDateButton: {
+        backgroundColor: '#9C86FC',
+        borderColor: '#9C86FC',
+    },
+    dateButtonText: {
+        fontSize: 14,
+        color: '#333',
+    },
+    selectedDateButtonText: {
+        color: '#fff',
+        fontWeight: 'bold',
+    },
+    clearDatesButton: {
+        alignSelf: 'flex-start',
+        paddingVertical: 4,
+        paddingHorizontal: 8,
+    },
+    clearDatesButtonText: {
+        fontSize: 12,
+        color: '#9C86FC',
+        textDecorationLine: 'underline',
+    },
+    disabledMealItem: {
+        opacity: 0.5,
     },
     modalMealItem: {
         backgroundColor: '#f8f8f8',
