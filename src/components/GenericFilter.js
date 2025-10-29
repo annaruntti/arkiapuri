@@ -127,7 +127,7 @@ const styles = {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: 'transparent',
-        borderWidth: 1,
+        borderWidth: 2,
         borderColor: '#9C86FC',
         borderRadius: 25,
         paddingHorizontal: 16,

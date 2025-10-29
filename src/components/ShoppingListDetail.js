@@ -17,10 +17,13 @@ import { analyzeImage } from '../utils/googleVision'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 import Button from './Button'
+import CategorySectionHeader from './CategorySectionHeader'
 import CustomText from './CustomText'
 import FormFoodItem from './FormFoodItem'
+import GenericFilter from './GenericFilter'
+import GenericFilterSection from './GenericFilterSection'
 import PantryItemDetails from './PantryItemDetails'
-import UnifiedFoodSearch from './UnifiedFoodSearch'
+import SearchSection from './SearchSection'
 
 const ShoppingListDetail = ({
     shoppingList,
@@ -34,6 +37,9 @@ const ShoppingListDetail = ({
     const [loading, setLoading] = useState(false)
     const [selectedItem, setSelectedItem] = useState(null)
     const [showItemDetails, setShowItemDetails] = useState(false)
+    const [searchQuery, setSearchQuery] = useState('')
+    const [selectedCategoryFilters, setSelectedCategoryFilters] = useState([])
+    const [showFilters, setShowFilters] = useState(false)
     const { isDesktop } = useResponsiveDimensions()
 
     const SHOPPING_LIST_PLACEHOLDER_IMAGE_URL =
@@ -99,7 +105,80 @@ const ShoppingListDetail = ({
         return sections
     }
 
-    const itemSections = groupItemsByCategory(shoppingList.items || [])
+    // Get ingredient categories from categories.json
+    const ingredientCategories =
+        categoriesData.find((cat) => cat.id === 'ingredients')?.children || []
+
+    // Filter items based on search query
+    const filterItemsBySearch = (items) => {
+        if (!searchQuery.trim()) {
+            return items
+        }
+
+        return items.filter((item) =>
+            item.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
+        )
+    }
+
+    // Filter items based on selected category filters
+    const filterItemsByCategory = (items) => {
+        if (selectedCategoryFilters.length === 0) {
+            return items
+        }
+
+        return items.filter((item) => {
+            if (!item.category || item.category.length === 0) {
+                return false
+            }
+
+            // Item must have at least one of the selected category filters
+            // Normalize both sides to strings for consistent comparison
+            return selectedCategoryFilters.some((filterId) =>
+                item.category.some(
+                    (itemCatId) => String(itemCatId) === String(filterId)
+                )
+            )
+        })
+    }
+
+    const toggleCategoryFilter = (categoryId) => {
+        setSelectedCategoryFilters((prev) => {
+            // Normalize to string for consistent comparison
+            const normalizedId = String(categoryId)
+
+            // Check if already selected (normalize for comparison)
+            const isSelected = prev.some((id) => String(id) === normalizedId)
+
+            if (isSelected) {
+                return prev.filter((id) => String(id) !== normalizedId)
+            } else {
+                return [...prev, normalizedId]
+            }
+        })
+    }
+
+    const getCategoryItemCounts = () => {
+        const counts = {}
+        const searchedItems = filterItemsBySearch(shoppingList.items || [])
+
+        ingredientCategories.forEach((category) => {
+            counts[category.id] = searchedItems.filter((item) => {
+                if (!item.category || item.category.length === 0) {
+                    return false
+                }
+                return item.category.includes(String(category.id))
+            }).length
+        })
+
+        return counts
+    }
+
+    // Apply both search and category filters
+    const filteredItems = filterItemsByCategory(
+        filterItemsBySearch(shoppingList.items || [])
+    )
+
+    const itemSections = groupItemsByCategory(filteredItems)
 
     const handleCheckItem = (item) => {
         setCheckedItems((prev) =>
@@ -532,6 +611,9 @@ const ShoppingListDetail = ({
                             setShowItemForm(false)
                             setScannedProduct(null)
                         }}
+                        showUnifiedSearch={true}
+                        onSearchItemSelect={handleSearchItemSelect}
+                        shoppingListId={shoppingList._id}
                     />
                 </View>
             ) : (
@@ -561,49 +643,57 @@ const ShoppingListDetail = ({
                         </CustomText>
                     </View>
 
-                    {/* Sticky search section */}
-                    <View style={styles.stickySearchSection}>
-                        <View
-                            style={
-                                isDesktop
-                                    ? styles.searchAndAddContainerDesktop
-                                    : styles.searchAndAddContainerMobile
-                            }
-                        >
-                            <View style={styles.searchContainer}>
-                                <UnifiedFoodSearch
-                                    onSelectItem={handleSearchItemSelect}
-                                    location="shopping-list"
-                                    shoppingListId={shoppingList._id}
-                                />
-                            </View>
+                    {/* Search section with buttons */}
+                    <SearchSection
+                        searchQuery={searchQuery}
+                        onSearchChange={setSearchQuery}
+                        onClearSearch={() => setSearchQuery('')}
+                        placeholder="Hae ostoslistasta..."
+                        resultsCount={filteredItems.length}
+                        resultsText="Löytyi {count} tuotetta"
+                        noResultsText="Tuotteita ei löytynyt"
+                        showButtonSection={true}
+                        buttonTitle="+ Luo uusi tuote"
+                        onButtonPress={() => setShowItemForm(true)}
+                        buttonStyle={styles.smallPrimaryButton}
+                        buttonTextStyle={styles.buttonText}
+                        filterComponent={
+                            <GenericFilter
+                                selectedFilters={selectedCategoryFilters}
+                                showFilters={showFilters}
+                                onToggleShowFilters={() =>
+                                    setShowFilters(!showFilters)
+                                }
+                                buttonText="Suodata"
+                            />
+                        }
+                    />
 
-                            <View style={styles.manualAddContainer}>
-                                <Button
-                                    title="+ Luo uusi tuote"
-                                    onPress={() => setShowItemForm(true)}
-                                    style={[
-                                        styles.tertiaryButton,
-                                        isDesktop &&
-                                            styles.desktopPrimaryButton,
-                                    ]}
-                                    textStyle={styles.buttonText}
-                                />
-                            </View>
-                        </View>
-                    </View>
+                    {/* Category filters section */}
+                    <GenericFilterSection
+                        selectedFilters={selectedCategoryFilters}
+                        showFilters={showFilters}
+                        filterTitle="Suodata kategorioittain:"
+                        categories={ingredientCategories}
+                        onToggleFilter={toggleCategoryFilter}
+                        onClearFilters={() => setSelectedCategoryFilters([])}
+                        getItemCounts={getCategoryItemCounts}
+                    />
 
                     {/* Items list container */}
                     <View style={styles.itemsListContainer}>
                         <View style={styles.stats}>
                             <CustomText>
-                                Tuotteita: {shoppingList.items?.length || 0} kpl
+                                Tuotteita:{' '}
+                                {searchQuery.length > 0 ||
+                                selectedCategoryFilters.length > 0
+                                    ? `${filteredItems.length} / ${shoppingList.items?.length || 0}`
+                                    : `${shoppingList.items?.length || 0} kpl`}
                             </CustomText>
                             <CustomText>
                                 Kokonaishinta:{' '}
-                                {shoppingList.items &&
-                                shoppingList.items.length > 0
-                                    ? shoppingList.items
+                                {filteredItems && filteredItems.length > 0
+                                    ? filteredItems
                                           .reduce(
                                               (sum, item) =>
                                                   sum +
@@ -618,14 +708,13 @@ const ShoppingListDetail = ({
                         <SectionList
                             sections={itemSections}
                             renderItem={renderItem}
-                            renderSectionHeader={({ section: { title } }) => (
-                                <View style={styles.sectionHeader}>
-                                    <CustomText
-                                        style={styles.sectionHeaderText}
-                                    >
-                                        {title}
-                                    </CustomText>
-                                </View>
+                            renderSectionHeader={({
+                                section: { title, data },
+                            }) => (
+                                <CategorySectionHeader
+                                    title={title}
+                                    count={data.length}
+                                />
                             )}
                             keyExtractor={(item) => item._id}
                             style={styles.itemsList}
@@ -819,6 +908,17 @@ const styles = StyleSheet.create({
         width: '100%',
         marginBottom: 10,
     },
+    smallPrimaryButton: {
+        borderRadius: 25,
+        paddingTop: 7,
+        paddingBottom: 7,
+        paddingLeft: 10,
+        paddingRight: 10,
+        elevation: 2,
+        backgroundColor: '#9C86FC',
+        minWidth: 150,
+        marginBottom: 10,
+    },
     secondaryButton: {
         borderRadius: 25,
         paddingTop: 7,
@@ -922,22 +1022,6 @@ const styles = StyleSheet.create({
     desktopButtonContainer: {
         justifyContent: 'center',
         alignItems: 'center',
-    },
-    sectionHeader: {
-        backgroundColor: '#F0EBFF',
-        paddingVertical: 10,
-        paddingHorizontal: 15,
-        borderRadius: 8,
-        marginTop: 15,
-        marginBottom: 8,
-        borderLeftWidth: 4,
-        borderLeftColor: '#9C86FC',
-    },
-    sectionHeaderText: {
-        fontSize: 19,
-        fontWeight: 'bold',
-        color: '#333',
-        letterSpacing: 0.5,
     },
 })
 

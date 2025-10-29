@@ -12,6 +12,7 @@ import {
 } from 'react-native'
 import CategoryFilter from '../components/CategoryFilter'
 import CategoryFilterSection from '../components/CategoryFilterSection'
+import CategorySectionHeader from '../components/CategorySectionHeader'
 import CustomText from '../components/CustomText'
 import FormFoodItem from '../components/FormFoodItem'
 import PantryItemDetails from '../components/PantryItemDetails'
@@ -678,15 +679,12 @@ const PantryScreen = ({}) => {
                                 sections={pantryItemSections}
                                 renderItem={renderItem}
                                 renderSectionHeader={({
-                                    section: { title },
+                                    section: { title, data },
                                 }) => (
-                                    <View style={styles.sectionHeader}>
-                                        <CustomText
-                                            style={styles.sectionHeaderText}
-                                        >
-                                            {title}
-                                        </CustomText>
-                                    </View>
+                                    <CategorySectionHeader
+                                        title={title}
+                                        count={data.length}
+                                    />
                                 )}
                                 keyExtractor={(item) => item._id}
                                 extraData={[
@@ -963,23 +961,6 @@ const styles = StyleSheet.create({
         marginBottom: 15,
         color: '#333',
         textAlign: 'left',
-    },
-    sectionHeader: {
-        backgroundColor: '#F0EBFF',
-        paddingVertical: 10,
-        paddingHorizontal: 15,
-        borderRadius: 8,
-        marginTop: 15,
-        marginBottom: 8,
-        borderLeftWidth: 4,
-        borderLeftColor: '#9C86FC',
-        boxShadow: 'rgba(0, 0, 0, 0.1) 0px 1px 2px',
-    },
-    sectionHeaderText: {
-        fontSize: 19,
-        fontWeight: 'bold',
-        color: '#333',
-        letterSpacing: 0.5,
     },
     desktopContentWrapper: {
         flex: 1,

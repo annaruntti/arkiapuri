@@ -28,6 +28,7 @@ import { getServerUrl } from '../utils/getServerUrl'
 import Button from './Button'
 import CustomText from './CustomText'
 import InlineCategorySelect from './InlineCategorySelect'
+import UnifiedFoodSearch from './UnifiedFoodSearch'
 
 const FormFoodItem = forwardRef(
     (
@@ -40,6 +41,9 @@ const FormFoodItem = forwardRef(
             onShoppingListSelect,
             initialValues = {},
             buttonStyle = 'primary',
+            showUnifiedSearch = false,
+            onSearchItemSelect,
+            shoppingListId,
         },
         ref
     ) => {
@@ -1164,6 +1168,42 @@ const FormFoodItem = forwardRef(
                 showsVerticalScrollIndicator={true}
                 bounces={false}
             >
+                {showUnifiedSearch && (
+                    <View style={styles.unifiedSearchSection}>
+                        <CustomText style={styles.unifiedSearchTitle}>
+                            Lisää uusia tuotteita
+                        </CustomText>
+                        <CustomText style={styles.unifiedSearchText}>
+                            Hae tuotteita nimellä tai skannaa viivakoodi.
+                            Tulokset sisältävät sekä omat tuotteesi että Open
+                            Food Facts -tietokannan.
+                        </CustomText>
+                        <View style={styles.unifiedSearchContainer}>
+                            <UnifiedFoodSearch
+                                onSelectItem={onSearchItemSelect}
+                                location="shopping-list"
+                                shoppingListId={shoppingListId}
+                            />
+                        </View>
+                    </View>
+                )}
+
+                {showUnifiedSearch && (
+                    <View style={styles.divider}>
+                        <View style={styles.dividerLine} />
+                        <CustomText style={styles.dividerText}>TAI</CustomText>
+                        <View style={styles.dividerLine} />
+                    </View>
+                )}
+
+                {showUnifiedSearch && (
+                    <View style={styles.manualFormSection}>
+                        <CustomText style={styles.manualFormTitle}>
+                            Luo uusi tuote manuaalisesti
+                        </CustomText>
+                    </View>
+                )}
+
                 {renderForm()}
             </ScrollView>
         )
@@ -1191,6 +1231,53 @@ const styles = StyleSheet.create({
     formScroll: {
         flexGrow: 1,
         width: '100%',
+    },
+    unifiedSearchSection: {
+        marginBottom: 15,
+        paddingHorizontal: 15,
+        backgroundColor: 'rgb(248, 248, 248)',
+        paddingVertical: 15,
+        borderRadius: 10,
+        boxShadow: 'rgba(0, 0, 0, 0.1) 0px 1px 2px',
+    },
+    unifiedSearchTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#333',
+        marginBottom: 5,
+    },
+    unifiedSearchText: {
+        fontSize: 14,
+        color: '#666',
+        marginBottom: 10,
+    },
+    unifiedSearchContainer: {
+        width: '100%',
+    },
+    divider: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginVertical: 15,
+    },
+    dividerLine: {
+        flex: 1,
+        height: 1,
+        backgroundColor: '#ddd',
+    },
+    dividerText: {
+        marginHorizontal: 15,
+        fontSize: 14,
+        color: '#666',
+        fontWeight: 'bold',
+    },
+    manualFormSection: {
+        marginBottom: 10,
+    },
+    manualFormTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#333',
+        marginBottom: 5,
     },
     label: {
         marginTop: 10,

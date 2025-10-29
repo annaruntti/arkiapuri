@@ -11,6 +11,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native'
+import CategorySectionHeader from '../components/CategorySectionHeader'
 import CustomText from '../components/CustomText'
 import AddMealForm from '../components/FormAddMeal'
 import GenericFilter from '../components/GenericFilter'
@@ -482,14 +483,10 @@ const MealsScreen = () => {
 
     const renderCategorySection = (category, mealsInCategory) => (
         <View key={category} style={styles.categorySection}>
-            <View style={styles.categoryHeader}>
-                <CustomText style={styles.categoryTitle}>
-                    {getMealRoleText(category)}
-                </CustomText>
-                <CustomText style={styles.categoryCount}>
-                    ({mealsInCategory.length})
-                </CustomText>
-            </View>
+            <CategorySectionHeader
+                title={getMealRoleText(category)}
+                count={mealsInCategory.length}
+            />
             {mealsInCategory.map((meal, index) => (
                 <View key={meal._id}>{renderItem({ item: meal })}</View>
             ))}
@@ -774,22 +771,6 @@ const styles = StyleSheet.create({
     },
     categorySection: {
         marginBottom: 20,
-    },
-    categoryHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 10,
-        paddingHorizontal: 5,
-    },
-    categoryTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#333',
-    },
-    categoryCount: {
-        fontSize: 16,
-        color: '#666',
-        marginLeft: 8,
     },
     desktopContentWrapper: {
         flex: 1,
