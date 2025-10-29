@@ -7,16 +7,17 @@ import {
     ScrollView,
     SectionList,
     StyleSheet,
-    TextInput,
     TouchableOpacity,
     View,
 } from 'react-native'
-import Button from '../components/Button'
+import CategoryFilter from '../components/CategoryFilter'
+import CategoryFilterSection from '../components/CategoryFilterSection'
 import CustomText from '../components/CustomText'
 import FormFoodItem from '../components/FormFoodItem'
 import PantryItemDetails from '../components/PantryItemDetails'
 import ResponsiveLayout from '../components/ResponsiveLayout'
 import ResponsiveModal from '../components/ResponsiveModal'
+import SearchSection from '../components/SearchSection'
 import UnifiedFoodSearch from '../components/UnifiedFoodSearch'
 import categoriesData from '../data/categories.json'
 import { getServerUrl } from '../utils/getServerUrl'
@@ -37,19 +38,83 @@ const PantryScreen = ({}) => {
     const [showFullInstructions, setShowFullInstructions] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
     const [showAddItemSearch, setShowAddItemSearch] = useState(false)
+    const [selectedCategoryFilters, setSelectedCategoryFilters] = useState([])
+    const [showFilters, setShowFilters] = useState(false)
+
+    // Get ingredient categories from categories.json
+    const ingredientCategories =
+        categoriesData.find((cat) => cat.id === 'ingredients')?.children || []
 
     // Filter pantry items based on search query
-    const filteredPantryItems = pantryItems.filter((item) =>
-        item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    const filterItemsBySearch = (items) => {
+        if (!searchQuery.trim()) {
+            return items
+        }
+        return items.filter((item) =>
+            item.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
+        )
+    }
+
+    // Filter pantry items based on selected category filters
+    const filterItemsByCategory = (items) => {
+        if (selectedCategoryFilters.length === 0) {
+            return items
+        }
+
+        return items.filter((item) => {
+            if (!item.category || item.category.length === 0) {
+                return false
+            }
+
+            // Item must have at least one of the selected category filters
+            // Normalize both sides to strings for consistent comparison
+            return selectedCategoryFilters.some((filterId) =>
+                item.category.some(
+                    (itemCatId) => String(itemCatId) === String(filterId)
+                )
+            )
+        })
+    }
+
+    const toggleCategoryFilter = (categoryId) => {
+        setSelectedCategoryFilters((prev) => {
+            // Normalize to string for consistent comparison
+            const normalizedId = String(categoryId)
+
+            // Check if already selected (normalize for comparison)
+            const isSelected = prev.some((id) => String(id) === normalizedId)
+
+            if (isSelected) {
+                return prev.filter((id) => String(id) !== normalizedId)
+            } else {
+                return [...prev, normalizedId]
+            }
+        })
+    }
+
+    const getCategoryItemCounts = () => {
+        const counts = {}
+        const searchedItems = filterItemsBySearch(pantryItems)
+
+        ingredientCategories.forEach((category) => {
+            counts[category.id] = searchedItems.filter((item) => {
+                if (!item.category || item.category.length === 0) {
+                    return false
+                }
+                return item.category.includes(String(category.id))
+            }).length
+        })
+
+        return counts
+    }
+
+    // Apply both search and category filters
+    const filteredPantryItems = filterItemsByCategory(
+        filterItemsBySearch(pantryItems)
     )
 
     // Group items by category for section list
     const groupItemsByCategory = (items) => {
-        // Get all ingredient categories from categories.json
-        const ingredientCategories =
-            categoriesData.find((cat) => cat.id === 'ingredients')?.children ||
-            []
-
         // Create a map of category id to category name
         const categoryMap = {}
         ingredientCategories.forEach((cat) => {
@@ -104,9 +169,7 @@ const PantryScreen = ({}) => {
         return sections
     }
 
-    const pantryItemSections = groupItemsByCategory(
-        searchQuery.length > 0 ? filteredPantryItems : pantryItems
-    )
+    const pantryItemSections = groupItemsByCategory(filteredPantryItems)
 
     const fetchPantryItems = async () => {
         try {
@@ -563,92 +626,50 @@ const PantryScreen = ({}) => {
                             </View>
                         </View>
 
-                        {/* Sticky search section */}
-                        <View style={styles.stickySearchSection}>
-                            <View
-                                style={[
-                                    styles.searchAndAddContainer,
-                                    !isDesktop &&
-                                        styles.searchAndAddContainerMobile,
-                                ]}
-                            >
-                                {/* Pantry-specific search */}
-                                <View
-                                    style={[
-                                        styles.pantrySearchContainer,
-                                        !isDesktop &&
-                                            styles.pantrySearchContainerMobile,
-                                    ]}
-                                >
-                                    <View style={styles.searchInputContainer}>
-                                        <MaterialIcons
-                                            name="search"
-                                            size={20}
-                                            color="#666"
-                                            style={styles.searchIcon}
-                                        />
-                                        <TextInput
-                                            style={styles.searchInput}
-                                            placeholder="Etsi pentteristä..."
-                                            value={searchQuery}
-                                            onChangeText={setSearchQuery}
-                                            placeholderTextColor="#999"
-                                        />
-                                        {searchQuery.length > 0 && (
-                                            <TouchableOpacity
-                                                onPress={() =>
-                                                    setSearchQuery('')
-                                                }
-                                                style={styles.clearButton}
-                                            >
-                                                <MaterialIcons
-                                                    name="clear"
-                                                    size={20}
-                                                    color="#666"
-                                                />
-                                            </TouchableOpacity>
-                                        )}
-                                    </View>
+                        {/* Search section with buttons */}
+                        <SearchSection
+                            searchQuery={searchQuery}
+                            onSearchChange={setSearchQuery}
+                            onClearSearch={() => setSearchQuery('')}
+                            placeholder="Etsi pentteristä..."
+                            resultsCount={filteredPantryItems.length}
+                            resultsText="Löytyi {count} tuotetta"
+                            noResultsText="Tuotteita ei löytynyt"
+                            showButtonSection={true}
+                            buttonTitle="+ Luo uusi tuote"
+                            onButtonPress={() => setShowAddItemSearch(true)}
+                            buttonStyle={styles.primaryButton}
+                            buttonTextStyle={styles.buttonText}
+                            filterComponent={
+                                <CategoryFilter
+                                    selectedFilters={selectedCategoryFilters}
+                                    showFilters={showFilters}
+                                    onToggleShowFilters={() =>
+                                        setShowFilters(!showFilters)
+                                    }
+                                />
+                            }
+                        />
 
-                                    {/* Search results info */}
-                                    {searchQuery.length > 0 && (
-                                        <View style={styles.searchResultsInfo}>
-                                            <CustomText
-                                                style={styles.searchResultsText}
-                                            >
-                                                {filteredPantryItems.length > 0
-                                                    ? `Löytyi ${filteredPantryItems.length} tuotetta`
-                                                    : 'Tuotteita ei löytynyt'}
-                                            </CustomText>
-                                        </View>
-                                    )}
-                                </View>
-
-                                <View
-                                    style={[
-                                        styles.manualAddContainer,
-                                        !isDesktop &&
-                                            styles.manualAddContainerMobile,
-                                    ]}
-                                >
-                                    <Button
-                                        title="+ Luo uusi tuote"
-                                        onPress={() =>
-                                            setShowAddItemSearch(true)
-                                        }
-                                        style={styles.tertiaryButton}
-                                        textStyle={styles.buttonText}
-                                    />
-                                </View>
-                            </View>
-                        </View>
+                        {/* Category filters section */}
+                        <CategoryFilterSection
+                            categories={ingredientCategories}
+                            selectedFilters={selectedCategoryFilters}
+                            onToggleFilter={toggleCategoryFilter}
+                            onClearFilters={() =>
+                                setSelectedCategoryFilters([])
+                            }
+                            showFilters={showFilters}
+                            itemCounts={getCategoryItemCounts()}
+                        />
 
                         {/* Product list container */}
                         <View style={styles.productListContainer}>
                             <View style={styles.stats}>
                                 <CustomText>
                                     Tuotteita:{' '}
-                                    {searchQuery.length > 0
+                                    {searchQuery.length > 0 ||
+                                    selectedCategoryFilters.length > 0
                                         ? `${filteredPantryItems.length} / ${pantryItems?.length || 0}`
                                         : `${pantryItems?.length || 0} kpl`}
                                 </CustomText>
@@ -795,13 +816,6 @@ const styles = StyleSheet.create({
         zIndex: 1,
         position: 'relative',
     },
-    buttonContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        width: '100%',
-        paddingHorizontal: 10,
-        marginBottom: 20,
-    },
     primaryButton: {
         borderRadius: 25,
         paddingTop: 7,
@@ -810,11 +824,7 @@ const styles = StyleSheet.create({
         paddingRight: 10,
         elevation: 2,
         backgroundColor: '#9C86FC',
-        color: 'black',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        width: 'auto',
-        marginBottom: 20,
+        minWidth: 150,
     },
     secondaryButton: {
         borderRadius: 25,
@@ -830,20 +840,6 @@ const styles = StyleSheet.create({
         width: 'auto',
         marginTop: 10,
         marginBottom: 10,
-    },
-    tertiaryButton: {
-        borderRadius: 25,
-        paddingTop: 7,
-        paddingBottom: 7,
-        paddingLeft: 10,
-        paddingRight: 10,
-        elevation: 2,
-        backgroundColor: '#fff',
-        minHeight: 48,
-        minWidth: 200,
-        borderWidth: 3,
-        borderColor: '#9C86FC',
-        whiteSpace: 'nowrap',
     },
     buttonText: {
         color: '#000000',
@@ -926,70 +922,12 @@ const styles = StyleSheet.create({
     formContainer: {
         padding: 15,
     },
-    searchAndAddContainer: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        gap: 10,
-        marginBottom: 15,
-        backgroundColor: 'rgb(248, 248, 248)',
-        borderRadius: 10,
-        padding: 15,
-        boxShadow: 'rgba(0, 0, 0, 0.1) 0px 1px 2px',
-        elevation: 2,
-    },
-    searchAndAddContainerMobile: {
-        flexDirection: 'column',
-        alignItems: 'stretch',
-        gap: 15,
-    },
-    pantrySearchContainer: {
-        flex: 1,
-    },
-    pantrySearchContainerMobile: {
-        width: '100%',
-        position: 'relative',
-    },
-    searchInputContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#fff',
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#ddd',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-    },
-    searchIcon: {
-        marginRight: 8,
-    },
-    searchInput: {
-        flex: 1,
-        fontSize: 16,
-        color: '#333',
-        paddingVertical: 4,
-    },
-    clearButton: {
-        padding: 4,
-        marginLeft: 8,
-    },
-    searchResultsInfo: {
-        paddingHorizontal: 4,
-    },
-    searchResultsText: {
-        fontSize: 14,
-        color: '#666',
-        fontStyle: 'italic',
-    },
     addItemModalContainer: {
         padding: 10,
     },
     modalScrollView: {
         maxHeight: '80vh', // Limit height on web
         flex: 1,
-    },
-    searchSection: {
-        marginBottom: 15,
-        alignItems: 'flex-start',
     },
     searchSectionTitle: {
         fontSize: 18,
