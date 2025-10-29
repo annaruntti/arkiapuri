@@ -87,6 +87,7 @@ const styles = {
         paddingVertical: 15,
         borderRadius: 10,
         boxShadow: 'rgba(0, 0, 0, 0.1) 0px 1px 2px',
+        width: '100%',
     },
     searchInputContainer: {
         flexDirection: 'row',

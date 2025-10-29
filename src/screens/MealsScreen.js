@@ -8,16 +8,17 @@ import {
     RefreshControl,
     ScrollView,
     StyleSheet,
-    TextInput,
     TouchableOpacity,
     View,
 } from 'react-native'
-import Button from '../components/Button'
 import CustomText from '../components/CustomText'
 import AddMealForm from '../components/FormAddMeal'
+import GenericFilter from '../components/GenericFilter'
+import GenericFilterSection from '../components/GenericFilterSection'
 import MealItemDetail from '../components/MealItemDetail'
 import ResponsiveLayout from '../components/ResponsiveLayout'
 import ResponsiveModal from '../components/ResponsiveModal'
+import SearchSection from '../components/SearchSection'
 import categoriesData from '../data/categories.json'
 import { getServerUrl } from '../utils/getServerUrl'
 import { getDifficultyText, getMealRoleText } from '../utils/mealUtils'
@@ -117,12 +118,32 @@ const MealsScreen = () => {
 
     const toggleDietFilter = (categoryId) => {
         setSelectedDietFilters((prev) => {
-            if (prev.includes(categoryId)) {
-                return prev.filter((id) => id !== categoryId)
+            // Normalize to string for consistent comparison
+            const normalizedId = String(categoryId)
+
+            // Check if already selected (normalize for comparison)
+            const isSelected = prev.some((id) => String(id) === normalizedId)
+
+            if (isSelected) {
+                return prev.filter((id) => String(id) !== normalizedId)
             } else {
-                return [...prev, categoryId]
+                return [...prev, normalizedId]
             }
         })
+    }
+
+    const getMealCountsForCategories = () => {
+        const counts = {}
+        const searchedMeals = filterMealsBySearch(meals)
+
+        dietCategories.forEach((category) => {
+            counts[category.id] = searchedMeals.filter((meal) => {
+                const mealCategories = getMealDietaryCategories(meal)
+                return mealCategories.includes(String(category.id))
+            }).length
+        })
+
+        return counts
     }
 
     // Group meals by their default roles
@@ -480,92 +501,6 @@ const MealsScreen = () => {
         setDetailModalVisible(true)
     }
 
-    const renderDietFilters = () => {
-        // Count meals for each diet category
-        const getMealCountForCategory = (categoryId) => {
-            const searchedMeals = filterMealsBySearch(meals)
-            return searchedMeals.filter((meal) => {
-                const mealCategories = getMealDietaryCategories(meal)
-                return mealCategories.includes(String(categoryId))
-            }).length
-        }
-
-        if (!showFilters) return null
-
-        return (
-            <View style={styles.filterSection}>
-                {showFilters && (
-                    <View style={styles.filterContainer}>
-                        <CustomText style={styles.filterTitle}>
-                            Suodata ruokavalioin mukaan:
-                        </CustomText>
-                        <View style={styles.filterChipsContainer}>
-                            {dietCategories.map((category) => {
-                                const isSelected = selectedDietFilters.includes(
-                                    String(category.id)
-                                )
-                                const mealCount = getMealCountForCategory(
-                                    category.id
-                                )
-
-                                return (
-                                    <TouchableOpacity
-                                        key={category.id}
-                                        style={[
-                                            styles.filterChip,
-                                            isSelected &&
-                                                styles.filterChipSelected,
-                                            mealCount === 0 &&
-                                                styles.filterChipDisabled,
-                                        ]}
-                                        onPress={() =>
-                                            toggleDietFilter(
-                                                String(category.id)
-                                            )
-                                        }
-                                        disabled={mealCount === 0}
-                                    >
-                                        <CustomText
-                                            style={[
-                                                styles.filterChipText,
-                                                isSelected &&
-                                                    styles.filterChipTextSelected,
-                                                mealCount === 0 &&
-                                                    styles.filterChipTextDisabled,
-                                            ]}
-                                        >
-                                            {category.name} ({mealCount})
-                                        </CustomText>
-                                        {isSelected && (
-                                            <MaterialIcons
-                                                name="check"
-                                                size={16}
-                                                color="#fff"
-                                                style={styles.filterChipIcon}
-                                            />
-                                        )}
-                                    </TouchableOpacity>
-                                )
-                            })}
-                        </View>
-                        {selectedDietFilters.length > 0 && (
-                            <TouchableOpacity
-                                style={styles.clearFiltersButton}
-                                onPress={() => {
-                                    setSelectedDietFilters([])
-                                }}
-                            >
-                                <CustomText style={styles.clearFiltersText}>
-                                    Tyhjennä suodattimet
-                                </CustomText>
-                            </TouchableOpacity>
-                        )}
-                    </View>
-                )}
-            </View>
-        )
-    }
-
     const renderHeader = () => (
         <View style={styles.headerContainer}>
             <CustomText
@@ -574,73 +509,6 @@ const MealsScreen = () => {
                 Selaa ja hallinnoi aterioitasi. Voit lisätä uusia aterioita ja
                 muokata olemassa olevia.
             </CustomText>
-
-            <View style={styles.searchAndButtonWrapper}>
-                <View style={styles.searchContainer}>
-                    <MaterialIcons
-                        name="search"
-                        size={20}
-                        color="#999"
-                        style={styles.searchIcon}
-                    />
-                    <TextInput
-                        style={styles.searchInput}
-                        placeholder="Hae aterioita nimellä..."
-                        placeholderTextColor="#999"
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                    />
-                    {searchQuery.length > 0 && (
-                        <TouchableOpacity
-                            style={styles.clearButton}
-                            onPress={() => setSearchQuery('')}
-                        >
-                            <MaterialIcons
-                                name="close"
-                                size={20}
-                                color="#666"
-                            />
-                        </TouchableOpacity>
-                    )}
-                </View>
-
-                <View style={styles.buttonContainer}>
-                    <Button
-                        title="Lisää ateria"
-                        onPress={() => setModalVisible(true)}
-                        style={styles.primaryButton}
-                        textStyle={styles.buttonText}
-                    />
-
-                    <TouchableOpacity
-                        style={styles.tertiaryButton}
-                        onPress={() => setShowFilters(!showFilters)}
-                    >
-                        <MaterialIcons
-                            name="filter-list"
-                            size={20}
-                            color="#000"
-                        />
-                        <CustomText style={styles.tertiaryButtonText}>
-                            Suodata
-                        </CustomText>
-                        {selectedDietFilters.length > 0 && (
-                            <View style={styles.filterBadge}>
-                                <CustomText style={styles.filterBadgeText}>
-                                    {selectedDietFilters.length}
-                                </CustomText>
-                            </View>
-                        )}
-                        <MaterialIcons
-                            name={showFilters ? 'expand-less' : 'expand-more'}
-                            size={20}
-                            color="#000"
-                        />
-                    </TouchableOpacity>
-                </View>
-            </View>
-
-            {renderDietFilters()}
         </View>
     )
 
@@ -658,6 +526,44 @@ const MealsScreen = () => {
                 />
             </ResponsiveModal>
 
+            {renderHeader()}
+
+            <SearchSection
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                onClearSearch={() => setSearchQuery('')}
+                placeholder="Hae aterioita nimellä..."
+                resultsCount={
+                    filterMealsByDiet(filterMealsBySearch(meals)).length
+                }
+                resultsText="Löytyi {count} ateriaa"
+                noResultsText="Aterioita ei löytynyt"
+                showButtonSection={true}
+                buttonTitle="+ Lisää ateria"
+                onButtonPress={() => setModalVisible(true)}
+                buttonStyle={styles.primaryButton}
+                buttonTextStyle={styles.buttonText}
+                filterComponent={
+                    <GenericFilter
+                        selectedFilters={selectedDietFilters}
+                        showFilters={showFilters}
+                        onToggleShowFilters={() => setShowFilters(!showFilters)}
+                        buttonText="Suodata"
+                    />
+                }
+            />
+
+            {/* Diet filters section */}
+            <GenericFilterSection
+                selectedFilters={selectedDietFilters}
+                showFilters={showFilters}
+                filterTitle="Suodata ruokavalioin mukaan:"
+                categories={dietCategories}
+                onToggleFilter={toggleDietFilter}
+                onClearFilters={() => setSelectedDietFilters([])}
+                getItemCounts={getMealCountsForCategories}
+            />
+
             {meals.length > 0 ? (
                 <ScrollView
                     style={styles.list}
@@ -669,7 +575,6 @@ const MealsScreen = () => {
                         />
                     }
                 >
-                    {renderHeader()}
                     {(() => {
                         const searchedMeals = filterMealsBySearch(meals)
                         const filteredMeals = filterMealsByDiet(searchedMeals)
@@ -772,43 +677,6 @@ const styles = StyleSheet.create({
     desktopIntroText: {
         fontSize: 21,
         paddingVertical: 16,
-    },
-    searchAndButtonWrapper: {
-        backgroundColor: 'rgb(248, 248, 248)',
-        borderRadius: 10,
-        padding: 15,
-        marginBottom: 15,
-        boxShadow: 'rgba(0, 0, 0, 0.1) 0px 1px 2px',
-        elevation: 2,
-        width: '100%',
-    },
-    searchContainer: {
-        position: 'relative',
-        width: '100%',
-        marginBottom: 15,
-    },
-    searchIcon: {
-        position: 'absolute',
-        left: 15,
-        top: 12,
-        zIndex: 1,
-    },
-    searchInput: {
-        borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 8,
-        paddingLeft: 45,
-        paddingRight: 40,
-        paddingVertical: 12,
-        fontSize: 16,
-        backgroundColor: '#fff',
-        width: '100%',
-    },
-    clearButton: {
-        position: 'absolute',
-        right: 12,
-        top: 12,
-        padding: 4,
     },
     itemContainer: {
         backgroundColor: '#f8f8f8',
@@ -922,101 +790,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#666',
         marginLeft: 8,
-    },
-    filterSection: {
-        marginTop: 15,
-        marginBottom: 15,
-    },
-    tertiaryButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingTop: 7,
-        paddingBottom: 7,
-        paddingLeft: 10,
-        paddingRight: 10,
-        backgroundColor: 'transparent',
-        borderRadius: 25,
-        borderWidth: 2,
-        borderColor: '#9C86FC',
-        minHeight: 48,
-        gap: 6,
-    },
-    tertiaryButtonText: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#000',
-    },
-    filterBadge: {
-        backgroundColor: '#9C86FC',
-        borderRadius: 10,
-        minWidth: 20,
-        height: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingHorizontal: 5,
-    },
-    filterBadgeText: {
-        color: '#fff',
-        fontSize: 11,
-        fontWeight: 'bold',
-    },
-    filterContainer: {
-        padding: 15,
-        backgroundColor: 'rgb(248, 248, 248)',
-        boxShadow: 'rgba(0, 0, 0, 0.1) 0px 1px 2px',
-        borderRadius: 10,
-    },
-    filterTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginBottom: 10,
-        color: '#333',
-    },
-    filterChipsContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 8,
-    },
-    filterChip: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 20,
-        backgroundColor: 'rgb(224, 224, 224)',
-        marginBottom: 8,
-    },
-    filterChipSelected: {
-        backgroundColor: '#9C86FC',
-    },
-    filterChipText: {
-        fontSize: 14,
-        color: '#000',
-        fontWeight: '500',
-    },
-    filterChipTextSelected: {
-        color: '#fff',
-    },
-    filterChipDisabled: {
-        backgroundColor: '#f0f0f0',
-        opacity: 0.5,
-    },
-    filterChipTextDisabled: {
-        color: '#666',
-    },
-    filterChipIcon: {
-        marginLeft: 4,
-    },
-    clearFiltersButton: {
-        marginTop: 10,
-        alignSelf: 'flex-start',
-    },
-    clearFiltersText: {
-        fontSize: 14,
-        color: '#9C86FC',
-        fontWeight: '600',
-        textDecorationLine: 'underline',
     },
     desktopContentWrapper: {
         flex: 1,
