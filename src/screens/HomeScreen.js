@@ -1,3 +1,4 @@
+import { MaterialIcons } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
 import { LinearGradient } from 'expo-linear-gradient'
 import React from 'react'
@@ -27,6 +28,10 @@ const shoppingListImage = {
 
 const readingOrderImage = {
     uri: 'https://images.ctfassets.net/hef5a6s5axrs/5s04BoMG8Blt6H2mvimgUK/ec13e9499e1d6e280ad8ae44c13e674b/undraw_diet_zdwe.png',
+}
+
+const quickMealsImage = {
+    uri: 'https://images.ctfassets.net/hef5a6s5axrs/1fvToRJqesGgl6dJCFyyJl/0f484ccfe293cca2a0a4ab57d3324c34/undraw_breakfast_rgx5.png',
 }
 
 const staticWavePathData =
@@ -156,6 +161,39 @@ const HomeScreen = () => {
                             {renderDesktopGrid()}
                         </LinearGradient>
                     </View>
+
+                    {/* Quick & Easy Meals Card - Desktop */}
+                    <TouchableOpacity
+                        style={styles.desktopQuickMealsCard}
+                        onPress={() =>
+                            navigation.navigate('MealsStack', {
+                                screen: 'Ateriat',
+                                params: {
+                                    filterDifficulty: 'easy',
+                                    filterMaxCookingTime: 30,
+                                },
+                            })
+                        }
+                    >
+                        <Image
+                            source={quickMealsImage}
+                            style={styles.desktopQuickMealsImage}
+                        />
+                        <View style={styles.quickMealsContent}>
+                            <CustomText style={styles.desktopQuickMealsTitle}>
+                                Helpot ja nopeat arkiruuat
+                            </CustomText>
+                            <CustomText style={styles.quickMealsSubtitle}>
+                                Helppoja ruokia alle 30 minuutissa
+                            </CustomText>
+                        </View>
+                        <MaterialIcons
+                            name="arrow-forward"
+                            size={28}
+                            color="#9C86FC"
+                            style={styles.quickMealsArrow}
+                        />
+                    </TouchableOpacity>
                 </ScrollView>
             </ResponsiveLayout>
         )
@@ -321,6 +359,42 @@ const HomeScreen = () => {
                             </TouchableOpacity>
                         </View>
                     </View>
+
+                    {/* Quick & Easy Meals Card - Inside gradient with white background */}
+                    <TouchableOpacity
+                        style={[
+                            styles.quickMealsCard,
+                            isTablet && styles.tabletQuickMealsCard,
+                        ]}
+                        onPress={() =>
+                            navigation.navigate('MealsStack', {
+                                screen: 'Ateriat',
+                                params: {
+                                    filterDifficulty: 'easy',
+                                    filterMaxCookingTime: 30,
+                                },
+                            })
+                        }
+                    >
+                        <Image
+                            source={quickMealsImage}
+                            style={styles.quickMealsImage}
+                        />
+                        <View style={styles.quickMealsContent}>
+                            <CustomText style={styles.quickMealsTitle}>
+                                Helpot ja nopeat arkiruuat
+                            </CustomText>
+                            <CustomText style={styles.quickMealsSubtitle}>
+                                Helppoja ruokia alle 30 minuutissa
+                            </CustomText>
+                        </View>
+                        <MaterialIcons
+                            name="arrow-forward"
+                            size={24}
+                            color="#9C86FC"
+                            style={styles.quickMealsArrow}
+                        />
+                    </TouchableOpacity>
                 </View>
             </LinearGradient>
         </ScrollView>
@@ -543,5 +617,80 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: '#333',
         textAlign: 'center',
+    },
+    quickMealsCard: {
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        marginTop: 20,
+        marginHorizontal: 20,
+        padding: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    tabletQuickMealsCard: {
+        marginHorizontal: 40,
+        padding: 20,
+    },
+    quickMealsImage: {
+        width: 80,
+        height: 80,
+        resizeMode: 'contain',
+    },
+    quickMealsContent: {
+        flex: 1,
+        marginLeft: 16,
+    },
+    quickMealsTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#333',
+        marginBottom: 4,
+    },
+    quickMealsSubtitle: {
+        fontSize: 14,
+        color: '#666',
+    },
+    quickMealsArrow: {
+        marginLeft: 8,
+    },
+    desktopQuickMealsCard: {
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        marginTop: 30,
+        marginHorizontal: 60,
+        marginBottom: 40,
+        padding: 24,
+        flexDirection: 'row',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 4,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 5,
+        maxWidth: 960,
+        alignSelf: 'center',
+        width: '90%',
+    },
+    desktopQuickMealsImage: {
+        width: 100,
+        height: 100,
+        resizeMode: 'contain',
+    },
+    desktopQuickMealsTitle: {
+        fontSize: 22,
+        fontWeight: '600',
+        color: '#333',
+        marginBottom: 6,
     },
 })

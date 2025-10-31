@@ -29,7 +29,7 @@ import storage from '../utils/storage'
 const PLACEHOLDER_IMAGE_URL =
     'https://images.ctfassets.net/2pij69ehhf4n/3b9imD6TDC4i68V4uHVgL1/1ac1194dccb086bb52ebd674c59983e3/undraw_breakfast_rgx5.png'
 
-const MealsScreen = () => {
+const MealsScreen = ({ route, navigation }) => {
     const [modalVisible, setModalVisible] = useState(false)
     const [meals, setMeals] = useState([])
     const [loading, setLoading] = useState(true)
@@ -39,6 +39,18 @@ const MealsScreen = () => {
     const [showFilters, setShowFilters] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
     const { isDesktop } = useResponsiveDimensions()
+
+    // Get filter params from navigation
+    const filterDifficulty = route?.params?.filterDifficulty || null
+    const filterMaxCookingTime = route?.params?.filterMaxCookingTime || null
+
+    // Clear navigation filters
+    const clearNavigationFilters = () => {
+        navigation.setParams({
+            filterDifficulty: null,
+            filterMaxCookingTime: null,
+        })
+    }
 
     // Get diet categories from categories.json
     const dietCategories =
@@ -114,6 +126,32 @@ const MealsScreen = () => {
             return selectedDietFilters.every((filterId) =>
                 mealCategories.includes(filterId)
             )
+        })
+    }
+
+    // Filter meals by difficulty level
+    const filterMealsByDifficulty = (meals) => {
+        if (!filterDifficulty) {
+            return meals
+        }
+
+        return meals.filter((meal) => {
+            const mealDifficulty = meal.difficultyLevel
+                ? String(meal.difficultyLevel).toLowerCase()
+                : 'medium'
+            return mealDifficulty === filterDifficulty.toLowerCase()
+        })
+    }
+
+    // Filter meals by cooking time
+    const filterMealsByCookingTime = (meals) => {
+        if (!filterMaxCookingTime) {
+            return meals
+        }
+
+        return meals.filter((meal) => {
+            const cookingTime = parseInt(meal.cookingTime) || 0
+            return cookingTime > 0 && cookingTime <= filterMaxCookingTime
         })
     }
 
@@ -531,7 +569,11 @@ const MealsScreen = () => {
                 onClearSearch={() => setSearchQuery('')}
                 placeholder="Hae aterioita nimellä..."
                 resultsCount={
-                    filterMealsByDiet(filterMealsBySearch(meals)).length
+                    filterMealsByCookingTime(
+                        filterMealsByDifficulty(
+                            filterMealsByDiet(filterMealsBySearch(meals))
+                        )
+                    ).length
                 }
                 resultsText="Löytyi {count} ateriaa"
                 noResultsText="Aterioita ei löytynyt"
@@ -572,9 +614,44 @@ const MealsScreen = () => {
                         />
                     }
                 >
+                    {/* Active filter indicator */}
+                    {(filterDifficulty || filterMaxCookingTime) && (
+                        <View style={styles.activeFilterBanner}>
+                            <MaterialIcons
+                                name="filter-list"
+                                size={20}
+                                color="#9C86FC"
+                            />
+                            <CustomText style={styles.activeFilterText}>
+                                Näytetään:{' '}
+                                {filterDifficulty &&
+                                    `${getDifficultyText(filterDifficulty)}`}
+                                {filterDifficulty &&
+                                    filterMaxCookingTime &&
+                                    ', '}
+                                {filterMaxCookingTime &&
+                                    `Valmistusaika ≤ ${filterMaxCookingTime} min`}
+                            </CustomText>
+                            <TouchableOpacity
+                                onPress={clearNavigationFilters}
+                                style={styles.activeFilterCloseButton}
+                            >
+                                <MaterialIcons
+                                    name="close"
+                                    size={20}
+                                    color="#666"
+                                />
+                            </TouchableOpacity>
+                        </View>
+                    )}
+
                     {(() => {
                         const searchedMeals = filterMealsBySearch(meals)
-                        const filteredMeals = filterMealsByDiet(searchedMeals)
+                        const dietFiltered = filterMealsByDiet(searchedMeals)
+                        const difficultyFiltered =
+                            filterMealsByDifficulty(dietFiltered)
+                        const filteredMeals =
+                            filterMealsByCookingTime(difficultyFiltered)
                         const groupedMeals = groupMealsByCategory(filteredMeals)
 
                         if (Object.keys(groupedMeals).length === 0) {
@@ -777,6 +854,28 @@ const styles = StyleSheet.create({
         width: '100%',
         maxWidth: 960,
         alignSelf: 'center',
+    },
+    activeFilterBanner: {
+        backgroundColor: '#F3F0FF',
+        borderLeftWidth: 4,
+        borderLeftColor: '#9C86FC',
+        padding: 12,
+        marginTop: 10,
+        marginBottom: 10,
+        borderRadius: 8,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    activeFilterText: {
+        fontSize: 14,
+        color: '#333',
+        fontWeight: '500',
+        flex: 1,
+    },
+    activeFilterCloseButton: {
+        padding: 4,
+        marginLeft: 8,
     },
 })
 
