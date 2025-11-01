@@ -4,7 +4,9 @@ import CustomText from './CustomText'
 import Button from './Button'
 import { useResponsiveDimensions } from '../utils/responsive'
 
-const defaultImage = require('../assets/images/default-profile.png')
+const defaultImage = {
+    uri: 'https://images.ctfassets.net/hef5a6s5axrs/2wzxlzyydJLVr8T7k67cOO/90074490ee64362fe6f0e384d2b3daf8/arkiapuri-removebg-preview.png',
+}
 
 const FamilySection = ({ household, onManagePress }) => {
     const { isDesktop } = useResponsiveDimensions()
