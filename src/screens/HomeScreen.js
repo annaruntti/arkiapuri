@@ -11,6 +11,7 @@ import {
 } from 'react-native'
 import Svg, { Path } from 'react-native-svg'
 import CustomText from '../components/CustomText'
+import FilteredMealsCard from '../components/FilteredMealsCard'
 import ResponsiveLayout from '../components/ResponsiveLayout'
 import { useResponsiveDimensions } from '../utils/responsive'
 
@@ -360,12 +361,13 @@ const HomeScreen = () => {
                         </View>
                     </View>
 
-                    {/* Quick & Easy Meals Card - Inside gradient with white background */}
-                    <TouchableOpacity
-                        style={[
-                            styles.quickMealsCard,
-                            isTablet && styles.tabletQuickMealsCard,
-                        ]}
+                    {/* Filtered Meals Cards */}
+                    <FilteredMealsCard
+                        title="Helpot ja nopeat arkiruuat"
+                        subtitle="Helppoja ruokia alle 30 minuutissa"
+                        image={quickMealsImage}
+                        filterDifficulty="easy"
+                        filterMaxCookingTime={30}
                         onPress={() =>
                             navigation.navigate('MealsStack', {
                                 screen: 'Ateriat',
@@ -375,26 +377,37 @@ const HomeScreen = () => {
                                 },
                             })
                         }
-                    >
-                        <Image
-                            source={quickMealsImage}
-                            style={styles.quickMealsImage}
-                        />
-                        <View style={styles.quickMealsContent}>
-                            <CustomText style={styles.quickMealsTitle}>
-                                Helpot ja nopeat arkiruuat
-                            </CustomText>
-                            <CustomText style={styles.quickMealsSubtitle}>
-                                Helppoja ruokia alle 30 minuutissa
-                            </CustomText>
-                        </View>
-                        <MaterialIcons
-                            name="arrow-forward"
-                            size={24}
-                            color="#9C86FC"
-                            style={styles.quickMealsArrow}
-                        />
-                    </TouchableOpacity>
+                    />
+
+                    <FilteredMealsCard
+                        title="Aamiaisruoat"
+                        subtitle="Aloita päivä hyvin"
+                        image={mealImage}
+                        filterMealType="breakfast"
+                        onPress={() =>
+                            navigation.navigate('MealsStack', {
+                                screen: 'Ateriat',
+                                params: {
+                                    filterMealType: 'breakfast',
+                                },
+                            })
+                        }
+                    />
+
+                    <FilteredMealsCard
+                        title="Jälkiruoat"
+                        subtitle="Makeat herkut"
+                        image={mealImage}
+                        filterMealType="dessert"
+                        onPress={() =>
+                            navigation.navigate('MealsStack', {
+                                screen: 'Ateriat',
+                                params: {
+                                    filterMealType: 'dessert',
+                                },
+                            })
+                        }
+                    />
                 </View>
             </LinearGradient>
         </ScrollView>
@@ -617,80 +630,5 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: '#333',
         textAlign: 'center',
-    },
-    quickMealsCard: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        marginTop: 20,
-        marginHorizontal: 20,
-        padding: 16,
-        flexDirection: 'row',
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-    },
-    tabletQuickMealsCard: {
-        marginHorizontal: 40,
-        padding: 20,
-    },
-    quickMealsImage: {
-        width: 80,
-        height: 80,
-        resizeMode: 'contain',
-    },
-    quickMealsContent: {
-        flex: 1,
-        marginLeft: 5,
-    },
-    quickMealsTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#333',
-        marginBottom: 4,
-    },
-    quickMealsSubtitle: {
-        fontSize: 14,
-        color: '#666',
-    },
-    quickMealsArrow: {
-        marginLeft: 8,
-    },
-    desktopQuickMealsCard: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        marginTop: 30,
-        marginHorizontal: 60,
-        marginBottom: 40,
-        padding: 24,
-        flexDirection: 'row',
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 4,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 5,
-        maxWidth: 960,
-        alignSelf: 'center',
-        width: '90%',
-    },
-    desktopQuickMealsImage: {
-        width: 100,
-        height: 100,
-        resizeMode: 'contain',
-    },
-    desktopQuickMealsTitle: {
-        fontSize: 22,
-        fontWeight: '600',
-        color: '#333',
-        marginBottom: 6,
     },
 })

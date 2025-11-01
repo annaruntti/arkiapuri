@@ -43,12 +43,14 @@ const MealsScreen = ({ route, navigation }) => {
     // Get filter params from navigation
     const filterDifficulty = route?.params?.filterDifficulty || null
     const filterMaxCookingTime = route?.params?.filterMaxCookingTime || null
+    const filterMealType = route?.params?.filterMealType || null
 
     // Clear navigation filters
     const clearNavigationFilters = () => {
         navigation.setParams({
             filterDifficulty: null,
             filterMaxCookingTime: null,
+            filterMealType: null,
         })
     }
 
@@ -152,6 +154,18 @@ const MealsScreen = ({ route, navigation }) => {
         return meals.filter((meal) => {
             const cookingTime = parseInt(meal.cookingTime) || 0
             return cookingTime > 0 && cookingTime <= filterMaxCookingTime
+        })
+    }
+
+    // Filter meals by meal type (defaultRoles)
+    const filterMealsByType = (meals) => {
+        if (!filterMealType) {
+            return meals
+        }
+
+        return meals.filter((meal) => {
+            const roles = meal.defaultRoles || []
+            return roles.includes(filterMealType)
         })
     }
 
@@ -568,10 +582,12 @@ const MealsScreen = ({ route, navigation }) => {
                 onSearchChange={setSearchQuery}
                 onClearSearch={() => setSearchQuery('')}
                 placeholder="Hae aterioita nimellä..."
-                resultsCount={
+                resultsCount=                {
                     filterMealsByCookingTime(
                         filterMealsByDifficulty(
-                            filterMealsByDiet(filterMealsBySearch(meals))
+                            filterMealsByType(
+                                filterMealsByDiet(filterMealsBySearch(meals))
+                            )
                         )
                     ).length
                 }
@@ -615,7 +631,9 @@ const MealsScreen = ({ route, navigation }) => {
                     }
                 >
                     {/* Active filter indicator */}
-                    {(filterDifficulty || filterMaxCookingTime) && (
+                    {(filterDifficulty ||
+                        filterMaxCookingTime ||
+                        filterMealType) && (
                         <View style={styles.activeFilterBanner}>
                             <MaterialIcons
                                 name="filter-list"
@@ -627,10 +645,13 @@ const MealsScreen = ({ route, navigation }) => {
                                 {filterDifficulty &&
                                     `${getDifficultyText(filterDifficulty)}`}
                                 {filterDifficulty &&
-                                    filterMaxCookingTime &&
+                                    (filterMaxCookingTime || filterMealType) &&
                                     ', '}
                                 {filterMaxCookingTime &&
                                     `Valmistusaika ≤ ${filterMaxCookingTime} min`}
+                                {filterMaxCookingTime && filterMealType && ', '}
+                                {filterMealType &&
+                                    `${getMealRoleText(filterMealType)}`}
                             </CustomText>
                             <TouchableOpacity
                                 onPress={clearNavigationFilters}
@@ -648,8 +669,9 @@ const MealsScreen = ({ route, navigation }) => {
                     {(() => {
                         const searchedMeals = filterMealsBySearch(meals)
                         const dietFiltered = filterMealsByDiet(searchedMeals)
+                        const typeFiltered = filterMealsByType(dietFiltered)
                         const difficultyFiltered =
-                            filterMealsByDifficulty(dietFiltered)
+                            filterMealsByDifficulty(typeFiltered)
                         const filteredMeals =
                             filterMealsByCookingTime(difficultyFiltered)
                         const groupedMeals = groupMealsByCategory(filteredMeals)
