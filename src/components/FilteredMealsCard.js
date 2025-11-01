@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
         padding: 24,
         marginBottom: 24,
         marginHorizontal: 60,
-        maxWidth: 960,
+        maxWidth: 730,
         alignSelf: 'center',
         width: '90%',
         shadowOffset: { width: 0, height: 4 },
