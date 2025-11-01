@@ -20,6 +20,7 @@ import { AntDesign, Feather, FontAwesome6 } from '@expo/vector-icons'
 
 import CustomText from '../components/CustomText'
 import ConfirmEmailScreen from '../screens/ConfirmEmailScreen'
+import FamilyManagementScreen from '../screens/FamilyManagementScreen'
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen'
 import HomeScreen from '../screens/HomeScreen'
 import ImageUploadScreen from '../screens/ImageUploadScreen'
@@ -388,6 +389,10 @@ function ProfileStackScreen() {
             })}
         >
             <ProfileStack.Screen name="Omat tiedot" component={ProfileScreen} />
+            <ProfileStack.Screen
+                name="Hallinnoi perhettä"
+                component={FamilyManagementScreen}
+            />
         </ProfileStack.Navigator>
     )
 }
@@ -605,6 +610,7 @@ const linking = {
                     ProfileStack: {
                         screens: {
                             'Omat tiedot': 'profile',
+                            'Hallinnoi perhettä': 'family-management',
                         },
                     },
                 },

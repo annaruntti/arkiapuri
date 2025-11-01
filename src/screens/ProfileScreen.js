@@ -23,9 +23,37 @@ const ProfileScreen = () => {
     const { logout, profile, setProfile } = useLogin()
     const navigation = useNavigation()
     const { isDesktop, isTablet } = useResponsiveDimensions()
+    const [household, setHousehold] = React.useState(null)
+    const [loadingHousehold, setLoadingHousehold] = React.useState(true)
 
     const defaultImage = {
         uri: 'https://images.ctfassets.net/hef5a6s5axrs/2wzxlzyydJLVr8T7k67cOO/90074490ee64362fe6f0e384d2b3daf8/arkiapuri-removebg-preview.png',
+    }
+
+    // Fetch household data
+    React.useEffect(() => {
+        fetchHousehold()
+    }, [])
+
+    const fetchHousehold = async () => {
+        try {
+            setLoadingHousehold(true)
+            const token = await storage.getItem('userToken')
+            const response = await axios.get(getServerUrl('/household'), {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            })
+
+            if (response.data.success && response.data.household) {
+                setHousehold(response.data.household)
+            }
+        } catch (error) {
+            console.error('Error fetching household:', error)
+            // Silent fail - household is optional
+        } finally {
+            setLoadingHousehold(false)
+        }
     }
 
     const pickImage = async () => {
@@ -174,6 +202,57 @@ const ProfileScreen = () => {
                                 </CustomText>
                             </View>
                         </View>
+
+                        {/* Family Section */}
+                        {!loadingHousehold && household && (
+                            <View style={styles.familySection}>
+                                <View style={styles.familyHeader}>
+                                    <CustomText
+                                        style={[
+                                            styles.familyTitle,
+                                            isDesktop && styles.desktopFamilyTitle,
+                                        ]}
+                                    >
+                                        {household.name}
+                                    </CustomText>
+                                </View>
+                                
+                                <View style={styles.familyMembers}>
+                                    {household.members.map((member) => (
+                                        <View key={member._id} style={styles.memberRow}>
+                                            <Image
+                                                source={
+                                                    member.userId?.profileImage
+                                                        ? { uri: member.userId.profileImage }
+                                                        : defaultImage
+                                                }
+                                                style={styles.memberAvatar}
+                                            />
+                                            <View style={styles.memberInfo}>
+                                                <CustomText style={styles.memberName}>
+                                                    {member.userId?.username}
+                                                    {household.owner.toString() === member.userId?._id && (
+                                                        <CustomText style={styles.ownerBadge}> (Omistaja)</CustomText>
+                                                    )}
+                                                </CustomText>
+                                                <CustomText style={styles.memberEmail}>
+                                                    {member.userId?.email}
+                                                </CustomText>
+                                            </View>
+                                        </View>
+                                    ))}
+                                </View>
+
+                                <TouchableOpacity
+                                    style={styles.manageFamilyButton}
+                                    onPress={() => navigation.navigate('Hallinnoi perhettä')}
+                                >
+                                    <CustomText style={styles.manageFamilyText}>
+                                        Hallinnoi perhettä
+                                    </CustomText>
+                                </TouchableOpacity>
+                            </View>
+                        )}
 
                         <View style={styles.buttonSection}>
                             <Button
@@ -363,5 +442,79 @@ const styles = StyleSheet.create({
         color: '#000000',
         fontWeight: 'bold',
         textAlign: 'center',
+    },
+    familySection: {
+        width: '100%',
+        marginTop: 24,
+        marginBottom: 24,
+        padding: 20,
+        backgroundColor: '#f9fafb',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#e5e7eb',
+    },
+    familyHeader: {
+        marginBottom: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#e5e7eb',
+        paddingBottom: 12,
+    },
+    familyTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#1f2937',
+    },
+    desktopFamilyTitle: {
+        fontSize: 20,
+    },
+    familyMembers: {
+        gap: 12,
+    },
+    memberRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 12,
+        backgroundColor: '#ffffff',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#e5e7eb',
+    },
+    memberAvatar: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        marginRight: 12,
+        borderWidth: 2,
+        borderColor: '#9C86FC',
+    },
+    memberInfo: {
+        flex: 1,
+    },
+    memberName: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#1f2937',
+        marginBottom: 4,
+    },
+    ownerBadge: {
+        fontSize: 14,
+        fontWeight: '400',
+        color: '#9C86FC',
+    },
+    memberEmail: {
+        fontSize: 14,
+        color: '#6b7280',
+    },
+    manageFamilyButton: {
+        marginTop: 16,
+        padding: 12,
+        backgroundColor: '#9C86FC',
+        borderRadius: 8,
+        alignItems: 'center',
+    },
+    manageFamilyText: {
+        color: '#ffffff',
+        fontWeight: '600',
+        fontSize: 14,
     },
 })
