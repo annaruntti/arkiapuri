@@ -163,9 +163,13 @@ const HomeScreen = () => {
                         </LinearGradient>
                     </View>
 
-                    {/* Quick & Easy Meals Card - Desktop */}
-                    <TouchableOpacity
-                        style={styles.desktopQuickMealsCard}
+                    {/* Filtered Meals Cards */}
+                    <FilteredMealsCard
+                        title="Helpot ja nopeat arkiruuat"
+                        subtitle="Helppoja ruokia alle 30 minuutissa"
+                        image={quickMealsImage}
+                        filterDifficulty="easy"
+                        filterMaxCookingTime={30}
                         onPress={() =>
                             navigation.navigate('MealsStack', {
                                 screen: 'Ateriat',
@@ -175,26 +179,37 @@ const HomeScreen = () => {
                                 },
                             })
                         }
-                    >
-                        <Image
-                            source={quickMealsImage}
-                            style={styles.desktopQuickMealsImage}
-                        />
-                        <View style={styles.quickMealsContent}>
-                            <CustomText style={styles.desktopQuickMealsTitle}>
-                                Helpot ja nopeat arkiruuat
-                            </CustomText>
-                            <CustomText style={styles.quickMealsSubtitle}>
-                                Helppoja ruokia alle 30 minuutissa
-                            </CustomText>
-                        </View>
-                        <MaterialIcons
-                            name="arrow-forward"
-                            size={28}
-                            color="#9C86FC"
-                            style={styles.quickMealsArrow}
-                        />
-                    </TouchableOpacity>
+                    />
+
+                    <FilteredMealsCard
+                        title="Aamiaisruoat"
+                        subtitle="Aloita päivä hyvin"
+                        image={mealImage}
+                        filterMealType="breakfast"
+                        onPress={() =>
+                            navigation.navigate('MealsStack', {
+                                screen: 'Ateriat',
+                                params: {
+                                    filterMealType: 'breakfast',
+                                },
+                            })
+                        }
+                    />
+
+                    <FilteredMealsCard
+                        title="Jälkiruoat"
+                        subtitle="Makeat herkut"
+                        image={mealImage}
+                        filterMealType="dessert"
+                        onPress={() =>
+                            navigation.navigate('MealsStack', {
+                                screen: 'Ateriat',
+                                params: {
+                                    filterMealType: 'dessert',
+                                },
+                            })
+                        }
+                    />
                 </ScrollView>
             </ResponsiveLayout>
         )

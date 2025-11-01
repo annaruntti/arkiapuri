@@ -26,17 +26,11 @@ const FilteredMealsCard = ({
         >
             <Image
                 source={image}
-                style={[
-                    styles.image,
-                    isDesktop && styles.desktopImage,
-                ]}
+                style={[styles.image, isDesktop && styles.desktopImage]}
             />
             <View style={styles.content}>
                 <CustomText
-                    style={[
-                        styles.title,
-                        isDesktop && styles.desktopTitle,
-                    ]}
+                    style={[styles.title, isDesktop && styles.desktopTitle]}
                 >
                     {title}
                 </CustomText>
