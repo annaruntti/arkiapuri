@@ -256,6 +256,12 @@ const ProfileScreen = () => {
 
                         <View style={styles.buttonSection}>
                             <Button
+                                title="Hallinnoi perhettä"
+                                style={styles.familyManageButton}
+                                textStyle={styles.buttonText}
+                                onPress={() => navigation.navigate('Hallinnoi perhettä')}
+                            />
+                            <Button
                                 title="Muokkaa tietoja"
                                 style={styles.secondaryButton}
                                 textStyle={styles.buttonText}
@@ -414,6 +420,16 @@ const styles = StyleSheet.create({
         width: '100%',
         gap: 16,
         alignItems: 'center',
+    },
+    familyManageButton: {
+        borderRadius: 25,
+        paddingTop: 7,
+        paddingBottom: 7,
+        paddingLeft: 10,
+        paddingRight: 10,
+        elevation: 2,
+        backgroundColor: '#9C86FC',
+        width: '80%',
     },
     secondaryButton: {
         borderRadius: 25,
