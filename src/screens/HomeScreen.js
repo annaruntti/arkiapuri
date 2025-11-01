@@ -646,10 +646,10 @@ const styles = StyleSheet.create({
     },
     quickMealsContent: {
         flex: 1,
-        marginLeft: 16,
+        marginLeft: 5,
     },
     quickMealsTitle: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: '600',
         color: '#333',
         marginBottom: 4,
