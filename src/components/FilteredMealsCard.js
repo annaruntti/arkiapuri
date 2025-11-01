@@ -13,21 +13,45 @@ const FilteredMealsCard = ({
     filterMealType,
     onPress,
 }) => {
-    const { isTablet } = useResponsiveDimensions()
+    const { isTablet, isDesktop } = useResponsiveDimensions()
 
     return (
         <TouchableOpacity
-            style={[styles.card, isTablet && styles.tabletCard]}
+            style={[
+                styles.card,
+                isTablet && styles.tabletCard,
+                isDesktop && styles.desktopCard,
+            ]}
             onPress={onPress}
         >
-            <Image source={image} style={styles.image} />
+            <Image
+                source={image}
+                style={[
+                    styles.image,
+                    isDesktop && styles.desktopImage,
+                ]}
+            />
             <View style={styles.content}>
-                <CustomText style={styles.title}>{title}</CustomText>
-                <CustomText style={styles.subtitle}>{subtitle}</CustomText>
+                <CustomText
+                    style={[
+                        styles.title,
+                        isDesktop && styles.desktopTitle,
+                    ]}
+                >
+                    {title}
+                </CustomText>
+                <CustomText
+                    style={[
+                        styles.subtitle,
+                        isDesktop && styles.desktopSubtitle,
+                    ]}
+                >
+                    {subtitle}
+                </CustomText>
             </View>
             <MaterialIcons
                 name="arrow-forward"
-                size={24}
+                size={isDesktop ? 28 : 24}
                 color="#9C86FC"
                 style={styles.arrow}
             />
@@ -53,12 +77,31 @@ const styles = StyleSheet.create({
     tabletCard: {
         padding: 20,
         marginBottom: 20,
+        marginHorizontal: 15,
+    },
+    desktopCard: {
+        padding: 24,
+        marginBottom: 24,
+        marginHorizontal: 60,
+        maxWidth: 960,
+        alignSelf: 'center',
+        width: '90%',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.12,
+        shadowRadius: 8,
+        elevation: 4,
     },
     image: {
         width: 60,
         height: 60,
         borderRadius: 12,
         marginRight: 16,
+    },
+    desktopImage: {
+        width: 80,
+        height: 80,
+        borderRadius: 16,
+        marginRight: 20,
     },
     content: {
         flex: 1,
@@ -69,9 +112,16 @@ const styles = StyleSheet.create({
         color: '#1f2937',
         marginBottom: 4,
     },
+    desktopTitle: {
+        fontSize: 20,
+        marginBottom: 6,
+    },
     subtitle: {
         fontSize: 14,
         color: '#6b7280',
+    },
+    desktopSubtitle: {
+        fontSize: 16,
     },
     arrow: {
         marginLeft: 8,
