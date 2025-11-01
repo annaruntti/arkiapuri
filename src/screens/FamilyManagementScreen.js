@@ -1,6 +1,7 @@
 import { MaterialIcons } from '@expo/vector-icons'
+import { useFocusEffect } from '@react-navigation/native'
 import axios from 'axios'
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import {
     Alert,
     Image,
@@ -35,9 +36,12 @@ const FamilyManagementScreen = ({ navigation }) => {
         uri: 'https://images.ctfassets.net/hef5a6s5axrs/2wzxlzyydJLVr8T7k67cOO/90074490ee64362fe6f0e384d2b3daf8/arkiapuri-removebg-preview.png',
     }
 
-    useEffect(() => {
-        fetchHousehold()
-    }, [])
+    // Fetch household data when screen is focused
+    useFocusEffect(
+        React.useCallback(() => {
+            fetchHousehold()
+        }, [])
+    )
 
     const fetchHousehold = async () => {
         try {
@@ -77,7 +81,8 @@ const FamilyManagementScreen = ({ navigation }) => {
 
             if (response.data.success) {
                 Alert.alert('Onnistui', 'Perhe luotu onnistuneesti')
-                fetchHousehold()
+                // Refresh to show the new household
+                await fetchHousehold()
             }
         } catch (error) {
             console.error('Error creating household:', error)

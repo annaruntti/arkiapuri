@@ -1,4 +1,5 @@
 import { useNavigation } from '@react-navigation/native'
+import { useFocusEffect } from '@react-navigation/native'
 import axios from 'axios'
 import * as ImagePicker from 'expo-image-picker'
 import * as React from 'react'
@@ -30,10 +31,12 @@ const ProfileScreen = () => {
         uri: 'https://images.ctfassets.net/hef5a6s5axrs/2wzxlzyydJLVr8T7k67cOO/90074490ee64362fe6f0e384d2b3daf8/arkiapuri-removebg-preview.png',
     }
 
-    // Fetch household data
-    React.useEffect(() => {
-        fetchHousehold()
-    }, [])
+    // Fetch household data when screen is focused
+    useFocusEffect(
+        React.useCallback(() => {
+            fetchHousehold()
+        }, [])
+    )
 
     const fetchHousehold = async () => {
         try {
