@@ -21,6 +21,7 @@ const FilteredMealsCard = ({
                 styles.card,
                 isTablet && styles.tabletCard,
                 isDesktop && styles.desktopCard,
+                !isDesktop && styles.centeredCard,
             ]}
             onPress={onPress}
         >
@@ -73,12 +74,15 @@ const styles = StyleSheet.create({
         marginBottom: 20,
         marginHorizontal: 15,
     },
+    centeredCard: {
+        alignSelf: 'center',
+    },
     desktopCard: {
         padding: 24,
         marginBottom: 24,
         marginHorizontal: 60,
         maxWidth: 730,
-        alignSelf: 'center',
+        alignSelf: 'flex-start',
         width: '90%',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.12,
