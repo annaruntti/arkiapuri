@@ -410,9 +410,6 @@ const styles = StyleSheet.create({
         borderWidth: 3,
         borderColor: '#9C86FC',
     },
-    manageFamilyButton: {
-        width: '100%',
-    },
     buttonText: {
         color: '#000000',
         fontWeight: 'bold',

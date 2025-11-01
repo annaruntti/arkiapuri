@@ -56,7 +56,7 @@ const FamilySection = ({ household, onManagePress }) => {
                 ))}
                 <Button
                     title="Hallinnoi perhettä"
-                    style={[styles.secondaryButton, styles.manageFamilyButton]}
+                    style={styles.manageFamilyButton}
                     textStyle={styles.buttonText}
                     onPress={onManagePress}
                 />
@@ -128,14 +128,14 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#6b7280',
     },
-    secondaryButton: {
-        backgroundColor: '#fff',
-        width: '90%',
-        marginBottom: 10,
-        borderWidth: 3,
-        borderColor: '#9C86FC',
-    },
     manageFamilyButton: {
+        borderRadius: 25,
+        paddingTop: 7,
+        paddingBottom: 7,
+        paddingLeft: 10,
+        paddingRight: 10,
+        elevation: 2,
+        backgroundColor: '#38E4D9',
         width: '100%',
     },
     buttonText: {
