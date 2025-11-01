@@ -1,5 +1,4 @@
-import { useNavigation } from '@react-navigation/native'
-import { useFocusEffect } from '@react-navigation/native'
+import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import axios from 'axios'
 import * as ImagePicker from 'expo-image-picker'
 import * as React from 'react'
@@ -14,6 +13,7 @@ import {
 } from 'react-native'
 import Button from '../components/Button'
 import CustomText from '../components/CustomText'
+import FamilySection from '../components/FamilySection'
 import ResponsiveLayout from '../components/ResponsiveLayout'
 import { useLogin } from '../context/LoginProvider'
 import { getServerUrl } from '../utils/getServerUrl'
@@ -205,71 +205,24 @@ const ProfileScreen = () => {
                                 </CustomText>
                             </View>
                         </View>
+                        <Button
+                            title="Muokkaa tietoja"
+                            style={styles.primaryButton}
+                            textStyle={styles.buttonText}
+                            onPress={() => {}}
+                        />
 
                         {/* Family Section */}
-                        {!loadingHousehold && household && (
-                            <View style={styles.familySection}>
-                                <View style={styles.familyHeader}>
-                                    <CustomText
-                                        style={[
-                                            styles.familyTitle,
-                                            isDesktop && styles.desktopFamilyTitle,
-                                        ]}
-                                    >
-                                        {household.name}
-                                    </CustomText>
-                                </View>
-                                
-                                <View style={styles.familyMembers}>
-                                    {household.members.map((member) => (
-                                        <View key={member._id} style={styles.memberRow}>
-                                            <Image
-                                                source={
-                                                    member.userId?.profileImage
-                                                        ? { uri: member.userId.profileImage }
-                                                        : defaultImage
-                                                }
-                                                style={styles.memberAvatar}
-                                            />
-                                            <View style={styles.memberInfo}>
-                                                <CustomText style={styles.memberName}>
-                                                    {member.userId?.username}
-                                                    {household.owner.toString() === member.userId?._id && (
-                                                        <CustomText style={styles.ownerBadge}> (Omistaja)</CustomText>
-                                                    )}
-                                                </CustomText>
-                                                <CustomText style={styles.memberEmail}>
-                                                    {member.userId?.email}
-                                                </CustomText>
-                                            </View>
-                                        </View>
-                                    ))}
-                                </View>
-
-                                <TouchableOpacity
-                                    style={styles.manageFamilyButton}
-                                    onPress={() => navigation.navigate('Hallinnoi perhettä')}
-                                >
-                                    <CustomText style={styles.manageFamilyText}>
-                                        Hallinnoi perhettä
-                                    </CustomText>
-                                </TouchableOpacity>
-                            </View>
+                        {!loadingHousehold && (
+                            <FamilySection
+                                household={household}
+                                onManagePress={() =>
+                                    navigation.navigate('Hallinnoi perhettä')
+                                }
+                            />
                         )}
 
                         <View style={styles.buttonSection}>
-                            <Button
-                                title="Hallinnoi perhettä"
-                                style={styles.familyManageButton}
-                                textStyle={styles.buttonText}
-                                onPress={() => navigation.navigate('Hallinnoi perhettä')}
-                            />
-                            <Button
-                                title="Muokkaa tietoja"
-                                style={styles.secondaryButton}
-                                textStyle={styles.buttonText}
-                                onPress={() => {}}
-                            />
                             <Button
                                 title="Kirjaudu ulos"
                                 style={styles.tertiaryButton}
@@ -424,7 +377,7 @@ const styles = StyleSheet.create({
         gap: 16,
         alignItems: 'center',
     },
-    familyManageButton: {
+    primaryButton: {
         borderRadius: 25,
         paddingTop: 7,
         paddingBottom: 7,
@@ -432,7 +385,7 @@ const styles = StyleSheet.create({
         paddingRight: 10,
         elevation: 2,
         backgroundColor: '#9C86FC',
-        width: '80%',
+        width: '90%',
     },
     secondaryButton: {
         borderRadius: 25,
@@ -442,7 +395,7 @@ const styles = StyleSheet.create({
         paddingRight: 10,
         elevation: 2,
         backgroundColor: '#38E4D9',
-        width: '80%',
+        width: '90%',
     },
     tertiaryButton: {
         borderRadius: 25,
@@ -452,88 +405,17 @@ const styles = StyleSheet.create({
         paddingRight: 10,
         elevation: 2,
         backgroundColor: '#fff',
-        width: '80%',
+        width: '90%',
         marginBottom: 10,
         borderWidth: 3,
         borderColor: '#9C86FC',
+    },
+    manageFamilyButton: {
+        width: '100%',
     },
     buttonText: {
         color: '#000000',
         fontWeight: 'bold',
         textAlign: 'center',
-    },
-    familySection: {
-        width: '100%',
-        marginTop: 24,
-        marginBottom: 24,
-        padding: 20,
-        backgroundColor: '#f9fafb',
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#e5e7eb',
-    },
-    familyHeader: {
-        marginBottom: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#e5e7eb',
-        paddingBottom: 12,
-    },
-    familyTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: '#1f2937',
-    },
-    desktopFamilyTitle: {
-        fontSize: 20,
-    },
-    familyMembers: {
-        gap: 12,
-    },
-    memberRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 12,
-        backgroundColor: '#ffffff',
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#e5e7eb',
-    },
-    memberAvatar: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        marginRight: 12,
-        borderWidth: 2,
-        borderColor: '#9C86FC',
-    },
-    memberInfo: {
-        flex: 1,
-    },
-    memberName: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#1f2937',
-        marginBottom: 4,
-    },
-    ownerBadge: {
-        fontSize: 14,
-        fontWeight: '400',
-        color: '#9C86FC',
-    },
-    memberEmail: {
-        fontSize: 14,
-        color: '#6b7280',
-    },
-    manageFamilyButton: {
-        marginTop: 16,
-        padding: 12,
-        backgroundColor: '#9C86FC',
-        borderRadius: 8,
-        alignItems: 'center',
-    },
-    manageFamilyText: {
-        color: '#ffffff',
-        fontWeight: '600',
-        fontSize: 14,
     },
 })
