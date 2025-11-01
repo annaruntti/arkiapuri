@@ -518,7 +518,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         marginBottom: 15,
-        paddingHorizontal: 10,
         width: '100%',
     },
     box: {

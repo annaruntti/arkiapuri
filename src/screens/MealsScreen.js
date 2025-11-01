@@ -582,7 +582,7 @@ const MealsScreen = ({ route, navigation }) => {
                 onSearchChange={setSearchQuery}
                 onClearSearch={() => setSearchQuery('')}
                 placeholder="Hae aterioita nimellä..."
-                resultsCount=                {
+                resultsCount={
                     filterMealsByCookingTime(
                         filterMealsByDifficulty(
                             filterMealsByType(

@@ -1,8 +1,8 @@
-import React from 'react'
-import { View, TouchableOpacity, Image, StyleSheet } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
-import CustomText from './CustomText'
+import React from 'react'
+import { Image, StyleSheet, TouchableOpacity, View } from 'react-native'
 import { useResponsiveDimensions } from '../utils/responsive'
+import CustomText from './CustomText'
 
 const FilteredMealsCard = ({
     title,
@@ -48,6 +48,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
+        marginHorizontal: 7,
     },
     tabletCard: {
         padding: 20,
@@ -78,4 +79,3 @@ const styles = StyleSheet.create({
 })
 
 export default FilteredMealsCard
-
