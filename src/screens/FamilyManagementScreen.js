@@ -5,7 +5,6 @@ import React, { useState } from 'react'
 import {
     Alert,
     Image,
-    Platform,
     ScrollView,
     StyleSheet,
     TextInput,
@@ -53,12 +52,14 @@ const FamilyManagementScreen = ({ navigation }) => {
                 },
             })
 
-            if (response.data.success && response.data.household) {
+            if (response.data.success) {
+                // Set household even if it's null (user has no household)
                 setHousehold(response.data.household)
             }
         } catch (error) {
             console.error('Error fetching household:', error)
-            Alert.alert('Virhe', 'Perheen tietojen haku epäonnistui')
+            // Don't show alert on fetch error - just keep current state
+            setHousehold(null)
         } finally {
             setLoading(false)
         }
@@ -80,8 +81,12 @@ const FamilyManagementScreen = ({ navigation }) => {
             )
 
             if (response.data.success) {
+                // Immediately set the household from the create response
+                if (response.data.household) {
+                    setHousehold(response.data.household)
+                }
                 Alert.alert('Onnistui', 'Perhe luotu onnistuneesti')
-                // Refresh to show the new household
+                // Also refresh to ensure we have the latest data with populated fields
                 await fetchHousehold()
             }
         } catch (error) {
@@ -124,7 +129,10 @@ const FamilyManagementScreen = ({ navigation }) => {
                             text: 'Kopioi koodi',
                             onPress: () => {
                                 // In a real app, you'd copy to clipboard
-                                console.log('Copy code:', response.data.invitationCode)
+                                console.log(
+                                    'Copy code:',
+                                    response.data.invitationCode
+                                )
                             },
                         },
                         { text: 'OK' },
@@ -172,7 +180,8 @@ const FamilyManagementScreen = ({ navigation }) => {
             console.error('Error joining household:', error)
             Alert.alert(
                 'Virhe',
-                error.response?.data?.message || 'Perheeseen liittyminen epäonnistui'
+                error.response?.data?.message ||
+                    'Perheeseen liittyminen epäonnistui'
             )
         }
     }
@@ -256,7 +265,9 @@ const FamilyManagementScreen = ({ navigation }) => {
         )
     }
 
-    const isOwner = household?.owner?.toString() === profile?._id || household?.owner?._id === profile?._id
+    const isOwner =
+        household?.owner?.toString() === profile?._id ||
+        household?.owner?._id === profile?._id
     const userRole = household?.members?.find(
         (m) => m.userId?._id === profile?._id
     )?.role
@@ -339,9 +350,13 @@ const FamilyManagementScreen = ({ navigation }) => {
         <ResponsiveLayout activeRoute="ProfileStack">
             <ScrollView style={styles.container}>
                 <View style={styles.header}>
-                    <CustomText style={styles.title}>{household.name}</CustomText>
+                    <CustomText style={styles.title}>
+                        {household.name}
+                    </CustomText>
                     {isOwner && (
-                        <CustomText style={styles.ownerBadge}>Omistaja</CustomText>
+                        <CustomText style={styles.ownerBadge}>
+                            Omistaja
+                        </CustomText>
                     )}
                 </View>
 
@@ -370,17 +385,25 @@ const FamilyManagementScreen = ({ navigation }) => {
 
                     <View style={styles.membersList}>
                         {household.members?.map((member) => {
-                            const isCurrentUser = member.userId?._id === profile?._id
+                            const isCurrentUser =
+                                member.userId?._id === profile?._id
                             const isMemberOwner =
-                                household.owner?.toString() === member.userId?._id ||
+                                household.owner?.toString() ===
+                                    member.userId?._id ||
                                 household.owner?._id === member.userId?._id
 
                             return (
-                                <View key={member._id} style={styles.memberCard}>
+                                <View
+                                    key={member._id}
+                                    style={styles.memberCard}
+                                >
                                     <Image
                                         source={
                                             member.userId?.profileImage
-                                                ? { uri: member.userId.profileImage }
+                                                ? {
+                                                      uri: member.userId
+                                                          .profileImage,
+                                                  }
                                                 : defaultImage
                                         }
                                         style={styles.memberAvatar}
@@ -389,7 +412,9 @@ const FamilyManagementScreen = ({ navigation }) => {
                                         <CustomText style={styles.memberName}>
                                             {member.userId?.username}
                                             {isCurrentUser && (
-                                                <CustomText style={styles.youBadge}>
+                                                <CustomText
+                                                    style={styles.youBadge}
+                                                >
                                                     {' '}
                                                     (Sinä)
                                                 </CustomText>
@@ -402,8 +427,8 @@ const FamilyManagementScreen = ({ navigation }) => {
                                             {member.role === 'owner'
                                                 ? 'Omistaja'
                                                 : member.role === 'admin'
-                                                ? 'Ylläpitäjä'
-                                                : 'Jäsen'}
+                                                  ? 'Ylläpitäjä'
+                                                  : 'Jäsen'}
                                         </CustomText>
                                     </View>
                                     {!isMemberOwner &&
@@ -432,8 +457,9 @@ const FamilyManagementScreen = ({ navigation }) => {
                 </View>
 
                 {/* Pending Invitations */}
-                {household.invitations?.filter((inv) => inv.status === 'pending')
-                    .length > 0 && (
+                {household.invitations?.filter(
+                    (inv) => inv.status === 'pending'
+                ).length > 0 && (
                     <View style={styles.section}>
                         <CustomText style={styles.sectionTitle}>
                             Odottavat kutsut
@@ -441,17 +467,24 @@ const FamilyManagementScreen = ({ navigation }) => {
                         {household.invitations
                             .filter((inv) => inv.status === 'pending')
                             .map((invitation) => (
-                                <View key={invitation._id} style={styles.invitationCard}>
+                                <View
+                                    key={invitation._id}
+                                    style={styles.invitationCard}
+                                >
                                     <MaterialIcons
                                         name="mail-outline"
                                         size={24}
                                         color="#9C86FC"
                                     />
                                     <View style={styles.invitationInfo}>
-                                        <CustomText style={styles.invitationEmail}>
+                                        <CustomText
+                                            style={styles.invitationEmail}
+                                        >
                                             {invitation.email}
                                         </CustomText>
-                                        <CustomText style={styles.invitationDate}>
+                                        <CustomText
+                                            style={styles.invitationDate}
+                                        >
                                             Lähetetty{' '}
                                             {new Date(
                                                 invitation.createdAt
@@ -721,4 +754,3 @@ const styles = StyleSheet.create({
 })
 
 export default FamilyManagementScreen
-
