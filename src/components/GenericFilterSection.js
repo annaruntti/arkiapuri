@@ -12,6 +12,7 @@ const GenericFilterSection = ({
     onClearFilters,
     getItemCounts = () => ({}),
     disabled = false,
+    additionalFilterGroups = [],
 }) => {
     if (!showFilters) return null
 
@@ -88,6 +89,45 @@ const GenericFilterSection = ({
                         </CustomText>
                     </TouchableOpacity>
                 )}
+
+                {/* Additional filter groups */}
+                {additionalFilterGroups.map((group, index) => (
+                    <View key={index} style={styles.additionalFilterGroup}>
+                        <CustomText style={styles.filterGroupTitle}>
+                            {group.title}
+                        </CustomText>
+                        <View style={styles.filterChipsContainer}>
+                            {group.options.map((option) => (
+                                <TouchableOpacity
+                                    key={option.value}
+                                    style={[
+                                        styles.filterChip,
+                                        group.selectedValue === option.value &&
+                                            styles.filterChipSelected,
+                                    ]}
+                                    onPress={() =>
+                                        group.onSelect(
+                                            group.selectedValue === option.value
+                                                ? null
+                                                : option.value
+                                        )
+                                    }
+                                >
+                                    <CustomText
+                                        style={[
+                                            styles.filterChipText,
+                                            group.selectedValue ===
+                                                option.value &&
+                                                styles.filterChipTextSelected,
+                                        ]}
+                                    >
+                                        {option.label}
+                                    </CustomText>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </View>
+                ))}
             </View>
         </View>
     )
@@ -159,6 +199,18 @@ const styles = {
         fontSize: 12,
         color: '#9C86FC',
         textDecorationLine: 'underline',
+    },
+    additionalFilterGroup: {
+        marginTop: 20,
+        paddingTop: 15,
+        borderTopWidth: 1,
+        borderTopColor: '#e0e0e0',
+    },
+    filterGroupTitle: {
+        fontSize: 14,
+        fontWeight: '600',
+        marginBottom: 10,
+        color: '#333',
     },
 }
 

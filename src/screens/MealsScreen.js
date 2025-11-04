@@ -623,86 +623,33 @@ const MealsScreen = ({ route, navigation }) => {
                 onToggleFilter={toggleDietFilter}
                 onClearFilters={() => setSelectedDietFilters([])}
                 getItemCounts={getMealCountsForCategories}
+                additionalFilterGroups={[
+                    {
+                        title: 'Vaikeustaso:',
+                        selectedValue: selectedDifficultyFilter,
+                        onSelect: setSelectedDifficultyFilter,
+                        options: [
+                            { value: 'easy', label: getDifficultyText('easy') },
+                            {
+                                value: 'medium',
+                                label: getDifficultyText('medium'),
+                            },
+                            { value: 'hard', label: getDifficultyText('hard') },
+                        ],
+                    },
+                    {
+                        title: 'Valmistusaika:',
+                        selectedValue: selectedCookingTimeFilter,
+                        onSelect: setSelectedCookingTimeFilter,
+                        options: [
+                            { value: 15, label: '≤ 15 min' },
+                            { value: 30, label: '≤ 30 min' },
+                            { value: 45, label: '≤ 45 min' },
+                            { value: 60, label: '≤ 60 min' },
+                        ],
+                    },
+                ]}
             />
-
-            {/* Additional filters */}
-            {showFilters && (
-                <View style={styles.additionalFiltersContainer}>
-                    {/* Difficulty Level Filter */}
-                    <View style={styles.filterGroup}>
-                        <CustomText style={styles.filterGroupTitle}>
-                            Vaikeustaso:
-                        </CustomText>
-                        <View style={styles.filterOptions}>
-                            {['easy', 'medium', 'hard'].map((level) => (
-                                <TouchableOpacity
-                                    key={level}
-                                    style={[
-                                        styles.filterOption,
-                                        selectedDifficultyFilter === level &&
-                                            styles.filterOptionSelected,
-                                    ]}
-                                    onPress={() =>
-                                        setSelectedDifficultyFilter(
-                                            selectedDifficultyFilter === level
-                                                ? null
-                                                : level
-                                        )
-                                    }
-                                >
-                                    <CustomText
-                                        style={[
-                                            styles.filterOptionText,
-                                            selectedDifficultyFilter ===
-                                                level &&
-                                                styles.filterOptionTextSelected,
-                                        ]}
-                                    >
-                                        {getDifficultyText(level)}
-                                    </CustomText>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    </View>
-
-                    {/* Cooking Time Filter */}
-                    <View style={styles.filterGroup}>
-                        <CustomText style={styles.filterGroupTitle}>
-                            Valmistusaika:
-                        </CustomText>
-                        <View style={styles.filterOptions}>
-                            {[15, 30, 45, 60].map((time) => (
-                                <TouchableOpacity
-                                    key={time}
-                                    style={[
-                                        styles.filterOption,
-                                        selectedCookingTimeFilter === time &&
-                                            styles.filterOptionSelected,
-                                    ]}
-                                    onPress={() =>
-                                        setSelectedCookingTimeFilter(
-                                            selectedCookingTimeFilter === time
-                                                ? null
-                                                : time
-                                        )
-                                    }
-                                >
-                                    <CustomText
-                                        style={[
-                                            styles.filterOptionText,
-                                            selectedCookingTimeFilter ===
-                                                time &&
-                                                styles.filterOptionTextSelected,
-                                        ]}
-                                    >
-                                        ≤ {time} min
-                                    </CustomText>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    </View>
-                </View>
-            )}
 
             {meals.length > 0 ? (
                 <ScrollView
@@ -983,47 +930,6 @@ const styles = StyleSheet.create({
     activeFilterCloseButton: {
         padding: 4,
         marginLeft: 8,
-    },
-    additionalFiltersContainer: {
-        backgroundColor: '#f9fafb',
-        padding: 15,
-        marginHorizontal: 15,
-        marginBottom: 10,
-        borderRadius: 8,
-    },
-    filterGroup: {
-        marginBottom: 15,
-    },
-    filterGroupTitle: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#333',
-        marginBottom: 8,
-    },
-    filterOptions: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 8,
-    },
-    filterOption: {
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 20,
-        backgroundColor: '#fff',
-        borderWidth: 1,
-        borderColor: '#e5e7eb',
-    },
-    filterOptionSelected: {
-        backgroundColor: '#9C86FC',
-        borderColor: '#9C86FC',
-    },
-    filterOptionText: {
-        fontSize: 14,
-        color: '#666',
-        fontWeight: '500',
-    },
-    filterOptionTextSelected: {
-        color: '#fff',
     },
 })
 
