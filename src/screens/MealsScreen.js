@@ -205,6 +205,26 @@ const MealsScreen = ({ route, navigation }) => {
         return counts
     }
 
+    // Get meal counts by difficulty level
+    const getMealCountByDifficulty = (difficulty) => {
+        const searchedMeals = filterMealsBySearch(meals)
+        return searchedMeals.filter((meal) => {
+            const mealDifficulty = meal.difficultyLevel
+                ? String(meal.difficultyLevel).toLowerCase()
+                : 'medium'
+            return mealDifficulty === difficulty.toLowerCase()
+        }).length
+    }
+
+    // Get meal counts by cooking time
+    const getMealCountByCookingTime = (maxTime) => {
+        const searchedMeals = filterMealsBySearch(meals)
+        return searchedMeals.filter((meal) => {
+            const cookingTime = parseInt(meal.cookingTime) || 0
+            return cookingTime > 0 && cookingTime <= maxTime
+        }).length
+    }
+
     // Group meals by their default roles
     const groupMealsByCategory = (meals) => {
         const grouped = {}
@@ -618,16 +638,17 @@ const MealsScreen = ({ route, navigation }) => {
             <GenericFilterSection
                 selectedFilters={selectedDietFilters}
                 showFilters={showFilters}
-                filterTitle="Suodata ruokavalioin mukaan:"
+                filterTitle="Suodata ruokavalioin mukaan"
                 categories={dietCategories}
                 onToggleFilter={toggleDietFilter}
                 onClearFilters={() => setSelectedDietFilters([])}
                 getItemCounts={getMealCountsForCategories}
                 additionalFilterGroups={[
                     {
-                        title: 'Vaikeustaso:',
+                        title: 'Vaikeustaso',
                         selectedValue: selectedDifficultyFilter,
                         onSelect: setSelectedDifficultyFilter,
+                        getItemCount: getMealCountByDifficulty,
                         options: [
                             { value: 'easy', label: getDifficultyText('easy') },
                             {
@@ -638,9 +659,10 @@ const MealsScreen = ({ route, navigation }) => {
                         ],
                     },
                     {
-                        title: 'Valmistusaika:',
+                        title: 'Valmistusaika',
                         selectedValue: selectedCookingTimeFilter,
                         onSelect: setSelectedCookingTimeFilter,
+                        getItemCount: getMealCountByCookingTime,
                         options: [
                             { value: 15, label: '≤ 15 min' },
                             { value: 30, label: '≤ 30 min' },

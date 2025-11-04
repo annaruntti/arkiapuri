@@ -155,36 +155,53 @@ const GenericFilterSection = ({
 
                             {expandedGroups[`group_${index}`] && (
                                 <View style={styles.filterChipsContainer}>
-                                    {group.options.map((option) => (
-                                        <TouchableOpacity
-                                            key={option.value}
-                                            style={[
-                                                styles.filterChip,
-                                                group.selectedValue ===
-                                                    option.value &&
-                                                    styles.filterChipSelected,
-                                            ]}
-                                            onPress={() =>
-                                                group.onSelect(
-                                                    group.selectedValue ===
-                                                        option.value
-                                                        ? null
-                                                        : option.value
-                                                )
-                                            }
-                                        >
-                                            <CustomText
+                                    {group.options.map((option) => {
+                                        const count = group.getItemCount
+                                            ? group.getItemCount(option.value)
+                                            : null
+                                        return (
+                                            <TouchableOpacity
+                                                key={option.value}
                                                 style={[
-                                                    styles.filterChipText,
+                                                    styles.filterChip,
                                                     group.selectedValue ===
                                                         option.value &&
-                                                        styles.filterChipTextSelected,
+                                                        styles.filterChipSelected,
                                                 ]}
+                                                onPress={() =>
+                                                    group.onSelect(
+                                                        group.selectedValue ===
+                                                            option.value
+                                                            ? null
+                                                            : option.value
+                                                    )
+                                                }
                                             >
-                                                {option.label}
-                                            </CustomText>
-                                        </TouchableOpacity>
-                                    ))}
+                                                <CustomText
+                                                    style={[
+                                                        styles.filterChipText,
+                                                        group.selectedValue ===
+                                                            option.value &&
+                                                            styles.filterChipTextSelected,
+                                                    ]}
+                                                >
+                                                    {option.label}
+                                                </CustomText>
+                                                {count !== null && (
+                                                    <CustomText
+                                                        style={[
+                                                            styles.filterChipText,
+                                                            group.selectedValue ===
+                                                                option.value &&
+                                                                styles.filterChipTextSelected,
+                                                        ]}
+                                                    >
+                                                        ({count})
+                                                    </CustomText>
+                                                )}
+                                            </TouchableOpacity>
+                                        )
+                                    })}
                                 </View>
                             )}
                         </View>
