@@ -45,9 +45,24 @@ const MealsScreen = ({ route, navigation }) => {
     const { isDesktop } = useResponsiveDimensions()
 
     // Get filter params from navigation - only use if they have actual values
-    const filterDifficulty = route?.params?.filterDifficulty || undefined
-    const filterMaxCookingTime = route?.params?.filterMaxCookingTime || undefined
-    const filterMealType = route?.params?.filterMealType || undefined
+    const filterDifficulty =
+        route?.params?.filterDifficulty &&
+        route.params.filterDifficulty !== null &&
+        route.params.filterDifficulty !== undefined
+            ? route.params.filterDifficulty
+            : undefined
+    const filterMaxCookingTime =
+        route?.params?.filterMaxCookingTime &&
+        route.params.filterMaxCookingTime !== null &&
+        route.params.filterMaxCookingTime !== undefined
+            ? route.params.filterMaxCookingTime
+            : undefined
+    const filterMealType =
+        route?.params?.filterMealType &&
+        route.params.filterMealType !== null &&
+        route.params.filterMealType !== undefined
+            ? route.params.filterMealType
+            : undefined
 
     // Clear navigation filters
     const clearNavigationFilters = () => {
@@ -687,11 +702,11 @@ const MealsScreen = ({ route, navigation }) => {
                     }
                 >
                     {/* Active filter indicator */}
-                    {(filterDifficulty ||
-                        filterMaxCookingTime ||
-                        filterMealType ||
-                        selectedDifficultyFilter ||
-                        selectedCookingTimeFilter) && (
+                    {(!!filterDifficulty ||
+                        !!filterMaxCookingTime ||
+                        !!filterMealType ||
+                        !!selectedDifficultyFilter ||
+                        !!selectedCookingTimeFilter) && (
                         <View style={styles.activeFilterBanner}>
                             <MaterialIcons
                                 name="filter-list"
