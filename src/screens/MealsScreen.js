@@ -56,6 +56,8 @@ const MealsScreen = ({ route, navigation }) => {
             filterMaxCookingTime: null,
             filterMealType: null,
         })
+        setSelectedDifficultyFilter(null)
+        setSelectedCookingTimeFilter(null)
     }
 
     // Get diet categories from categories.json
@@ -687,7 +689,9 @@ const MealsScreen = ({ route, navigation }) => {
                     {/* Active filter indicator */}
                     {(filterDifficulty ||
                         filterMaxCookingTime ||
-                        filterMealType) && (
+                        filterMealType ||
+                        selectedDifficultyFilter ||
+                        selectedCookingTimeFilter) && (
                         <View style={styles.activeFilterBanner}>
                             <MaterialIcons
                                 name="filter-list"
@@ -696,14 +700,25 @@ const MealsScreen = ({ route, navigation }) => {
                             />
                             <CustomText style={styles.activeFilterText}>
                                 Näytetään:{' '}
-                                {filterDifficulty &&
-                                    `${getDifficultyText(filterDifficulty)}`}
-                                {filterDifficulty &&
-                                    (filterMaxCookingTime || filterMealType) &&
+                                {(filterDifficulty || selectedDifficultyFilter) &&
+                                    `${getDifficultyText(
+                                        filterDifficulty || selectedDifficultyFilter
+                                    )}`}
+                                {(filterDifficulty || selectedDifficultyFilter) &&
+                                    (filterMaxCookingTime ||
+                                        selectedCookingTimeFilter ||
+                                        filterMealType) &&
                                     ', '}
-                                {filterMaxCookingTime &&
-                                    `Valmistusaika ≤ ${filterMaxCookingTime} min`}
-                                {filterMaxCookingTime && filterMealType && ', '}
+                                {(filterMaxCookingTime ||
+                                    selectedCookingTimeFilter) &&
+                                    `Valmistusaika ≤ ${
+                                        filterMaxCookingTime ||
+                                        selectedCookingTimeFilter
+                                    } min`}
+                                {(filterMaxCookingTime ||
+                                    selectedCookingTimeFilter) &&
+                                    filterMealType &&
+                                    ', '}
                                 {filterMealType &&
                                     `${getMealRoleText(filterMealType)}`}
                             </CustomText>

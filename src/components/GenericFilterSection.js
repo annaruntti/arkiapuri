@@ -68,7 +68,8 @@ const GenericFilterSection = ({
                                     )
                                     const itemCount =
                                         itemCounts[category.id] || 0
-                                    const isDisabled = itemCount === 0 || disabled
+                                    const isDisabled =
+                                        itemCount === 0 || disabled
 
                                     return (
                                         <TouchableOpacity
@@ -112,7 +113,9 @@ const GenericFilterSection = ({
                                                     name="close"
                                                     size={16}
                                                     color="#fff"
-                                                    style={styles.filterChipIcon}
+                                                    style={
+                                                        styles.filterChipIcon
+                                                    }
                                                 />
                                             )}
                                         </TouchableOpacity>
