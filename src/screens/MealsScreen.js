@@ -75,22 +75,6 @@ const MealsScreen = ({ route, navigation }) => {
         setSelectedCookingTimeFilter(null)
     }
 
-    // Debug: Log filter values
-    console.log('Filter values:', {
-        filterDifficulty,
-        filterMaxCookingTime,
-        filterMealType,
-        selectedDifficultyFilter,
-        selectedCookingTimeFilter,
-        showBanner: !!(
-            filterDifficulty ||
-            filterMaxCookingTime ||
-            filterMealType ||
-            selectedDifficultyFilter ||
-            selectedCookingTimeFilter
-        ),
-    })
-
     // Get diet categories from categories.json
     const dietCategories =
         categoriesData.find((cat) => cat.id === 'diets')?.children || []
