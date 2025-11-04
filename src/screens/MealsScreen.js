@@ -44,17 +44,17 @@ const MealsScreen = ({ route, navigation }) => {
         useState(null)
     const { isDesktop } = useResponsiveDimensions()
 
-    // Get filter params from navigation
-    const filterDifficulty = route?.params?.filterDifficulty || null
-    const filterMaxCookingTime = route?.params?.filterMaxCookingTime || null
-    const filterMealType = route?.params?.filterMealType || null
+    // Get filter params from navigation - only use if they have actual values
+    const filterDifficulty = route?.params?.filterDifficulty || undefined
+    const filterMaxCookingTime = route?.params?.filterMaxCookingTime || undefined
+    const filterMealType = route?.params?.filterMealType || undefined
 
     // Clear navigation filters
     const clearNavigationFilters = () => {
         navigation.setParams({
-            filterDifficulty: null,
-            filterMaxCookingTime: null,
-            filterMealType: null,
+            filterDifficulty: undefined,
+            filterMaxCookingTime: undefined,
+            filterMealType: undefined,
         })
         setSelectedDifficultyFilter(null)
         setSelectedCookingTimeFilter(null)
@@ -700,11 +700,14 @@ const MealsScreen = ({ route, navigation }) => {
                             />
                             <CustomText style={styles.activeFilterText}>
                                 Näytetään:{' '}
-                                {(filterDifficulty || selectedDifficultyFilter) &&
+                                {(filterDifficulty ||
+                                    selectedDifficultyFilter) &&
                                     `${getDifficultyText(
-                                        filterDifficulty || selectedDifficultyFilter
+                                        filterDifficulty ||
+                                            selectedDifficultyFilter
                                     )}`}
-                                {(filterDifficulty || selectedDifficultyFilter) &&
+                                {(filterDifficulty ||
+                                    selectedDifficultyFilter) &&
                                     (filterMaxCookingTime ||
                                         selectedCookingTimeFilter ||
                                         filterMealType) &&
