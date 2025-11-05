@@ -351,14 +351,7 @@ const TableMonth = () => {
 
     const renderMealItemWithRemove = (meal, date) => (
         <View style={styles.mealItemContainer}>
-            <View style={styles.imageAndButtonRow}>
-                <Image
-                    source={{
-                        uri: meal.image?.url || PLACEHOLDER_IMAGE_URL,
-                    }}
-                    style={styles.mealImage}
-                    resizeMode="cover"
-                />
+            <View style={styles.closeButtonRow}>
                 <TouchableOpacity
                     style={styles.deleteButton}
                     onPress={(e) => {
@@ -368,16 +361,29 @@ const TableMonth = () => {
                     activeOpacity={0.7}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                    <MaterialIcons name="delete" size={14} color="#666" />
+                    <MaterialIcons name="close" size={12} color="#666" />
                 </TouchableOpacity>
             </View>
             <TouchableOpacity
-                style={styles.mealNameContainer}
-                onPress={() => handleMealPress(meal)}
+                style={styles.imageAndNameRow}
+                onPress={(e) => {
+                    e.stopPropagation()
+                    handleMealPress(meal)
+                }}
+                activeOpacity={0.7}
             >
-                <CustomText style={styles.mealText} numberOfLines={2}>
-                    {meal.name}
-                </CustomText>
+                <Image
+                    source={{
+                        uri: meal.image?.url || PLACEHOLDER_IMAGE_URL,
+                    }}
+                    style={styles.mealImage}
+                    resizeMode="cover"
+                />
+                <View style={styles.mealNameContainer}>
+                    <CustomText style={styles.mealText} numberOfLines={2}>
+                        {meal.name}
+                    </CustomText>
+                </View>
             </TouchableOpacity>
         </View>
     )
@@ -916,8 +922,8 @@ const styles = StyleSheet.create({
     },
     mealItemContainer: {
         backgroundColor: '#fff',
-        padding: 8,
-        borderRadius: 8,
+        padding: 4,
+        borderRadius: 6,
         marginBottom: 4,
         flexDirection: 'column',
         shadowColor: '#000',
@@ -929,30 +935,30 @@ const styles = StyleSheet.create({
         shadowRadius: 2,
         elevation: 2,
     },
-    imageAndButtonRow: {
+    closeButtonRow: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
+        justifyContent: 'flex-end',
         alignItems: 'center',
-        marginBottom: 4,
+        marginBottom: 2,
+        minHeight: 16,
+    },
+    imageAndNameRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        paddingHorizontal: 4,
+        paddingBottom: 4,
     },
     mealNameContainer: {
-        width: '100%',
+        flex: 1,
+        marginLeft: 6,
     },
     deleteButton: {
-        backgroundColor: '#e0e0e0',
-        width: 24,
-        height: 24,
-        borderRadius: 12,
+        backgroundColor: 'transparent',
+        width: 16,
+        height: 16,
         justifyContent: 'center',
         alignItems: 'center',
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 1,
-        },
-        shadowOpacity: 0.2,
-        shadowRadius: 1.41,
+        padding: 2,
     },
 })
 

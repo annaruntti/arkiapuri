@@ -77,20 +77,23 @@ const Table = () => {
     const [availableMeals, setAvailableMeals] = useState([])
     const [selectedMeal, setSelectedMeal] = useState(null)
     const [detailModalVisible, setDetailModalVisible] = useState(false)
+    const [weekOffset, setWeekOffset] = useState(0) // 0 = current week, -1 = previous, +1 = next
 
-    // Generate 7 days starting from today
+    // Generate 7 days based on week offset
     useEffect(() => {
         const today = new Date()
-        const nextDays = []
+        // Calculate the start of the week based on offset
+        const startDate = addDays(today, weekOffset * 7)
+        const weekDays = []
 
         for (let i = 0; i < 7; i++) {
-            const date = addDays(today, i)
-            nextDays.push(date)
+            const date = addDays(startDate, i)
+            weekDays.push(date)
         }
 
-        setDates(nextDays)
-        fetchMealData(nextDays)
-    }, [])
+        setDates(weekDays)
+        fetchMealData(weekDays)
+    }, [weekOffset])
 
     // Fetch meal data for the dates
     const fetchMealData = async (datesToFetch, debugMealId = null) => {
@@ -336,6 +339,18 @@ const Table = () => {
     const handleCloseDetail = () => {
         setDetailModalVisible(false)
         setSelectedMeal(null)
+    }
+
+    const goToPreviousWeek = () => {
+        setWeekOffset((prev) => prev - 1)
+    }
+
+    const goToNextWeek = () => {
+        setWeekOffset((prev) => prev + 1)
+    }
+
+    const goToCurrentWeek = () => {
+        setWeekOffset(0)
     }
 
     const handleMealUpdate = async (mealId, updatedMeal) => {
@@ -639,17 +654,64 @@ const Table = () => {
         </ResponsiveModal>
     )
 
-    const renderHeader = () => (
-        <View style={styles.headerContainer}>
-            <CustomText style={styles.introText}>
-                Täältä löydät viikon lukujärjestyksesi
-            </CustomText>
-            <CustomText style={styles.infoText}>
-                Luo lukujärjestys ja suunnittele viikon ohjelma ja ateriat.
-                Lisää ateriat lukujärjestykseen helpottaaksesi arkea.
-            </CustomText>
-        </View>
-    )
+    const renderHeader = () => {
+        const isCurrentWeek = weekOffset === 0
+        const weekLabel = isCurrentWeek
+            ? 'Tämä viikko'
+            : weekOffset < 0
+              ? `${Math.abs(weekOffset)} viikko${Math.abs(weekOffset) > 1 ? 'a' : ''} sitten`
+              : `${weekOffset} viikko${weekOffset > 1 ? 'n' : ''} päästä`
+
+        return (
+            <View style={styles.headerContainer}>
+                <CustomText style={styles.introText}>
+                    Täältä löydät viikon lukujärjestyksesi
+                </CustomText>
+                <CustomText style={styles.infoText}>
+                    Luo lukujärjestys ja suunnittele viikon ohjelma ja ateriat.
+                    Lisää ateriat lukujärjestykseen helpottaaksesi arkea.
+                </CustomText>
+
+                {/* Week Navigation */}
+                <View style={styles.weekNavigationContainer}>
+                    <TouchableOpacity
+                        onPress={goToPreviousWeek}
+                        style={styles.navButton}
+                    >
+                        <MaterialIcons
+                            name="chevron-left"
+                            size={28}
+                            color="#333"
+                        />
+                    </TouchableOpacity>
+
+                    <View style={styles.weekLabelContainer}>
+                        <CustomText style={styles.weekLabel}>
+                            {weekLabel}
+                        </CustomText>
+                        {!isCurrentWeek && (
+                            <TouchableOpacity onPress={goToCurrentWeek}>
+                                <CustomText style={styles.currentWeekLink}>
+                                    Palaa nykyiseen viikkoon
+                                </CustomText>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+
+                    <TouchableOpacity
+                        onPress={goToNextWeek}
+                        style={styles.navButton}
+                    >
+                        <MaterialIcons
+                            name="chevron-right"
+                            size={28}
+                            color="#333"
+                        />
+                    </TouchableOpacity>
+                </View>
+            </View>
+        )
+    }
 
     return (
         <View style={styles.container}>
@@ -702,6 +764,58 @@ const styles = StyleSheet.create({
         fontSize: 17,
         textAlign: 'left',
         marginBottom: 20,
+    },
+    weekNavigationContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        width: '100%',
+        marginTop: 10,
+        marginBottom: 20,
+        paddingVertical: 15,
+        paddingHorizontal: 10,
+        backgroundColor: '#f0f0f0',
+        borderRadius: 12,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 3,
+    },
+    navButton: {
+        padding: 8,
+        borderRadius: 20,
+        backgroundColor: '#fff',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
+        elevation: 2,
+    },
+    weekLabelContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginHorizontal: 15,
+    },
+    weekLabel: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#333',
+        textAlign: 'center',
+    },
+    currentWeekLink: {
+        fontSize: 14,
+        color: '#9C86FC',
+        marginTop: 4,
+        textDecorationLine: 'underline',
+        textAlign: 'center',
     },
     dateSection: {
         backgroundColor: '#f8f8f8',
