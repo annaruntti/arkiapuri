@@ -7,26 +7,30 @@ const MealCategorySelector = ({ value, onSelect }) => {
     return (
         <View style={styles.container}>
             <View style={styles.grid}>
-                {Object.entries(mealCategories).map(([categoryValue, label]) => (
-                    <Pressable
-                        key={categoryValue}
-                        style={styles.gridItem}
-                        onPress={() => onSelect(categoryValue)}
-                    >
-                        <View
-                            style={[
-                                styles.radioButton,
-                                value === categoryValue &&
-                                    styles.radioButtonChecked,
-                            ]}
+                {Object.entries(mealCategories).map(
+                    ([categoryValue, label]) => (
+                        <Pressable
+                            key={categoryValue}
+                            style={styles.gridItem}
+                            onPress={() => onSelect(categoryValue)}
                         >
-                            {value === categoryValue && (
-                                <View style={styles.radioButtonInner} />
-                            )}
-                        </View>
-                        <CustomText style={styles.label}>{label}</CustomText>
-                    </Pressable>
-                ))}
+                            <View
+                                style={[
+                                    styles.radioButton,
+                                    value === categoryValue &&
+                                        styles.radioButtonChecked,
+                                ]}
+                            >
+                                {value === categoryValue && (
+                                    <View style={styles.radioButtonInner} />
+                                )}
+                            </View>
+                            <CustomText style={styles.label}>
+                                {label}
+                            </CustomText>
+                        </Pressable>
+                    )
+                )}
             </View>
         </View>
     )
@@ -75,4 +79,3 @@ const styles = StyleSheet.create({
 })
 
 export default MealCategorySelector
-
