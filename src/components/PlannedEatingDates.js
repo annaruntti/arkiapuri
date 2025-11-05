@@ -2,7 +2,7 @@ import { MaterialIcons } from '@expo/vector-icons'
 import { format } from 'date-fns'
 import { fi } from 'date-fns/locale'
 import React, { useState } from 'react'
-import { StyleSheet, TouchableOpacity, View } from 'react-native'
+import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native'
 import Button from './Button'
 import CustomText from './CustomText'
 import DateTimePicker from './DateTimePicker'
@@ -61,22 +61,16 @@ const PlannedEatingDates = ({ dates = [], onChange }) => {
                                         color="#333"
                                     />
                                     <CustomText style={styles.eatingDateText}>
-                                        {format(
-                                            new Date(date),
-                                            'dd.MM.yyyy',
-                                            { locale: fi }
-                                        )}
+                                        {format(new Date(date), 'dd.MM.yyyy', {
+                                            locale: fi,
+                                        })}
                                     </CustomText>
                                 </TouchableOpacity>
                                 <TouchableOpacity
                                     onPress={() => removeEatingDate(index)}
                                     style={styles.removeDateButton}
                                 >
-                                    <MaterialIcons
-                                        name="close"
-                                        size={18}
-                                        color="#FF6B6B"
-                                    />
+                                    <MaterialIcons name="close" size={18} />
                                 </TouchableOpacity>
                             </View>
                         ))}
@@ -96,7 +90,7 @@ const PlannedEatingDates = ({ dates = [], onChange }) => {
                     </View>
                 )}
 
-                {dates.length > 0 && (
+                {dates.length > 0 && Platform.OS !== 'web' && (
                     <Button
                         title="+ Lisää syöntipäivä"
                         onPress={addEatingDate}
@@ -105,7 +99,23 @@ const PlannedEatingDates = ({ dates = [], onChange }) => {
                     />
                 )}
 
-                {showDatePicker && (
+                {Platform.OS === 'web' && (
+                    <View style={styles.webDatePickerContainer}>
+                        <DateTimePicker
+                            value={new Date()}
+                            mode="date"
+                            display="default"
+                            onChange={(event, selectedDate) => {
+                                if (selectedDate) {
+                                    onChange([...dates, selectedDate])
+                                }
+                            }}
+                            minimumDate={new Date()}
+                        />
+                    </View>
+                )}
+
+                {Platform.OS !== 'web' && showDatePicker && (
                     <View style={styles.datePickerContainer}>
                         <DateTimePicker
                             value={
@@ -128,14 +138,14 @@ const PlannedEatingDates = ({ dates = [], onChange }) => {
 const styles = StyleSheet.create({
     eatingDatesContainer: {
         paddingTop: 10,
-        paddingBottom: 8,
+        paddingBottom: 15,
         marginBottom: 0,
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
     },
     label: {
         fontWeight: 'bold',
-        flex: 1,
+        marginBottom: 8,
     },
     eatingDatesSection: {
         flex: 1,
@@ -172,6 +182,10 @@ const styles = StyleSheet.create({
         marginTop: 5,
         marginLeft: -10,
     },
+    webDatePickerContainer: {
+        marginTop: 10,
+        marginBottom: 10,
+    },
     emptyDatesRow: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -188,4 +202,3 @@ const styles = StyleSheet.create({
 })
 
 export default PlannedEatingDates
-

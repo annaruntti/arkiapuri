@@ -503,6 +503,7 @@ const MealsScreen = ({ route, navigation }) => {
                     : [updatedMeal.defaultRoles?.toString() || 'dinner'],
                 mealCategory: updatedMeal.mealCategory || 'other',
                 plannedCookingDate: updatedMeal.plannedCookingDate,
+                plannedEatingDates: updatedMeal.plannedEatingDates || [],
                 recipe: updatedMeal.recipe || '',
                 foodItems: processedFoodItems.map((item) => item._id), // Only send the IDs
             }

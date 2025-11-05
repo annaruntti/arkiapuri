@@ -228,9 +228,46 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                                 type="number"
                             />
 
+                            <EditableField
+                                field="defaultRoles"
+                                label="Aterian tyyppi"
+                                value={getMealTypeText(
+                                    editedValues.defaultRoles ||
+                                        meal.defaultRoles
+                                )}
+                                isEditing={editableFields.defaultRoles}
+                                editedValue={
+                                    editedValues.defaultRoles ||
+                                    meal.defaultRoles
+                                }
+                                onToggleEdit={() => toggleEdit('defaultRoles')}
+                                onChange={(value) =>
+                                    handleChange('defaultRoles', value)
+                                }
+                            />
+
+                            <EditableField
+                                field="mealCategory"
+                                label="Ruokalaji"
+                                value={getMealCategoryText(
+                                    editedValues.mealCategory ||
+                                        meal.mealCategory
+                                )}
+                                isEditing={editableFields.mealCategory}
+                                editedValue={
+                                    editedValues.mealCategory ||
+                                    meal.mealCategory ||
+                                    'other'
+                                }
+                                onToggleEdit={() => toggleEdit('mealCategory')}
+                                onChange={(value) =>
+                                    handleChange('mealCategory', value)
+                                }
+                            />
+
                             <View style={styles.detailRow}>
                                 <CustomText style={styles.detailLabel}>
-                                    Suunniteltu valmistuspäivä:
+                                    Suunniteltu valmistuspäivä
                                 </CustomText>
                                 {Platform.OS === 'web' ? (
                                     <DateTimePicker
@@ -310,43 +347,6 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                             <PlannedEatingDates
                                 dates={editedValues.plannedEatingDates || []}
                                 onChange={handlePlannedEatingDatesChange}
-                            />
-
-                            <EditableField
-                                field="defaultRoles"
-                                label="Aterian tyyppi"
-                                value={getMealTypeText(
-                                    editedValues.defaultRoles ||
-                                        meal.defaultRoles
-                                )}
-                                isEditing={editableFields.defaultRoles}
-                                editedValue={
-                                    editedValues.defaultRoles ||
-                                    meal.defaultRoles
-                                }
-                                onToggleEdit={() => toggleEdit('defaultRoles')}
-                                onChange={(value) =>
-                                    handleChange('defaultRoles', value)
-                                }
-                            />
-
-                            <EditableField
-                                field="mealCategory"
-                                label="Ruokalaji"
-                                value={getMealCategoryText(
-                                    editedValues.mealCategory ||
-                                        meal.mealCategory
-                                )}
-                                isEditing={editableFields.mealCategory}
-                                editedValue={
-                                    editedValues.mealCategory ||
-                                    meal.mealCategory ||
-                                    'other'
-                                }
-                                onToggleEdit={() => toggleEdit('mealCategory')}
-                                onChange={(value) =>
-                                    handleChange('mealCategory', value)
-                                }
                             />
 
                             <MealTabs
