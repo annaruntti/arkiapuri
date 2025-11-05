@@ -11,8 +11,8 @@ import {
 } from 'react-native'
 import {
     getDifficultyText,
-    getMealTypeText,
     getMealCategoryText,
+    getMealTypeText,
 } from '../utils/mealUtils'
 import Button from './Button'
 import CustomText from './CustomText'
@@ -307,11 +307,6 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                                 />
                             )}
 
-                            <PlannedEatingDates
-                                dates={editedValues.plannedEatingDates || []}
-                                onChange={handlePlannedEatingDatesChange}
-                            />
-
                             <EditableField
                                 field="defaultRoles"
                                 label="Aterian tyyppi"
@@ -334,7 +329,8 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                                 field="mealCategory"
                                 label="Ruokalaji"
                                 value={getMealCategoryText(
-                                    editedValues.mealCategory || meal.mealCategory
+                                    editedValues.mealCategory ||
+                                        meal.mealCategory
                                 )}
                                 isEditing={editableFields.mealCategory}
                                 editedValue={
@@ -346,6 +342,11 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                                 onChange={(value) =>
                                     handleChange('mealCategory', value)
                                 }
+                            />
+
+                            <PlannedEatingDates
+                                dates={editedValues.plannedEatingDates || []}
+                                onChange={handlePlannedEatingDatesChange}
                             />
 
                             <MealTabs
