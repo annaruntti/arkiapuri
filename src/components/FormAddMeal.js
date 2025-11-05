@@ -16,11 +16,7 @@ import {
 } from 'react-native'
 import { useLogin } from '../context/LoginProvider'
 import { getServerUrl } from '../utils/getServerUrl'
-import {
-    getDifficultyEnum,
-    mealCategories,
-    mealRoles,
-} from '../utils/mealUtils'
+import { getDifficultyEnum, mealRoles } from '../utils/mealUtils'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 import Button from './Button'
@@ -28,6 +24,7 @@ import CustomText from './CustomText'
 import DateTimePicker from './DateTimePicker'
 import DifficultySelector from './DifficultySelector'
 import FormFoodItem from './FormFoodItem'
+import MealCategorySelector from './MealCategorySelector'
 import UnifiedFoodSearch from './UnifiedFoodSearch'
 
 import Info from './Info'
@@ -815,42 +812,10 @@ const AddMealForm = ({ onSubmit }) => {
                         </View>
 
                         <CustomText style={styles.label}>Ruokalaji</CustomText>
-                        <View style={styles.checkboxGroup}>
-                            <View style={styles.checkboxGrid}>
-                                {Object.entries(mealCategories).map(
-                                    ([value, label]) => (
-                                        <Pressable
-                                            key={value}
-                                            style={styles.checkboxGridItem}
-                                            onPress={() =>
-                                                setMealCategory(value)
-                                            }
-                                        >
-                                            <View
-                                                style={[
-                                                    styles.radioButton,
-                                                    mealCategory === value &&
-                                                        styles.radioButtonChecked,
-                                                ]}
-                                            >
-                                                {mealCategory === value && (
-                                                    <View
-                                                        style={
-                                                            styles.radioButtonInner
-                                                        }
-                                                    />
-                                                )}
-                                            </View>
-                                            <CustomText
-                                                style={styles.checkboxLabel}
-                                            >
-                                                {label}
-                                            </CustomText>
-                                        </Pressable>
-                                    )
-                                )}
-                            </View>
-                        </View>
+                        <MealCategorySelector
+                            value={mealCategory}
+                            onSelect={setMealCategory}
+                        />
                         <View style={styles.labelWithInfo}>
                             <CustomText style={styles.label}>
                                 Suunniteltu valmistuspäivä
