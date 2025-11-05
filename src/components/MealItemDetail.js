@@ -307,6 +307,11 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                                 />
                             )}
 
+                            <PlannedEatingDates
+                                dates={editedValues.plannedEatingDates || []}
+                                onChange={handlePlannedEatingDatesChange}
+                            />
+
                             <EditableField
                                 field="defaultRoles"
                                 label="Aterian tyyppi"
@@ -342,11 +347,6 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                                 onChange={(value) =>
                                     handleChange('mealCategory', value)
                                 }
-                            />
-
-                            <PlannedEatingDates
-                                dates={editedValues.plannedEatingDates || []}
-                                onChange={handlePlannedEatingDatesChange}
                             />
 
                             <MealTabs

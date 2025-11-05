@@ -128,7 +128,10 @@ const PlannedEatingDates = ({ dates = [], onChange }) => {
 const styles = StyleSheet.create({
     eatingDatesContainer: {
         paddingTop: 10,
-        marginBottom: 15,
+        paddingBottom: 8,
+        marginBottom: 0,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
     },
     label: {
         fontWeight: 'bold',
