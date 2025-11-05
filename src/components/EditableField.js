@@ -25,6 +25,21 @@ const mealTypes = [
     { value: 'other', label: 'Muu' },
 ]
 
+const mealCategories = [
+    { value: 'salad', label: 'Salaatti' },
+    { value: 'pasta', label: 'Pasta' },
+    { value: 'soup', label: 'Keitto' },
+    { value: 'casserole', label: 'Uuniruoka' },
+    { value: 'stew', label: 'Pataruoka' },
+    { value: 'pizza', label: 'Pizza' },
+    { value: 'texmex', label: 'TexMex' },
+    { value: 'burger', label: 'Burgeri' },
+    { value: 'steak', label: 'Pihvi' },
+    { value: 'fish', label: 'Kalaruoka' },
+    { value: 'vegetarian', label: 'Kasvisruoka' },
+    { value: 'other', label: 'Muu' },
+]
+
 const EditableField = ({
     field,
     label,
@@ -232,6 +247,103 @@ const EditableField = ({
         }
     }
 
+    // Meal category field with scroll picker
+    if (field === 'mealCategory') {
+        if (isEditing) {
+            const normalizedValue = editedValue
+                ? String(editedValue).toLowerCase()
+                : 'other'
+
+            return (
+                <View style={styles.detailRow}>
+                    <CustomText style={styles.detailLabel}>{label}:</CustomText>
+                    <View style={styles.valueContainer}>
+                        <View style={styles.categoryScrollPicker}>
+                            {/* Top scroll indicator */}
+                            <View style={styles.categoryScrollIndicatorTop}>
+                                <MaterialIcons
+                                    name="keyboard-arrow-up"
+                                    size={16}
+                                    color="#999"
+                                />
+                            </View>
+
+                            <ScrollView
+                                style={styles.categoryScrollView}
+                                contentContainerStyle={styles.categoryScrollContent}
+                                showsVerticalScrollIndicator={false}
+                                snapToInterval={32}
+                                decelerationRate="fast"
+                                onMomentumScrollEnd={(event) => {
+                                    const y = event.nativeEvent.contentOffset.y
+                                    const index = Math.round(y / 32)
+                                    const selectedCategory =
+                                        mealCategories[index] || mealCategories[11]
+                                    onChange(selectedCategory.value)
+                                }}
+                            >
+                                {mealCategories.map((category) => (
+                                    <TouchableOpacity
+                                        key={category.value}
+                                        style={[
+                                            styles.categoryScrollOption,
+                                            normalizedValue === category.value &&
+                                                styles.categoryScrollOptionSelected,
+                                        ]}
+                                        onPress={() => onChange(category.value)}
+                                    >
+                                        <CustomText
+                                            style={[
+                                                styles.categoryScrollOptionText,
+                                                normalizedValue === category.value &&
+                                                    styles.categoryScrollOptionTextSelected,
+                                            ]}
+                                        >
+                                            {category.label}
+                                        </CustomText>
+                                    </TouchableOpacity>
+                                ))}
+                            </ScrollView>
+
+                            {/* Bottom scroll indicator */}
+                            <View style={styles.categoryScrollIndicatorBottom}>
+                                <MaterialIcons
+                                    name="keyboard-arrow-down"
+                                    size={16}
+                                    color="#999"
+                                />
+                            </View>
+                        </View>
+                        <TouchableOpacity
+                            style={styles.editIcon}
+                            onPress={onToggleEdit}
+                        >
+                            <Feather name="check" size={18} color="#666" />
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            )
+        } else {
+            // Not editing - show value with edit icon
+            return (
+                <View style={styles.detailRow}>
+                    <CustomText style={styles.detailLabel}>{label}:</CustomText>
+                    <View style={styles.valueContainer}>
+                        <TouchableOpacity onPress={onToggleEdit}>
+                            <CustomText>{value}</CustomText>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.editIcon}
+                            onPress={onToggleEdit}
+                        >
+                            <Feather name="edit-2" size={18} color="#666" />
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            )
+        }
+    }
+
     // Default text/number field
     return (
         <View style={styles.detailRow}>
@@ -402,6 +514,52 @@ const styles = StyleSheet.create({
         color: '#666',
     },
     mealTypeScrollOptionTextSelected: {
+        color: '#000',
+        fontWeight: 'bold',
+    },
+    categoryScrollPicker: {
+        width: 120,
+        height: 40,
+        backgroundColor: 'white',
+        borderColor: '#bbb',
+        borderWidth: 1,
+        borderRadius: 4,
+        position: 'relative',
+    },
+    categoryScrollIndicatorTop: {
+        position: 'absolute',
+        top: 2,
+        right: 2,
+        zIndex: 1,
+        padding: 1,
+    },
+    categoryScrollIndicatorBottom: {
+        position: 'absolute',
+        bottom: 2,
+        right: 2,
+        zIndex: 1,
+        padding: 1,
+    },
+    categoryScrollView: {
+        flex: 1,
+    },
+    categoryScrollContent: {
+        paddingVertical: 4,
+    },
+    categoryScrollOption: {
+        height: 32,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 8,
+    },
+    categoryScrollOptionSelected: {
+        backgroundColor: '#f0f0f0',
+    },
+    categoryScrollOptionText: {
+        fontSize: 14,
+        color: '#666',
+    },
+    categoryScrollOptionTextSelected: {
         color: '#000',
         fontWeight: 'bold',
     },

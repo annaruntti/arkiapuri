@@ -22,7 +22,11 @@ import ResponsiveModal from '../components/ResponsiveModal'
 import SearchSection from '../components/SearchSection'
 import categoriesData from '../data/categories.json'
 import { getServerUrl } from '../utils/getServerUrl'
-import { getDifficultyText, getMealRoleText } from '../utils/mealUtils'
+import {
+    getDifficultyText,
+    getMealCategoryText,
+    getMealRoleText,
+} from '../utils/mealUtils'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 
@@ -561,6 +565,7 @@ const MealsScreen = ({ route, navigation }) => {
                 <View style={styles.mealTextContainer}>
                     <CustomText style={styles.itemName}>{item.name}</CustomText>
                     <CustomText style={styles.itemDetails}>
+                        {getMealCategoryText(item.mealCategory)} •{' '}
                         {getDifficultyText(item.difficultyLevel)} •{' '}
                         {item.cookingTime} min
                     </CustomText>

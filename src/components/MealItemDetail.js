@@ -9,7 +9,11 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native'
-import { getDifficultyText, getMealTypeText } from '../utils/mealUtils'
+import {
+    getDifficultyText,
+    getMealTypeText,
+    getMealCategoryText,
+} from '../utils/mealUtils'
 import Button from './Button'
 import CustomText from './CustomText'
 import DateTimePicker from './DateTimePicker'
@@ -323,6 +327,24 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                                 onToggleEdit={() => toggleEdit('defaultRoles')}
                                 onChange={(value) =>
                                     handleChange('defaultRoles', value)
+                                }
+                            />
+
+                            <EditableField
+                                field="mealCategory"
+                                label="Ruokalaji"
+                                value={getMealCategoryText(
+                                    editedValues.mealCategory || meal.mealCategory
+                                )}
+                                isEditing={editableFields.mealCategory}
+                                editedValue={
+                                    editedValues.mealCategory ||
+                                    meal.mealCategory ||
+                                    'other'
+                                }
+                                onToggleEdit={() => toggleEdit('mealCategory')}
+                                onChange={(value) =>
+                                    handleChange('mealCategory', value)
                                 }
                             />
 

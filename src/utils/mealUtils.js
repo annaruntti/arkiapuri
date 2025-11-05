@@ -60,3 +60,23 @@ export const formatDate = (dateString) => {
         year: 'numeric',
     })
 }
+
+export const mealCategories = {
+    salad: 'Salaatti',
+    pasta: 'Pasta',
+    soup: 'Keitto',
+    casserole: 'Uuniruoka',
+    stew: 'Pataruoka',
+    pizza: 'Pizza',
+    texmex: 'TexMex',
+    burger: 'Burgeri',
+    steak: 'Pihvi',
+    fish: 'Kalaruoka',
+    vegetarian: 'Kasvisruoka',
+    other: 'Muu',
+}
+
+export const getMealCategoryText = (category) => {
+    if (!category) return 'Ei määritelty'
+    return mealCategories[category.toLowerCase()] || 'Ei määritelty'
+}

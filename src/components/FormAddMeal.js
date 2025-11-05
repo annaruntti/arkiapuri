@@ -16,7 +16,11 @@ import {
 } from 'react-native'
 import { useLogin } from '../context/LoginProvider'
 import { getServerUrl } from '../utils/getServerUrl'
-import { getDifficultyEnum, mealRoles } from '../utils/mealUtils'
+import {
+    getDifficultyEnum,
+    mealCategories,
+    mealRoles,
+} from '../utils/mealUtils'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 import Button from './Button'
@@ -38,6 +42,7 @@ const AddMealForm = ({ onSubmit }) => {
     const [foodItems, setFoodItems] = useState([])
 
     const [selectedRoles, setSelectedRoles] = useState([])
+    const [mealCategory, setMealCategory] = useState('other')
     const [plannedCookingDate, setPlannedCookingDate] = useState(new Date())
     const [plannedEatingDates, setPlannedEatingDates] = useState([])
     const [showDatePicker, setShowDatePicker] = useState(false)
@@ -412,6 +417,7 @@ const AddMealForm = ({ onSubmit }) => {
                 cookingTime: parseInt(cookingTime) || 0,
                 foodItems: createdFoodItemIds,
                 defaultRoles: [...selectedRoles],
+                mealCategory,
                 plannedCookingDate,
                 plannedEatingDates: eatingDates,
                 user: profile._id,
@@ -794,6 +800,44 @@ const AddMealForm = ({ onSubmit }) => {
                                                         name="check"
                                                         size={16}
                                                         color="white"
+                                                    />
+                                                )}
+                                            </View>
+                                            <CustomText
+                                                style={styles.checkboxLabel}
+                                            >
+                                                {label}
+                                            </CustomText>
+                                        </Pressable>
+                                    )
+                                )}
+                            </View>
+                        </View>
+
+                        <CustomText style={styles.label}>Ruokalaji</CustomText>
+                        <View style={styles.checkboxGroup}>
+                            <View style={styles.checkboxGrid}>
+                                {Object.entries(mealCategories).map(
+                                    ([value, label]) => (
+                                        <Pressable
+                                            key={value}
+                                            style={styles.checkboxGridItem}
+                                            onPress={() =>
+                                                setMealCategory(value)
+                                            }
+                                        >
+                                            <View
+                                                style={[
+                                                    styles.radioButton,
+                                                    mealCategory === value &&
+                                                        styles.radioButtonChecked,
+                                                ]}
+                                            >
+                                                {mealCategory === value && (
+                                                    <View
+                                                        style={
+                                                            styles.radioButtonInner
+                                                        }
                                                     />
                                                 )}
                                             </View>
