@@ -38,15 +38,15 @@ const ReadingOrderScreen = ({}) => {
                 }
             >
                 <View style={styles.container}>
-                    {/* Tab Navigation */}
-                    <View style={styles.tabContainer}>
-                        {renderTabButton('week', 'Viikko')}
-                        {renderTabButton('month', 'Kuukausi')}
-                    </View>
-
                     {/* Content */}
                     <View style={styles.contentContainer}>
                         {activeTab === 'week' ? <TableWeek /> : <TableMonth />}
+                    </View>
+
+                    {/* Tab Navigation - Rendered last so it's on top */}
+                    <View style={styles.tabContainer}>
+                        {renderTabButton('week', 'Viikko')}
+                        {renderTabButton('month', 'Kuukausi')}
                     </View>
                 </View>
             </View>
@@ -60,12 +60,23 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fff',
+        position: 'relative',
     },
     tabContainer: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
         flexDirection: 'row',
         backgroundColor: '#f8f9fa',
         borderBottomWidth: 1,
         borderBottomColor: '#dee2e6',
+        zIndex: 10000000,
+        elevation: 10000,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
     },
     tabButton: {
         flex: 1,
@@ -90,15 +101,19 @@ const styles = StyleSheet.create({
     },
     contentContainer: {
         flex: 1,
+        paddingTop: 60,
+        // No zIndex - let tabs' absolute positioning work
     },
     desktopContentWrapper: {
         flex: 1,
         width: '100%',
         maxWidth: 960,
         alignSelf: 'center',
+        position: 'relative',
     },
     fullWidth: {
         flex: 1,
         width: '100%',
+        position: 'relative',
     },
 })
