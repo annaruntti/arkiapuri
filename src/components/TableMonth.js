@@ -25,6 +25,7 @@ import {
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
 import CustomText from './CustomText'
+import DateSelector from './DateSelector'
 import MealItemDetail from './MealItemDetail'
 import ResponsiveModal from './ResponsiveModal'
 
@@ -544,7 +545,12 @@ const TableMonth = () => {
                 </TouchableOpacity>
 
                 <CustomText style={styles.monthTitle}>
-                    {format(currentMonth, 'MMMM yyyy', { locale: fi })}
+                    {format(currentMonth, 'LLLL yyyy', { locale: fi })
+                        .charAt(0)
+                        .toUpperCase() +
+                        format(currentMonth, 'LLLL yyyy', { locale: fi }).slice(
+                            1
+                        )}
                 </CustomText>
 
                 <TouchableOpacity
@@ -571,48 +577,12 @@ const TableMonth = () => {
                 maxWidth={700}
             >
                 {/* Date Selection Section */}
-                <View style={styles.dateSelectionContainer}>
-                    <CustomText style={styles.dateSelectionTitle}>
-                        Valitse päivät ({selectedDates.length} valittu)
-                    </CustomText>
-                    <View style={styles.dateGrid}>
-                        {monthDates.map((date) => {
-                            const isSelected = selectedDates.some(
-                                (d) => d.getTime() === date.getTime()
-                            )
-                            return (
-                                <TouchableOpacity
-                                    key={date.toISOString()}
-                                    style={[
-                                        styles.dateButton,
-                                        isSelected && styles.selectedDateButton,
-                                    ]}
-                                    onPress={() => toggleDateSelection(date)}
-                                >
-                                    <CustomText
-                                        style={[
-                                            styles.dateButtonText,
-                                            isSelected &&
-                                                styles.selectedDateButtonText,
-                                        ]}
-                                    >
-                                        {format(date, 'd.M')}
-                                    </CustomText>
-                                </TouchableOpacity>
-                            )
-                        })}
-                    </View>
-                    {selectedDates.length > 0 && (
-                        <TouchableOpacity
-                            style={styles.clearDatesButton}
-                            onPress={clearDateSelection}
-                        >
-                            <CustomText style={styles.clearDatesButtonText}>
-                                Tyhjennä valinnat
-                            </CustomText>
-                        </TouchableOpacity>
-                    )}
-                </View>
+                <DateSelector
+                    dates={monthDates}
+                    selectedDates={selectedDates}
+                    onToggleDateSelection={toggleDateSelection}
+                    onClearSelection={clearDateSelection}
+                />
 
                 {(() => {
                     const groupedMeals = groupMealsByCategory(availableMeals)
@@ -626,6 +596,7 @@ const TableMonth = () => {
                     return (
                         <SectionList
                             sections={sections}
+                            stickySectionHeadersEnabled={false}
                             renderItem={({ item }) => (
                                 <TouchableOpacity
                                     key={item._id}
@@ -707,12 +678,13 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: 20,
+        paddingVertical: 8,
+        paddingHorizontal: 20,
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
     },
     navButton: {
-        padding: 10,
+        padding: 6,
         minWidth: 40,
         alignItems: 'center',
     },
@@ -722,7 +694,7 @@ const styles = StyleSheet.create({
         color: '#9C86FC',
     },
     monthTitle: {
-        fontSize: 20,
+        fontSize: 16,
         fontWeight: 'bold',
         textTransform: 'capitalize',
     },
@@ -833,54 +805,6 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#333',
         letterSpacing: 0.5,
-    },
-    dateSelectionContainer: {
-        padding: 15,
-        backgroundColor: '#f8f9fa',
-        borderRadius: 8,
-        marginBottom: 15,
-    },
-    dateSelectionTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginBottom: 10,
-        color: '#333',
-    },
-    dateGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 8,
-        marginBottom: 10,
-    },
-    dateButton: {
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        borderRadius: 6,
-        borderWidth: 1,
-        borderColor: '#ddd',
-        backgroundColor: '#fff',
-    },
-    selectedDateButton: {
-        backgroundColor: '#9C86FC',
-        borderColor: '#9C86FC',
-    },
-    dateButtonText: {
-        fontSize: 14,
-        color: '#333',
-    },
-    selectedDateButtonText: {
-        color: '#fff',
-        fontWeight: 'bold',
-    },
-    clearDatesButton: {
-        alignSelf: 'flex-start',
-        paddingVertical: 4,
-        paddingHorizontal: 8,
-    },
-    clearDatesButtonText: {
-        fontSize: 12,
-        color: '#9C86FC',
-        textDecorationLine: 'underline',
     },
     disabledMealItem: {
         opacity: 0.5,
