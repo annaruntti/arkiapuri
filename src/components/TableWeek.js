@@ -1335,13 +1335,6 @@ const Table = () => {
     )
 
     const renderHeader = () => {
-        const isCurrentWeek = weekOffset === 0
-        const weekLabel = isCurrentWeek
-            ? 'Tämä viikko'
-            : weekOffset < 0
-              ? `${Math.abs(weekOffset)} viikko${Math.abs(weekOffset) > 1 ? 'a' : ''} sitten`
-              : `${weekOffset} viikko${weekOffset > 1 ? 'n' : ''} päästä`
-
         return (
             <View style={styles.headerContainer}>
                 <CustomText style={styles.introText}>
@@ -1351,44 +1344,50 @@ const Table = () => {
                     Luo lukujärjestys ja suunnittele viikon ohjelma ja ateriat.
                     Lisää ateriat lukujärjestykseen helpottaaksesi arkea.
                 </CustomText>
+            </View>
+        )
+    }
 
-                {/* Week Navigation */}
-                <View style={styles.weekNavigationContainer}>
-                    <TouchableOpacity
-                        onPress={goToPreviousWeek}
-                        style={styles.navButton}
-                    >
-                        <MaterialIcons
-                            name="chevron-left"
-                            size={28}
-                            color="#333"
-                        />
-                    </TouchableOpacity>
+    const renderWeekNavigation = () => {
+        const isCurrentWeek = weekOffset === 0
+        const weekLabel = isCurrentWeek
+            ? 'Tämä viikko'
+            : weekOffset < 0
+              ? `${Math.abs(weekOffset)} viikko${Math.abs(weekOffset) > 1 ? 'a' : ''} sitten`
+              : `${weekOffset} viiko${weekOffset > 1 ? 'n' : 'n'} päästä`
 
-                    <View style={styles.weekLabelContainer}>
-                        <CustomText style={styles.weekLabel}>
-                            {weekLabel}
-                        </CustomText>
-                        {!isCurrentWeek && (
-                            <TouchableOpacity onPress={goToCurrentWeek}>
-                                <CustomText style={styles.currentWeekLink}>
-                                    Palaa nykyiseen viikkoon
-                                </CustomText>
-                            </TouchableOpacity>
-                        )}
-                    </View>
+        return (
+            <View style={styles.bottomWeekNavigation}>
+                <TouchableOpacity
+                    onPress={goToPreviousWeek}
+                    style={styles.bottomNavButton}
+                >
+                    <MaterialIcons name="chevron-left" size={24} color="#333" />
+                </TouchableOpacity>
 
-                    <TouchableOpacity
-                        onPress={goToNextWeek}
-                        style={styles.navButton}
-                    >
-                        <MaterialIcons
-                            name="chevron-right"
-                            size={28}
-                            color="#333"
-                        />
-                    </TouchableOpacity>
+                <View style={styles.bottomWeekLabelContainer}>
+                    <CustomText style={styles.bottomWeekLabel}>
+                        {weekLabel}
+                    </CustomText>
+                    {!isCurrentWeek && (
+                        <TouchableOpacity onPress={goToCurrentWeek}>
+                            <CustomText style={styles.bottomCurrentWeekLink}>
+                                Palaa nykyiseen
+                            </CustomText>
+                        </TouchableOpacity>
+                    )}
                 </View>
+
+                <TouchableOpacity
+                    onPress={goToNextWeek}
+                    style={styles.bottomNavButton}
+                >
+                    <MaterialIcons
+                        name="chevron-right"
+                        size={24}
+                        color="#333"
+                    />
+                </TouchableOpacity>
             </View>
         )
     }
@@ -1426,6 +1425,7 @@ const Table = () => {
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
             {content}
+            {renderWeekNavigation()}
             {draggingMeal && (
                 <View
                     style={[
@@ -1481,7 +1481,7 @@ const styles = StyleSheet.create({
         overflow: 'visible',
     },
     listContent: {
-        paddingBottom: 20,
+        paddingBottom: 80,
         overflow: 'visible',
     },
     headerContainer: {
@@ -1639,10 +1639,10 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
     },
     noMealsContainer: {
-        flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         padding: 20,
+        minHeight: 60,
     },
     noMealsText: {
         fontSize: 16,
@@ -1968,8 +1968,8 @@ const styles = StyleSheet.create({
     },
     dragOverlay: {
         position: 'absolute',
-        zIndex: 999999,
-        elevation: 999,
+        zIndex: 100,
+        elevation: 100,
         opacity: 0.9,
         shadowColor: '#000',
         shadowOffset: {
@@ -1979,6 +1979,61 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3,
         shadowRadius: 4.65,
         width: 300,
+    },
+    bottomWeekNavigation: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: 8,
+        paddingHorizontal: 15,
+        backgroundColor: '#f8f8f8',
+        borderTopWidth: 1,
+        borderTopColor: '#e0e0e0',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: -2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 5,
+        zIndex: 10,
+    },
+    bottomNavButton: {
+        padding: 6,
+        borderRadius: 15,
+        backgroundColor: '#fff',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 2,
+    },
+    bottomWeekLabelContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginHorizontal: 10,
+    },
+    bottomWeekLabel: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: '#333',
+        textAlign: 'center',
+    },
+    bottomCurrentWeekLink: {
+        fontSize: 11,
+        color: '#9C86FC',
+        marginTop: 2,
+        textDecorationLine: 'underline',
+        textAlign: 'center',
     },
 })
 
