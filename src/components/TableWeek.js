@@ -2,7 +2,7 @@ import { MaterialIcons } from '@expo/vector-icons'
 import axios from 'axios'
 import { addDays, format } from 'date-fns'
 import { fi } from 'date-fns/locale'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
     Alert,
     FlatList,
@@ -13,6 +13,17 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native'
+import {
+    Gesture,
+    GestureDetector,
+    GestureHandlerRootView,
+} from 'react-native-gesture-handler'
+import Animated, {
+    runOnJS,
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
+} from 'react-native-reanimated'
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
 import Button from './Button'
@@ -68,6 +79,113 @@ const groupMealsByCategory = (meals) => {
     return sortedGrouped
 }
 
+// Custom Draggable Component
+const DraggableMealItem = ({
+    meal,
+    date,
+    children,
+    onDragStart,
+    onDragEnd,
+    onDragging,
+    onDragPosition,
+}) => {
+    const translateX = useSharedValue(0)
+    const translateY = useSharedValue(0)
+    const scale = useSharedValue(1)
+    const isDraggingValue = useSharedValue(false)
+    const lastAbsoluteY = useSharedValue(0)
+    const startX = useSharedValue(0)
+    const startY = useSharedValue(0)
+
+    // Create the callbacks outside the gesture to properly capture meal and date
+    const handleStart = () => {
+        console.log(
+            'handleStart called with meal:',
+            meal?.name,
+            'date:',
+            format(date, 'yyyy-MM-dd')
+        )
+        onDragStart(meal, date)
+    }
+
+    const handleDragging = (absoluteY) => {
+        if (onDragging) {
+            onDragging(absoluteY)
+        }
+    }
+
+    const handlePosition = (absoluteX, absoluteY) => {
+        if (onDragPosition) {
+            onDragPosition(absoluteX, absoluteY)
+        }
+    }
+
+    const handleEnd = (finalY) => {
+        onDragEnd(finalY)
+    }
+
+    const panGesture = Gesture.Pan()
+        .activateAfterLongPress(150)
+        .minDistance(5)
+        .onBegin(() => {
+            'worklet'
+            console.log('Gesture begin')
+        })
+        .onStart((event) => {
+            'worklet'
+            console.log('Gesture start')
+            try {
+                isDraggingValue.value = true
+                scale.value = withSpring(1.05)
+                startX.value = event.absoluteX
+                startY.value = event.absoluteY
+                runOnJS(handleStart)()
+                runOnJS(handlePosition)(event.absoluteX, event.absoluteY)
+            } catch (error) {
+                console.log('Error in onStart:', error)
+            }
+        })
+        .onUpdate((event) => {
+            'worklet'
+            try {
+                translateX.value = event.translationX
+                translateY.value = event.translationY
+                lastAbsoluteY.value = event.absoluteY
+                runOnJS(handleDragging)(event.absoluteY)
+                runOnJS(handlePosition)(event.absoluteX, event.absoluteY)
+            } catch (error) {
+                console.log('Error in onUpdate:', error)
+            }
+        })
+        .onEnd(() => {
+            'worklet'
+            console.log('Gesture end, lastAbsoluteY:', lastAbsoluteY.value)
+            try {
+                const finalY = lastAbsoluteY.value
+                isDraggingValue.value = false
+                translateX.value = withSpring(0)
+                translateY.value = withSpring(0)
+                scale.value = withSpring(1)
+                runOnJS(handleEnd)(finalY)
+            } catch (error) {
+                console.log('Error in onEnd:', error)
+            }
+        })
+
+    const animatedStyle = useAnimatedStyle(() => {
+        const isDragging = isDraggingValue.value
+        return {
+            opacity: isDragging ? 0.3 : 1, // Make original very transparent when dragging
+        }
+    })
+
+    return (
+        <GestureDetector gesture={panGesture}>
+            <Animated.View style={animatedStyle}>{children}</Animated.View>
+        </GestureDetector>
+    )
+}
+
 const Table = () => {
     const [dates, setDates] = useState([])
     const [mealsByDate, setMealsByDate] = useState({})
@@ -78,6 +196,22 @@ const Table = () => {
     const [selectedMeal, setSelectedMeal] = useState(null)
     const [detailModalVisible, setDetailModalVisible] = useState(false)
     const [weekOffset, setWeekOffset] = useState(0) // 0 = current week, -1 = previous, +1 = next
+    const [moveMealModalVisible, setMoveMealModalVisible] = useState(false)
+    const [mealToMove, setMealToMove] = useState(null)
+    const [moveFromDate, setMoveFromDate] = useState(null)
+
+    // Drag and drop state
+    const [draggingMeal, setDraggingMeal] = useState(null)
+    const [draggingFromDate, setDraggingFromDate] = useState(null)
+    const [dropTargetDate, setDropTargetDate] = useState(null)
+    const [isScrollEnabled, setIsScrollEnabled] = useState(true)
+    const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 })
+    const dayRefs = useRef(new Map())
+    const scrollViewRef = useRef(null)
+    const flatListRef = useRef(null)
+    const draggingMealRef = useRef(null)
+    const draggingFromDateRef = useRef(null)
+    const scrollOffsetRef = useRef(0)
 
     // Generate 7 days based on week offset
     useEffect(() => {
@@ -86,9 +220,13 @@ const Table = () => {
         const startDate = addDays(today, weekOffset * 7)
         const weekDays = []
 
+        console.log('📅 Generating week dates:')
         for (let i = 0; i < 7; i++) {
             const date = addDays(startDate, i)
             weekDays.push(date)
+            console.log(
+                `  [${i}]: ${format(date, 'yyyy-MM-dd EEEE', { locale: fi })}`
+            )
         }
 
         setDates(weekDays)
@@ -159,6 +297,10 @@ const Table = () => {
     }
 
     const handleAddMeal = async (date) => {
+        console.log(
+            '🔵 handleAddMeal called with date:',
+            format(date, 'yyyy-MM-dd EEEE', { locale: fi })
+        )
         try {
             const token = await storage.getItem('userToken')
             const response = await axios.get(getServerUrl('/meals'), {
@@ -183,6 +325,12 @@ const Table = () => {
     }
 
     const handleSelectMeal = async (meal) => {
+        console.log(
+            '🟢 handleSelectMeal - selectedDates:',
+            selectedDates.map((d) =>
+                format(d, 'yyyy-MM-dd EEEE', { locale: fi })
+            )
+        )
         try {
             const token = await storage.getItem('userToken')
             const formattedDates = selectedDates.map(
@@ -190,6 +338,7 @@ const Table = () => {
                     new Date(date).toISOString().split('T')[0] +
                     'T00:00:00.000Z'
             )
+            console.log('🟢 Formatted dates being saved:', formattedDates)
 
             // Use PUT with the meal._id
             const response = await axios.put(
@@ -353,6 +502,389 @@ const Table = () => {
         setWeekOffset(0)
     }
 
+    const handleLongPress = (meal, date) => {
+        console.log('Opening move meal modal for:', meal.name)
+        // Open modal to select target day
+        setMealToMove(meal)
+        setMoveFromDate(date)
+        setMoveMealModalVisible(true)
+    }
+
+    const handleMoveMealToDay = async (targetDate) => {
+        if (!mealToMove || !moveFromDate || !targetDate) {
+            setMoveMealModalVisible(false)
+            return
+        }
+
+        const fromDateStr = format(moveFromDate, 'yyyy-MM-dd')
+        const toDateStr = format(targetDate, 'yyyy-MM-dd')
+
+        // Don't do anything if same date
+        if (fromDateStr === toDateStr) {
+            setMoveMealModalVisible(false)
+            setMealToMove(null)
+            setMoveFromDate(null)
+            return
+        }
+
+        try {
+            // Get current planned eating dates
+            const currentDates = mealToMove.plannedEatingDates || []
+
+            // Remove the old date and add the new date
+            const updatedDates = currentDates
+                .filter((dateStr) => {
+                    const mealDate = format(new Date(dateStr), 'yyyy-MM-dd')
+                    return mealDate !== fromDateStr
+                })
+                .concat([
+                    new Date(targetDate).toISOString().split('T')[0] +
+                        'T00:00:00.000Z',
+                ])
+
+            const token = await storage.getItem('userToken')
+
+            await axios.put(
+                getServerUrl(`/meals/${mealToMove._id}`),
+                {
+                    plannedEatingDates: updatedDates,
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+            )
+
+            // Refresh the meal data
+            await fetchMealData(dates)
+
+            if (Platform.OS !== 'web') {
+                Alert.alert('Valmis!', 'Ateria siirretty')
+            }
+        } catch (error) {
+            console.error('Error moving meal:', error)
+            if (Platform.OS === 'web') {
+                alert('Virhe: Aterian siirtäminen epäonnistui')
+            } else {
+                Alert.alert('Virhe', 'Aterian siirtäminen epäonnistui')
+            }
+        } finally {
+            setMoveMealModalVisible(false)
+            setMealToMove(null)
+            setMoveFromDate(null)
+        }
+    }
+
+    // Handler for when a meal is dropped on a new day
+    const handleMealDrop = async (meal, fromDate, toDate) => {
+        console.log('🎯 handleMealDrop called:')
+        console.log('  Meal:', meal.name)
+        console.log('  From Date (Date object):', fromDate)
+        console.log('  To Date (Date object):', toDate)
+
+        const fromDateStr = format(fromDate, 'yyyy-MM-dd')
+        const toDateStr = format(toDate, 'yyyy-MM-dd')
+
+        console.log(
+            '  From Date (formatted):',
+            fromDateStr,
+            format(fromDate, 'EEEE', { locale: fi })
+        )
+        console.log(
+            '  To Date (formatted):',
+            toDateStr,
+            format(toDate, 'EEEE', { locale: fi })
+        )
+
+        // Don't do anything if dropped on the same date
+        if (fromDateStr === toDateStr) {
+            console.log('  ⚠️ Same date, canceling')
+            return
+        }
+        console.log('  ✅ Different dates, proceeding with drop')
+
+        try {
+            // Get current planned eating dates
+            const currentDates = meal.plannedEatingDates || []
+
+            // Remove the old date and add the new date
+            const updatedDates = currentDates
+                .filter((dateStr) => {
+                    const mealDate = format(new Date(dateStr), 'yyyy-MM-dd')
+                    return mealDate !== fromDateStr
+                })
+                .concat([
+                    new Date(toDate).toISOString().split('T')[0] +
+                        'T00:00:00.000Z',
+                ])
+
+            const token = await storage.getItem('userToken')
+
+            await axios.put(
+                getServerUrl(`/meals/${meal._id}`),
+                {
+                    plannedEatingDates: updatedDates,
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+            )
+
+            // Refresh the meal data
+            await fetchMealData(dates)
+        } catch (error) {
+            console.error('Error moving meal:', error)
+            if (Platform.OS === 'web') {
+                alert('Virhe: Aterian siirtäminen epäonnistui')
+            } else {
+                Alert.alert('Virhe', 'Aterian siirtäminen epäonnistui')
+            }
+        }
+    }
+
+    // Store day layouts with cumulative positions
+    const [dayLayouts, setDayLayouts] = useState(new Map())
+    const dayHeightsRef = useRef(new Map())
+
+    const handleDayLayout = (dateKey, layout) => {
+        // Store the height if provided
+        if (dateKey && layout.height) {
+            dayHeightsRef.current.set(dateKey, layout.height)
+        }
+
+        // Calculate cumulative Y position based on date order
+        // onLayout positions are relative to FlatList content (after header)
+        let cumulativeY = 0
+        const updatedLayouts = new Map()
+
+        dates.forEach((date) => {
+            const key = format(date, 'yyyy-MM-dd')
+            const height = dayHeightsRef.current.get(key) || 0
+
+            if (height > 0) {
+                updatedLayouts.set(key, {
+                    y: cumulativeY,
+                    height: height,
+                })
+                cumulativeY += height
+            }
+        })
+
+        setDayLayouts(updatedLayouts)
+
+        // Log when complete
+        if (
+            updatedLayouts.size === dates.length &&
+            dateKey &&
+            !dayLayouts.has(dateKey)
+        ) {
+            console.log(`📐 Day layouts calculated:`)
+            updatedLayouts.forEach((val, key) => {
+                console.log(
+                    `  ${key}: y=${val.y}, h=${val.height}, end=${val.y + val.height}`
+                )
+            })
+        }
+    }
+
+    // Drag gesture handlers
+    const screenPositionsRef = useRef(new Map())
+
+    const handleDragStart = (meal, date) => {
+        console.log(
+            'handleDragStart called for meal:',
+            meal?.name,
+            'on date:',
+            format(date, 'yyyy-MM-dd')
+        )
+
+        // Measure screen positions of all days using refs
+        screenPositionsRef.current = new Map()
+        console.log('📍 Measuring screen positions at drag start:')
+
+        dates.forEach((d, index) => {
+            const dateKey = format(d, 'yyyy-MM-dd')
+            const ref = dayRefs.current.get(dateKey)
+            if (ref) {
+                ref.measureInWindow((x, y, width, height) => {
+                    screenPositionsRef.current.set(dateKey, {
+                        y,
+                        height,
+                        index,
+                    })
+                    console.log(
+                        `  [${index}] ${dateKey}: screen Y ${y} to ${y + height}`
+                    )
+                })
+            }
+        })
+
+        try {
+            // Store in both state (for UI) and ref (for reliable access)
+            draggingMealRef.current = meal
+            draggingFromDateRef.current = date
+            setDraggingMeal(meal)
+            setDraggingFromDate(date)
+            setIsScrollEnabled(false) // Disable scrolling during drag
+        } catch (error) {
+            console.log('Error in handleDragStart:', error)
+        }
+    }
+
+    const handleDragging = (absoluteY) => {
+        try {
+            if (screenPositionsRef.current.size === 0) {
+                return
+            }
+
+            let targetDate = null
+            let prevTargetDate = dropTargetDate
+
+            // Use screen positions measured at drag start
+            screenPositionsRef.current.forEach((position, dateKey) => {
+                const { y, height } = position
+                // Check if finger is within this day's screen bounds
+                if (absoluteY >= y && absoluteY <= y + height) {
+                    const foundDate = dates.find(
+                        (d) => format(d, 'yyyy-MM-dd') === dateKey
+                    )
+                    if (foundDate) {
+                        targetDate = foundDate
+                    }
+                }
+            })
+
+            // Only log when target changes
+            if (
+                targetDate &&
+                (!prevTargetDate ||
+                    format(targetDate, 'yyyy-MM-dd') !==
+                        format(prevTargetDate, 'yyyy-MM-dd'))
+            ) {
+                const position = screenPositionsRef.current.get(
+                    format(targetDate, 'yyyy-MM-dd')
+                )
+                console.log(
+                    `✓ Over ${format(targetDate, 'yyyy-MM-dd')} (finger: ${absoluteY}, day: ${position.y}-${position.y + position.height})`
+                )
+            }
+
+            setDropTargetDate(targetDate || null)
+        } catch (error) {
+            console.log('Error in handleDragging:', error)
+        }
+    }
+
+    const handleDragPosition = (absoluteX, absoluteY) => {
+        setDragPosition({ x: absoluteX, y: absoluteY })
+    }
+
+    const findDropTargetAtPosition = (absoluteY) => {
+        console.log('=== DROP DETECTION ===')
+        console.log('Finger at screen Y:', absoluteY)
+
+        let targetDate = null
+
+        // Use screen positions measured at drag start
+        screenPositionsRef.current.forEach((position, dateKey) => {
+            const { y, height, index } = position
+            const matches = absoluteY >= y && absoluteY <= y + height
+
+            console.log(
+                `  [${index}] ${dateKey}: ${Math.round(y)}-${Math.round(y + height)} ${matches ? '✅' : '❌'}`
+            )
+
+            if (matches) {
+                const foundDate = dates.find(
+                    (d) => format(d, 'yyyy-MM-dd') === dateKey
+                )
+                if (foundDate) {
+                    targetDate = foundDate
+                }
+            }
+        })
+
+        if (targetDate) {
+            console.log(
+                `\n✅ DETECTED: ${format(targetDate, 'yyyy-MM-dd EEEE', { locale: fi })}`
+            )
+            console.log(`❓ Was this the day you VISUALLY saw?`)
+
+            // Find the index in the dates array
+            const dateIndex = dates.findIndex(
+                (d) =>
+                    format(d, 'yyyy-MM-dd') === format(targetDate, 'yyyy-MM-dd')
+            )
+            console.log(`📍 Date index in array: ${dateIndex}`)
+        } else {
+            console.log(`\n❌ NO MATCH at screen Y=${absoluteY}`)
+        }
+
+        return targetDate
+    }
+
+    const handleDragEnd = (finalAbsoluteY) => {
+        console.log('=== DROP STARTED ===')
+        console.log('finalAbsoluteY:', finalAbsoluteY)
+        try {
+            // Use refs for reliable access to drag data
+            const meal = draggingMealRef.current
+            const fromDate = draggingFromDateRef.current
+
+            // Find the drop target at the final position
+            const finalDropTarget = finalAbsoluteY
+                ? findDropTargetAtPosition(finalAbsoluteY)
+                : dropTargetDate
+
+            console.log('Drop data:', {
+                mealName: meal?.name,
+                fromDate: fromDate ? format(fromDate, 'yyyy-MM-dd') : null,
+                toDate: finalDropTarget
+                    ? format(finalDropTarget, 'yyyy-MM-dd')
+                    : null,
+                hasMeal: !!meal,
+                hasFromDate: !!fromDate,
+                hasToDate: !!finalDropTarget,
+            })
+
+            if (meal && finalDropTarget && fromDate) {
+                const fromDateStr = format(fromDate, 'yyyy-MM-dd')
+                const toDateStr = format(finalDropTarget, 'yyyy-MM-dd')
+
+                if (fromDateStr === toDateStr) {
+                    console.log('Same date, no move needed')
+                } else {
+                    console.log(
+                        `Moving meal from ${fromDateStr} to ${toDateStr}`
+                    )
+                    handleMealDrop(meal, fromDate, finalDropTarget)
+                }
+            } else {
+                console.log('Drop cancelled - missing required data')
+            }
+
+            // Clear refs and state
+            draggingMealRef.current = null
+            draggingFromDateRef.current = null
+            screenPositionsRef.current.clear() // Clear screen positions
+            setDraggingMeal(null)
+            setDraggingFromDate(null)
+            setDropTargetDate(null)
+            setDragPosition({ x: 0, y: 0 })
+            setIsScrollEnabled(true) // Re-enable scrolling
+            console.log('🔓 Cleared drag state')
+        } catch (error) {
+            console.log('Error in handleDragEnd:', error)
+            screenPositionsRef.current.clear() // Clear on error too
+            setIsScrollEnabled(true) // Re-enable scrolling even on error
+        }
+    }
+
     const handleMealUpdate = async (mealId, updatedMeal) => {
         try {
             if (!mealId) {
@@ -441,57 +973,115 @@ const Table = () => {
         </TouchableOpacity>
     )
 
-    const renderMealItemWithRemove = (meal, date) => (
-        <View style={styles.mealItemContainer}>
-            <TouchableOpacity
-                onPress={() => handleMealPress(meal)}
-                style={styles.mealItemInfo}
+    const renderMealItemWithRemove = (meal, date) => {
+        const isDraggingThis = draggingMeal && draggingMeal._id === meal._id
+        return (
+            <DraggableMealItem
+                meal={meal}
+                date={date}
+                onDragStart={handleDragStart}
+                onDragging={handleDragging}
+                onDragEnd={handleDragEnd}
+                onDragPosition={handleDragPosition}
             >
-                <Image
-                    source={{
-                        uri: meal.image?.url || PLACEHOLDER_IMAGE_URL,
-                    }}
-                    style={styles.mealImage}
-                    resizeMode="cover"
-                />
-                <View style={styles.mealTextContainer}>
-                    <CustomText style={styles.mealName}>{meal.name}</CustomText>
-                    <CustomText style={styles.mealType}>
-                        {meal.defaultRoles?.[0]
-                            ? mealTypeTranslations[meal.defaultRoles[0]] ||
-                              meal.defaultRoles[0]
-                            : 'Ateria'}
-                    </CustomText>
+                <View style={styles.mealItemContainer}>
+                    <View style={styles.mealItemInfo}>
+                        <TouchableOpacity
+                            onPress={() => handleMealPress(meal)}
+                            style={styles.mealContentTouchable}
+                            activeOpacity={0.7}
+                        >
+                            <Image
+                                source={{
+                                    uri:
+                                        meal.image?.url ||
+                                        PLACEHOLDER_IMAGE_URL,
+                                }}
+                                style={styles.mealImage}
+                                resizeMode="cover"
+                            />
+                            <View style={styles.mealTextContainer}>
+                                <CustomText style={styles.mealName}>
+                                    {meal.name}
+                                </CustomText>
+                                <CustomText style={styles.mealType}>
+                                    {meal.defaultRoles?.[0]
+                                        ? mealTypeTranslations[
+                                              meal.defaultRoles[0]
+                                          ] || meal.defaultRoles[0]
+                                        : 'Ateria'}
+                                </CustomText>
+                            </View>
+                        </TouchableOpacity>
+                        <View style={styles.dragHandle}>
+                            <MaterialIcons
+                                name="drag-indicator"
+                                size={24}
+                                color="#999"
+                            />
+                        </View>
+                    </View>
+                    <View style={styles.mealItemActions}>
+                        <TouchableOpacity
+                            style={styles.deleteButton}
+                            onPress={(e) => {
+                                e.stopPropagation()
+                                removeMealFromDate(meal, date)
+                            }}
+                            activeOpacity={0.7}
+                            hitSlop={{
+                                top: 10,
+                                bottom: 10,
+                                left: 10,
+                                right: 10,
+                            }}
+                        >
+                            <MaterialIcons
+                                name="delete"
+                                size={20}
+                                color="#666"
+                            />
+                        </TouchableOpacity>
+                    </View>
                 </View>
-            </TouchableOpacity>
-            <View style={styles.mealItemActions}>
-                <TouchableOpacity
-                    style={styles.deleteButton}
-                    onPress={(e) => {
-                        e.stopPropagation()
-                        removeMealFromDate(meal, date)
-                    }}
-                    activeOpacity={0.7}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
-                    <MaterialIcons name="delete" size={20} color="#666" />
-                </TouchableOpacity>
-            </View>
-        </View>
-    )
+            </DraggableMealItem>
+        )
+    }
 
     const renderDateSection = ({ item: date }) => {
-        const meals = mealsByDate[format(date, 'yyyy-MM-dd')] || []
+        const dateKey = format(date, 'yyyy-MM-dd')
+        const meals = mealsByDate[dateKey] || []
         const isToday =
             format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
+        const isDropTarget =
+            dropTargetDate && format(dropTargetDate, 'yyyy-MM-dd') === dateKey
 
         // Format the date with capitalized day name
-        const formattedDate = format(date, 'EEEE d.M.yyyy', { locale: fi })
+        const formattedDate = format(date, 'EEEE d.M.yyyy', {
+            locale: fi,
+        })
         const capitalizedDate =
             formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1)
 
         return (
-            <View style={styles.dateSection}>
+            <View
+                ref={(ref) => {
+                    if (ref) {
+                        dayRefs.current.set(dateKey, ref)
+                    }
+                }}
+                onLayout={(event) => {
+                    const { height } = event.nativeEvent.layout
+                    // Just pass the height, Y will be calculated cumulatively
+                    handleDayLayout(dateKey, {
+                        height: height,
+                    })
+                }}
+                style={[
+                    styles.dateSection,
+                    isDropTarget && styles.dateSectionDropTarget,
+                ]}
+            >
                 <View style={styles.dateHeaderContainer}>
                     <CustomText style={styles.dateHeader}>
                         {capitalizedDate}
@@ -517,6 +1107,18 @@ const Table = () => {
                     <View style={styles.noMealsContainer}>
                         <CustomText style={styles.noMealsText}>
                             Ei aterioita
+                        </CustomText>
+                    </View>
+                )}
+                {isDropTarget && draggingMeal && (
+                    <View style={styles.dropIndicator}>
+                        <MaterialIcons
+                            name="arrow-downward"
+                            size={32}
+                            color="#fff"
+                        />
+                        <CustomText style={styles.dropIndicatorText}>
+                            Pudota tänne
                         </CustomText>
                     </View>
                 )}
@@ -654,6 +1256,84 @@ const Table = () => {
         </ResponsiveModal>
     )
 
+    const renderMoveMealModal = () => (
+        <ResponsiveModal
+            visible={moveMealModalVisible}
+            onClose={() => {
+                setMoveMealModalVisible(false)
+                setMealToMove(null)
+                setMoveFromDate(null)
+            }}
+        >
+            <View style={styles.modalContent}>
+                <CustomText style={styles.modalTitle}>
+                    Siirrä ateria toiselle päivälle
+                </CustomText>
+                {mealToMove && (
+                    <View style={styles.moveFromInfo}>
+                        <CustomText style={styles.moveFromText}>
+                            Siirretään:{' '}
+                            <CustomText style={styles.mealNameBold}>
+                                {mealToMove.name}
+                            </CustomText>
+                        </CustomText>
+                        {moveFromDate && (
+                            <CustomText style={styles.moveFromText}>
+                                Nykyinen päivä:{' '}
+                                {format(moveFromDate, 'EEEE d.M.', {
+                                    locale: fi,
+                                })}
+                            </CustomText>
+                        )}
+                    </View>
+                )}
+                <CustomText style={styles.selectDayTitle}>
+                    Valitse uusi päivä:
+                </CustomText>
+                <View style={styles.daysList}>
+                    {dates.map((date) => {
+                        const isCurrentDay =
+                            moveFromDate &&
+                            format(date, 'yyyy-MM-dd') ===
+                                format(moveFromDate, 'yyyy-MM-dd')
+                        const dayName = format(date, 'EEEE d.M.', {
+                            locale: fi,
+                        })
+                        const capitalizedDayName =
+                            dayName.charAt(0).toUpperCase() + dayName.slice(1)
+
+                        return (
+                            <TouchableOpacity
+                                key={format(date, 'yyyy-MM-dd')}
+                                style={[
+                                    styles.dayButton,
+                                    isCurrentDay && styles.currentDayButton,
+                                ]}
+                                onPress={() => handleMoveMealToDay(date)}
+                                disabled={isCurrentDay}
+                            >
+                                <CustomText
+                                    style={[
+                                        styles.dayButtonText,
+                                        isCurrentDay &&
+                                            styles.currentDayButtonText,
+                                    ]}
+                                >
+                                    {capitalizedDayName}
+                                </CustomText>
+                                {isCurrentDay && (
+                                    <CustomText style={styles.currentDayLabel}>
+                                        (Nykyinen)
+                                    </CustomText>
+                                )}
+                            </TouchableOpacity>
+                        )
+                    })}
+                </View>
+            </View>
+        </ResponsiveModal>
+    )
+
     const renderHeader = () => {
         const isCurrentWeek = weekOffset === 0
         const weekLabel = isCurrentWeek
@@ -713,9 +1393,10 @@ const Table = () => {
         )
     }
 
-    return (
+    const content = (
         <View style={styles.container}>
             <FlatList
+                ref={flatListRef}
                 data={dates}
                 renderItem={renderDateSection}
                 keyExtractor={(date) => format(date, 'yyyy-MM-dd')}
@@ -723,8 +1404,16 @@ const Table = () => {
                 contentContainerStyle={styles.listContent}
                 ListHeaderComponent={renderHeader}
                 showsVerticalScrollIndicator={true}
+                scrollEnabled={isScrollEnabled}
+                removeClippedSubviews={false}
+                keyboardShouldPersistTaps="handled"
+                onScroll={(event) => {
+                    scrollOffsetRef.current = event.nativeEvent.contentOffset.y
+                }}
+                scrollEventThrottle={16}
             />
             {renderMealSelectModal()}
+            {renderMoveMealModal()}
             <MealItemDetail
                 meal={selectedMeal}
                 visible={detailModalVisible}
@@ -732,6 +1421,50 @@ const Table = () => {
                 onUpdate={handleMealUpdate}
             />
         </View>
+    )
+
+    return (
+        <GestureHandlerRootView style={{ flex: 1 }}>
+            {content}
+            {draggingMeal && (
+                <View
+                    style={[
+                        styles.dragOverlay,
+                        {
+                            left: dragPosition.x - 140,
+                            top: dragPosition.y - 140,
+                        },
+                    ]}
+                    pointerEvents="none"
+                >
+                    <View style={styles.mealItemContainer}>
+                        <View style={styles.mealItemInfo}>
+                            <Image
+                                source={{
+                                    uri:
+                                        draggingMeal.image?.url ||
+                                        PLACEHOLDER_IMAGE_URL,
+                                }}
+                                style={styles.mealImage}
+                                resizeMode="cover"
+                            />
+                            <View style={styles.mealTextContainer}>
+                                <CustomText style={styles.mealName}>
+                                    {draggingMeal.name}
+                                </CustomText>
+                                <CustomText style={styles.mealType}>
+                                    {draggingMeal.defaultRoles?.[0]
+                                        ? mealTypeTranslations[
+                                              draggingMeal.defaultRoles[0]
+                                          ] || draggingMeal.defaultRoles[0]
+                                        : 'Ateria'}
+                                </CustomText>
+                            </View>
+                        </View>
+                    </View>
+                </View>
+            )}
+        </GestureHandlerRootView>
     )
 }
 
@@ -745,9 +1478,11 @@ const styles = StyleSheet.create({
     list: {
         width: '100%',
         zIndex: 1,
+        overflow: 'visible',
     },
     listContent: {
         paddingBottom: 20,
+        overflow: 'visible',
     },
     headerContainer: {
         alignItems: 'flex-start',
@@ -830,7 +1565,9 @@ const styles = StyleSheet.create({
         },
         shadowOpacity: 0.1,
         shadowRadius: 2,
-        elevation: 2,
+        elevation: 0,
+        overflow: 'visible',
+        position: 'relative',
     },
     dateHeaderContainer: {
         flexDirection: 'row',
@@ -838,6 +1575,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 10,
         width: '100%',
+        zIndex: 0,
     },
     dateHeader: {
         fontSize: 18,
@@ -852,7 +1590,7 @@ const styles = StyleSheet.create({
         paddingBottom: 7,
         paddingLeft: 10,
         paddingRight: 10,
-        elevation: 2,
+        elevation: 0,
         backgroundColor: '#9C86FC',
         marginLeft: 10,
         alignItems: 'center',
@@ -1061,17 +1799,33 @@ const styles = StyleSheet.create({
         },
         shadowOpacity: 0.1,
         shadowRadius: 2,
-        elevation: 2,
+        elevation: 0,
+        overflow: 'visible',
+        position: 'relative',
     },
     mealItemInfo: {
         flex: 1,
         flexDirection: 'row',
-        marginRight: 10,
         alignItems: 'center',
+    },
+    mealContentTouchable: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    dragHandle: {
+        padding: 10,
+        marginLeft: 4,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 8,
+        minWidth: 40,
+        minHeight: 40,
     },
     mealItemActions: {
         flexDirection: 'row',
         alignItems: 'center',
+        marginLeft: 10,
     },
     deleteButton: {
         backgroundColor: '#e0e0e0',
@@ -1088,6 +1842,143 @@ const styles = StyleSheet.create({
         },
         shadowOpacity: 0.2,
         shadowRadius: 1.41,
+    },
+    mealItemDragging: {
+        opacity: 0.5,
+        backgroundColor: '#e3f2fd',
+        borderWidth: 2,
+        borderColor: '#9C86FC',
+        borderStyle: 'dashed',
+    },
+    dateSectionDropTarget: {
+        backgroundColor: '#f0f8ff',
+        borderWidth: 2,
+        borderColor: '#9C86FC',
+        borderStyle: 'dashed',
+    },
+    dropIndicator: {
+        backgroundColor: '#9C86FC',
+        padding: 10,
+        borderRadius: 8,
+        marginTop: 10,
+        alignItems: 'center',
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: 8,
+        zIndex: 1,
+    },
+    dropIndicatorText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 14,
+        marginLeft: 8,
+    },
+    dragModeHeader: {
+        backgroundColor: '#9C86FC',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: 12,
+        paddingHorizontal: 15,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
+    },
+    dragModeHeaderContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+    },
+    dragModeText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginLeft: 10,
+        flex: 1,
+    },
+    cancelDragButton: {
+        padding: 5,
+        borderRadius: 15,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    },
+    moveFromInfo: {
+        backgroundColor: '#f5f5f5',
+        padding: 15,
+        borderRadius: 8,
+        marginBottom: 20,
+    },
+    moveFromText: {
+        fontSize: 14,
+        color: '#666',
+        marginBottom: 5,
+    },
+    mealNameBold: {
+        fontWeight: 'bold',
+        color: '#333',
+    },
+    selectDayTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        marginBottom: 15,
+        color: '#333',
+    },
+    daysList: {
+        gap: 10,
+    },
+    dayButton: {
+        backgroundColor: '#9C86FC',
+        padding: 16,
+        borderRadius: 10,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 3,
+    },
+    currentDayButton: {
+        backgroundColor: '#e0e0e0',
+        opacity: 0.6,
+    },
+    dayButtonText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#fff',
+    },
+    currentDayButtonText: {
+        color: '#999',
+    },
+    currentDayLabel: {
+        fontSize: 12,
+        color: '#999',
+        marginTop: 4,
+    },
+    mealsContainer: {
+        overflow: 'visible',
+        zIndex: 100,
+        position: 'relative',
+    },
+    dragOverlay: {
+        position: 'absolute',
+        zIndex: 999999,
+        elevation: 999,
+        opacity: 0.9,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 4,
+        },
+        shadowOpacity: 0.3,
+        shadowRadius: 4.65,
+        width: 300,
     },
 })
 
