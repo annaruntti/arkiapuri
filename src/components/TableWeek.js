@@ -8,7 +8,6 @@ import {
     FlatList,
     Image,
     Platform,
-    SectionList,
     StyleSheet,
     TouchableOpacity,
     View,
@@ -30,55 +29,11 @@ import Button from './Button'
 import CustomText from './CustomText'
 import DateSelector from './DateSelector'
 import MealItemDetail from './MealItemDetail'
+import MealSelectionList, {
+    PLACEHOLDER_IMAGE_URL,
+    mealTypeTranslations,
+} from './MealSelectionList'
 import ResponsiveModal from './ResponsiveModal'
-
-const PLACEHOLDER_IMAGE_URL =
-    'https://images.ctfassets.net/2pij69ehhf4n/3b9imD6TDC4i68V4uHVgL1/1ac1194dccb086bb52ebd674c59983e3/undraw_breakfast_rgx5.png'
-
-const mealTypeTranslations = {
-    breakfast: 'Aamiainen',
-    lunch: 'Lounas',
-    snack: 'Välipala',
-    dinner: 'Päivällinen',
-    supper: 'Iltapala',
-    dessert: 'Jälkiruoka',
-    other: 'Muu',
-}
-
-// Group meals by their default roles
-const groupMealsByCategory = (meals) => {
-    const grouped = {}
-
-    meals.forEach((meal) => {
-        const roles = meal.defaultRoles || ['other']
-        roles.forEach((role) => {
-            if (!grouped[role]) {
-                grouped[role] = []
-            }
-            grouped[role].push(meal)
-        })
-    })
-
-    // Sort categories by predefined order
-    const categoryOrder = [
-        'breakfast',
-        'lunch',
-        'snack',
-        'dinner',
-        'supper',
-        'dessert',
-        'other',
-    ]
-    const sortedGrouped = {}
-
-    categoryOrder.forEach((category) => {
-        if (grouped[category] && grouped[category].length > 0) {
-            sortedGrouped[category] = grouped[category]
-        }
-    })
-
-    return sortedGrouped
-}
 
 // Custom Draggable Component
 const DraggableMealItem = ({
@@ -100,12 +55,6 @@ const DraggableMealItem = ({
 
     // Create the callbacks outside the gesture to properly capture meal and date
     const handleStart = () => {
-        console.log(
-            'handleStart called with meal:',
-            meal?.name,
-            'date:',
-            format(date, 'yyyy-MM-dd')
-        )
         onDragStart(meal, date)
     }
 
@@ -130,11 +79,9 @@ const DraggableMealItem = ({
         .minDistance(5)
         .onBegin(() => {
             'worklet'
-            console.log('Gesture begin')
         })
         .onStart((event) => {
             'worklet'
-            console.log('Gesture start')
             try {
                 isDraggingValue.value = true
                 scale.value = withSpring(1.05)
@@ -143,7 +90,7 @@ const DraggableMealItem = ({
                 runOnJS(handleStart)()
                 runOnJS(handlePosition)(event.absoluteX, event.absoluteY)
             } catch (error) {
-                console.log('Error in onStart:', error)
+                // Silent fail for gesture start
             }
         })
         .onUpdate((event) => {
@@ -155,12 +102,11 @@ const DraggableMealItem = ({
                 runOnJS(handleDragging)(event.absoluteY)
                 runOnJS(handlePosition)(event.absoluteX, event.absoluteY)
             } catch (error) {
-                console.log('Error in onUpdate:', error)
+                // Silent fail for gesture update
             }
         })
         .onEnd(() => {
             'worklet'
-            console.log('Gesture end, lastAbsoluteY:', lastAbsoluteY.value)
             try {
                 const finalY = lastAbsoluteY.value
                 isDraggingValue.value = false
@@ -169,7 +115,7 @@ const DraggableMealItem = ({
                 scale.value = withSpring(1)
                 runOnJS(handleEnd)(finalY)
             } catch (error) {
-                console.log('Error in onEnd:', error)
+                // Silent fail for gesture end
             }
         })
 
@@ -221,13 +167,9 @@ const Table = () => {
         const startDate = addDays(today, weekOffset * 7)
         const weekDays = []
 
-        console.log('📅 Generating week dates:')
         for (let i = 0; i < 7; i++) {
             const date = addDays(startDate, i)
             weekDays.push(date)
-            console.log(
-                `  [${i}]: ${format(date, 'yyyy-MM-dd EEEE', { locale: fi })}`
-            )
         }
 
         setDates(weekDays)
@@ -298,10 +240,6 @@ const Table = () => {
     }
 
     const handleAddMeal = async (date) => {
-        console.log(
-            '🔵 handleAddMeal called with date:',
-            format(date, 'yyyy-MM-dd EEEE', { locale: fi })
-        )
         try {
             const token = await storage.getItem('userToken')
             const response = await axios.get(getServerUrl('/meals'), {
@@ -326,12 +264,6 @@ const Table = () => {
     }
 
     const handleSelectMeal = async (meal) => {
-        console.log(
-            '🟢 handleSelectMeal - selectedDates:',
-            selectedDates.map((d) =>
-                format(d, 'yyyy-MM-dd EEEE', { locale: fi })
-            )
-        )
         try {
             const token = await storage.getItem('userToken')
             const formattedDates = selectedDates.map(
@@ -339,7 +271,6 @@ const Table = () => {
                     new Date(date).toISOString().split('T')[0] +
                     'T00:00:00.000Z'
             )
-            console.log('🟢 Formatted dates being saved:', formattedDates)
 
             // Use PUT with the meal._id
             const response = await axios.put(
@@ -504,7 +435,6 @@ const Table = () => {
     }
 
     const handleLongPress = (meal, date) => {
-        console.log('Opening move meal modal for:', meal.name)
         // Open modal to select target day
         setMealToMove(meal)
         setMoveFromDate(date)
@@ -580,31 +510,13 @@ const Table = () => {
 
     // Handler for when a meal is dropped on a new day
     const handleMealDrop = async (meal, fromDate, toDate) => {
-        console.log('🎯 handleMealDrop called:')
-        console.log('  Meal:', meal.name)
-        console.log('  From Date (Date object):', fromDate)
-        console.log('  To Date (Date object):', toDate)
-
         const fromDateStr = format(fromDate, 'yyyy-MM-dd')
         const toDateStr = format(toDate, 'yyyy-MM-dd')
 
-        console.log(
-            '  From Date (formatted):',
-            fromDateStr,
-            format(fromDate, 'EEEE', { locale: fi })
-        )
-        console.log(
-            '  To Date (formatted):',
-            toDateStr,
-            format(toDate, 'EEEE', { locale: fi })
-        )
-
         // Don't do anything if dropped on the same date
         if (fromDateStr === toDateStr) {
-            console.log('  ⚠️ Same date, canceling')
             return
         }
-        console.log('  ✅ Different dates, proceeding with drop')
 
         try {
             // Get current planned eating dates
@@ -677,36 +589,14 @@ const Table = () => {
         })
 
         setDayLayouts(updatedLayouts)
-
-        // Log when complete
-        if (
-            updatedLayouts.size === dates.length &&
-            dateKey &&
-            !dayLayouts.has(dateKey)
-        ) {
-            console.log(`📐 Day layouts calculated:`)
-            updatedLayouts.forEach((val, key) => {
-                console.log(
-                    `  ${key}: y=${val.y}, h=${val.height}, end=${val.y + val.height}`
-                )
-            })
-        }
     }
 
     // Drag gesture handlers
     const screenPositionsRef = useRef(new Map())
 
     const handleDragStart = (meal, date) => {
-        console.log(
-            'handleDragStart called for meal:',
-            meal?.name,
-            'on date:',
-            format(date, 'yyyy-MM-dd')
-        )
-
         // Measure screen positions of all days using refs
         screenPositionsRef.current = new Map()
-        console.log('📍 Measuring screen positions at drag start:')
 
         dates.forEach((d, index) => {
             const dateKey = format(d, 'yyyy-MM-dd')
@@ -718,9 +608,6 @@ const Table = () => {
                         height,
                         index,
                     })
-                    console.log(
-                        `  [${index}] ${dateKey}: screen Y ${y} to ${y + height}`
-                    )
                 })
             }
         })
@@ -733,7 +620,7 @@ const Table = () => {
             setDraggingFromDate(date)
             setIsScrollEnabled(false) // Disable scrolling during drag
         } catch (error) {
-            console.log('Error in handleDragStart:', error)
+            // Silent fail for drag start
         }
     }
 
@@ -760,24 +647,9 @@ const Table = () => {
                 }
             })
 
-            // Only log when target changes
-            if (
-                targetDate &&
-                (!prevTargetDate ||
-                    format(targetDate, 'yyyy-MM-dd') !==
-                        format(prevTargetDate, 'yyyy-MM-dd'))
-            ) {
-                const position = screenPositionsRef.current.get(
-                    format(targetDate, 'yyyy-MM-dd')
-                )
-                console.log(
-                    `✓ Over ${format(targetDate, 'yyyy-MM-dd')} (finger: ${absoluteY}, day: ${position.y}-${position.y + position.height})`
-                )
-            }
-
             setDropTargetDate(targetDate || null)
         } catch (error) {
-            console.log('Error in handleDragging:', error)
+            // Silent fail for dragging
         }
     }
 
@@ -786,19 +658,12 @@ const Table = () => {
     }
 
     const findDropTargetAtPosition = (absoluteY) => {
-        console.log('=== DROP DETECTION ===')
-        console.log('Finger at screen Y:', absoluteY)
-
         let targetDate = null
 
         // Use screen positions measured at drag start
         screenPositionsRef.current.forEach((position, dateKey) => {
-            const { y, height, index } = position
+            const { y, height } = position
             const matches = absoluteY >= y && absoluteY <= y + height
-
-            console.log(
-                `  [${index}] ${dateKey}: ${Math.round(y)}-${Math.round(y + height)} ${matches ? '✅' : '❌'}`
-            )
 
             if (matches) {
                 const foundDate = dates.find(
@@ -810,28 +675,10 @@ const Table = () => {
             }
         })
 
-        if (targetDate) {
-            console.log(
-                `\n✅ DETECTED: ${format(targetDate, 'yyyy-MM-dd EEEE', { locale: fi })}`
-            )
-            console.log(`❓ Was this the day you VISUALLY saw?`)
-
-            // Find the index in the dates array
-            const dateIndex = dates.findIndex(
-                (d) =>
-                    format(d, 'yyyy-MM-dd') === format(targetDate, 'yyyy-MM-dd')
-            )
-            console.log(`📍 Date index in array: ${dateIndex}`)
-        } else {
-            console.log(`\n❌ NO MATCH at screen Y=${absoluteY}`)
-        }
-
         return targetDate
     }
 
     const handleDragEnd = (finalAbsoluteY) => {
-        console.log('=== DROP STARTED ===')
-        console.log('finalAbsoluteY:', finalAbsoluteY)
         try {
             // Use refs for reliable access to drag data
             const meal = draggingMealRef.current
@@ -842,31 +689,13 @@ const Table = () => {
                 ? findDropTargetAtPosition(finalAbsoluteY)
                 : dropTargetDate
 
-            console.log('Drop data:', {
-                mealName: meal?.name,
-                fromDate: fromDate ? format(fromDate, 'yyyy-MM-dd') : null,
-                toDate: finalDropTarget
-                    ? format(finalDropTarget, 'yyyy-MM-dd')
-                    : null,
-                hasMeal: !!meal,
-                hasFromDate: !!fromDate,
-                hasToDate: !!finalDropTarget,
-            })
-
             if (meal && finalDropTarget && fromDate) {
                 const fromDateStr = format(fromDate, 'yyyy-MM-dd')
                 const toDateStr = format(finalDropTarget, 'yyyy-MM-dd')
 
-                if (fromDateStr === toDateStr) {
-                    console.log('Same date, no move needed')
-                } else {
-                    console.log(
-                        `Moving meal from ${fromDateStr} to ${toDateStr}`
-                    )
+                if (fromDateStr !== toDateStr) {
                     handleMealDrop(meal, fromDate, finalDropTarget)
                 }
-            } else {
-                console.log('Drop cancelled - missing required data')
             }
 
             // Clear refs and state
@@ -878,9 +707,7 @@ const Table = () => {
             setDropTargetDate(null)
             setDragPosition({ x: 0, y: 0 })
             setIsScrollEnabled(true) // Re-enable scrolling
-            console.log('🔓 Cleared drag state')
         } catch (error) {
-            console.log('Error in handleDragEnd:', error)
             screenPositionsRef.current.clear() // Clear on error too
             setIsScrollEnabled(true) // Re-enable scrolling even on error
         }
@@ -1145,80 +972,12 @@ const Table = () => {
                 onClearSelection={clearDateSelection}
             />
 
-            {availableMeals.length === 0 ? (
-                <View style={styles.noMealsContainer}>
-                    <CustomText style={styles.noMealsText}>
-                        Ei vapaita aterioita
-                    </CustomText>
-                </View>
-            ) : (
-                (() => {
-                    const groupedMeals = groupMealsByCategory(availableMeals)
-                    const sections = Object.entries(groupedMeals).map(
-                        ([category, meals]) => ({
-                            title: mealTypeTranslations[category] || category,
-                            data: meals,
-                        })
-                    )
-
-                    return (
-                        <SectionList
-                            sections={sections}
-                            stickySectionHeadersEnabled={false}
-                            renderItem={({ item }) => (
-                                <TouchableOpacity
-                                    style={[
-                                        styles.modalMealItem,
-                                        selectedDates.length === 0 &&
-                                            styles.disabledMealItem,
-                                    ]}
-                                    onPress={() =>
-                                        selectedDates.length > 0
-                                            ? handleSelectMeal(item)
-                                            : null
-                                    }
-                                    disabled={selectedDates.length === 0}
-                                >
-                                    <Image
-                                        source={{
-                                            uri:
-                                                item.image?.url ||
-                                                PLACEHOLDER_IMAGE_URL,
-                                        }}
-                                        style={styles.modalMealImage}
-                                        resizeMode="cover"
-                                    />
-                                    <View style={styles.modalMealTextContainer}>
-                                        <CustomText
-                                            style={styles.modalMealName}
-                                        >
-                                            {item.name}
-                                        </CustomText>
-                                        <CustomText
-                                            style={styles.modalMealType}
-                                        >
-                                            {item.defaultRoles?.[0]
-                                                ? mealTypeTranslations[
-                                                      item.defaultRoles[0]
-                                                  ] || item.defaultRoles[0]
-                                                : 'Ateria'}
-                                        </CustomText>
-                                    </View>
-                                </TouchableOpacity>
-                            )}
-                            renderSectionHeader={({ section: { title } }) => (
-                                <View style={styles.sectionHeader}>
-                                    <CustomText style={styles.sectionTitle}>
-                                        {title}
-                                    </CustomText>
-                                </View>
-                            )}
-                            keyExtractor={(item) => item._id}
-                            contentContainerStyle={styles.modalList}
-                        />
-                    )
-                })()
-            )}
+            <MealSelectionList
+                availableMeals={availableMeals}
+                selectedDates={selectedDates}
+                onMealSelect={handleSelectMeal}
+                showAllRoles={false}
+            />
         </ResponsiveModal>
     )
 
@@ -1604,16 +1363,6 @@ const styles = StyleSheet.create({
         marginTop: 4,
         flexWrap: 'wrap',
     },
-    noMealsContainer: {
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 20,
-        minHeight: 60,
-    },
-    noMealsText: {
-        fontSize: 16,
-        color: '#666',
-    },
     modalView: {
         flex: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -1642,65 +1391,6 @@ const styles = StyleSheet.create({
     },
     closeButton: {
         padding: 5,
-    },
-    modalList: {
-        padding: 15,
-        flexGrow: 1,
-    },
-    sectionHeader: {
-        backgroundColor: '#F0EBFF',
-        paddingVertical: 10,
-        paddingHorizontal: 15,
-        borderRadius: 8,
-        marginTop: 15,
-        marginBottom: 8,
-        borderLeftWidth: 4,
-        borderLeftColor: '#9C86FC',
-        boxShadow: 'rgba(0, 0, 0, 0.1) 0px 1px 2px',
-    },
-    sectionTitle: {
-        fontSize: 19,
-        fontWeight: 'bold',
-        color: '#333',
-        letterSpacing: 0.5,
-    },
-    disabledMealItem: {
-        opacity: 0.5,
-    },
-    modalMealItem: {
-        backgroundColor: '#f8f8f8',
-        padding: 15,
-        borderRadius: 8,
-        marginBottom: 10,
-        flexDirection: 'row',
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 1,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 2,
-    },
-    modalMealImage: {
-        width: 50,
-        height: 50,
-        borderRadius: 6,
-        marginRight: 12,
-    },
-    modalMealTextContainer: {
-        flex: 1,
-        flexDirection: 'column',
-    },
-    modalMealName: {
-        fontSize: 16,
-        fontWeight: '500',
-    },
-    modalMealType: {
-        fontSize: 14,
-        color: '#666',
-        marginTop: 4,
     },
     mealItemContainer: {
         backgroundColor: '#fff',
