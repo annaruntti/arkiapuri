@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native'
 import { LinearGradient } from 'expo-linear-gradient'
-import React from 'react'
+import React, { useState } from 'react'
 import {
     Image,
     ScrollView,
@@ -11,6 +11,8 @@ import {
 import Svg, { Path } from 'react-native-svg'
 import CustomText from '../components/CustomText'
 import FilteredMealsCard from '../components/FilteredMealsCard'
+import MealItemDetail from '../components/MealItemDetail'
+import RandomMealCard from '../components/RandomMealCard'
 import ResponsiveLayout from '../components/ResponsiveLayout'
 import { useResponsiveDimensions } from '../utils/responsive'
 
@@ -34,6 +36,10 @@ const quickMealsImage = {
     uri: 'https://images.ctfassets.net/hef5a6s5axrs/1fvToRJqesGgl6dJCFyyJl/0f484ccfe293cca2a0a4ab57d3324c34/undraw_breakfast_rgx5.png',
 }
 
+const randomMealImage = {
+    uri: 'https://images.ctfassets.net/hef5a6s5axrs/5s04BoMG8Blt6H2mvimgUK/ec13e9499e1d6e280ad8ae44c13e674b/undraw_diet_zdwe.png',
+}
+
 const staticWavePathData =
     'M0,96L40,112C80,128,160,160,240,186.7C320,213,400,235,480,208C560,181,640,107,720,69.3C800,32,880,32,960,74.7C1040,117,1120,203,1200,229.3C1280,256,1360,224,1400,208L1440,192L1440,320L1400,320C1360,320,1280,320,1200,320C1120,320,1040,320,960,320C880,320,800,320,720,320C640,320,560,320,480,320C400,320,320,320,240,320C160,320,80,320,40,320L0,320Z'
 
@@ -44,6 +50,13 @@ const desktopWavePathData =
 const HomeScreen = () => {
     const navigation = useNavigation()
     const { isDesktop, isTablet, responsivePadding } = useResponsiveDimensions()
+    const [selectedMeal, setSelectedMeal] = useState(null)
+    const [detailModalVisible, setDetailModalVisible] = useState(false)
+
+    const handleMealPress = (meal) => {
+        setSelectedMeal(meal)
+        setDetailModalVisible(true)
+    }
 
     const navigationCards = [
         {
@@ -207,9 +220,25 @@ const HomeScreen = () => {
                                     })
                                 }
                             />
+
+                            <RandomMealCard
+                                onMealPress={handleMealPress}
+                                iconImage={randomMealImage}
+                            />
                         </LinearGradient>
                     </View>
                 </ScrollView>
+
+                {selectedMeal && (
+                    <MealItemDetail
+                        visible={detailModalVisible}
+                        onClose={() => {
+                            setDetailModalVisible(false)
+                            setSelectedMeal(null)
+                        }}
+                        meal={selectedMeal}
+                    />
+                )}
             </ResponsiveLayout>
         )
     }
@@ -422,8 +451,24 @@ const HomeScreen = () => {
                             })
                         }
                     />
+
+                    <RandomMealCard
+                        onMealPress={handleMealPress}
+                        iconImage={randomMealImage}
+                    />
                 </View>
             </LinearGradient>
+
+            {selectedMeal && (
+                <MealItemDetail
+                    visible={detailModalVisible}
+                    onClose={() => {
+                        setDetailModalVisible(false)
+                        setSelectedMeal(null)
+                    }}
+                    meal={selectedMeal}
+                />
+            )}
         </ScrollView>
     )
 }
