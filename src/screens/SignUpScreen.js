@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { useNavigation } from '@react-navigation/core'
+import { useNavigation, useRoute } from '@react-navigation/core'
 import axios from 'axios'
 import React from 'react'
 import { useForm } from 'react-hook-form'
@@ -14,7 +14,14 @@ import CustomText from '../components/CustomText'
 const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/
 
 const SignUpScreen = () => {
-    const { control, handleSubmit, watch } = useForm()
+    const route = useRoute()
+    const invitedEmail = route.params?.invitedEmail
+    
+    const { control, handleSubmit, watch } = useForm({
+        defaultValues: {
+            email: invitedEmail || '',
+        }
+    })
     const pwd = watch('password')
 
     const navigation = useNavigation()
@@ -75,7 +82,11 @@ const SignUpScreen = () => {
     return (
         <AuthLayout
             title="Luo käyttäjätunnus"
-            subtitle="Aloita matka Arkiapurin kanssa luomalla käyttäjätunnus."
+            subtitle={
+                invitedEmail 
+                    ? `Luo tili osoitteella ${invitedEmail} hyväksyäksesi perhekutsu.`
+                    : "Aloita matka Arkiapurin kanssa luomalla käyttäjätunnus."
+            }
         >
             <View style={styles.form}>
                 <CustomInput
@@ -102,6 +113,7 @@ const SignUpScreen = () => {
                     name="email"
                     control={control}
                     placeholder="Kirjoita sähköpostiosoitteesi"
+                    editable={!invitedEmail}
                     rules={{
                         pattern: {
                             value: emailRegex,

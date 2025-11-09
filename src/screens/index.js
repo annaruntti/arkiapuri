@@ -1,3 +1,4 @@
+import AcceptInviteScreen from './AcceptInviteScreen'
 import ConfirmEmailScreen from './ConfirmEmailScreen'
 import HomeScreen from './HomeScreen'
 import ImageUploadScreen from './ImageUploadScreen'
@@ -11,6 +12,7 @@ import SignInScreen from './SignInScreen'
 import SignUpScreen from './SignUpScreen'
 
 export {
+    AcceptInviteScreen,
     ConfirmEmailScreen,
     HomeScreen,
     ImageUploadScreen,

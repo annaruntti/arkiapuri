@@ -19,6 +19,7 @@ import { useResponsiveDimensions } from '../utils/responsive'
 import { AntDesign, Feather, FontAwesome6 } from '@expo/vector-icons'
 
 import CustomText from '../components/CustomText'
+import AcceptInviteScreen from '../screens/AcceptInviteScreen'
 import ConfirmEmailScreen from '../screens/ConfirmEmailScreen'
 import FamilyManagementScreen from '../screens/FamilyManagementScreen'
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen'
@@ -562,10 +563,11 @@ const setStoredState = async (state) => {
 // Web linking configuration
 const linking = {
     prefixes: [
+        'arkiapuri://',
         'http://localhost:8081',
         'http://localhost:19006',
         'https://yourdomain.com',
-    ], // Add your production domain later
+    ],
     enabled: true,
     config: {
         screens: {
@@ -615,6 +617,7 @@ const linking = {
                     },
                 },
             },
+            AcceptInvite: 'accept-invite/:token',
         },
     },
 }
@@ -670,6 +673,14 @@ export default function Navigation() {
                             component={AuthStackScreen}
                         />
                     )}
+                    <RootStack.Screen
+                        name="AcceptInvite"
+                        component={AcceptInviteScreen}
+                        options={{
+                            presentation: 'modal',
+                            headerShown: false,
+                        }}
+                    />
                 </RootStack.Navigator>
             </NavigationContainer>
         </NavigationHistoryProvider>

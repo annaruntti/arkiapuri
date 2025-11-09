@@ -119,24 +119,11 @@ const FamilyManagementScreen = ({ navigation }) => {
             )
 
             if (response.data.success) {
-                setGeneratedCode(response.data.invitationCode)
                 setInviteEmail('')
+                setShowInviteModal(false)
                 Alert.alert(
-                    'Kutsu lähetetty',
-                    `Kutsukoodi: ${response.data.invitationCode}\n\nJaa tämä koodi kutsuttavalle henkilölle.`,
-                    [
-                        {
-                            text: 'Kopioi koodi',
-                            onPress: () => {
-                                // In a real app, you'd copy to clipboard
-                                console.log(
-                                    'Copy code:',
-                                    response.data.invitationCode
-                                )
-                            },
-                        },
-                        { text: 'OK' },
-                    ]
+                    'Kutsu lähetetty!',
+                    `Kutsuviesti on lähetetty sähköpostiosoitteeseen ${inviteEmail.trim()}. Vastaanottaja voi liittyä perheeseen klikkaamalla sähköpostissa olevaa linkkiä.`
                 )
                 fetchHousehold()
             }
@@ -520,8 +507,8 @@ const FamilyManagementScreen = ({ navigation }) => {
             >
                 <View style={styles.modalContent}>
                     <CustomText style={styles.modalDescription}>
-                        Syötä kutsuttavan henkilön sähköpostiosoite. Hän saa
-                        kutsukoodin, jolla voi liittyä perheeseen.
+                        Syötä kutsuttavan henkilön sähköpostiosoite. Hänelle
+                        lähetetään kutsulinkki, jolla voi liittyä perheeseen.
                     </CustomText>
                     <TextInput
                         style={styles.input}
