@@ -16,11 +16,11 @@ const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/
 const SignUpScreen = () => {
     const route = useRoute()
     const invitedEmail = route.params?.invitedEmail
-    
+
     const { control, handleSubmit, watch } = useForm({
         defaultValues: {
             email: invitedEmail || '',
-        }
+        },
     })
     const pwd = watch('password')
 
@@ -75,17 +75,21 @@ const SignUpScreen = () => {
         navigation.navigate('Kirjaudu sisään')
     }
 
-    const onTermsOfUsePressed = () => {}
+    const onTermsOfUsePressed = () => {
+        navigation.navigate('Käyttöehdot')
+    }
 
-    const onPrivacyPressed = () => {}
+    const onPrivacyPressed = () => {
+        navigation.navigate('Tietosuojaseloste')
+    }
 
     return (
         <AuthLayout
             title="Luo käyttäjätunnus"
             subtitle={
-                invitedEmail 
+                invitedEmail
                     ? `Luo tili osoitteella ${invitedEmail} hyväksyäksesi perhekutsu.`
-                    : "Aloita matka Arkiapurin kanssa luomalla käyttäjätunnus."
+                    : 'Aloita matka Arkiapurin kanssa luomalla käyttäjätunnus.'
             }
         >
             <View style={styles.form}>
@@ -227,7 +231,7 @@ const styles = StyleSheet.create({
         lineHeight: 18,
     },
     link: {
-        color: '#9C86FC',
+        color: '#7B6BC9',
         fontWeight: '600',
         textDecorationLine: 'underline',
     },

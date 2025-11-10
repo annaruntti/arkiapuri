@@ -209,7 +209,9 @@ const ProfileScreen = () => {
                             title="Muokkaa tietoja"
                             style={styles.primaryButton}
                             textStyle={styles.buttonText}
-                            onPress={() => {}}
+                            onPress={() =>
+                                navigation.navigate('Muokkaa tietoja')
+                            }
                         />
 
                         {/* Family Section */}
@@ -269,12 +271,14 @@ const styles = StyleSheet.create({
         width: '100%',
         maxWidth: 400,
         alignItems: 'center',
+        marginHorizontal: 'auto',
+        marginVertical: 'auto',
     },
     desktopContent: {
         backgroundColor: '#ffffff',
         borderRadius: 16,
         padding: 40,
-        maxWidth: 480,
+        maxWidth: 640,
         width: '100%',
         alignItems: 'center',
         ...(Platform.OS === 'web' && {
@@ -286,7 +290,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#ffffff',
         borderRadius: 12,
         padding: 32,
-        maxWidth: 440,
+        maxWidth: 640,
         width: '100%',
         alignItems: 'center',
         ...(Platform.OS === 'web' && {

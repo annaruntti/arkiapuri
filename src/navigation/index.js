@@ -21,6 +21,7 @@ import { AntDesign, Feather, FontAwesome6 } from '@expo/vector-icons'
 import CustomText from '../components/CustomText'
 import AcceptInviteScreen from '../screens/AcceptInviteScreen'
 import ConfirmEmailScreen from '../screens/ConfirmEmailScreen'
+import EditProfileScreen from '../screens/EditProfileScreen'
 import FamilyManagementScreen from '../screens/FamilyManagementScreen'
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen'
 import HomeScreen from '../screens/HomeScreen'
@@ -28,12 +29,14 @@ import ImageUploadScreen from '../screens/ImageUploadScreen'
 import LandingScreen from '../screens/LandingScreen'
 import MealsScreen from '../screens/MealsScreen'
 import PantryScreen from '../screens/PantryScreen'
+import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen'
 import ProfileScreen from '../screens/ProfileScreen'
 import ReadingOrderScreen from '../screens/ReadingOrderScreen'
 import ResetPasswordScreen from '../screens/ResetPasswordScreen'
 import ShoppingListScreen from '../screens/ShoppingListsScreen'
 import SignInScreen from '../screens/SignInScreen'
 import SignUpScreen from '../screens/SignUpScreen'
+import TermsOfServiceScreen from '../screens/TermsOfServiceScreen'
 
 const HomeStack = createNativeStackNavigator()
 
@@ -391,6 +394,10 @@ function ProfileStackScreen() {
         >
             <ProfileStack.Screen name="Omat tiedot" component={ProfileScreen} />
             <ProfileStack.Screen
+                name="Muokkaa tietoja"
+                component={EditProfileScreen}
+            />
+            <ProfileStack.Screen
                 name="Hallinnoi perhettä"
                 component={FamilyManagementScreen}
             />
@@ -587,6 +594,8 @@ const linking = {
                     HomeStack: {
                         screens: {
                             Arkiapuri: 'home',
+                            'Käyttöehdot': 'terms-of-service',
+                            Tietosuojaseloste: 'privacy-policy',
                         },
                     },
                     MealsStack: {
@@ -612,6 +621,7 @@ const linking = {
                     ProfileStack: {
                         screens: {
                             'Omat tiedot': 'profile',
+                            'Muokkaa tietoja': 'edit-profile',
                             'Hallinnoi perhettä': 'family-management',
                         },
                     },
@@ -756,6 +766,22 @@ function AuthStackScreen() {
                     <>
                         <NavigationTracker screenName="Vaihda salasana" />
                         <ResetPasswordScreen {...props} />
+                    </>
+                )}
+            </HomeStack.Screen>
+            <HomeStack.Screen name="Käyttöehdot">
+                {(props) => (
+                    <>
+                        <NavigationTracker screenName="Käyttöehdot" />
+                        <TermsOfServiceScreen {...props} />
+                    </>
+                )}
+            </HomeStack.Screen>
+            <HomeStack.Screen name="Tietosuojaseloste">
+                {(props) => (
+                    <>
+                        <NavigationTracker screenName="Tietosuojaseloste" />
+                        <PrivacyPolicyScreen {...props} />
                     </>
                 )}
             </HomeStack.Screen>

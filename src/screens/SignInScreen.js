@@ -22,6 +22,7 @@ const SignInScreen = () => {
     const {
         control,
         handleSubmit,
+        setError,
         formState: { errors },
     } = useForm()
 
@@ -37,14 +38,51 @@ const SignInScreen = () => {
                 await login(response.data.user)
             } else {
                 console.error('Sign in failed:', response.data.message)
-                Alert.alert(
-                    'Virhe',
+                const message =
                     response.data.message || 'Kirjautuminen epäonnistui'
-                )
+
+                // Show error in password field if it's a credential error
+                if (
+                    message.toLowerCase().includes('password') ||
+                    message.toLowerCase().includes('salasana') ||
+                    message.toLowerCase().includes('does not match')
+                ) {
+                    setError('password', {
+                        type: 'manual',
+                        message: 'Väärä salasana',
+                    })
+                } else if (
+                    message.toLowerCase().includes('email') ||
+                    message.toLowerCase().includes('not found') ||
+                    message.toLowerCase().includes('user')
+                ) {
+                    setError('email', {
+                        type: 'manual',
+                        message: 'Käyttäjää ei löytynyt tällä sähköpostilla',
+                    })
+                } else {
+                    Alert.alert('Virhe', message)
+                }
             }
         } catch (error) {
             console.error('Login error:', error)
-            Alert.alert('Virhe', 'Kirjautuminen epäonnistui')
+            const errorMessage = error.response?.data?.message
+
+            if (
+                errorMessage &&
+                (errorMessage.toLowerCase().includes('password') ||
+                    errorMessage.toLowerCase().includes('salasana'))
+            ) {
+                setError('password', {
+                    type: 'manual',
+                    message: 'Väärä salasana',
+                })
+            } else {
+                Alert.alert(
+                    'Virhe',
+                    errorMessage || 'Kirjautuminen epäonnistui'
+                )
+            }
         }
     }
 
