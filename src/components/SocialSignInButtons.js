@@ -12,6 +12,7 @@ const SocialSignInButtons = ({ onSocialSignIn }) => {
     // OAuth configuration
     const googleAuthUrl = `${getServerUrl('')}/auth/google`
     const appleAuthUrl = `${getServerUrl('')}/auth/apple`
+    const facebookAuthUrl = `${getServerUrl('')}/auth/facebook`
 
     const handleGoogleSignIn = () => {
         console.log('Google sign in button pressed')
@@ -21,6 +22,11 @@ const SocialSignInButtons = ({ onSocialSignIn }) => {
     const handleAppleSignIn = () => {
         console.log('Apple sign in button pressed')
         handleOAuthLogin(appleAuthUrl, 'Apple Login', 'apple_auth_result')
+    }
+
+    const handleFacebookSignIn = () => {
+        console.log('Facebook sign in button pressed')
+        handleOAuthLogin(facebookAuthUrl, 'Facebook Login', 'facebook_auth_result')
     }
 
     const handleOAuthLogin = async (authUrl, windowTitle, storageKey) => {
@@ -77,11 +83,6 @@ const SocialSignInButtons = ({ onSocialSignIn }) => {
         }, 30000)
     }
 
-    const handleFacebookSignIn = async () => {
-        // Facebook Sign-In implementation would go here
-        Alert.alert('Tulossa pian', 'Facebook kirjautuminen lisätään myöhemmin')
-    }
-
     return (
         <View style={styles.container}>
             <View style={styles.dividerContainer}>
@@ -100,6 +101,16 @@ const SocialSignInButtons = ({ onSocialSignIn }) => {
                 </CustomText>
             </TouchableOpacity>
 
+            <TouchableOpacity
+                style={[styles.socialButton, styles.facebookButton]}
+                onPress={handleFacebookSignIn}
+            >
+                <Ionicons name="logo-facebook" size={20} color="#fff" />
+                <CustomText style={styles.socialButtonText}>
+                    Facebook-tilillä
+                </CustomText>
+            </TouchableOpacity>
+
             {/* Apple Sign-In - Hidden until Apple Developer enrollment is complete
             <TouchableOpacity
                 style={[styles.socialButton, styles.appleButton]}
@@ -108,18 +119,6 @@ const SocialSignInButtons = ({ onSocialSignIn }) => {
                 <Ionicons name="logo-apple" size={20} color="#fff" />
                 <CustomText style={styles.socialButtonText}>
                     Apple ID:llä
-                </CustomText>
-            </TouchableOpacity>
-            */}
-
-            {/* Facebook Sign-In - Coming soon
-            <TouchableOpacity
-                style={[styles.socialButton, styles.facebookButton]}
-                onPress={handleFacebookSignIn}
-            >
-                <Ionicons name="logo-facebook" size={20} color="#fff" />
-                <CustomText style={styles.socialButtonText}>
-                    Facebook-tilillä
                 </CustomText>
             </TouchableOpacity>
             */}
