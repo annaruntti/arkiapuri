@@ -1,8 +1,8 @@
 import React from 'react'
-import { View, Image, StyleSheet, TouchableOpacity } from 'react-native'
-import CustomText from './CustomText'
-import Button from './Button'
+import { Image, StyleSheet, View } from 'react-native'
 import { useResponsiveDimensions } from '../utils/responsive'
+import Button from './Button'
+import CustomText from './CustomText'
 
 const defaultImage = {
     uri: 'https://images.ctfassets.net/hef5a6s5axrs/2wzxlzyydJLVr8T7k67cOO/90074490ee64362fe6f0e384d2b3daf8/arkiapuri-removebg-preview.png',
@@ -31,8 +31,8 @@ const FamilySection = ({ household, onManagePress }) => {
                     <View key={member._id} style={styles.memberRow}>
                         <Image
                             source={
-                                member.userId?.profileImage
-                                    ? { uri: member.userId.profileImage }
+                                member.userId?.profileImage?.url
+                                    ? { uri: member.userId.profileImage.url }
                                     : defaultImage
                             }
                             style={styles.memberAvatar}
@@ -146,4 +146,3 @@ const styles = StyleSheet.create({
 })
 
 export default FamilySection
-

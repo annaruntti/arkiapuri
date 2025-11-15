@@ -75,7 +75,7 @@ const ProfileScreen = () => {
 
             // Pick the image
             const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                mediaTypes: 'images',
                 allowsEditing: true,
                 aspect: [1, 1],
                 quality: 1,
@@ -98,11 +98,21 @@ const ProfileScreen = () => {
             }
 
             const formData = new FormData()
-            formData.append('profile', {
-                uri: imageFile.uri,
-                type: 'image/jpeg',
-                name: 'profile.jpg',
-            })
+
+            // Handle file differently for web vs native
+            if (Platform.OS === 'web') {
+                // For web, we need to fetch the blob first
+                const response = await fetch(imageFile.uri)
+                const blob = await response.blob()
+                formData.append('profileImage', blob, 'profile.jpg')
+            } else {
+                // For native (iOS/Android)
+                formData.append('profileImage', {
+                    uri: imageFile.uri,
+                    type: 'image/jpeg',
+                    name: 'profile.jpg',
+                })
+            }
 
             const response = await axios.post(
                 getServerUrl('/profile/image'),
@@ -121,6 +131,8 @@ const ProfileScreen = () => {
                     ...profile,
                     profileImage: response.data.user.profileImage.url,
                 })
+                // Refresh household data to update the image in family section
+                await fetchHousehold()
                 Alert.alert('Success', 'Profile image updated successfully')
             }
         } catch (error) {
