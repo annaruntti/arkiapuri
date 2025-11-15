@@ -87,10 +87,12 @@ const SignInScreen = () => {
 
     const onSocialSignIn = async (provider, data) => {
         try {
-            // If provider is 'google' and we have user data, we already have a JWT token from OAuth
+            // If provider is 'google' or 'apple' and we have user data, we already have a JWT token from OAuth
             // No need to call /auth/social again
-            if (provider === 'google' && data.user) {
-                console.log('Using existing JWT token from OAuth flow')
+            if ((provider === 'google' || provider === 'apple') && data.user) {
+                console.log(
+                    `Using existing JWT token from ${provider} OAuth flow`
+                )
                 await storage.setItem('userToken', data.token)
                 await login(data.user)
                 return

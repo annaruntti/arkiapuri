@@ -9,48 +9,56 @@ import CustomText from './CustomText'
 WebBrowser.maybeCompleteAuthSession()
 
 const SocialSignInButtons = ({ onSocialSignIn }) => {
-    // Google OAuth configuration
+    // OAuth configuration
     const googleAuthUrl = `${getServerUrl('')}/auth/google`
+    const appleAuthUrl = `${getServerUrl('')}/auth/apple`
 
     const handleGoogleSignIn = () => {
         console.log('Google sign in button pressed')
-        handleRealGoogleLogin()
+        handleOAuthLogin(googleAuthUrl, 'Google Login', 'google_auth_result')
     }
 
-    const handleRealGoogleLogin = async () => {
-        console.log('Starting real Google OAuth flow')
-        console.log('Backend URL:', googleAuthUrl)
+    const handleAppleSignIn = () => {
+        console.log('Apple sign in button pressed')
+        handleOAuthLogin(appleAuthUrl, 'Apple Login', 'apple_auth_result')
+    }
 
-        // Open Google OAuth in a popup window
+    const handleOAuthLogin = async (authUrl, windowTitle, storageKey) => {
+        console.log(`Starting OAuth flow for ${windowTitle}`)
+        console.log('Backend URL:', authUrl)
+
+        // Open OAuth in a popup window
         const width = 500
         const height = 600
         const left = window.screenX + (window.outerWidth - width) / 2
         const top = window.screenY + (window.outerHeight - height) / 2
 
         const popup = window.open(
-            googleAuthUrl,
-            'Google Login',
+            authUrl,
+            windowTitle,
             `width=${width},height=${height},left=${left},top=${top}`
         )
 
         // Poll localStorage for the auth result
         console.log('Starting to poll localStorage for auth result')
         const pollInterval = setInterval(() => {
-            const result = localStorage.getItem('google_auth_result')
+            const result = localStorage.getItem(storageKey)
 
             if (result) {
                 console.log('Found auth result in localStorage!')
                 clearInterval(pollInterval)
 
                 // Clear the result from localStorage
-                localStorage.removeItem('google_auth_result')
+                localStorage.removeItem(storageKey)
 
                 const authData = JSON.parse(result)
                 console.log('Auth data:', authData)
 
                 if (authData.type === 'success') {
                     console.log('✅ Login successful, calling onSocialSignIn')
-                    onSocialSignIn('google', {
+                    // Extract provider from storage key (google_auth_result -> google)
+                    const provider = storageKey.replace('_auth_result', '')
+                    onSocialSignIn(provider, {
                         token: authData.token,
                         user: authData.user,
                     })
@@ -65,13 +73,8 @@ const SocialSignInButtons = ({ onSocialSignIn }) => {
         setTimeout(() => {
             clearInterval(pollInterval)
             console.log('⏱️ Auth polling timeout - stopped waiting')
-            localStorage.removeItem('google_auth_result')
+            localStorage.removeItem(storageKey)
         }, 30000)
-    }
-
-    const handleAppleSignIn = async () => {
-        // Apple Sign-In implementation would go here
-        Alert.alert('Tulossa pian', 'Apple kirjautuminen lisätään myöhemmin')
     }
 
     const handleFacebookSignIn = async () => {
@@ -97,6 +100,7 @@ const SocialSignInButtons = ({ onSocialSignIn }) => {
                 </CustomText>
             </TouchableOpacity>
 
+            {/* Apple Sign-In - Hidden until Apple Developer enrollment is complete
             <TouchableOpacity
                 style={[styles.socialButton, styles.appleButton]}
                 onPress={handleAppleSignIn}
@@ -106,7 +110,9 @@ const SocialSignInButtons = ({ onSocialSignIn }) => {
                     Apple ID:llä
                 </CustomText>
             </TouchableOpacity>
+            */}
 
+            {/* Facebook Sign-In - Coming soon
             <TouchableOpacity
                 style={[styles.socialButton, styles.facebookButton]}
                 onPress={handleFacebookSignIn}
@@ -116,6 +122,7 @@ const SocialSignInButtons = ({ onSocialSignIn }) => {
                     Facebook-tilillä
                 </CustomText>
             </TouchableOpacity>
+            */}
         </View>
     )
 }

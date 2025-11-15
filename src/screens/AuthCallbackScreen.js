@@ -9,20 +9,25 @@ const AuthCallbackScreen = () => {
         console.log('🟢 === Auth Callback Screen useEffect Started ===')
         console.log('Current URL:', window.location.href)
 
-        // Get token and user data from URL
+        // Get token, user data, and provider from URL
         const urlParams = new URLSearchParams(window.location.search)
         const token = urlParams.get('token')
         const userParam = urlParams.get('user')
         const error = urlParams.get('error')
+        const provider = urlParams.get('provider') || 'google' // default to google for backward compatibility
 
+        console.log('Provider:', provider)
         console.log('Token:', token ? 'YES' : 'NO')
         console.log('User:', userParam ? 'YES' : 'NO')
         console.log('Error:', error)
         console.log('Has window.opener:', !!window.opener)
 
+        // Determine which storage key to use based on provider
+        const storageKey = `${provider}_auth_result`
+
         if (error) {
             console.log('🔴 Storing error in localStorage')
-            localStorage.setItem('google_auth_result', JSON.stringify({
+            localStorage.setItem(storageKey, JSON.stringify({
                 type: 'error',
                 error: decodeURIComponent(error)
             }))
@@ -39,7 +44,7 @@ const AuthCallbackScreen = () => {
             }
 
             console.log('🟢 Storing success in localStorage')
-            localStorage.setItem('google_auth_result', JSON.stringify({
+            localStorage.setItem(storageKey, JSON.stringify({
                 type: 'success',
                 token: token,
                 user: userData
