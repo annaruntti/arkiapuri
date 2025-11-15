@@ -26,7 +26,11 @@ const SocialSignInButtons = ({ onSocialSignIn }) => {
 
     const handleFacebookSignIn = () => {
         console.log('Facebook sign in button pressed')
-        handleOAuthLogin(facebookAuthUrl, 'Facebook Login', 'facebook_auth_result')
+        handleOAuthLogin(
+            facebookAuthUrl,
+            'Facebook Login',
+            'facebook_auth_result'
+        )
     }
 
     const handleOAuthLogin = async (authUrl, windowTitle, storageKey) => {
@@ -75,12 +79,12 @@ const SocialSignInButtons = ({ onSocialSignIn }) => {
             }
         }, 500)
 
-        // Stop polling after 30 seconds (timeout)
+        // Stop polling after 60 seconds (timeout)
         setTimeout(() => {
             clearInterval(pollInterval)
             console.log('⏱️ Auth polling timeout - stopped waiting')
             localStorage.removeItem(storageKey)
-        }, 30000)
+        }, 60000) // Increased to 60 seconds to ensure we catch the data
     }
 
     return (
