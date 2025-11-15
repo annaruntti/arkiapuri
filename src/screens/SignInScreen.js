@@ -17,14 +17,9 @@ const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/
 
 const SignInScreen = () => {
     const navigation = useNavigation()
-    const { setIsLoggedIn, setProfile, login } = useLogin()
+    const { login } = useLogin()
 
-    const {
-        control,
-        handleSubmit,
-        setError,
-        formState: { errors },
-    } = useForm()
+    const { control, handleSubmit, setError } = useForm()
 
     const onSignInPressed = async (data) => {
         try {
@@ -86,17 +81,22 @@ const SignInScreen = () => {
         }
     }
 
-    const onForgotPasswordPressed = () => {
-        navigation.navigate('ForgotPassword')
-    }
-
     const onSignUpPress = () => {
         navigation.navigate('Luo tunnus')
     }
 
     const onSocialSignIn = async (provider, data) => {
         try {
-            // Send the social auth token to your backend
+            // If provider is 'google' and we have user data, we already have a JWT token from OAuth
+            // No need to call /auth/social again
+            if (provider === 'google' && data.user) {
+                console.log('Using existing JWT token from OAuth flow')
+                await storage.setItem('userToken', data.token)
+                await login(data.user)
+                return
+            }
+
+            // For demo mode, send to backend
             const response = await axios.post(getServerUrl('/auth/social'), {
                 provider,
                 token: data.token,
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
         width: '100%',
     },
     forgotPasswordContainer: {
-        alignSelf: 'flex-end',
+        alignSelf: 'flex-start',
         marginBottom: 24,
     },
     forgotPassword: {

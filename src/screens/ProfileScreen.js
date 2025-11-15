@@ -390,6 +390,7 @@ const styles = StyleSheet.create({
         elevation: 2,
         backgroundColor: '#9C86FC',
         width: '90%',
+        marginBottom: 10,
     },
     secondaryButton: {
         borderRadius: 25,

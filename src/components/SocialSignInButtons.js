@@ -12,89 +12,61 @@ const SocialSignInButtons = ({ onSocialSignIn }) => {
     // Google OAuth configuration
     const googleAuthUrl = `${getServerUrl('')}/auth/google`
 
-    const handleGoogleSignIn = async () => {
-        Alert.alert(
-            'Google Kirjautuminen',
-            'Haluatko kirjautua demo-tilillä vai yrittää todellista Google OAuth:ia?',
-            [
-                {
-                    text: 'Peruuta',
-                    style: 'cancel',
-                },
-                {
-                    text: 'Demo',
-                    onPress: () => {
-                        onSocialSignIn('demo', {
-                            token: 'demo-token',
-                            user: {
-                                email: 'demo@gmail.com',
-                                name: 'Demo User (Google)',
-                                picture: 'https://via.placeholder.com/150',
-                            },
-                        })
-                    },
-                },
-                {
-                    text: 'Google OAuth',
-                    onPress: async () => {
-                        try {
-                            const result =
-                                await WebBrowser.openAuthSessionAsync(
-                                    googleAuthUrl,
-                                    'exp://127.0.0.1:8081/--/auth/callback'
-                                )
+    const handleGoogleSignIn = () => {
+        console.log('Google sign in button pressed')
+        handleRealGoogleLogin()
+    }
 
-                            if (result.type === 'success') {
-                                const { url } = result
+    const handleRealGoogleLogin = async () => {
+        console.log('Starting real Google OAuth flow')
+        console.log('Backend URL:', googleAuthUrl)
 
-                                if (url.includes('token=')) {
-                                    const token = url
-                                        .split('token=')[1]
-                                        .split('&')[0]
+        // Open Google OAuth in a popup window
+        const width = 500
+        const height = 600
+        const left = window.screenX + (window.outerWidth - width) / 2
+        const top = window.screenY + (window.outerHeight - height) / 2
 
-                                    // Parse user data if present
-                                    let userData = null
-                                    if (url.includes('user=')) {
-                                        const userParam = url
-                                            .split('user=')[1]
-                                            .split('&')[0]
-                                        try {
-                                            userData = JSON.parse(
-                                                decodeURIComponent(userParam)
-                                            )
-                                        } catch (e) {
-                                            console.error(
-                                                'Error parsing user data:',
-                                                e
-                                            )
-                                        }
-                                    }
-
-                                    onSocialSignIn('google', {
-                                        token,
-                                        user: userData,
-                                    })
-                                } else if (url.includes('error=')) {
-                                    const error = url
-                                        .split('error=')[1]
-                                        .split('&')[0]
-                                    Alert.alert(
-                                        'Virhe',
-                                        `Google kirjautuminen epäonnistui: ${decodeURIComponent(error)}`
-                                    )
-                                }
-                            }
-                        } catch (error) {
-                            console.error('Google sign in error:', error)
-                            Alert.alert(
-                                'Virhe',
-                                'Google kirjautuminen epäonnistui'
-                            )
-                        }
-                    },
-                },
-            ]
+        const popup = window.open(
+            googleAuthUrl,
+            'Google Login',
+            `width=${width},height=${height},left=${left},top=${top}`
         )
+
+        // Poll localStorage for the auth result
+        console.log('Starting to poll localStorage for auth result')
+        const pollInterval = setInterval(() => {
+            const result = localStorage.getItem('google_auth_result')
+
+            if (result) {
+                console.log('Found auth result in localStorage!')
+                clearInterval(pollInterval)
+
+                // Clear the result from localStorage
+                localStorage.removeItem('google_auth_result')
+
+                const authData = JSON.parse(result)
+                console.log('Auth data:', authData)
+
+                if (authData.type === 'success') {
+                    console.log('✅ Login successful, calling onSocialSignIn')
+                    onSocialSignIn('google', {
+                        token: authData.token,
+                        user: authData.user,
+                    })
+                } else if (authData.type === 'error') {
+                    console.error('❌ Login error:', authData.error)
+                    Alert.alert('Virhe', authData.error)
+                }
+            }
+        }, 500)
+
+        // Stop polling after 30 seconds (timeout)
+        setTimeout(() => {
+            clearInterval(pollInterval)
+            console.log('⏱️ Auth polling timeout - stopped waiting')
+            localStorage.removeItem('google_auth_result')
+        }, 30000)
     }
 
     const handleAppleSignIn = async () => {

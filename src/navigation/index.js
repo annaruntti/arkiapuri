@@ -20,6 +20,7 @@ import { AntDesign, Feather, FontAwesome6 } from '@expo/vector-icons'
 
 import CustomText from '../components/CustomText'
 import AcceptInviteScreen from '../screens/AcceptInviteScreen'
+import AuthCallbackScreen from '../screens/AuthCallbackScreen'
 import ConfirmEmailScreen from '../screens/ConfirmEmailScreen'
 import EditProfileScreen from '../screens/EditProfileScreen'
 import FamilyManagementScreen from '../screens/FamilyManagementScreen'
@@ -587,6 +588,7 @@ const linking = {
                     'Vaihda salasana': 'reset-password',
                     'Vahvista sähköposti': 'confirm-email',
                     'Lataa profiilikuva': 'upload-image',
+                    AuthCallback: 'AuthCallback',
                 },
             },
             Main: {
@@ -594,7 +596,7 @@ const linking = {
                     HomeStack: {
                         screens: {
                             Arkiapuri: 'home',
-                            'Käyttöehdot': 'terms-of-service',
+                            Käyttöehdot: 'terms-of-service',
                             Tietosuojaseloste: 'privacy-policy',
                         },
                     },
@@ -726,6 +728,19 @@ function AuthStackScreen() {
                     <>
                         <NavigationTracker screenName="Kirjaudu sisään" />
                         <SignInScreen {...props} />
+                    </>
+                )}
+            </HomeStack.Screen>
+            <HomeStack.Screen
+                name="AuthCallback"
+                options={{
+                    headerShown: false,
+                }}
+            >
+                {(props) => (
+                    <>
+                        <NavigationTracker screenName="AuthCallback" />
+                        <AuthCallbackScreen {...props} />
                     </>
                 )}
             </HomeStack.Screen>
