@@ -37,25 +37,41 @@ To run the application locally, follow these steps:
     npm install
     ```
 
-3. **Set Up Environment Variables**:
-   Create a [.env](http://_vscodecontentref_/2) file in the root of the project and add the following environment variables:
-
-    For web development:
-
-    ```env
-    API_URL=http://localhost:3000
-    ```
-
-    For mobile development, you need to set your IP address:
-
-    ```env
-    API_URL=http://<your-ip-address>:3000
-    ```
-
-    Replace `<your-ip-address>` with your actual IP address. You can find your IP address by running `ipconfig` on Windows or `ifconfig` on macOS/Linux in the terminal.
+3. **Environment Configuration**:
+   
+   The app uses `src/environment.js` for API URL configuration, not `.env` files. The `.env` file (if present) only needs:
+   
+   ```env
+   EXPO_USE_METRO_WORKSPACE_ROOT=1
+   ```
+   
+   **Current Configuration:**
+   - `development`: Uses `http://localhost:3000` as API URL
+   - `production`: Uses `https://arkiapuri-api-production.up.railway.app` as API URL
+   
+   The app automatically uses the correct environment based on `NODE_ENV` (set by Expo).
+   
+   **To Change API URLs:**
+   
+   Edit `src/environment.js` directly:
+   
+   ```javascript
+   const ENV = {
+       development: {
+           apiUrl: 'http://localhost:3000',  // For local backend
+           // Or use your IP for mobile device testing:
+           // apiUrl: 'http://<your-ip-address>:3000',
+       },
+       production: {
+           apiUrl: 'https://arkiapuri-api-production.up.railway.app',
+       },
+   }
+   ```
+   
+   **Note:** The current setup in `environment.js` is sufficient for most use cases. If you want to use `.env` files instead, you would need to install `react-native-dotenv` or `react-native-config` and modify `environment.js` to read from `process.env`.
 
 4. **Start the Backend Server**:
-   Ensure that your backend server is running on port `3001`. If you are using a different port, update the `API_URL` accordingly.
+   Ensure that your backend server is running on port `3000` (or update the `apiUrl` in `src/environment.js` if using a different port).
 
 5. **Run the Application**:
 
