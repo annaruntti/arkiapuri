@@ -225,6 +225,11 @@ const HomeScreen = () => {
                                 onMealPress={handleMealPress}
                                 iconImage={randomMealImage}
                             />
+                            <RandomMealCard
+                                onMealPress={handleMealPress}
+                                iconImage={pantryImage}
+                                filterByPantry={true}
+                            />
                         </LinearGradient>
                     </View>
                 </ScrollView>
@@ -455,6 +460,11 @@ const HomeScreen = () => {
                     <RandomMealCard
                         onMealPress={handleMealPress}
                         iconImage={randomMealImage}
+                    />
+                    <RandomMealCard
+                        onMealPress={handleMealPress}
+                        iconImage={pantryImage}
+                        filterByPantry={true}
                     />
                 </View>
             </LinearGradient>
