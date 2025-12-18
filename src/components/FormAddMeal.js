@@ -359,7 +359,7 @@ const AddMealForm = ({ onSubmit }) => {
         try {
             const token = await storage.getItem('userToken')
             
-            // Check if item exists in pantry or shopping list
+            // Check is item exists in pantry or shopping list
             const availabilityResponse = await axios.post(
                 getServerUrl('/food-items/check-availability'),
                 { name: selectedItem.name },
@@ -424,7 +424,7 @@ const AddMealForm = ({ onSubmit }) => {
         try {
             console.log('addItemToShoppingList called', { selectedShoppingListId, selectedItem, foodItemInList })
             
-            // Get current shopping list ID (might need to fetch if not set)
+            // Get current shopping list ID
             let listIdToUse = selectedShoppingListId
             if (!listIdToUse) {
                 console.log('No shopping list selected, fetching...')
@@ -525,7 +525,7 @@ const AddMealForm = ({ onSubmit }) => {
 
             console.log('Shopping list response:', shoppingListResponse.data)
 
-            // Get the actual quantity from the response
+            // Get the quantity from the response
             // The response returns shoppingList with items array
             let actualQuantity = quantity
             if (shoppingListResponse.data?.shoppingList?.items) {
@@ -640,7 +640,7 @@ const AddMealForm = ({ onSubmit }) => {
                 }
             )
 
-            // Get the actual quantity from the pantry response
+            // Get the quantity from the pantry response
             let actualQuantity = quantity
             if (pantryResponse.data?.pantry?.items) {
                 const pantryItem = pantryResponse.data.pantry.items.find(
@@ -762,7 +762,6 @@ const AddMealForm = ({ onSubmit }) => {
 
                 setFoodItems((prevItems) => [...prevItems, newFoodItem])
                 setShowItemForm(false)
-                // Inline UI will show suggestion if item is not in pantry/shopping list
             }
         } catch (error) {
             console.error('Error adding new item:', error)
@@ -787,13 +786,11 @@ const AddMealForm = ({ onSubmit }) => {
         setShowEatingDatePicker(false)
         if (selectedDate) {
             if (editingEatingDateIndex !== null) {
-                // Update existing date
                 const updatedDates = [...plannedEatingDates]
                 updatedDates[editingEatingDateIndex] = selectedDate
                 setPlannedEatingDates(updatedDates)
                 setEditingEatingDateIndex(null)
             } else {
-                // Add new date
                 setPlannedEatingDates([...plannedEatingDates, selectedDate])
             }
         }
@@ -828,7 +825,7 @@ const AddMealForm = ({ onSubmit }) => {
                         ...updatedItems[index].quantities,
                         meal: newQuantity,
                     },
-                    quantity: newQuantity, // This for backward compatibility
+                    quantity: newQuantity, // Backward compatibility
                     // Preserve availability data
                     availability: updatedItems[index].availability || {
                         inPantry: false,
@@ -845,12 +842,7 @@ const AddMealForm = ({ onSubmit }) => {
     }
 
     const renderSelectedItem = ({ item, index }) => {
-        // Get availability - if not set, assume item is not in pantry/shopping list
         const availability = item.availability || {}
-        // Show suggestion if:
-        // 1. Availability data is missing, OR
-        // 2. Item is not in pantry, OR  
-        // 3. Item is not in shopping list
         const showSuggestion = 
             !item.availability || 
             availability.inPantry !== true || 
@@ -858,7 +850,6 @@ const AddMealForm = ({ onSubmit }) => {
 
         return (
             <View style={styles.selectedItem}>
-                {/* Remove button in top right corner */}
                 <TouchableOpacity
                     style={styles.removeButton}
                     onPress={() => handleRemoveFoodItem(index)}
