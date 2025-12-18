@@ -58,10 +58,17 @@ const AddMealForm = ({ onSubmit }) => {
                 },
             })
             if (response.data.success) {
-                if (response.data.shoppingLists.length === 1) {
-                    setSelectedShoppingListId(
-                        response.data.shoppingLists[0]._id
-                    )
+                const lists = response.data.shoppingLists || []
+                console.log('Fetched shopping lists:', lists.length)
+                if (lists.length === 1) {
+                    setSelectedShoppingListId(lists[0]._id)
+                    console.log('Auto-selected shopping list:', lists[0]._id)
+                } else if (lists.length > 1 && !selectedShoppingListId) {
+                    // If multiple lists and none selected, use the first one
+                    setSelectedShoppingListId(lists[0]._id)
+                    console.log('Auto-selected first shopping list:', lists[0]._id)
+                } else if (lists.length === 0) {
+                    console.log('No shopping lists found')
                 }
             }
         } catch (error) {
@@ -220,177 +227,57 @@ const AddMealForm = ({ onSubmit }) => {
             const createdFoodItemIds = await Promise.all(
                 foodItems.map(async (item) => {
                     try {
-                        const foodItemData = {
-                            name: item.name,
-                            unit: item.unit || 'kpl',
-                            category: (() => {
-                                // Handle case where category might be a stringified array
-                                let categoryArray = item.category
-                                if (typeof item.category === 'string') {
-                                    try {
-                                        categoryArray = JSON.parse(
-                                            item.category
-                                        )
-                                    } catch (e) {
-                                        categoryArray = []
-                                    }
-                                }
-
-                                // Ensure we have an array
-                                if (!Array.isArray(categoryArray)) {
-                                    return []
-                                }
-
-                                // Extract category names from objects or use strings directly
-                                return categoryArray
-                                    .map((cat) => {
-                                        if (
-                                            typeof cat === 'object' &&
-                                            cat !== null
-                                        ) {
-                                            return (
-                                                cat.name ||
-                                                cat.id ||
-                                                String(cat)
-                                            )
-                                        }
-                                        return String(cat)
-                                    })
-                                    .filter((cat) => cat && cat.trim() !== '')
-                            })(),
-                            calories: parseInt(item.calories) || 0,
-                            price: parseFloat(item.price) || 0,
-                            locations: item.locations || ['meal'],
-                            quantities: {
-                                meal:
-                                    parseFloat(item.quantities?.meal) ||
-                                    parseFloat(item.quantity) ||
-                                    0,
-                                'shopping-list':
-                                    parseFloat(
-                                        item.quantities?.['shopping-list']
-                                    ) || 0,
-                                pantry:
-                                    parseFloat(item.quantities?.pantry) || 0,
-                            },
-                            expirationDate: item.expirationDate,
-                            user: profile._id,
-                        }
-
-                        let response
-                        // Check if item has a real MongoDB ObjectId (not temporary ID)
-                        const hasRealId =
-                            item._id &&
-                            !item._id.startsWith('openfoodfacts-') &&
-                            !item._id.startsWith('new-') &&
-                            item._id.length === 24 // MongoDB ObjectId length
-
-                        if (hasRealId) {
-                            try {
-                                response = await axios.put(
-                                    getServerUrl(`/food-items/${item._id}`),
-                                    foodItemData,
-                                    {
-                                        headers: {
-                                            Authorization: `Bearer ${token}`,
-                                        },
-                                    }
-                                )
-                            } catch (updateError) {
-                                if (updateError.response?.status === 404) {
-                                    response = await axios.post(
-                                        getServerUrl('/food-items'),
-                                        foodItemData,
-                                        {
-                                            headers: {
-                                                Authorization: `Bearer ${token}`,
-                                            },
-                                        }
-                                    )
-                                } else {
-                                    throw updateError
+                        // Prepare category array
+                        const categoryArray = (() => {
+                            let catArray = item.category
+                            if (typeof item.category === 'string') {
+                                try {
+                                    catArray = JSON.parse(item.category)
+                                } catch (e) {
+                                    catArray = []
                                 }
                             }
-                        } else {
-                            response = await axios.post(
-                                getServerUrl('/food-items'),
-                                foodItemData,
-                                {
-                                    headers: {
-                                        Authorization: `Bearer ${token}`,
-                                    },
-                                }
-                            )
-                        }
+                            if (!Array.isArray(catArray)) return []
+                            return catArray
+                                .map((cat) => {
+                                    if (typeof cat === 'object' && cat !== null) {
+                                        return cat.name || cat.id || String(cat)
+                                    }
+                                    return String(cat)
+                                })
+                                .filter((cat) => cat && cat.trim() !== '')
+                        })()
 
-                        const foodItem = response.data.foodItem || response.data
+                        const mealQuantity =
+                            parseFloat(item.quantities?.meal) ||
+                            parseFloat(item.quantity) ||
+                            0
 
-                        if (
-                            item.locations?.includes('shopping-list') &&
-                            item.shoppingListId
-                        ) {
-                            const shoppingListItem = {
-                                foodId: foodItem._id,
+                        // Use findOrCreateFoodItem to sync with existing items
+                        const findOrCreateResponse = await axios.post(
+                            getServerUrl('/food-items/find-or-create'),
+                            {
                                 name: item.name,
-                                estimatedPrice: parseFloat(item.price) || 0,
-                                quantity:
-                                    parseFloat(
-                                        item.quantities['shopping-list']
-                                    ) || 0,
                                 unit: item.unit || 'kpl',
-                                category: (() => {
-                                    // Handle case where category might be a stringified array
-                                    let categoryArray = item.category
-                                    if (typeof item.category === 'string') {
-                                        try {
-                                            categoryArray = JSON.parse(
-                                                item.category
-                                            )
-                                        } catch (e) {
-                                            categoryArray = []
-                                        }
-                                    }
-
-                                    // Ensure we have an array
-                                    if (!Array.isArray(categoryArray)) {
-                                        return []
-                                    }
-
-                                    // Extract category names from objects or use strings directly
-                                    return categoryArray
-                                        .map((cat) => {
-                                            if (
-                                                typeof cat === 'object' &&
-                                                cat !== null
-                                            ) {
-                                                return (
-                                                    cat.name ||
-                                                    cat.id ||
-                                                    String(cat)
-                                                )
-                                            }
-                                            return String(cat)
-                                        })
-                                        .filter(
-                                            (cat) => cat && cat.trim() !== ''
-                                        )
-                                })(),
+                                category: categoryArray,
                                 calories: parseInt(item.calories) || 0,
                                 price: parseFloat(item.price) || 0,
+                                location: 'meal',
+                                quantities: {
+                                    meal: mealQuantity,
+                                    'shopping-list': 0,
+                                    pantry: 0,
+                                },
+                            },
+                            {
+                                headers: {
+                                    Authorization: `Bearer ${token}`,
+                                },
                             }
+                        )
 
-                            await axios.post(
-                                getServerUrl(
-                                    `/shopping-lists/${item.shoppingListId}/items`
-                                ),
-                                { items: [shoppingListItem] },
-                                {
-                                    headers: {
-                                        Authorization: `Bearer ${token}`,
-                                    },
-                                }
-                            )
-                        }
+                        const foodItem =
+                            findOrCreateResponse.data.foodItem
 
                         return foodItem._id
                     } catch (error) {
@@ -468,25 +355,329 @@ const AddMealForm = ({ onSubmit }) => {
         }
     }
 
-    const handleSelectItem = (selectedItem) => {
-        // Convert the selected item to the format expected by the meal form
-        const newFoodItem = {
-            ...selectedItem,
-            // Add a unique temporary ID for tracking
-            tempId: `${selectedItem._id || selectedItem.name}-${Date.now()}-${Math.random()}`,
-            shoppingListId: selectedShoppingListId,
-            locations: selectedItem.locations || ['meal'],
-            quantities: {
-                meal:
-                    selectedItem.quantities?.meal || selectedItem.quantity || 1,
-                'shopping-list':
-                    selectedItem.quantities?.['shopping-list'] || 0,
-                pantry: selectedItem.quantities?.pantry || 0,
-            },
-        }
+    const handleSelectItem = async (selectedItem) => {
+        try {
+            const token = await storage.getItem('userToken')
+            
+            // Check if item exists in pantry or shopping list
+            const availabilityResponse = await axios.post(
+                getServerUrl('/food-items/check-availability'),
+                { name: selectedItem.name },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            )
 
-        // Use functional update to avoid stale closure
-        setFoodItems((prevItems) => [...prevItems, newFoodItem])
+            const availability = availabilityResponse.data
+
+            // Convert the selected item to the format expected by the meal form
+            const newFoodItem = {
+                ...selectedItem,
+                // Add a unique temporary ID for tracking
+                tempId: `${selectedItem._id || selectedItem.name}-${Date.now()}-${Math.random()}`,
+                shoppingListId: selectedShoppingListId,
+                locations: selectedItem.locations || ['meal'],
+                quantities: {
+                    meal:
+                        selectedItem.quantities?.meal || selectedItem.quantity || 1,
+                    'shopping-list':
+                        selectedItem.quantities?.['shopping-list'] || 0,
+                    pantry: selectedItem.quantities?.pantry || 0,
+                },
+                availability: {
+                    inPantry: availability?.inPantry === true,
+                    inShoppingList: availability?.inShoppingList === true,
+                    pantryQuantity: availability?.pantryQuantity || 0,
+                    shoppingListQuantity: availability?.shoppingListQuantity || 0,
+                }, // Store availability info explicitly
+            }
+
+            // Add item to list - inline UI will show suggestion if needed
+            setFoodItems((prevItems) => [...prevItems, newFoodItem])
+        } catch (error) {
+            console.error('Error checking availability:', error)
+            // If check fails, assume item is not in pantry/shopping list
+            const newFoodItem = {
+                ...selectedItem,
+                tempId: `${selectedItem._id || selectedItem.name}-${Date.now()}-${Math.random()}`,
+                shoppingListId: selectedShoppingListId,
+                locations: selectedItem.locations || ['meal'],
+                quantities: {
+                    meal:
+                        selectedItem.quantities?.meal || selectedItem.quantity || 1,
+                    'shopping-list':
+                        selectedItem.quantities?.['shopping-list'] || 0,
+                    pantry: selectedItem.quantities?.pantry || 0,
+                },
+                availability: {
+                    inPantry: false,
+                    inShoppingList: false,
+                }, // Default to not available if check fails
+            }
+            setFoodItems((prevItems) => [...prevItems, newFoodItem])
+        }
+    }
+
+    const addItemToShoppingList = async (selectedItem, foodItemInList) => {
+        try {
+            console.log('addItemToShoppingList called', { selectedShoppingListId, selectedItem, foodItemInList })
+            
+            // Get current shopping list ID (might need to fetch if not set)
+            let listIdToUse = selectedShoppingListId
+            if (!listIdToUse) {
+                console.log('No shopping list selected, fetching...')
+                const token = await storage.getItem('userToken')
+                const response = await axios.get(getServerUrl('/shopping-lists'), {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                })
+                if (response.data.success && response.data.shoppingLists?.length > 0) {
+                    listIdToUse = response.data.shoppingLists[0]._id
+                    setSelectedShoppingListId(listIdToUse)
+                    console.log('Auto-selected shopping list:', listIdToUse)
+                } else {
+                    Alert.alert('Virhe', 'Sinulla ei ole ostoslistaa. Luo ensin ostoslista.')
+                    return
+                }
+            }
+
+            const token = await storage.getItem('userToken')
+            if (!token) {
+                console.log('No token found')
+                Alert.alert('Virhe', 'Kirjaudu uudelleen sisään')
+                return
+            }
+
+            const quantity = foodItemInList.quantities?.meal || foodItemInList.quantity || 1
+            console.log('Adding to shopping list with quantity:', quantity)
+
+            // Prepare category array
+            const categoryArray = (() => {
+                let catArray = selectedItem.category || foodItemInList.category
+                if (typeof catArray === 'string') {
+                    try {
+                        catArray = JSON.parse(catArray)
+                    } catch (e) {
+                        catArray = []
+                    }
+                }
+                if (!Array.isArray(catArray)) return []
+                return catArray
+                    .map((cat) => {
+                        if (typeof cat === 'object' && cat !== null) {
+                            return cat.name || cat.id || String(cat)
+                        }
+                        return String(cat)
+                    })
+                    .filter((cat) => cat && cat.trim() !== '')
+            })()
+
+            // Use findOrCreateFoodItem to sync
+            const findOrCreateResponse = await axios.post(
+                getServerUrl('/food-items/find-or-create'),
+                {
+                    name: selectedItem.name || foodItemInList.name,
+                    unit: selectedItem.unit || foodItemInList.unit || 'kpl',
+                    category: categoryArray,
+                    calories: parseInt(selectedItem.calories || foodItemInList.calories) || 0,
+                    price: parseFloat(selectedItem.price || foodItemInList.price) || 0,
+                    location: 'shopping-list',
+                    quantities: {
+                        meal: 0,
+                        'shopping-list': quantity,
+                        pantry: 0,
+                    },
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            )
+
+            const foodItem = findOrCreateResponse.data.foodItem
+
+            // Add to shopping list
+            const shoppingListItem = {
+                foodId: foodItem._id,
+                name: selectedItem.name || foodItemInList.name,
+                estimatedPrice: parseFloat(selectedItem.price || foodItemInList.price) || 0,
+                quantity: quantity,
+                unit: selectedItem.unit || foodItemInList.unit || 'kpl',
+                category: categoryArray,
+                calories: parseInt(selectedItem.calories || foodItemInList.calories) || 0,
+                price: parseFloat(selectedItem.price || foodItemInList.price) || 0,
+            }
+
+            console.log('Sending request to add item to shopping list:', shoppingListItem)
+            const shoppingListResponse = await axios.post(
+                getServerUrl(`/shopping-lists/${listIdToUse}/items`),
+                { items: [shoppingListItem] },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            )
+
+            console.log('Shopping list response:', shoppingListResponse.data)
+
+            // Get the actual quantity from the response
+            // The response returns shoppingList with items array
+            let actualQuantity = quantity
+            if (shoppingListResponse.data?.shoppingList?.items) {
+                const addedItem = shoppingListResponse.data.shoppingList.items.find(
+                    (item) => {
+                        const itemFoodId = item.foodId?._id?.toString() || item.foodId?.toString() || item.foodId
+                        const itemName = item.name || item.foodId?.name
+                        const searchName = selectedItem.name || foodItemInList.name
+                        return itemFoodId === foodItem._id.toString() || 
+                               (itemName && searchName && itemName.toLowerCase() === searchName.toLowerCase())
+                    }
+                )
+                if (addedItem) {
+                    actualQuantity = addedItem.quantity || quantity
+                    console.log('Found added item with quantity:', actualQuantity)
+                }
+            }
+
+            // Update the food item in the list to mark it as in shopping list
+            setFoodItems((prevItems) =>
+                prevItems.map((item) => {
+                    if (item.tempId === foodItemInList.tempId) {
+                        console.log('Updating item availability:', item.tempId)
+                        return {
+                            ...item,
+                            availability: {
+                                ...item.availability,
+                                inShoppingList: true,
+                                shoppingListQuantity: actualQuantity,
+                            },
+                        }
+                    }
+                    return item
+                })
+            )
+            console.log('Successfully added to shopping list')
+            Alert.alert('Onnistui', 'Tuote lisätty ostoslistaan')
+        } catch (error) {
+            console.error('Error adding to shopping list:', error)
+            console.error('Error response:', error.response?.data)
+            Alert.alert('Virhe', 'Tuotteen lisääminen ostoslistaan epäonnistui: ' + (error.response?.data?.error || error.response?.data?.message || error.message))
+        }
+    }
+
+    const addItemToPantry = async (selectedItem, foodItemInList) => {
+        try {
+            const token = await storage.getItem('userToken')
+            const quantity = foodItemInList.quantities?.meal || foodItemInList.quantity || 1
+
+            // Prepare category array
+            const categoryArray = (() => {
+                let catArray = selectedItem.category || foodItemInList.category
+                if (typeof catArray === 'string') {
+                    try {
+                        catArray = JSON.parse(catArray)
+                    } catch (e) {
+                        catArray = []
+                    }
+                }
+                if (!Array.isArray(catArray)) return []
+                return catArray
+                    .map((cat) => {
+                        if (typeof cat === 'object' && cat !== null) {
+                            return cat.name || cat.id || String(cat)
+                        }
+                        return String(cat)
+                    })
+                    .filter((cat) => cat && cat.trim() !== '')
+            })()
+
+            // Use findOrCreateFoodItem to sync
+            const findOrCreateResponse = await axios.post(
+                getServerUrl('/food-items/find-or-create'),
+                {
+                    name: selectedItem.name || foodItemInList.name,
+                    unit: selectedItem.unit || foodItemInList.unit || 'kpl',
+                    category: categoryArray,
+                    calories: parseInt(selectedItem.calories || foodItemInList.calories) || 0,
+                    price: parseFloat(selectedItem.price || foodItemInList.price) || 0,
+                    location: 'pantry',
+                    quantities: {
+                        meal: 0,
+                        'shopping-list': 0,
+                        pantry: quantity,
+                    },
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            )
+
+            const foodItem = findOrCreateResponse.data.foodItem
+
+            // Add to pantry
+            const pantryResponse = await axios.post(
+                getServerUrl('/pantry/items'),
+                {
+                    name: selectedItem.name || foodItemInList.name,
+                    category: categoryArray,
+                    quantity: quantity,
+                    unit: selectedItem.unit || foodItemInList.unit || 'kpl',
+                    price: parseFloat(selectedItem.price || foodItemInList.price) || 0,
+                    calories: parseInt(selectedItem.calories || foodItemInList.calories) || 0,
+                    foodId: foodItem._id,
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            )
+
+            // Get the actual quantity from the pantry response
+            let actualQuantity = quantity
+            if (pantryResponse.data?.pantry?.items) {
+                const pantryItem = pantryResponse.data.pantry.items.find(
+                    (item) => {
+                        const itemFoodId = item.foodId?.toString() || item.foodId?._id?.toString()
+                        const itemName = item.name
+                        const searchName = selectedItem.name || foodItemInList.name
+                        return itemFoodId === foodItem._id.toString() || 
+                               (itemName && searchName && itemName.toLowerCase() === searchName.toLowerCase())
+                    }
+                )
+                if (pantryItem) {
+                    actualQuantity = pantryItem.quantity || quantity
+                }
+            }
+
+            // Update the food item in the list to mark it as in pantry with correct quantity
+            setFoodItems((prevItems) =>
+                prevItems.map((item) => {
+                    if (item.tempId === foodItemInList.tempId) {
+                        return {
+                            ...item,
+                            availability: {
+                                ...item.availability,
+                                inPantry: true,
+                                pantryQuantity: actualQuantity,
+                            },
+                        }
+                    }
+                    return item
+                })
+            )
+            Alert.alert('Onnistui', 'Tuote lisätty ruokavarastoon')
+        } catch (error) {
+            console.error('Error adding to pantry:', error)
+            Alert.alert('Virhe', 'Tuotteen lisääminen ruokavarastoon epäonnistui: ' + (error.response?.data?.error || error.message))
+        }
     }
 
     const handleAddNewItem = async (itemData) => {
@@ -499,73 +690,79 @@ const AddMealForm = ({ onSubmit }) => {
                 return
             }
 
-            // Create the FoodItem
-            const foodItemData = {
-                name: itemData.name,
-                unit: itemData.unit,
-                category: (() => {
-                    // Handle case where category might be a stringified array
-                    let categoryArray = itemData.category
-                    if (typeof itemData.category === 'string') {
-                        try {
-                            categoryArray = JSON.parse(itemData.category)
-                        } catch (e) {
-                            categoryArray = []
-                        }
-                    }
-
-                    // Ensure we have an array
-                    if (!Array.isArray(categoryArray)) {
-                        return []
-                    }
-
-                    // Extract category names from objects or use strings directly
-                    const processedCategories = categoryArray
-                        .map((cat) => {
-                            if (typeof cat === 'object' && cat !== null) {
-                                return cat.name || cat.id || String(cat)
-                            }
-                            return String(cat)
-                        })
-                        .filter((cat) => cat && cat.trim() !== '')
-
-                    return processedCategories
-                })(),
-                calories: Number(itemData.calories) || 0,
-                price: Number(itemData.price) || 0,
-                locations: ['meal'],
-                quantities: {
-                    meal: Number(itemData.quantity) || 1,
-                    'shopping-list': 0,
-                    pantry: 0,
-                },
-                user: profile._id,
-            }
-
-            const response = await axios.post(
-                getServerUrl('/food-items'),
-                foodItemData,
+            // Check if item exists in pantry or shopping list
+            const availabilityResponse = await axios.post(
+                getServerUrl('/food-items/check-availability'),
+                { name: itemData.name },
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
-                        'Content-Type': 'application/json',
                     },
                 }
             )
 
-            if (response.data.success) {
+            const availability = availabilityResponse.data
+
+            // Prepare category array
+            const categoryArray = (() => {
+                let catArray = itemData.category
+                if (typeof itemData.category === 'string') {
+                    try {
+                        catArray = JSON.parse(itemData.category)
+                    } catch (e) {
+                        catArray = []
+                    }
+                }
+                if (!Array.isArray(catArray)) return []
+                return catArray
+                    .map((cat) => {
+                        if (typeof cat === 'object' && cat !== null) {
+                            return cat.name || cat.id || String(cat)
+                        }
+                        return String(cat)
+                    })
+                    .filter((cat) => cat && cat.trim() !== '')
+            })()
+
+            // Use findOrCreateFoodItem to sync
+            const findOrCreateResponse = await axios.post(
+                getServerUrl('/food-items/find-or-create'),
+                {
+                    name: itemData.name,
+                    category: categoryArray,
+                    unit: itemData.unit,
+                    price: Number(itemData.price) || 0,
+                    calories: Number(itemData.calories) || 0,
+                    location: 'meal',
+                    quantities: {
+                        meal: Number(itemData.quantity) || 1,
+                        'shopping-list': 0,
+                        pantry: 0,
+                    },
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            )
+
+            if (findOrCreateResponse.data.success) {
                 const newFoodItem = {
-                    ...response.data.foodItem,
-                    tempId: `new-${response.data.foodItem._id || itemData.name}-${Date.now()}-${Math.random()}`,
+                    ...findOrCreateResponse.data.foodItem,
+                    tempId: `new-${findOrCreateResponse.data.foodItem._id || itemData.name}-${Date.now()}-${Math.random()}`,
                     shoppingListId: selectedShoppingListId,
+                    availability: {
+                        inPantry: availability?.inPantry === true,
+                        inShoppingList: availability?.inShoppingList === true,
+                        pantryQuantity: availability?.pantryQuantity || 0,
+                        shoppingListQuantity: availability?.shoppingListQuantity || 0,
+                    },
                 }
 
                 setFoodItems((prevItems) => [...prevItems, newFoodItem])
                 setShowItemForm(false)
-                Alert.alert(
-                    'Onnistui',
-                    `Tuote "${itemData.name}" lisätty aterialle`
-                )
+                // Inline UI will show suggestion if item is not in pantry/shopping list
             }
         } catch (error) {
             console.error('Error adding new item:', error)
@@ -632,6 +829,11 @@ const AddMealForm = ({ onSubmit }) => {
                         meal: newQuantity,
                     },
                     quantity: newQuantity, // This for backward compatibility
+                    // Preserve availability data
+                    availability: updatedItems[index].availability || {
+                        inPantry: false,
+                        inShoppingList: false,
+                    },
                 }
             }
             return updatedItems
@@ -642,41 +844,116 @@ const AddMealForm = ({ onSubmit }) => {
         setFoodItems((prevItems) => prevItems.filter((_, i) => i !== index))
     }
 
-    const renderSelectedItem = ({ item, index }) => (
-        <View style={styles.selectedItem}>
-            <View style={styles.itemInfo}>
-                <CustomText style={styles.itemName}>{item.name}</CustomText>
-                <CustomText style={styles.itemDetails}>
-                    {`${item.quantities?.meal || item.quantity || 1} ${item.unit || 'kpl'}`}
-                </CustomText>
-                <View style={styles.quantityRow}>
-                    <CustomText style={styles.quantityLabel}>Määrä:</CustomText>
-                    <TextInput
-                        style={styles.quantityInput}
-                        value={String(
-                            item.quantities?.meal || item.quantity || 1
-                        )}
-                        onChangeText={(text) =>
-                            handleUpdateQuantity(index, parseFloat(text) || 0)
-                        }
-                        keyboardType="numeric"
-                        placeholder="0"
-                    />
-                    <CustomText style={styles.unitText}>
-                        {item.unit || 'kpl'}
-                    </CustomText>
-                </View>
-            </View>
-            <View style={styles.itemActions}>
+    const renderSelectedItem = ({ item, index }) => {
+        // Get availability - if not set, assume item is not in pantry/shopping list
+        const availability = item.availability || {}
+        // Show suggestion if:
+        // 1. Availability data is missing, OR
+        // 2. Item is not in pantry, OR  
+        // 3. Item is not in shopping list
+        const showSuggestion = 
+            !item.availability || 
+            availability.inPantry !== true || 
+            availability.inShoppingList !== true
+
+        return (
+            <View style={styles.selectedItem}>
+                {/* Remove button in top right corner */}
                 <TouchableOpacity
                     style={styles.removeButton}
                     onPress={() => handleRemoveFoodItem(index)}
                 >
                     <MaterialIcons name="delete" size={20} color="#666" />
                 </TouchableOpacity>
+                
+                <View style={styles.itemInfo}>
+                    <CustomText style={styles.itemName}>{item.name}</CustomText>
+                    <CustomText style={styles.itemDetails}>
+                        {`${item.quantities?.meal || item.quantity || 1} ${item.unit || 'kpl'}`}
+                    </CustomText>
+                    <View style={styles.quantityRow}>
+                        <CustomText style={styles.quantityLabel}>Määrä:</CustomText>
+                        <TextInput
+                            style={styles.quantityInput}
+                            value={String(
+                                item.quantities?.meal || item.quantity || 1
+                            )}
+                            onChangeText={(text) =>
+                                handleUpdateQuantity(index, parseFloat(text) || 0)
+                            }
+                            keyboardType="numeric"
+                            placeholder="0"
+                        />
+                        <CustomText style={styles.unitText}>
+                            {item.unit || 'kpl'}
+                        </CustomText>
+                    </View>
+                    
+                    {/* Show availability status or suggestion */}
+                    <View style={styles.availabilityContainer}>
+                        {availability.inPantry && (
+                            <View style={styles.availabilityBadge}>
+                                <MaterialIcons name="check-circle" size={16} color="#10B981" />
+                                <CustomText style={styles.availabilityText}>
+                                    Ruokavarastossa ({availability.pantryQuantity || 0} {item.unit || 'kpl'})
+                                </CustomText>
+                            </View>
+                        )}
+                        {availability.inShoppingList && (
+                            <View style={styles.availabilityBadge}>
+                                <MaterialIcons name="check-circle" size={16} color="#10B981" />
+                                <CustomText style={styles.availabilityText}>
+                                    Ostoslistalla ({availability.shoppingListQuantity || 0} {item.unit || 'kpl'})
+                                </CustomText>
+                            </View>
+                        )}
+                        {showSuggestion && (
+                            <>
+                                <CustomText style={styles.suggestionText}>
+                                    Lisää raaka-aine myös:
+                                </CustomText>
+                                <View style={styles.suggestionButtons}>
+                                    {!availability.inShoppingList && (
+                                        <TouchableOpacity
+                                            style={styles.suggestionButton}
+                                            activeOpacity={0.7}
+                                            onPress={async () => {
+                                                console.log('Ostoslistaan button clicked', { selectedShoppingListId, item: item.name })
+                                                try {
+                                                    await addItemToShoppingList(item, item)
+                                                } catch (error) {
+                                                    console.error('Error in onPress handler:', error)
+                                                    Alert.alert('Virhe', 'Tuotteen lisääminen epäonnistui: ' + (error.message || 'Tuntematon virhe'))
+                                                }
+                                            }}
+                                        >
+                                            <MaterialIcons name="shopping-cart" size={16} color="#000000" />
+                                            <CustomText style={styles.suggestionButtonText}>
+                                                Ostoslistalle
+                                            </CustomText>
+                                        </TouchableOpacity>
+                                    )}
+                                    {!availability.inPantry && (
+                                        <TouchableOpacity
+                                            style={styles.suggestionButton}
+                                            onPress={async () => {
+                                                await addItemToPantry(item, item)
+                                            }}
+                                        >
+                                            <MaterialIcons name="kitchen" size={16} color="#000000" />
+                                            <CustomText style={styles.suggestionButtonText}>
+                                                Ruokavarastoon
+                                            </CustomText>
+                                        </TouchableOpacity>
+                                    )}
+                                </View>
+                            </>
+                        )}
+                    </View>
+                </View>
             </View>
-        </View>
-    )
+        )
+    }
 
     useEffect(() => {
         fetchShoppingLists()
@@ -1318,9 +1595,7 @@ const styles = StyleSheet.create({
         padding: 15,
         borderRadius: 10,
         marginBottom: 10,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+        flexDirection: 'column',
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
@@ -1329,15 +1604,12 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 2,
         elevation: 2,
+        position: 'relative',
     },
     itemInfo: {
         flex: 1,
         flexDirection: 'column',
-        marginRight: 10,
-    },
-    itemActions: {
-        flexDirection: 'row',
-        alignItems: 'center',
+        width: '100%',
     },
     quantityRow: {
         flexDirection: 'row',
@@ -1346,12 +1618,16 @@ const styles = StyleSheet.create({
         marginTop: 8,
     },
     removeButton: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
         backgroundColor: '#e0e0e0',
         width: 36,
         height: 36,
         borderRadius: 18,
         justifyContent: 'center',
         alignItems: 'center',
+        zIndex: 10,
     },
     manualAddContainer: {
         marginTop: 10,
@@ -1430,6 +1706,58 @@ const styles = StyleSheet.create({
     datePickerContainer: {
         marginTop: 10,
         marginLeft: -10,
+    },
+    availabilityContainer: {
+        marginTop: 12,
+        padding: 12,
+        backgroundColor: '#F3F4F6',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        gap: 8,
+    },
+    availabilityBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingVertical: 6,
+        paddingHorizontal: 10,
+        backgroundColor: '#D1FAE5',
+        borderRadius: 6,
+    },
+    availabilityText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#065F46',
+    },
+    suggestionText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#374151',
+        marginTop: 4,
+        marginBottom: 8,
+    },
+    suggestionButtons: {
+        flexDirection: 'row',
+        gap: 8,
+        flexWrap: 'wrap',
+    },
+    suggestionButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        backgroundColor: 'transparent',
+        borderWidth: 2,
+        borderColor: '#9C86FC',
+        borderRadius: 25,
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        minHeight: 32,
+    },
+    suggestionButtonText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#000000',
     },
 })
 
