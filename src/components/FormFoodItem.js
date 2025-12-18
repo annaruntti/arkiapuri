@@ -1146,9 +1146,7 @@ const FormFoodItem = forwardRef(
                     <View style={styles.buttonContainer}>
                         <Button
                             style={[
-                                buttonStyle === 'secondary'
-                                    ? styles.secondaryButton
-                                    : styles.primaryButton,
+                                styles.secondaryButton,
                                 isDesktop && styles.desktopButton,
                             ]}
                             textStyle={styles.buttonText}
@@ -1351,8 +1349,10 @@ const styles = StyleSheet.create({
         width: '100%',
     },
     desktopButton: {
-        width: '100%',
-        alignSelf: 'center',
+        width: 'auto',
+        alignSelf: 'flex-start',
+        minWidth: 200,
+        maxWidth: 250,
     },
     buttonText: {
         color: '#000000',

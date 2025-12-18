@@ -952,21 +952,14 @@ const AddMealForm = ({ onSubmit }) => {
 
     return (
         <View style={styles.container}>
-            {showItemForm ? (
-                <FormFoodItem
-                    onSubmit={handleAddNewItem}
-                    onClose={() => setShowItemForm(false)}
-                    location="meal"
-                />
-            ) : (
-                <ScrollView
-                    style={styles.scrollView}
-                    contentContainerStyle={styles.formScroll}
-                    showsVerticalScrollIndicator={true}
-                    bounces={false}
-                    keyboardShouldPersistTaps="handled"
-                >
-                    <View style={styles.formContainer}>
+            <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={styles.formScroll}
+                showsVerticalScrollIndicator={true}
+                bounces={false}
+                keyboardShouldPersistTaps="handled"
+            >
+                <View style={[styles.formContainer, isDesktop && styles.formContainerDesktop]}>
                         <CustomText style={styles.label}>
                             Aterian nimi
                         </CustomText>
@@ -1178,12 +1171,14 @@ const AddMealForm = ({ onSubmit }) => {
                                 </View>
                             )}
 
-                            <Button
-                                title="+ Lisää syöntipäivä"
-                                onPress={addEatingDate}
-                                style={styles.tertiaryButton}
-                                textStyle={styles.buttonText}
-                            />
+                            <View style={isDesktop && styles.desktopButtonContainer}>
+                                <Button
+                                    title="+ Lisää syöntipäivä"
+                                    onPress={addEatingDate}
+                                    style={[styles.tertiaryButton, isDesktop && styles.tertiaryButtonDesktop]}
+                                    textStyle={styles.buttonText}
+                                />
+                            </View>
 
                             {showEatingDatePicker && (
                                 <View style={styles.datePickerContainer}>
@@ -1214,18 +1209,42 @@ const AddMealForm = ({ onSubmit }) => {
                                 allowDuplicates={true}
                             />
 
-                            <View style={styles.manualAddContainer}>
+                            <View style={[styles.manualAddContainer, isDesktop && styles.desktopButtonContainer]}>
                                 <Button
                                     title="+ Luo uusi tuote"
-                                    onPress={() => setShowItemForm(true)}
+                                    onPress={() => setShowItemForm(!showItemForm)}
                                     style={[
                                         styles.tertiaryButton,
-                                        isDesktop &&
-                                            styles.desktopPrimaryButton,
+                                        isDesktop && styles.tertiaryButtonDesktop,
                                     ]}
                                     textStyle={styles.buttonText}
                                 />
                             </View>
+
+                            {/* FormFoodItem section - shown when user clicks "Luo uusi tuote" */}
+                            {showItemForm && (
+                                <View style={styles.formFoodItemSection}>
+                                    <View style={styles.formFoodItemHeader}>
+                                        <CustomText style={styles.formFoodItemTitle}>
+                                            Luo uusi tuote
+                                        </CustomText>
+                                        <TouchableOpacity
+                                            onPress={() => setShowItemForm(false)}
+                                            style={styles.closeFormButton}
+                                        >
+                                            <MaterialIcons
+                                                name="close"
+                                                size={24}
+                                                color="#666"
+                                            />
+                                        </TouchableOpacity>
+                                    </View>
+                                    <FormFoodItem
+                                        onSubmit={handleAddNewItem}
+                                        location="meal"
+                                    />
+                                </View>
+                            )}
 
                             {/* Display selected food items */}
                             {foodItems.length > 0 && (
@@ -1270,7 +1289,6 @@ const AddMealForm = ({ onSubmit }) => {
                         </View>
                     </View>
                 </ScrollView>
-            )}
         </View>
     )
 }
@@ -1286,6 +1304,9 @@ const styles = StyleSheet.create({
     formContainer: {
         paddingVertical: 5,
         zIndex: 1,
+    },
+    formContainerDesktop: {
+        paddingHorizontal: 50,
     },
     formScroll: {
         flexGrow: 1,
@@ -1623,6 +1644,7 @@ const styles = StyleSheet.create({
     manualAddContainer: {
         marginTop: 10,
         marginBottom: 15,
+        width: '100%',
     },
     tertiaryButton: {
         borderRadius: 25,
@@ -1635,6 +1657,15 @@ const styles = StyleSheet.create({
         width: 'auto',
         borderWidth: 3,
         borderColor: '#9C86FC',
+    },
+    tertiaryButtonDesktop: {
+        width: 'auto',
+        alignSelf: 'flex-start',
+        minWidth: 200,
+        maxWidth: 250,
+    },
+    desktopButtonContainer: {
+        alignItems: 'flex-start',
     },
     imagePicker: {
         borderWidth: 2,
@@ -1749,6 +1780,34 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '600',
         color: '#000000',
+    },
+    formFoodItemSection: {
+        marginTop: 20,
+        marginBottom: 20,
+        padding: 15,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    formFoodItemHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 15,
+        paddingBottom: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: '#E5E7EB',
+    },
+    formFoodItemTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#333',
+    },
+    closeFormButton: {
+        padding: 5,
+        borderRadius: 20,
+        backgroundColor: '#F3F4F6',
     },
 })
 
