@@ -1,14 +1,18 @@
 import { Feather } from '@expo/vector-icons'
+import axios from 'axios'
 import { format } from 'date-fns'
 import { fi } from 'date-fns/locale'
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
+    Alert,
     Platform,
     ScrollView,
     StyleSheet,
     TouchableOpacity,
     View,
 } from 'react-native'
+import { getServerUrl } from '../utils/getServerUrl'
+import storage from '../utils/storage'
 import {
     getDifficultyText,
     getMealCategoryText,
@@ -30,6 +34,8 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
     const [showDatePicker, setShowDatePicker] = useState(false)
     const [editingFoodItem, setEditingFoodItem] = useState(null)
     const [showFoodItemForm, setShowFoodItemForm] = useState(false)
+    const [selectedShoppingListId, setSelectedShoppingListId] = useState(null)
+    const [foodItemsWithAvailability, setFoodItemsWithAvailability] = useState([])
 
     useEffect(() => {
         if (meal) {
@@ -37,8 +43,72 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                 ...meal,
                 foodItems: [...meal.foodItems],
             })
+            checkFoodItemsAvailability(meal.foodItems)
+            fetchShoppingLists()
         }
     }, [meal])
+
+    const fetchShoppingLists = async () => {
+        try {
+            const token = await storage.getItem('userToken')
+            const response = await axios.get(getServerUrl('/shopping-lists'), {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            })
+            if (response.data.success) {
+                const lists = response.data.shoppingLists || []
+                if (lists.length > 0) {
+                    setSelectedShoppingListId(lists[0]._id)
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching shopping lists:', error)
+        }
+    }
+
+    const checkFoodItemsAvailability = async (foodItems) => {
+        try {
+            const token = await storage.getItem('userToken')
+            const itemsWithAvailability = await Promise.all(
+                foodItems.map(async (item) => {
+                    try {
+                        const availabilityResponse = await axios.post(
+                            getServerUrl('/food-items/check-availability'),
+                            { name: item.name },
+                            {
+                                headers: {
+                                    Authorization: `Bearer ${token}`,
+                                },
+                            }
+                        )
+                        const availability = availabilityResponse.data
+                        return {
+                            ...item,
+                            availability: {
+                                inPantry: availability?.inPantry === true,
+                                inShoppingList: availability?.inShoppingList === true,
+                                pantryQuantity: availability?.pantryQuantity || 0,
+                                shoppingListQuantity: availability?.shoppingListQuantity || 0,
+                            },
+                        }
+                    } catch (error) {
+                        console.error('Error checking availability for', item.name, error)
+                        return {
+                            ...item,
+                            availability: {
+                                inPantry: false,
+                                inShoppingList: false,
+                            },
+                        }
+                    }
+                })
+            )
+            setFoodItemsWithAvailability(itemsWithAvailability)
+        } catch (error) {
+            console.error('Error checking food items availability:', error)
+        }
+    }
 
     if (!meal || !visible) {
         return null
@@ -46,13 +116,11 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
 
     const toggleEdit = (field) => {
         if (editableFields[field]) {
-            // We're saving the edit, so keep the current edited value
             setEditedValues((prev) => ({
                 ...prev,
                 [field]: prev[field],
             }))
         } else {
-            // We're starting to edit, so initialize with current value
             setEditedValues((prev) => ({
                 ...prev,
                 [field]:
@@ -113,6 +181,122 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
             ...prev,
             foodItems: prev.foodItems.filter((_, i) => i !== index),
         }))
+    }
+
+    const addItemToShoppingList = async (item) => {
+        try {
+            let listIdToUse = selectedShoppingListId
+            if (!listIdToUse) {
+                const token = await storage.getItem('userToken')
+                const response = await axios.get(getServerUrl('/shopping-lists'), {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                })
+                if (response.data.success && response.data.shoppingLists?.length > 0) {
+                    listIdToUse = response.data.shoppingLists[0]._id
+                    setSelectedShoppingListId(listIdToUse)
+                } else {
+                    Alert.alert('Virhe', 'Sinulla ei ole ostoslistaa. Luo ensin ostoslista.')
+                    return
+                }
+            }
+
+            const token = await storage.getItem('userToken')
+            const quantity = item.quantities?.meal || item.quantity || 1
+
+            const categoryArray = Array.isArray(item.category) ? item.category : []
+
+            const findOrCreateResponse = await axios.post(
+                getServerUrl('/food-items/find-or-create'),
+                {
+                    name: item.name,
+                    unit: item.unit || 'kpl',
+                    category: categoryArray,
+                    calories: parseInt(item.calories) || 0,
+                    price: parseFloat(item.price) || 0,
+                    location: 'shopping-list',
+                    quantities: {
+                        meal: 0,
+                        'shopping-list': quantity,
+                        pantry: 0,
+                    },
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            )
+
+            const foodItem = findOrCreateResponse.data.foodItem
+
+            const shoppingListItem = {
+                foodId: foodItem._id,
+                name: item.name,
+                estimatedPrice: parseFloat(item.price) || 0,
+                quantity: quantity,
+                unit: item.unit || 'kpl',
+                category: categoryArray,
+                calories: parseInt(item.calories) || 0,
+                price: parseFloat(item.price) || 0,
+            }
+
+            await axios.post(
+                getServerUrl(`/shopping-lists/${listIdToUse}/items`),
+                { items: [shoppingListItem] },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            )
+
+            // Refresh availability
+            await checkFoodItemsAvailability(editedValues.foodItems)
+            Alert.alert('Onnistui', 'Tuote lisätty ostoslistaan')
+        } catch (error) {
+            console.error('Error adding to shopping list:', error)
+            Alert.alert('Virhe', 'Tuotteen lisääminen ostoslistaan epäonnistui')
+        }
+    }
+
+    const addItemToPantry = async (item) => {
+        try {
+            const token = await storage.getItem('userToken')
+            const quantity = item.quantities?.meal || item.quantity || 1
+
+            const categoryArray = Array.isArray(item.category) ? item.category : []
+
+            const findOrCreateResponse = await axios.post(
+                getServerUrl('/food-items/find-or-create'),
+                {
+                    name: item.name,
+                    unit: item.unit || 'kpl',
+                    category: categoryArray,
+                    calories: parseInt(item.calories) || 0,
+                    price: parseFloat(item.price) || 0,
+                    location: 'pantry',
+                    quantities: {
+                        meal: 0,
+                        'shopping-list': 0,
+                        pantry: quantity,
+                    },
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            )
+
+            // Refresh availability
+            await checkFoodItemsAvailability(editedValues.foodItems)
+            Alert.alert('Onnistui', 'Tuote lisätty ruokavarastoon')
+        } catch (error) {
+            console.error('Error adding to pantry:', error)
+            Alert.alert('Virhe', 'Tuotteen lisääminen ruokavarastoon epäonnistui')
+        }
     }
 
     const handleImageUpdate = (updatedMeal) => {
@@ -351,6 +535,7 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
 
                             <MealTabs
                                 foodItems={editedValues.foodItems}
+                                foodItemsWithAvailability={foodItemsWithAvailability}
                                 recipe={editedValues.recipe}
                                 isRecipeEditing={editableFields.recipe}
                                 editingFoodItem={editingFoodItem}
@@ -362,6 +547,8 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                                     handleChange('recipe', text)
                                 }
                                 onToggleRecipeEdit={() => toggleEdit('recipe')}
+                                onAddToShoppingList={addItemToShoppingList}
+                                onAddToPantry={addItemToPantry}
                             />
 
                             <View style={styles.buttonContainer}>

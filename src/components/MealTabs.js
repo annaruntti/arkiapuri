@@ -1,5 +1,5 @@
-import { Feather } from '@expo/vector-icons'
-import React, { useState } from 'react'
+import { Feather, MaterialIcons } from '@expo/vector-icons'
+import { useState } from 'react'
 import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native'
 import Button from './Button'
 import CustomText from './CustomText'
@@ -7,6 +7,7 @@ import FoodItemRow from './FoodItemRow'
 
 const MealTabs = ({
     foodItems,
+    foodItemsWithAvailability = [],
     recipe,
     isRecipeEditing,
     editingFoodItem,
@@ -16,6 +17,8 @@ const MealTabs = ({
     onItemChange,
     onRecipeChange,
     onToggleRecipeEdit,
+    onAddToShoppingList,
+    onAddToPantry,
 }) => {
     const [activeTab, setActiveTab] = useState('ingredients')
 
@@ -34,21 +37,84 @@ const MealTabs = ({
                             size="small"
                         />
                     </View>
-                    {foodItems?.map((item, index) => (
-                        <FoodItemRow
-                            key={index}
-                            item={item}
-                            index={index}
-                            onEdit={(index) =>
-                                onEditFoodItem(
-                                    editingFoodItem === index ? null : index
-                                )
-                            }
-                            onRemove={onRemoveFoodItem}
-                            isEditing={editingFoodItem === index}
-                            onItemChange={onItemChange}
-                        />
-                    ))}
+                    {foodItems?.map((item, index) => {
+                        // Find availability info for this item
+                        const itemWithAvailability = foodItemsWithAvailability.find(
+                            (availItem) => availItem.name === item.name || availItem._id === item._id
+                        ) || item
+                        const availability = itemWithAvailability.availability || {}
+                        const showSuggestion = 
+                            !availability.inPantry || !availability.inShoppingList
+
+                        return (
+                            <View key={index}>
+                                <FoodItemRow
+                                    item={item}
+                                    index={index}
+                                    onEdit={(index) =>
+                                        onEditFoodItem(
+                                            editingFoodItem === index ? null : index
+                                        )
+                                    }
+                                    onRemove={onRemoveFoodItem}
+                                    isEditing={editingFoodItem === index}
+                                    onItemChange={onItemChange}
+                                />
+                                {/* Show availability status */}
+                                {(availability.inPantry || availability.inShoppingList || showSuggestion) && (
+                                    <View style={styles.availabilityContainer}>
+                                        {availability.inPantry && (
+                                            <View style={styles.availabilityBadge}>
+                                                <MaterialIcons name="check-circle" size={16} color="#10B981" />
+                                                <CustomText style={styles.availabilityText}>
+                                                    Ruokavarastossa ({availability.pantryQuantity || 0} {item.unit || 'kpl'})
+                                                </CustomText>
+                                            </View>
+                                        )}
+                                        {availability.inShoppingList && (
+                                            <View style={styles.availabilityBadge}>
+                                                <MaterialIcons name="check-circle" size={16} color="#10B981" />
+                                                <CustomText style={styles.availabilityText}>
+                                                    Ostoslistalla ({availability.shoppingListQuantity || 0} {item.unit || 'kpl'})
+                                                </CustomText>
+                                            </View>
+                                        )}
+                                        {showSuggestion && onAddToShoppingList && onAddToPantry && (
+                                            <>
+                                                <CustomText style={styles.suggestionText}>
+                                                    Lisää raaka-aine myös:
+                                                </CustomText>
+                                                <View style={styles.suggestionButtons}>
+                                                    {!availability.inShoppingList && (
+                                                        <TouchableOpacity
+                                                            style={styles.suggestionButton}
+                                                            onPress={() => onAddToShoppingList(item)}
+                                                        >
+                                                            <MaterialIcons name="shopping-cart" size={16} color="#000000" />
+                                                            <CustomText style={styles.suggestionButtonText}>
+                                                                Ostoslistalle
+                                                            </CustomText>
+                                                        </TouchableOpacity>
+                                                    )}
+                                                    {!availability.inPantry && (
+                                                        <TouchableOpacity
+                                                            style={styles.suggestionButton}
+                                                            onPress={() => onAddToPantry(item)}
+                                                        >
+                                                            <MaterialIcons name="kitchen" size={16} color="#000000" />
+                                                            <CustomText style={styles.suggestionButtonText}>
+                                                                Ruokavarastoon
+                                                            </CustomText>
+                                                        </TouchableOpacity>
+                                                    )}
+                                                </View>
+                                            </>
+                                        )}
+                                    </View>
+                                )}
+                            </View>
+                        )
+                    })}
                 </View>
             )
         } else {
@@ -198,6 +264,59 @@ const styles = StyleSheet.create({
         flex: 1,
         flexWrap: 'wrap',
         wordBreak: 'break-word',
+    },
+    availabilityContainer: {
+        marginTop: 8,
+        marginBottom: 12,
+        padding: 12,
+        backgroundColor: '#F3F4F6',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        gap: 8,
+    },
+    availabilityBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingVertical: 6,
+        paddingHorizontal: 10,
+        backgroundColor: '#D1FAE5',
+        borderRadius: 6,
+    },
+    availabilityText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#065F46',
+    },
+    suggestionText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#374151',
+        marginTop: 4,
+        marginBottom: 8,
+    },
+    suggestionButtons: {
+        flexDirection: 'row',
+        gap: 8,
+        flexWrap: 'wrap',
+    },
+    suggestionButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        backgroundColor: 'transparent',
+        borderWidth: 2,
+        borderColor: '#9C86FC',
+        borderRadius: 25,
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        minHeight: 32,
+    },
+    suggestionButtonText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#000000',
     },
 })
 
