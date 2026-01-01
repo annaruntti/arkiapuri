@@ -416,7 +416,6 @@ const PantryScreen = ({}) => {
                 // Fetch fresh data from server to ensure sync
                 await fetchPantryItems()
                 setDetailsVisible(false)
-                Alert.alert('Onnistui', 'Tuotteen tiedot päivitetty')
             } else {
                 Alert.alert('Virhe', 'Tuotteen päivitys epäonnistui')
             }

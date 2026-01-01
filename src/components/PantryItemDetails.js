@@ -3,7 +3,7 @@ import axios from 'axios'
 import { format } from 'date-fns'
 import { fi } from 'date-fns/locale'
 import * as ImagePicker from 'expo-image-picker'
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
     Alert,
     Image,
@@ -376,11 +376,13 @@ const PantryItemDetails = ({ item, visible, onClose, onUpdate }) => {
                     {editableFields[field] ? (
                         <TextInput
                             style={styles.input}
-                            value={String(editedValues[field] || value)}
+                            value={String(editedValues[field])}
                             onChangeText={(text) => handleChange(field, text)}
                             keyboardType={
                                 type === 'number' ? 'numeric' : 'default'
                             }
+                            autoFocus
+                            selectTextOnFocus
                         />
                     ) : (
                         <CustomText>{value}</CustomText>

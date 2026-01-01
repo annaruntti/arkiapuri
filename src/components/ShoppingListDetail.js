@@ -529,7 +529,6 @@ const ShoppingListDetail = ({
                 )
                 onUpdate(response.data.shoppingList)
                 setShowItemDetails(false)
-                Alert.alert('Onnistui', 'Tuotteen tiedot päivitetty')
             }
         } catch (error) {
             console.error('Error updating item:', error)
