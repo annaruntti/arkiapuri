@@ -1,5 +1,5 @@
 import axios from 'axios'
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Alert, FlatList, StyleSheet, View } from 'react-native'
 import Button from '../components/Button'
 import CustomText from '../components/CustomText'
