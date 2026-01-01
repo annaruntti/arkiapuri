@@ -1,6 +1,7 @@
 import { MaterialIcons } from '@expo/vector-icons'
+import { useFocusEffect } from '@react-navigation/native'
 import axios from 'axios'
-import React, { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
     Alert,
     Image,
@@ -68,7 +69,6 @@ const PantryScreen = ({}) => {
             }
 
             // Item must have at least one of the selected category filters
-            // Normalize both sides to strings for consistent comparison
             return selectedCategoryFilters.some((filterId) =>
                 item.category.some(
                     (itemCatId) => String(itemCatId) === String(filterId)
@@ -79,10 +79,9 @@ const PantryScreen = ({}) => {
 
     const toggleCategoryFilter = (categoryId) => {
         setSelectedCategoryFilters((prev) => {
-            // Normalize to string for consistent comparison
             const normalizedId = String(categoryId)
 
-            // Check if already selected (normalize for comparison)
+            // Check is selected already normalize for comparison
             const isSelected = prev.some((id) => String(id) === normalizedId)
 
             if (isSelected) {
@@ -190,7 +189,7 @@ const PantryScreen = ({}) => {
             } else {
                 console.error('Failed to fetch pantry items:', response.data)
                 Alert.alert('Virhe', 'Pentterin sisältöä ei voitu hakea')
-                setPantryItems([]) // Clear items on error
+                setPantryItems([])
             }
         } catch (error) {
             console.error('Error fetching pantry items:', error)
@@ -201,7 +200,7 @@ const PantryScreen = ({}) => {
                         ? 'Yhteys aikakatkaistiin'
                         : error.message || 'Tuntematon virhe')
             )
-            setPantryItems([]) // Clear items on error
+            setPantryItems([])
         } finally {
             setLoading(false)
         }
@@ -210,6 +209,13 @@ const PantryScreen = ({}) => {
     useEffect(() => {
         fetchPantryItems()
     }, [])
+
+    // Refresh pantry items when user navigates to the screen
+    useFocusEffect(
+        useCallback(() => {
+            fetchPantryItems()
+        }, [])
+    )
 
     const handleAddItem = async (itemData) => {
         try {
@@ -279,7 +285,7 @@ const PantryScreen = ({}) => {
 
                 if (pantryResponse.data.success) {
                     setShowItemForm(false)
-                    setShowAddItemSearch(false) // Close the add item search modal
+                    setShowAddItemSearch(false)
                     await fetchPantryItems()
                     Alert.alert(
                         'Onnistui',
