@@ -32,22 +32,20 @@ const ReadingOrderScreen = ({}) => {
 
     return (
         <ResponsiveLayout activeRoute="ReadingOrderStack">
-            <View
-                style={
-                    isDesktop ? styles.desktopContentWrapper : styles.fullWidth
-                }
-            >
-                <View style={styles.container}>
-                    {/* Content */}
-                    <View style={styles.contentContainer}>
-                        {activeTab === 'week' ? <TableWeek /> : <TableMonth />}
-                    </View>
+            <View style={styles.container}>
+                {/* Content */}
+                <View style={styles.contentContainer}>
+                    {activeTab === 'week' ? (
+                        <TableWeek />
+                    ) : (
+                        <TableMonth />
+                    )}
+                </View>
 
-                    {/* Tab Navigation - Rendered last so it's on top */}
-                    <View style={styles.tabContainer}>
-                        {renderTabButton('week', 'Viikko')}
-                        {renderTabButton('month', 'Kuukausi')}
-                    </View>
+                {/* Tab Navigation - Rendered last so it's on top */}
+                <View style={styles.tabContainer}>
+                    {renderTabButton('week', 'Viikko')}
+                    {renderTabButton('month', 'Kuukausi')}
                 </View>
             </View>
         </ResponsiveLayout>
@@ -101,8 +99,7 @@ const styles = StyleSheet.create({
     },
     contentContainer: {
         flex: 1,
-        paddingTop: 60,
-        // No zIndex - let tabs' absolute positioning work
+        paddingTop: 53,
     },
     desktopContentWrapper: {
         flex: 1,
@@ -110,6 +107,7 @@ const styles = StyleSheet.create({
         maxWidth: 960,
         alignSelf: 'center',
         position: 'relative',
+        paddingHorizontal: 40,
     },
     fullWidth: {
         flex: 1,

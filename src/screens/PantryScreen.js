@@ -733,6 +733,13 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         padding: 15,
     },
+    desktopContentWrapper: {
+        flex: 1,
+        width: '100%',
+        maxWidth: 960,
+        alignSelf: 'center',
+        paddingHorizontal: 40,
+    },
     mainScrollView: {
         flex: 1,
         zIndex: 1,
@@ -961,12 +968,6 @@ const styles = StyleSheet.create({
         marginBottom: 15,
         color: '#333',
         textAlign: 'left',
-    },
-    desktopContentWrapper: {
-        flex: 1,
-        width: '100%',
-        maxWidth: 960,
-        alignSelf: 'center',
     },
     fullWidth: {
         flex: 1,

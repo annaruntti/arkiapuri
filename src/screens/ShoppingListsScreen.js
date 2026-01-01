@@ -432,6 +432,7 @@ const styles = StyleSheet.create({
         width: '100%',
         maxWidth: 960,
         alignSelf: 'center',
+        paddingHorizontal: 40,
     },
     fullWidth: {
         flex: 1,

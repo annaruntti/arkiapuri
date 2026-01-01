@@ -24,6 +24,7 @@ import Animated, {
     withSpring,
 } from 'react-native-reanimated'
 import { getServerUrl } from '../utils/getServerUrl'
+import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 import Button from './Button'
 import CustomText from './CustomText'
@@ -134,6 +135,7 @@ const DraggableMealItem = ({
 }
 
 const Table = () => {
+    const { isDesktop } = useResponsiveDimensions()
     const [dates, setDates] = useState([])
     const [mealsByDate, setMealsByDate] = useState({})
     const [isModalVisible, setIsModalVisible] = useState(false)
@@ -1065,7 +1067,7 @@ const Table = () => {
                 <CustomText style={styles.introText}>
                     Täältä löydät viikon lukujärjestyksesi
                 </CustomText>
-                <CustomText style={styles.infoText}>
+                <CustomText style={[styles.infoText, isDesktop && styles.infoTextDesktop]}>
                     Luo lukujärjestys ja suunnittele viikon ohjelma ja ateriat.
                     Lisää ateriat lukujärjestykseen helpottaaksesi arkea.
                 </CustomText>
@@ -1124,7 +1126,7 @@ const Table = () => {
                 data={dates}
                 renderItem={renderDateSection}
                 keyExtractor={(date) => format(date, 'yyyy-MM-dd')}
-                style={styles.list}
+                style={[styles.list, isDesktop && styles.listDesktop]}
                 contentContainerStyle={styles.listContent}
                 ListHeaderComponent={renderHeader}
                 showsVerticalScrollIndicator={true}
@@ -1198,12 +1200,15 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#fff',
         width: '100%',
-        padding: 10,
     },
     list: {
         width: '100%',
         zIndex: 1,
         overflow: 'visible',
+        paddingHorizontal: 10,
+    },
+    listDesktop: {
+        paddingHorizontal: 40,
     },
     listContent: {
         paddingBottom: 80,
@@ -1213,17 +1218,21 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         paddingTop: 20,
         paddingBottom: 10,
-        paddingHorizontal: 15,
+        paddingHorizontal: 10,
     },
     introText: {
-        fontSize: 19,
+        fontSize: 21,
         textAlign: 'left',
+        paddingTop: 5,
         marginBottom: 10,
     },
     infoText: {
-        fontSize: 17,
+        fontSize: 19,
         textAlign: 'left',
         marginBottom: 20,
+    },
+    infoTextDesktop: {
+        fontSize: 21,
     },
     weekNavigationContainer: {
         flexDirection: 'row',
