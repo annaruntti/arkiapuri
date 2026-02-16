@@ -1,7 +1,7 @@
 import { MaterialIcons } from '@expo/vector-icons'
 import axios from 'axios'
 import * as ImagePicker from 'expo-image-picker'
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
     Alert,
     FlatList,
@@ -13,6 +13,7 @@ import {
     TextInput,
     TouchableOpacity,
     View,
+    KeyboardAvoidingView,
 } from 'react-native'
 import { useLogin } from '../context/LoginProvider'
 import { getServerUrl } from '../utils/getServerUrl'
@@ -951,7 +952,11 @@ const AddMealForm = ({ onSubmit }) => {
     }, [])
 
     return (
-        <View style={styles.container}>
+        <KeyboardAvoidingView
+            style={styles.container}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+        >
             <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={styles.formScroll}
@@ -1289,7 +1294,7 @@ const AddMealForm = ({ onSubmit }) => {
                         </View>
                     </View>
                 </ScrollView>
-        </View>
+        </KeyboardAvoidingView>
     )
 }
 

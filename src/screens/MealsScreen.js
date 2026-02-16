@@ -13,7 +13,6 @@ import CategorySectionHeader from '../components/CategorySectionHeader'
 import CustomText from '../components/CustomText'
 import AddMealForm from '../components/FormAddMeal'
 import GenericFilter from '../components/GenericFilter'
-import GenericFilterSection from '../components/GenericFilterSection'
 import MealItem from '../components/MealItem'
 import MealItemDetail from '../components/MealItemDetail'
 import ResponsiveLayout from '../components/ResponsiveLayout'
@@ -447,6 +446,7 @@ const MealsScreen = ({ route, navigation }) => {
                 onButtonPress={() => setModalVisible(true)}
                 buttonStyle={styles.primaryButton}
                 buttonTextStyle={styles.buttonText}
+                showFilters={showFilters}
                 filterComponent={
                     <GenericFilter
                         selectedFilters={selectedDietFilters}
@@ -455,59 +455,54 @@ const MealsScreen = ({ route, navigation }) => {
                         buttonText="Suodata"
                     />
                 }
+                filterSectionProps={{
+                    selectedFilters: selectedDietFilters,
+                    filterTitle: "Suodata ruokavalioin mukaan",
+                    categories: dietCategories,
+                    onToggleFilter: toggleDietFilter,
+                    onClearFilters: () => setSelectedDietFilters([]),
+                    getItemCounts: () =>
+                        getMealCountsForCategories(
+                            filterMealsBySearch(meals, searchQuery)
+                        ),
+                    additionalFilterGroups: [
+                        {
+                            title: 'Vaikeustaso',
+                            selectedValue: selectedDifficultyFilter,
+                            onSelect: setSelectedDifficultyFilter,
+                            getItemCount: (difficulty) =>
+                                getMealCountByDifficulty(
+                                    filterMealsBySearch(meals, searchQuery),
+                                    difficulty
+                                ),
+                            options: [
+                                { value: 'easy', label: getDifficultyText('easy') },
+                                {
+                                    value: 'medium',
+                                    label: getDifficultyText('medium'),
+                                },
+                                { value: 'hard', label: getDifficultyText('hard') },
+                            ],
+                        },
+                        {
+                            title: 'Valmistusaika',
+                            selectedValue: selectedCookingTimeFilter,
+                            onSelect: setSelectedCookingTimeFilter,
+                            getItemCount: (maxTime) =>
+                                getMealCountByCookingTime(
+                                    filterMealsBySearch(meals, searchQuery),
+                                    maxTime
+                                ),
+                            options: [
+                                { value: 15, label: '≤ 15 min' },
+                                { value: 30, label: '≤ 30 min' },
+                                { value: 45, label: '≤ 45 min' },
+                                { value: 60, label: '≤ 60 min' },
+                            ],
+                        },
+                    ],
+                }}
             />
-
-            {/* Diet filters section */}
-            <GenericFilterSection
-                selectedFilters={selectedDietFilters}
-                showFilters={showFilters}
-                filterTitle="Suodata ruokavalioin mukaan"
-                categories={dietCategories}
-                onToggleFilter={toggleDietFilter}
-                onClearFilters={() => setSelectedDietFilters([])}
-                getItemCounts={() =>
-                    getMealCountsForCategories(
-                        filterMealsBySearch(meals, searchQuery)
-                    )
-                }
-                additionalFilterGroups={[
-                    {
-                        title: 'Vaikeustaso',
-                        selectedValue: selectedDifficultyFilter,
-                        onSelect: setSelectedDifficultyFilter,
-                        getItemCount: (difficulty) =>
-                            getMealCountByDifficulty(
-                                filterMealsBySearch(meals, searchQuery),
-                                difficulty
-                            ),
-                        options: [
-                            { value: 'easy', label: getDifficultyText('easy') },
-                            {
-                                value: 'medium',
-                                label: getDifficultyText('medium'),
-                            },
-                            { value: 'hard', label: getDifficultyText('hard') },
-                        ],
-                    },
-                    {
-                        title: 'Valmistusaika',
-                        selectedValue: selectedCookingTimeFilter,
-                        onSelect: setSelectedCookingTimeFilter,
-                        getItemCount: (maxTime) =>
-                            getMealCountByCookingTime(
-                                filterMealsBySearch(meals, searchQuery),
-                                maxTime
-                            ),
-                        options: [
-                            { value: 15, label: '≤ 15 min' },
-                            { value: 30, label: '≤ 30 min' },
-                            { value: 45, label: '≤ 45 min' },
-                            { value: 60, label: '≤ 60 min' },
-                        ],
-                    },
-                ]}
-            />
-
             {meals.length > 0 ? (
                 <ScrollView
                     style={styles.list}

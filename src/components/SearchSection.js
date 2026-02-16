@@ -1,8 +1,8 @@
 import { MaterialIcons } from '@expo/vector-icons'
-import React from 'react'
 import { TextInput, TouchableOpacity, View } from 'react-native'
 import Button from './Button'
 import CustomText from './CustomText'
+import { GenericFilterSection } from './GenericFilter'
 
 const SearchSection = ({
     searchQuery,
@@ -13,14 +13,14 @@ const SearchSection = ({
     resultsCount = 0,
     resultsText = 'Löytyi {count} tuotetta',
     noResultsText = 'Tuotteita ei löytynyt',
-    // Button section props
     showButtonSection = false,
     buttonTitle,
     onButtonPress,
     buttonStyle,
     buttonTextStyle,
-    // Filter component
     filterComponent,
+    showFilters,
+    filterSectionProps,
 }) => {
     return (
         <View style={styles.searchSection}>
@@ -73,6 +73,12 @@ const SearchSection = ({
                         )}
                         {filterComponent}
                     </View>
+                    {filterSectionProps && (
+                        <GenericFilterSection
+                            showFilters={showFilters}
+                            {...filterSectionProps}
+                        />
+                    )}
                 </View>
             )}
         </View>
@@ -130,5 +136,4 @@ const styles = {
         justifyContent: 'space-between',
     },
 }
-
 export default SearchSection
