@@ -1,7 +1,7 @@
-import { MaterialIcons } from '@expo/vector-icons'
-import React from 'react'
-import { TouchableOpacity, View } from 'react-native'
+import { View } from 'react-native'
+import ClearFiltersButton from './ClearFiltersButton'
 import CustomText from './CustomText'
+import FilterChip from './FilterChip'
 
 const CategoryFilterSection = ({
     categories,
@@ -22,7 +22,6 @@ const CategoryFilterSection = ({
                 </CustomText>
                 <View style={styles.filterChipsContainer}>
                     {categories.map((category) => {
-                        // Normalize for comparison to handle number/string mismatches
                         const isSelected = selectedFilters.some(
                             (filterId) =>
                                 String(filterId) === String(category.id)
@@ -31,59 +30,22 @@ const CategoryFilterSection = ({
                         const isDisabled = itemCount === 0
 
                         return (
-                            <TouchableOpacity
+                            <FilterChip
                                 key={category.id}
-                                style={[
-                                    styles.filterChip,
-                                    isSelected && styles.filterChipSelected,
-                                    isDisabled && styles.filterChipDisabled,
-                                ]}
+                                label={category.name}
+                                count={itemCount}
+                                isSelected={isSelected}
+                                isDisabled={isDisabled}
                                 onPress={() => onToggleFilter(category.id)}
-                                disabled={isDisabled}
-                            >
-                                <CustomText
-                                    style={[
-                                        styles.filterChipText,
-                                        isSelected &&
-                                            styles.filterChipTextSelected,
-                                        isDisabled &&
-                                            styles.filterChipTextDisabled,
-                                    ]}
-                                >
-                                    {category.name}
-                                </CustomText>
-                                <CustomText
-                                    style={[
-                                        styles.filterChipText,
-                                        isSelected &&
-                                            styles.filterChipTextSelected,
-                                        isDisabled &&
-                                            styles.filterChipTextDisabled,
-                                    ]}
-                                >
-                                    ({itemCount})
-                                </CustomText>
-                                {isSelected && (
-                                    <MaterialIcons
-                                        name="close"
-                                        size={16}
-                                        color="#000"
-                                        style={styles.filterChipIcon}
-                                    />
-                                )}
-                            </TouchableOpacity>
+                            />
                         )
                     })}
                 </View>
                 {selectedFilters.length > 0 && (
-                    <TouchableOpacity
-                        style={styles.clearFiltersButton}
+                    <ClearFiltersButton
                         onPress={onClearFilters}
-                    >
-                        <CustomText style={styles.clearFiltersText}>
-                            Tyhjennä suodattimet
-                        </CustomText>
-                    </TouchableOpacity>
+                        text="Tyhjennä suodattimet"
+                    />
                 )}
             </View>
         </View>
@@ -112,49 +74,6 @@ const styles = {
         flexWrap: 'wrap',
         gap: 8,
         marginBottom: 10,
-    },
-    filterChip: {
-        backgroundColor: '#e0e0e0',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 20,
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: 'transparent',
-    },
-    filterChipSelected: {
-        backgroundColor: '#9C86FC',
-        borderColor: '#9C86FC',
-    },
-    filterChipDisabled: {
-        backgroundColor: '#f5f5f5',
-        opacity: 0.5,
-    },
-    filterChipText: {
-        fontSize: 14,
-        color: '#333',
-        marginRight: 4,
-    },
-    filterChipTextSelected: {
-        color: '#000',
-        fontWeight: 'bold',
-    },
-    filterChipTextDisabled: {
-        color: '#999',
-    },
-    filterChipIcon: {
-        marginLeft: 4,
-    },
-    clearFiltersButton: {
-        alignSelf: 'flex-start',
-        paddingVertical: 4,
-        paddingHorizontal: 8,
-    },
-    clearFiltersText: {
-        fontSize: 12,
-        color: '#9C86FC',
-        textDecorationLine: 'underline',
     },
 }
 

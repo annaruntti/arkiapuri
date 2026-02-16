@@ -1,37 +1,46 @@
-import { MaterialIcons } from '@expo/vector-icons'
 import axios from 'axios'
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
     Alert,
-    Image,
     Platform,
     RefreshControl,
     ScrollView,
     StyleSheet,
-    TouchableOpacity,
     View,
 } from 'react-native'
+import ActiveFilterBanner from '../components/ActiveFilterBanner'
 import CategorySectionHeader from '../components/CategorySectionHeader'
 import CustomText from '../components/CustomText'
 import AddMealForm from '../components/FormAddMeal'
 import GenericFilter from '../components/GenericFilter'
 import GenericFilterSection from '../components/GenericFilterSection'
+import MealItem from '../components/MealItem'
 import MealItemDetail from '../components/MealItemDetail'
 import ResponsiveLayout from '../components/ResponsiveLayout'
 import ResponsiveModal from '../components/ResponsiveModal'
 import SearchSection from '../components/SearchSection'
-import categoriesData from '../data/categories.json'
 import { getServerUrl } from '../utils/getServerUrl'
 import {
     getDifficultyText,
-    getMealCategoryText,
     getMealRoleText,
 } from '../utils/mealUtils'
+import {
+    filterMealsBySearch,
+    filterMealsByDiet,
+    filterMealsByDifficulty,
+    filterMealsByCookingTime,
+    filterMealsByType,
+    getDietCategories,
+    getCategoryMappings,
+    getMealCountByDifficulty,
+    getMealCountByCookingTime,
+} from '../utils/mealFilters'
+import {
+    groupMealsByCategory,
+    getMealCountsForCategories,
+} from '../utils/mealGrouping'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
-
-const PLACEHOLDER_IMAGE_URL =
-    'https://images.ctfassets.net/2pij69ehhf4n/3b9imD6TDC4i68V4uHVgL1/1ac1194dccb086bb52ebd674c59983e3/undraw_breakfast_rgx5.png'
 
 const MealsScreen = ({ route, navigation }) => {
     const [modalVisible, setModalVisible] = useState(false)
@@ -48,7 +57,7 @@ const MealsScreen = ({ route, navigation }) => {
         useState(null)
     const { isDesktop } = useResponsiveDimensions()
 
-    // Get filter params from navigation - only use if they have actual values
+    // Get filter params from navigation, use only if they have actual values
     const filterDifficulty =
         route?.params?.filterDifficulty &&
         route.params.filterDifficulty !== null &&
@@ -80,121 +89,10 @@ const MealsScreen = ({ route, navigation }) => {
     }
 
     // Get diet categories from categories.json
-    const dietCategories =
-        categoriesData.find((cat) => cat.id === 'diets')?.children || []
+    const dietCategories = getDietCategories()
+    const { categoryNameToId } = getCategoryMappings()
 
-    // Create a mapping of category names to IDs and vice versa
-    const categoryNameToId = {}
-    const categoryIdToName = {}
-    dietCategories.forEach((cat) => {
-        categoryNameToId[cat.name] = String(cat.id)
-        categoryIdToName[String(cat.id)] = cat.name
-    })
-
-    // Determine which dietary categories a meal qualifies for
-    // A meal qualifies if ALL its food items have that category
-    const getMealDietaryCategories = (meal) => {
-        if (!meal.foodItems || meal.foodItems.length === 0) {
-            return []
-        }
-
-        const qualifiedCategories = []
-
-        dietCategories.forEach((dietCategory) => {
-            const categoryId = String(dietCategory.id)
-            const categoryName = dietCategory.name
-
-            // Check if ALL food items have this dietary category
-            const allItemsHaveCategory = meal.foodItems.every((foodItem) => {
-                // Check if foodItem is just an ID (not populated)
-                if (typeof foodItem === 'string' || !foodItem.category) {
-                    return false
-                }
-
-                const itemCategories = foodItem.category || []
-                // Check if the category exists as either ID or name
-                const hasCategory = itemCategories.some((cat) => {
-                    const catStr = String(cat).trim()
-                    // Compare both as ID and as name
-                    return catStr === categoryId || catStr === categoryName
-                })
-                return hasCategory
-            })
-
-            if (allItemsHaveCategory) {
-                qualifiedCategories.push(categoryId)
-            }
-        })
-
-        return qualifiedCategories
-    }
-
-    // Filter meals by search query
-    const filterMealsBySearch = (meals) => {
-        if (!searchQuery.trim()) {
-            return meals
-        }
-
-        return meals.filter((meal) =>
-            meal.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
-        )
-    }
-
-    // Filter meals based on selected dietary filters
-    const filterMealsByDiet = (meals) => {
-        if (selectedDietFilters.length === 0) {
-            return meals
-        }
-
-        return meals.filter((meal) => {
-            const mealCategories = getMealDietaryCategories(meal)
-
-            // Meal must have ALL selected diet filters
-            return selectedDietFilters.every((filterId) =>
-                mealCategories.includes(filterId)
-            )
-        })
-    }
-
-    // Filter meals by difficulty level
-    const filterMealsByDifficulty = (meals) => {
-        const difficulty = selectedDifficultyFilter || filterDifficulty
-        if (!difficulty) {
-            return meals
-        }
-
-        return meals.filter((meal) => {
-            const mealDifficulty = meal.difficultyLevel
-                ? String(meal.difficultyLevel).toLowerCase()
-                : 'medium'
-            return mealDifficulty === difficulty.toLowerCase()
-        })
-    }
-
-    // Filter meals by cooking time
-    const filterMealsByCookingTime = (meals) => {
-        const maxTime = selectedCookingTimeFilter || filterMaxCookingTime
-        if (!maxTime) {
-            return meals
-        }
-
-        return meals.filter((meal) => {
-            const cookingTime = parseInt(meal.cookingTime) || 0
-            return cookingTime > 0 && cookingTime <= maxTime
-        })
-    }
-
-    // Filter meals by meal type (defaultRoles)
-    const filterMealsByType = (meals) => {
-        if (!filterMealType) {
-            return meals
-        }
-
-        return meals.filter((meal) => {
-            const roles = meal.defaultRoles || []
-            return roles.includes(filterMealType)
-        })
-    }
+    // Note: Filter functions are now imported from utils/mealFilters.js
 
     const toggleDietFilter = (categoryId) => {
         setSelectedDietFilters((prev) => {
@@ -212,74 +110,7 @@ const MealsScreen = ({ route, navigation }) => {
         })
     }
 
-    const getMealCountsForCategories = () => {
-        const counts = {}
-        const searchedMeals = filterMealsBySearch(meals)
-
-        dietCategories.forEach((category) => {
-            counts[category.id] = searchedMeals.filter((meal) => {
-                const mealCategories = getMealDietaryCategories(meal)
-                return mealCategories.includes(String(category.id))
-            }).length
-        })
-
-        return counts
-    }
-
-    // Get meal counts by difficulty level
-    const getMealCountByDifficulty = (difficulty) => {
-        const searchedMeals = filterMealsBySearch(meals)
-        return searchedMeals.filter((meal) => {
-            const mealDifficulty = meal.difficultyLevel
-                ? String(meal.difficultyLevel).toLowerCase()
-                : 'medium'
-            return mealDifficulty === difficulty.toLowerCase()
-        }).length
-    }
-
-    // Get meal counts by cooking time
-    const getMealCountByCookingTime = (maxTime) => {
-        const searchedMeals = filterMealsBySearch(meals)
-        return searchedMeals.filter((meal) => {
-            const cookingTime = parseInt(meal.cookingTime) || 0
-            return cookingTime > 0 && cookingTime <= maxTime
-        }).length
-    }
-
-    // Group meals by their default roles
-    const groupMealsByCategory = (meals) => {
-        const grouped = {}
-
-        meals.forEach((meal) => {
-            const roles = meal.defaultRoles || ['other']
-            roles.forEach((role) => {
-                if (!grouped[role]) {
-                    grouped[role] = []
-                }
-                grouped[role].push(meal)
-            })
-        })
-
-        // Sort categories by predefined order
-        const categoryOrder = [
-            'breakfast',
-            'lunch',
-            'snack',
-            'dinner',
-            'supper',
-            'dessert',
-            'other',
-        ]
-        const sortedGrouped = {}
-
-        categoryOrder.forEach((category) => {
-            if (grouped[category] && grouped[category].length > 0) {
-                sortedGrouped[category] = grouped[category]
-            }
-        })
-
-        return sortedGrouped
-    }
+    // Note: Grouping and count functions are now imported from utils
 
     const fetchMeals = async () => {
         try {
@@ -492,7 +323,7 @@ const MealsScreen = ({ route, navigation }) => {
                 })
             )
 
-            // Now update the meal with only the necessary fields
+            // Update the meal with only the necessary fields
             const cleanedMeal = {
                 name: updatedMeal.name,
                 cookingTime: parseInt(updatedMeal.cookingTime) || 0,
@@ -540,57 +371,19 @@ const MealsScreen = ({ route, navigation }) => {
         }
     }
 
-    const DeleteButton = ({ onPress }) => (
-        <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={onPress}
-            activeOpacity={0.7}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-            <MaterialIcons name="delete" size={20} color="#666" />
-        </TouchableOpacity>
-    )
-
-    const renderItem = ({ item }) => (
-        <View style={styles.itemContainer}>
-            <TouchableOpacity
-                style={styles.itemInfo}
-                onPress={() => handleMealPress(item)}
-            >
-                <Image
-                    source={{
-                        uri: item.image?.url || PLACEHOLDER_IMAGE_URL,
-                    }}
-                    style={styles.mealImage}
-                    resizeMode="cover"
-                />
-                <View style={styles.mealTextContainer}>
-                    <CustomText style={styles.itemName}>{item.name}</CustomText>
-                    <CustomText style={styles.itemDetails}>
-                        {getMealCategoryText(item.mealCategory)} •{' '}
-                        {getDifficultyText(item.difficultyLevel)} •{' '}
-                        {item.cookingTime} min
-                    </CustomText>
-                </View>
-            </TouchableOpacity>
-            <View style={styles.itemActions}>
-                <DeleteButton
-                    onPress={() => {
-                        handleDeleteMeal(item._id)
-                    }}
-                />
-            </View>
-        </View>
-    )
-
     const renderCategorySection = (category, mealsInCategory) => (
         <View key={category} style={styles.categorySection}>
             <CategorySectionHeader
                 title={getMealRoleText(category)}
                 count={mealsInCategory.length}
             />
-            {mealsInCategory.map((meal, index) => (
-                <View key={meal._id}>{renderItem({ item: meal })}</View>
+            {mealsInCategory.map((meal) => (
+                <MealItem
+                    key={meal._id}
+                    item={meal}
+                    onPress={handleMealPress}
+                    onDelete={handleDeleteMeal}
+                />
             ))}
         </View>
     )
@@ -636,9 +429,15 @@ const MealsScreen = ({ route, navigation }) => {
                     filterMealsByCookingTime(
                         filterMealsByDifficulty(
                             filterMealsByType(
-                                filterMealsByDiet(filterMealsBySearch(meals))
-                            )
-                        )
+                                filterMealsByDiet(
+                                    filterMealsBySearch(meals, searchQuery),
+                                    selectedDietFilters
+                                ),
+                                filterMealType
+                            ),
+                            selectedDifficultyFilter || filterDifficulty
+                        ),
+                        selectedCookingTimeFilter || filterMaxCookingTime
                     ).length
                 }
                 resultsText="Löytyi {count} ateriaa"
@@ -666,13 +465,21 @@ const MealsScreen = ({ route, navigation }) => {
                 categories={dietCategories}
                 onToggleFilter={toggleDietFilter}
                 onClearFilters={() => setSelectedDietFilters([])}
-                getItemCounts={getMealCountsForCategories}
+                getItemCounts={() =>
+                    getMealCountsForCategories(
+                        filterMealsBySearch(meals, searchQuery)
+                    )
+                }
                 additionalFilterGroups={[
                     {
                         title: 'Vaikeustaso',
                         selectedValue: selectedDifficultyFilter,
                         onSelect: setSelectedDifficultyFilter,
-                        getItemCount: getMealCountByDifficulty,
+                        getItemCount: (difficulty) =>
+                            getMealCountByDifficulty(
+                                filterMealsBySearch(meals, searchQuery),
+                                difficulty
+                            ),
                         options: [
                             { value: 'easy', label: getDifficultyText('easy') },
                             {
@@ -686,7 +493,11 @@ const MealsScreen = ({ route, navigation }) => {
                         title: 'Valmistusaika',
                         selectedValue: selectedCookingTimeFilter,
                         onSelect: setSelectedCookingTimeFilter,
-                        getItemCount: getMealCountByCookingTime,
+                        getItemCount: (maxTime) =>
+                            getMealCountByCookingTime(
+                                filterMealsBySearch(meals, searchQuery),
+                                maxTime
+                            ),
                         options: [
                             { value: 15, label: '≤ 15 min' },
                             { value: 30, label: '≤ 30 min' },
@@ -709,65 +520,36 @@ const MealsScreen = ({ route, navigation }) => {
                     }
                 >
                     {/* Active filter indicator */}
-                    {(!!filterDifficulty ||
-                        !!filterMaxCookingTime ||
-                        !!filterMealType ||
-                        !!selectedDifficultyFilter ||
-                        !!selectedCookingTimeFilter) && (
-                        <View style={styles.activeFilterBanner}>
-                            <MaterialIcons
-                                name="filter-list"
-                                size={20}
-                                color="#9C86FC"
-                            />
-                            <CustomText style={styles.activeFilterText}>
-                                Näytetään:{' '}
-                                {(filterDifficulty ||
-                                    selectedDifficultyFilter) &&
-                                    `${getDifficultyText(
-                                        filterDifficulty ||
-                                            selectedDifficultyFilter
-                                    )}`}
-                                {(filterDifficulty ||
-                                    selectedDifficultyFilter) &&
-                                    (filterMaxCookingTime ||
-                                        selectedCookingTimeFilter ||
-                                        filterMealType) &&
-                                    ', '}
-                                {(filterMaxCookingTime ||
-                                    selectedCookingTimeFilter) &&
-                                    `Valmistusaika ≤ ${
-                                        filterMaxCookingTime ||
-                                        selectedCookingTimeFilter
-                                    } min`}
-                                {(filterMaxCookingTime ||
-                                    selectedCookingTimeFilter) &&
-                                    filterMealType &&
-                                    ', '}
-                                {filterMealType &&
-                                    `${getMealRoleText(filterMealType)}`}
-                            </CustomText>
-                            <TouchableOpacity
-                                onPress={clearNavigationFilters}
-                                style={styles.activeFilterCloseButton}
-                            >
-                                <MaterialIcons
-                                    name="close"
-                                    size={20}
-                                    color="#666"
-                                />
-                            </TouchableOpacity>
-                        </View>
-                    )}
+                    <ActiveFilterBanner
+                        filterDifficulty={filterDifficulty}
+                        selectedDifficultyFilter={selectedDifficultyFilter}
+                        filterMaxCookingTime={filterMaxCookingTime}
+                        selectedCookingTimeFilter={selectedCookingTimeFilter}
+                        filterMealType={filterMealType}
+                        onClear={clearNavigationFilters}
+                    />
 
                     {(() => {
-                        const searchedMeals = filterMealsBySearch(meals)
-                        const dietFiltered = filterMealsByDiet(searchedMeals)
-                        const typeFiltered = filterMealsByType(dietFiltered)
-                        const difficultyFiltered =
-                            filterMealsByDifficulty(typeFiltered)
-                        const filteredMeals =
-                            filterMealsByCookingTime(difficultyFiltered)
+                        const searchedMeals = filterMealsBySearch(
+                            meals,
+                            searchQuery
+                        )
+                        const dietFiltered = filterMealsByDiet(
+                            searchedMeals,
+                            selectedDietFilters
+                        )
+                        const typeFiltered = filterMealsByType(
+                            dietFiltered,
+                            filterMealType
+                        )
+                        const difficultyFiltered = filterMealsByDifficulty(
+                            typeFiltered,
+                            selectedDifficultyFilter || filterDifficulty
+                        )
+                        const filteredMeals = filterMealsByCookingTime(
+                            difficultyFiltered,
+                            selectedCookingTimeFilter || filterMaxCookingTime
+                        )
                         const groupedMeals = groupMealsByCategory(filteredMeals)
 
                         if (Object.keys(groupedMeals).length === 0) {
@@ -868,67 +650,6 @@ const styles = StyleSheet.create({
         fontSize: 21,
         paddingVertical: 16,
     },
-    itemContainer: {
-        backgroundColor: '#f8f8f8',
-        padding: 15,
-        borderRadius: 10,
-        marginBottom: 10,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 1,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 2,
-    },
-    itemInfo: {
-        flex: 1,
-        flexDirection: 'row',
-        marginRight: 10,
-        alignItems: 'center',
-    },
-    mealImage: {
-        width: 60,
-        height: 60,
-        borderRadius: 8,
-        marginRight: 12,
-    },
-    mealTextContainer: {
-        flex: 1,
-        flexDirection: 'column',
-    },
-    itemName: {
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
-    itemDetails: {
-        color: '#666',
-        fontSize: 14,
-    },
-    itemActions: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    deleteButton: {
-        backgroundColor: '#e0e0e0',
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        justifyContent: 'center',
-        alignItems: 'center',
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 1,
-        },
-        shadowOpacity: 0.2,
-        shadowRadius: 1.41,
-    },
     list: {
         width: '100%',
     },
@@ -971,28 +692,6 @@ const styles = StyleSheet.create({
         maxWidth: 960,
         alignSelf: 'center',
         paddingHorizontal: 40,
-    },
-    activeFilterBanner: {
-        backgroundColor: '#F3F0FF',
-        borderLeftWidth: 4,
-        borderLeftColor: '#9C86FC',
-        padding: 12,
-        marginTop: 10,
-        marginBottom: 10,
-        borderRadius: 8,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-    },
-    activeFilterText: {
-        fontSize: 14,
-        color: '#333',
-        fontWeight: '500',
-        flex: 1,
-    },
-    activeFilterCloseButton: {
-        padding: 4,
-        marginLeft: 8,
     },
 })
 

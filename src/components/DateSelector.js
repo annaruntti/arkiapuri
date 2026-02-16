@@ -1,7 +1,8 @@
 import { MaterialIcons } from '@expo/vector-icons'
 import { format } from 'date-fns'
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { StyleSheet, TouchableOpacity, View } from 'react-native'
+import ClearFiltersButton from './ClearFiltersButton'
 import CustomText from './CustomText'
 
 const DateSelector = ({
@@ -62,14 +63,10 @@ const DateSelector = ({
                         })}
                     </View>
                     {selectedDates.length > 0 && (
-                        <TouchableOpacity
-                            style={styles.clearDatesButton}
+                        <ClearFiltersButton
                             onPress={onClearSelection}
-                        >
-                            <CustomText style={styles.clearDatesButtonText}>
-                                Tyhjennä valinnat
-                            </CustomText>
-                        </TouchableOpacity>
+                            text="Tyhjennä valinnat"
+                        />
                     )}
                 </>
             )}
@@ -123,15 +120,9 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontWeight: 'bold',
     },
-    clearDatesButton: {
-        alignSelf: 'flex-start',
-        paddingVertical: 4,
-        paddingHorizontal: 8,
-    },
-    clearDatesButtonText: {
-        fontSize: 12,
-        color: '#9C86FC',
-        textDecorationLine: 'underline',
+    selectedDateButtonText: {
+        color: '#fff',
+        fontWeight: 'bold',
     },
 })
 

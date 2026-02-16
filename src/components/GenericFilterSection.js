@@ -1,7 +1,9 @@
 import { MaterialIcons } from '@expo/vector-icons'
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { ScrollView, TouchableOpacity, View } from 'react-native'
+import ClearFiltersButton from './ClearFiltersButton'
 import CustomText from './CustomText'
+import FilterChip from './FilterChip'
 
 const GenericFilterSection = ({
     selectedFilters,
@@ -60,7 +62,6 @@ const GenericFilterSection = ({
                         <>
                             <View style={styles.filterChipsContainer}>
                                 {categories.map((category) => {
-                                    // Normalize for comparison to handle number/string mismatches
                                     const isSelected = selectedFilters.some(
                                         (filterId) =>
                                             String(filterId) ===
@@ -72,65 +73,24 @@ const GenericFilterSection = ({
                                         itemCount === 0 || disabled
 
                                     return (
-                                        <TouchableOpacity
+                                        <FilterChip
                                             key={category.id}
-                                            style={[
-                                                styles.filterChip,
-                                                isSelected &&
-                                                    styles.filterChipSelected,
-                                                isDisabled &&
-                                                    styles.filterChipDisabled,
-                                            ]}
+                                            label={category.name}
+                                            count={itemCount}
+                                            isSelected={isSelected}
+                                            isDisabled={isDisabled}
                                             onPress={() =>
                                                 onToggleFilter(category.id)
                                             }
-                                            disabled={isDisabled}
-                                        >
-                                            <CustomText
-                                                style={[
-                                                    styles.filterChipText,
-                                                    isSelected &&
-                                                        styles.filterChipTextSelected,
-                                                    isDisabled &&
-                                                        styles.filterChipTextDisabled,
-                                                ]}
-                                            >
-                                                {category.name}
-                                            </CustomText>
-                                            <CustomText
-                                                style={[
-                                                    styles.filterChipText,
-                                                    isSelected &&
-                                                        styles.filterChipTextSelected,
-                                                    isDisabled &&
-                                                        styles.filterChipTextDisabled,
-                                                ]}
-                                            >
-                                                ({itemCount})
-                                            </CustomText>
-                                            {isSelected && (
-                                                <MaterialIcons
-                                                    name="close"
-                                                    size={16}
-                                                    color="#fff"
-                                                    style={
-                                                        styles.filterChipIcon
-                                                    }
-                                                />
-                                            )}
-                                        </TouchableOpacity>
+                                        />
                                     )
                                 })}
                             </View>
                             {selectedFilters.length > 0 && (
-                                <TouchableOpacity
-                                    style={styles.clearFiltersButton}
+                                <ClearFiltersButton
                                     onPress={onClearFilters}
-                                >
-                                    <CustomText style={styles.clearFiltersText}>
-                                        Tyhjennä suodattimet
-                                    </CustomText>
-                                </TouchableOpacity>
+                                    text="Tyhjennä suodattimet"
+                                />
                             )}
                         </>
                     )}
@@ -163,14 +123,15 @@ const GenericFilterSection = ({
                                             ? group.getItemCount(option.value)
                                             : null
                                         return (
-                                            <TouchableOpacity
+                                            <FilterChip
                                                 key={option.value}
-                                                style={[
-                                                    styles.filterChip,
+                                                label={option.label}
+                                                count={count}
+                                                isSelected={
                                                     group.selectedValue ===
-                                                        option.value &&
-                                                        styles.filterChipSelected,
-                                                ]}
+                                                    option.value
+                                                }
+                                                isDisabled={false}
                                                 onPress={() =>
                                                     group.onSelect(
                                                         group.selectedValue ===
@@ -179,30 +140,7 @@ const GenericFilterSection = ({
                                                             : option.value
                                                     )
                                                 }
-                                            >
-                                                <CustomText
-                                                    style={[
-                                                        styles.filterChipText,
-                                                        group.selectedValue ===
-                                                            option.value &&
-                                                            styles.filterChipTextSelected,
-                                                    ]}
-                                                >
-                                                    {option.label}
-                                                </CustomText>
-                                                {count !== null && (
-                                                    <CustomText
-                                                        style={[
-                                                            styles.filterChipText,
-                                                            group.selectedValue ===
-                                                                option.value &&
-                                                                styles.filterChipTextSelected,
-                                                        ]}
-                                                    >
-                                                        ({count})
-                                                    </CustomText>
-                                                )}
-                                            </TouchableOpacity>
+                                            />
                                         )
                                     })}
                                 </View>
@@ -247,49 +185,6 @@ const styles = {
         flexWrap: 'wrap',
         gap: 8,
         marginBottom: 10,
-    },
-    filterChip: {
-        backgroundColor: '#e0e0e0',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 20,
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: 'transparent',
-    },
-    filterChipSelected: {
-        backgroundColor: '#9C86FC',
-        borderColor: '#9C86FC',
-    },
-    filterChipDisabled: {
-        backgroundColor: '#f5f5f5',
-        opacity: 0.5,
-    },
-    filterChipText: {
-        fontSize: 14,
-        color: '#333',
-        marginRight: 4,
-    },
-    filterChipTextSelected: {
-        color: '#fff',
-        fontWeight: 'bold',
-    },
-    filterChipTextDisabled: {
-        color: '#999',
-    },
-    filterChipIcon: {
-        marginLeft: 4,
-    },
-    clearFiltersButton: {
-        alignSelf: 'flex-start',
-        paddingVertical: 4,
-        paddingHorizontal: 8,
-    },
-    clearFiltersText: {
-        fontSize: 12,
-        color: '#9C86FC',
-        textDecorationLine: 'underline',
     },
     additionalFilterGroup: {
         marginTop: 15,
