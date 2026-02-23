@@ -17,19 +17,14 @@ import ResponsiveLayout from '../components/ResponsiveLayout'
 import ResponsiveModal from '../components/ResponsiveModal'
 import { useLogin } from '../context/LoginProvider'
 import { getServerUrl } from '../utils/getServerUrl'
-import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 
 const FamilyManagementScreen = ({ navigation }) => {
     const { profile } = useLogin()
-    const { isDesktop, isTablet } = useResponsiveDimensions()
     const [household, setHousehold] = useState(null)
     const [loading, setLoading] = useState(true)
     const [inviteEmail, setInviteEmail] = useState('')
-    const [invitationCode, setInvitationCode] = useState('')
     const [showInviteModal, setShowInviteModal] = useState(false)
-    const [showJoinModal, setShowJoinModal] = useState(false)
-    const [generatedCode, setGeneratedCode] = useState(null)
 
     const defaultImage = {
         uri: 'https://images.ctfassets.net/hef5a6s5axrs/2wzxlzyydJLVr8T7k67cOO/90074490ee64362fe6f0e384d2b3daf8/arkiapuri-removebg-preview.png',
@@ -133,42 +128,6 @@ const FamilyManagementScreen = ({ navigation }) => {
                 'Virhe',
                 error.response?.data?.message ||
                     'Jäsenen kutsuminen epäonnistui'
-            )
-        }
-    }
-
-    const handleJoinHousehold = async () => {
-        if (!invitationCode.trim()) {
-            Alert.alert('Virhe', 'Syötä kutsukoodi')
-            return
-        }
-
-        try {
-            const token = await storage.getItem('userToken')
-            const response = await axios.post(
-                getServerUrl('/household/join'),
-                {
-                    invitationCode: invitationCode.trim(),
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            )
-
-            if (response.data.success) {
-                Alert.alert('Onnistui', 'Liityit perheeseen onnistuneesti')
-                setInvitationCode('')
-                setShowJoinModal(false)
-                fetchHousehold()
-            }
-        } catch (error) {
-            console.error('Error joining household:', error)
-            Alert.alert(
-                'Virhe',
-                error.response?.data?.message ||
-                    'Perheeseen liittyminen epäonnistui'
             )
         }
     }
@@ -284,7 +243,7 @@ const FamilyManagementScreen = ({ navigation }) => {
                         </CustomText>
                         <CustomText style={styles.emptySubtitle}>
                             Luo oma perhe tai liity olemassa olevaan perheeseen
-                            kutsukoodilla
+                            kutsulinkin kautta
                         </CustomText>
 
                         <View style={styles.actionButtons}>
@@ -294,41 +253,9 @@ const FamilyManagementScreen = ({ navigation }) => {
                                 style={styles.primaryButton}
                                 textStyle={styles.buttonText}
                             />
-                            <Button
-                                title="Liity perheeseen"
-                                onPress={() => setShowJoinModal(true)}
-                                style={styles.secondaryButton}
-                                textStyle={styles.buttonText}
-                            />
                         </View>
                     </View>
                 </ScrollView>
-
-                {/* Join Household Modal */}
-                <ResponsiveModal
-                    visible={showJoinModal}
-                    onClose={() => setShowJoinModal(false)}
-                    title="Liity perheeseen"
-                >
-                    <View style={styles.modalContent}>
-                        <CustomText style={styles.modalDescription}>
-                            Syötä perheenjäsenen sinulle lähettämä kutsukoodi
-                        </CustomText>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Kutsukoodi"
-                            value={invitationCode}
-                            onChangeText={setInvitationCode}
-                            autoCapitalize="none"
-                        />
-                        <Button
-                            title="Liity"
-                            onPress={handleJoinHousehold}
-                            style={styles.primaryButton}
-                            textStyle={styles.buttonText}
-                        />
-                    </View>
-                </ResponsiveModal>
             </ResponsiveLayout>
         )
     }
