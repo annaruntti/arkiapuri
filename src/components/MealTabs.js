@@ -1,6 +1,6 @@
-import { Feather, MaterialIcons } from '@expo/vector-icons'
 import { useState } from 'react'
 import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native'
+import { Feather, MaterialIcons } from '@expo/vector-icons'
 import Button from './Button'
 import CustomText from './CustomText'
 import FoodItemRow from './FoodItemRow'

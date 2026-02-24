@@ -1,6 +1,5 @@
-import { MaterialIcons } from '@expo/vector-icons'
-import React from 'react'
 import { Image, StyleSheet, TouchableOpacity, View } from 'react-native'
+import { MaterialIcons } from '@expo/vector-icons'
 import { useResponsiveDimensions } from '../utils/responsive'
 import CustomText from './CustomText'
 
@@ -8,9 +7,6 @@ const FilteredMealsCard = ({
     title,
     subtitle,
     image,
-    filterDifficulty,
-    filterMaxCookingTime,
-    filterMealType,
     onPress,
 }) => {
     const { isTablet, isDesktop } = useResponsiveDimensions()

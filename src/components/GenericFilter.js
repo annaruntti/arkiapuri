@@ -1,6 +1,6 @@
-import { MaterialIcons } from '@expo/vector-icons'
 import React from 'react'
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native'
+import { MaterialIcons } from '@expo/vector-icons'
 import ClearFiltersButton from './ClearFiltersButton'
 import CustomText from './CustomText'
 import FilterChip from './FilterChip'

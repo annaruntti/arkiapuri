@@ -1,5 +1,5 @@
-import { MaterialIcons } from '@expo/vector-icons'
-import React, { useEffect, useState } from 'react'
+import axios from '../api/client'
+import { useEffect, useState } from 'react'
 import {
     ActivityIndicator,
     Image,
@@ -7,7 +7,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native'
-import axios from '../api/client'
+import { MaterialIcons } from '@expo/vector-icons'
 import { useResponsiveDimensions } from '../utils/responsive'
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'

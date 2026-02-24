@@ -1,4 +1,3 @@
-import React from 'react'
 import { Image, StyleSheet, View } from 'react-native'
 import { useResponsiveDimensions } from '../utils/responsive'
 import Button from './Button'

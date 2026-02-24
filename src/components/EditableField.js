@@ -1,5 +1,4 @@
 import { Feather, MaterialIcons } from '@expo/vector-icons'
-import React from 'react'
 import {
     ScrollView,
     StyleSheet,
@@ -48,7 +47,6 @@ const EditableField = ({
     editedValue,
     onToggleEdit,
     onChange,
-    onDifficultyPickerOpen,
     type = 'text',
 }) => {
     // Difficulty level field with scroll picker

@@ -1,7 +1,5 @@
-import { MaterialIcons } from '@expo/vector-icons'
 import axios from 'axios'
-import * as ImagePicker from 'expo-image-picker'
-import React, { useState } from 'react'
+import { useState } from 'react'
 import {
     Alert,
     Image,
@@ -10,12 +8,17 @@ import {
     StyleSheet,
     TouchableOpacity,
     View,
+    ActivityIndicator,
 } from 'react-native'
+import { MaterialIcons } from '@expo/vector-icons'
+import * as ImagePicker from 'expo-image-picker'
+
 import categoriesData from '../data/categories.json'
 import { getServerUrl } from '../utils/getServerUrl'
 import { analyzeImage } from '../utils/googleVision'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
+
 import Button from './Button'
 import CategorySectionHeader from './CategorySectionHeader'
 import CustomText from './CustomText'
@@ -582,6 +585,11 @@ const ShoppingListDetail = ({
 
     return (
         <View style={styles.container}>
+            {loading && (
+                <View style={styles.loadingOverlay}>
+                    <ActivityIndicator size="large" color="#9C86FC" />
+                </View>
+            )}
             {showItemForm ? (
                 <View style={styles.formWrapper}>
                     <View style={styles.formHeader}>
@@ -1021,6 +1029,14 @@ const styles = StyleSheet.create({
     desktopButtonContainer: {
         justifyContent: 'center',
         alignItems: 'center',
+    },
+
+    loadingOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(255,255,255,0.7)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 100,
     },
 })
 

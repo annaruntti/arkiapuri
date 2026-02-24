@@ -1,5 +1,4 @@
-import { MaterialIcons } from '@expo/vector-icons'
-import React, { useState } from 'react'
+import { useState } from 'react'
 import {
     Animated,
     Pressable,
@@ -8,6 +7,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native'
+import { MaterialIcons } from '@expo/vector-icons'
 import Button from './Button'
 import CustomText from './CustomText'
 

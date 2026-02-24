@@ -1,7 +1,6 @@
-import React from 'react'
 import { View, StyleSheet, Modal, Pressable } from 'react-native'
-import CustomText from './CustomText'
 import { AntDesign } from '@expo/vector-icons'
+import CustomText from './CustomText'
 
 const CustomModal = ({
     visible,

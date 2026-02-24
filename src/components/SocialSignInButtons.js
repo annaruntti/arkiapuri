@@ -1,6 +1,3 @@
-import { Ionicons } from '@expo/vector-icons'
-import * as WebBrowser from 'expo-web-browser'
-import React from 'react'
 import {
     Alert,
     Platform,
@@ -8,6 +5,8 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
+import * as WebBrowser from 'expo-web-browser'
 import { getServerUrl } from '../utils/getServerUrl'
 import CustomText from './CustomText'
 

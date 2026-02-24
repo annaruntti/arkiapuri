@@ -1,7 +1,4 @@
-import { MaterialIcons } from '@expo/vector-icons'
 import axios from 'axios'
-import * as ImagePicker from 'expo-image-picker'
-import { useEffect, useState } from 'react'
 import {
     Alert,
     FlatList,
@@ -15,11 +12,16 @@ import {
     View,
     KeyboardAvoidingView,
 } from 'react-native'
+import { useEffect, useState } from 'react'
+import * as ImagePicker from 'expo-image-picker'
+import { MaterialIcons } from '@expo/vector-icons'
+
 import { useLogin } from '../context/LoginProvider'
 import { getServerUrl } from '../utils/getServerUrl'
 import { getDifficultyEnum, mealRoles } from '../utils/mealUtils'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
+
 import Button from './Button'
 import CustomText from './CustomText'
 import DateTimePicker from './DateTimePicker'

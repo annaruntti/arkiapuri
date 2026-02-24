@@ -1,4 +1,3 @@
-import React from 'react'
 
 // Simple web date input wrapper to mimic native API used in our forms
 const DateTimePicker = ({ value, onChange, testID, minimumDate }) => {

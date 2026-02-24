@@ -1,8 +1,5 @@
-import { MaterialIcons } from '@expo/vector-icons'
 import axios from 'axios'
-import { addDays, format } from 'date-fns'
-import { fi } from 'date-fns/locale'
-import React, { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
     Alert,
     FlatList,
@@ -12,6 +9,9 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native'
+import { MaterialIcons } from '@expo/vector-icons'
+import { addDays, format } from 'date-fns'
+import { fi } from 'date-fns/locale'
 import {
     Gesture,
     GestureDetector,
@@ -23,9 +23,11 @@ import Animated, {
     useSharedValue,
     withSpring,
 } from 'react-native-reanimated'
+
 import { getServerUrl } from '../utils/getServerUrl'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
+
 import Button from './Button'
 import CustomText from './CustomText'
 import DateSelector from './DateSelector'

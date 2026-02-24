@@ -1,5 +1,5 @@
 import axios from 'axios'
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import {
     Alert,
@@ -21,21 +21,16 @@ import ResponsiveModal from './ResponsiveModal'
 const FormAddShoppingList = ({ onSubmit, onClose }) => {
     const { isDesktop } = useResponsiveDimensions()
     const [items, setItems] = useState([])
-    const [foodItemModalVisible, setFoodItemModalVisible] = useState(false)
     const [showInlineFoodForm, setShowInlineFoodForm] = useState(false)
     const [pantryModalVisible, setPantryModalVisible] = useState(false)
     const [name, setName] = useState('')
     const [description, setDescription] = useState('')
     const [totalEstimatedPrice, setTotalEstimatedPrice] = useState('')
     const [pantryItems, setPantryItems] = useState([])
-    const [selectedShoppingListId, setSelectedShoppingListId] = useState(null)
+    const [selectedShoppingListId] = useState(null)
     const [isLoading, setIsLoading] = useState(false)
 
     const {
-        control,
-        handleSubmit,
-        formState: { errors },
-        reset,
     } = useForm({
         defaultValues: {
             name: '',

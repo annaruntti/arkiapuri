@@ -1,5 +1,5 @@
-import { MaterialIcons } from '@expo/vector-icons'
 import { Image, StyleSheet, TouchableOpacity, View } from 'react-native'
+import { MaterialIcons } from '@expo/vector-icons'
 import CustomText from './CustomText'
 import { getDifficultyText, getMealCategoryText } from '../utils/mealUtils'
 

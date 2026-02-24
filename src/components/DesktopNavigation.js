@@ -1,7 +1,6 @@
+import { StyleSheet, TouchableOpacity, View } from 'react-native'
 import { AntDesign, Feather, FontAwesome6 } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
-import React from 'react'
-import { StyleSheet, TouchableOpacity, View } from 'react-native'
 import CustomText from './CustomText'
 
 const DesktopNavigation = ({ activeRoute }) => {

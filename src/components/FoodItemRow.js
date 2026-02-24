@@ -1,4 +1,3 @@
-import React from 'react'
 import { View, StyleSheet, TouchableOpacity, TextInput } from 'react-native'
 import { Feather } from '@expo/vector-icons'
 import CustomText from './CustomText'

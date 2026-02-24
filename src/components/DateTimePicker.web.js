@@ -1,4 +1,3 @@
-import React from 'react'
 
 const DateTimePicker = ({ value, onChange, testID, minimumDate }) => {
     const toInputValue = (date) => {

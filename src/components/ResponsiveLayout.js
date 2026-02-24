@@ -1,4 +1,3 @@
-import React from 'react'
 import { StyleSheet, View } from 'react-native'
 import { useResponsiveDimensions } from '../utils/responsive'
 import DesktopNavigation from './DesktopNavigation'

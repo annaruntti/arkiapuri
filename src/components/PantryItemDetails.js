@@ -1,8 +1,4 @@
-import { Feather, MaterialIcons } from '@expo/vector-icons'
 import axios from 'axios'
-import { format } from 'date-fns'
-import { fi } from 'date-fns/locale'
-import * as ImagePicker from 'expo-image-picker'
 import { useEffect, useState } from 'react'
 import {
     Alert,
@@ -14,9 +10,15 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native'
+import { Feather, MaterialIcons } from '@expo/vector-icons'
+import { format } from 'date-fns'
+import { fi } from 'date-fns/locale'
+import * as ImagePicker from 'expo-image-picker'
+
 import categories from '../data/categories'
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
+
 import Button from './Button'
 import CategorySelect from './CategorySelect'
 import CustomText from './CustomText'

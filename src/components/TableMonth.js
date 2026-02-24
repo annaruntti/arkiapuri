@@ -1,17 +1,5 @@
-import { MaterialIcons } from '@expo/vector-icons'
 import axios from 'axios'
-import {
-    addDays,
-    addMonths,
-    endOfMonth,
-    format,
-    getDate,
-    getDaysInMonth,
-    startOfMonth,
-    subMonths,
-} from 'date-fns'
-import { fi } from 'date-fns/locale'
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
     Alert,
     Image,
@@ -20,7 +8,19 @@ import {
     StyleSheet,
     TouchableOpacity,
     View,
+    ActivityIndicator
 } from 'react-native'
+import { MaterialIcons } from '@expo/vector-icons'
+import {
+    addDays,
+    addMonths,
+    format,
+    getDate,
+    getDaysInMonth,
+    startOfMonth,
+    subMonths,
+} from 'date-fns'
+import { fi } from 'date-fns/locale'
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
 import CustomText from './CustomText'
@@ -35,7 +35,6 @@ const TableMonth = () => {
     const [mealsByDate, setMealsByDate] = useState({})
     const [isLoading, setIsLoading] = useState(true)
     const [isModalVisible, setIsModalVisible] = useState(false)
-    const [selectedDate, setSelectedDate] = useState(null)
     const [selectedDates, setSelectedDates] = useState([])
     const [availableMeals, setAvailableMeals] = useState([])
     const [selectedMeal, setSelectedMeal] = useState(null)
@@ -48,7 +47,6 @@ const TableMonth = () => {
 
     const generateMonthDates = (month) => {
         const startDate = startOfMonth(month)
-        const endDate = endOfMonth(month)
         const daysInMonth = getDaysInMonth(month)
         const dates = []
 
@@ -134,7 +132,6 @@ const TableMonth = () => {
 
     const handleDatePress = async (date) => {
         try {
-            setSelectedDate(date)
             setSelectedDates([date]) // Initialize with the clicked date
             const token = await storage.getItem('userToken')
             const response = await axios.get(getServerUrl('/meals'), {
@@ -487,6 +484,11 @@ const TableMonth = () => {
 
     return (
         <View style={styles.container}>
+            {isLoading && (
+                <View style={styles.loadingOverlay}>
+                    <ActivityIndicator size="large" color="#9C86FC" />
+                </View>
+            )}
             {/* Month Navigation */}
             <View style={styles.monthHeader}>
                 <TouchableOpacity
@@ -710,6 +712,13 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         padding: 2,
+    },
+    loadingOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(255,255,255,0.7)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 100,
     },
 })
 

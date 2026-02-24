@@ -1,4 +1,3 @@
-import React from 'react'
 import { Platform, ScrollView, StyleSheet, View } from 'react-native'
 import { useResponsiveDimensions } from '../utils/responsive'
 import CustomText from './CustomText'

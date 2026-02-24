@@ -1,7 +1,6 @@
-import { MaterialIcons as Icon } from '@expo/vector-icons'
-import React from 'react'
-import { Controller } from 'react-hook-form'
 import { Platform, StyleSheet, Text, TextInput, View } from 'react-native'
+import { Controller } from 'react-hook-form'
+import { MaterialIcons as Icon } from '@expo/vector-icons'
 import { useResponsiveDimensions } from '../utils/responsive'
 import CustomText from './CustomText'
 

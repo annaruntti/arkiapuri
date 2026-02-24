@@ -1,7 +1,4 @@
-import { Feather } from '@expo/vector-icons'
 import axios from 'axios'
-import { format } from 'date-fns'
-import { fi } from 'date-fns/locale'
 import { useEffect, useState } from 'react'
 import {
     Alert,
@@ -11,6 +8,10 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native'
+import { Feather } from '@expo/vector-icons'
+import { format } from 'date-fns'
+import { fi } from 'date-fns/locale'
+
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
 import {
@@ -18,6 +19,7 @@ import {
     getMealCategoryText,
     getMealTypeText,
 } from '../utils/mealUtils'
+
 import Button from './Button'
 import CustomText from './CustomText'
 import DateTimePicker from './DateTimePicker'

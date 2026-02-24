@@ -1,4 +1,3 @@
-import React from 'react'
 import { View, StyleSheet, TouchableOpacity } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
 import CustomText from './CustomText'

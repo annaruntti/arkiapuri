@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons'
 import axios from 'axios'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -13,6 +12,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 import { getServerUrl } from '../utils/getServerUrl'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'

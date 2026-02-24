@@ -1,6 +1,6 @@
-import { MaterialIcons } from '@expo/vector-icons'
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native'
+import { MaterialIcons } from '@expo/vector-icons'
 import Button from './Button'
 import CustomText from './CustomText'
 import ResponsiveModal from './ResponsiveModal'

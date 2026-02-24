@@ -1,7 +1,5 @@
-import { MaterialIcons } from '@expo/vector-icons'
-import Fontisto from '@expo/vector-icons/Fontisto'
-import * as ImagePicker from 'expo-image-picker'
-import React, { forwardRef, useState } from 'react'
+import axios from 'axios'
+import { forwardRef, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import {
     Alert,
@@ -14,21 +12,22 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native'
+import { MaterialIcons } from '@expo/vector-icons'
+import Fontisto from '@expo/vector-icons/Fontisto'
+import * as ImagePicker from 'expo-image-picker'
 // Cross-platform picker: web uses input[type=date], native uses community picker
-import axios from 'axios'
 import { format } from 'date-fns'
 import { fi } from 'date-fns/locale'
 import { useResponsiveDimensions } from '../utils/responsive'
+import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
 import CustomRadioButton from './CustomRadioButton'
 import DateTimePicker from './DateTimePicker'
-
-import categories from '../data/categories'
-import { getServerUrl } from '../utils/getServerUrl'
 import Button from './Button'
 import CustomText from './CustomText'
 import InlineCategorySelect from './InlineCategorySelect'
 import UnifiedFoodSearch from './UnifiedFoodSearch'
+import categories from '../data/categories'
 
 const FormFoodItem = forwardRef(
     (
@@ -40,7 +39,6 @@ const FormFoodItem = forwardRef(
             selectedShoppingListId,
             onShoppingListSelect,
             initialValues = {},
-            buttonStyle = 'primary',
             showUnifiedSearch = false,
             onSearchItemSelect,
             shoppingListId,

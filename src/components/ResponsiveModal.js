@@ -1,6 +1,5 @@
-import { AntDesign } from '@expo/vector-icons'
-import React from 'react'
 import { Modal, Platform, Pressable, StyleSheet, View } from 'react-native'
+import { AntDesign } from '@expo/vector-icons'
 import { useResponsiveDimensions } from '../utils/responsive'
 import CustomText from './CustomText'
 
