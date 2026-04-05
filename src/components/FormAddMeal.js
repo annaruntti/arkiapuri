@@ -12,7 +12,8 @@ import {
     View,
     KeyboardAvoidingView,
 } from 'react-native'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useForm } from 'react-hook-form'
 import * as ImagePicker from 'expo-image-picker'
 import { MaterialIcons } from '@expo/vector-icons'
 
@@ -23,6 +24,7 @@ import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 
 import Button from './Button'
+import CustomInput from './CustomInput'
 import CustomText from './CustomText'
 import DateTimePicker from './DateTimePicker'
 import DifficultySelector from './DifficultySelector'
@@ -35,12 +37,16 @@ import Info from './Info'
 const AddMealForm = ({ onSubmit }) => {
     const { profile } = useLogin()
     const { isDesktop } = useResponsiveDimensions()
-    const [name, setName] = useState('')
-    const [recipe, setRecipe] = useState('')
-    const [difficultyLevel, setDifficultyLevel] = useState('')
-    const [cookingTime, setCookingTime] = useState('')
     const [foodItems, setFoodItems] = useState([])
 
+    const { control, handleSubmit: handleRHFSubmit, formState: { errors: fieldErrors }, reset: resetFields } = useForm({
+        defaultValues: {
+            name: '',
+            recipe: '',
+            cookingTime: '',
+        },
+    })
+    const [difficultyLevel, setDifficultyLevel] = useState('')
     const [selectedRoles, setSelectedRoles] = useState([])
     const [mealCategory, setMealCategory] = useState('other')
     const [plannedCookingDate, setPlannedCookingDate] = useState(new Date())
@@ -51,6 +57,13 @@ const AddMealForm = ({ onSubmit }) => {
     const [selectedShoppingListId, setSelectedShoppingListId] = useState(null)
     const [showItemForm, setShowItemForm] = useState(false)
     const [mealImage, setMealImage] = useState(null)
+    const [formErrors, setFormErrors] = useState({})
+
+    // Refs scroll-to-error -toimintoa varten
+    const scrollViewRef = useRef(null)
+    const nameErrorRef = useRef(null)
+    const rolesErrorRef = useRef(null)
+    const foodItemsErrorRef = useRef(null)
 
     const fetchShoppingLists = async () => {
         try {
@@ -213,17 +226,45 @@ const AddMealForm = ({ onSubmit }) => {
         }
     }
 
-    const handleFormSubmit = async () => {
-        try {
-            if (!selectedRoles || selectedRoles.length === 0) {
-                Alert.alert('Virhe', 'Valitse vähintään yksi ateriatyyppi')
-                return
-            }
+    const validateCustomFields = () => {
+        const errors = {}
+        if (!selectedRoles || selectedRoles.length === 0) {
+            errors.roles = 'Valitse vähintään yksi ateriatyyppi'
+        }
+        if (!foodItems || foodItems.length === 0) {
+            errors.foodItems = 'Lisää vähintään yksi raaka-aine'
+        }
+        setFormErrors(errors)
+        return Object.keys(errors).length === 0
+    }
 
-            if (!foodItems || foodItems.length === 0) {
-                Alert.alert('Virhe', 'Lisää vähintään yksi raaka-aine')
-                return
-            }
+    // Scrollaa ensimmäiseen virheeseen lomakkeella
+    const scrollToFirstError = (rhfErrors, customErrors) => {
+        // Järjestys: name → roles → foodItems
+        let targetRef = null
+        if (rhfErrors?.name) {
+            targetRef = nameErrorRef
+        } else if (customErrors?.roles) {
+            targetRef = rolesErrorRef
+        } else if (customErrors?.foodItems) {
+            targetRef = foodItemsErrorRef
+        }
+        if (targetRef?.current && scrollViewRef?.current) {
+            targetRef.current.measureLayout(
+                scrollViewRef.current,
+                (_x, y) => {
+                    scrollViewRef.current.scrollTo({ y: Math.max(0, y - 24), animated: true })
+                },
+                () => {}
+            )
+        }
+    }
+
+    const handleFormSubmit = async (data) => {
+        if (!validateCustomFields()) {
+            return
+        }
+        try {
 
             const token = await storage.getItem('userToken')
 
@@ -298,10 +339,10 @@ const AddMealForm = ({ onSubmit }) => {
                     : [plannedCookingDate]
 
             const mealData = {
-                name,
-                recipe,
+                name: data.name,
+                recipe: data.recipe || '',
                 difficultyLevel: getDifficultyEnum(difficultyLevel),
-                cookingTime: parseInt(cookingTime) || 0,
+                cookingTime: parseInt(data.cookingTime) || 0,
                 foodItems: createdFoodItemIds,
                 defaultRoles: [...selectedRoles],
                 mealCategory,
@@ -398,7 +439,13 @@ const AddMealForm = ({ onSubmit }) => {
             }
 
             // Add item to list - inline UI will show suggestion if needed
-            setFoodItems((prevItems) => [...prevItems, newFoodItem])
+            setFoodItems((prevItems) => {
+                const updated = [...prevItems, newFoodItem]
+                if (updated.length > 0) {
+                    setFormErrors((e) => ({ ...e, foodItems: undefined }))
+                }
+                return updated
+            })
         } catch (error) {
             console.error('Error checking availability:', error)
             // If check fails, assume item is not in pantry/shopping list
@@ -419,7 +466,11 @@ const AddMealForm = ({ onSubmit }) => {
                     inShoppingList: false,
                 }, // Default to not available if check fails
             }
-            setFoodItems((prevItems) => [...prevItems, newFoodItem])
+            setFoodItems((prevItems) => {
+                const updated = [...prevItems, newFoodItem]
+                setFormErrors((e) => ({ ...e, foodItems: undefined }))
+                return updated
+            })
         }
     }
 
@@ -763,7 +814,13 @@ const AddMealForm = ({ onSubmit }) => {
                     },
                 }
 
-                setFoodItems((prevItems) => [...prevItems, newFoodItem])
+                setFoodItems((prevItems) => {
+                    const updated = [...prevItems, newFoodItem]
+                    if (updated.length > 0) {
+                        setFormErrors((e) => ({ ...e, foodItems: undefined }))
+                    }
+                    return updated
+                })
                 setShowItemForm(false)
             }
         } catch (error) {
@@ -960,6 +1017,7 @@ const AddMealForm = ({ onSubmit }) => {
             keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
         >
             <ScrollView
+                ref={scrollViewRef}
                 style={styles.scrollView}
                 contentContainerStyle={styles.formScroll}
                 showsVerticalScrollIndicator={true}
@@ -967,22 +1025,26 @@ const AddMealForm = ({ onSubmit }) => {
                 keyboardShouldPersistTaps="handled"
             >
                 <View style={[styles.formContainer, isDesktop && styles.formContainerDesktop]}>
-                        <CustomText style={styles.label}>
-                            Aterian nimi
-                        </CustomText>
-                        <TextInput
-                            style={styles.formInput}
-                            value={name}
-                            onChangeText={setName}
+                        <View ref={nameErrorRef}>
+                        <CustomInput
+                            control={control}
+                            name="name"
+                            label="Aterian nimi"
+                            placeholder="Esim. kasvisrisotto"
+                            rules={{ required: 'Aterian nimi on pakollinen tieto' }}
+                            variant="form"
                         />
+                        </View>
 
-                        <CustomText style={styles.label}>Resepti</CustomText>
-                        <TextInput
-                            style={[styles.formInput, styles.multilineInput]}
-                            value={recipe}
-                            onChangeText={setRecipe}
+                        <CustomInput
+                            control={control}
+                            name="recipe"
+                            label="Resepti"
+                            placeholder="Kirjoita resepti tähän..."
+                            variant="form"
                             multiline
                             numberOfLines={4}
+                            inputStyle={styles.multilineInput}
                         />
 
                         <CustomText style={styles.label}>
@@ -1020,13 +1082,12 @@ const AddMealForm = ({ onSubmit }) => {
                             value={difficultyLevel}
                             onSelect={setDifficultyLevel}
                         />
-                        <CustomText style={styles.label}>
-                            Valmistusaika (min)
-                        </CustomText>
-                        <TextInput
-                            style={styles.formInput}
-                            value={cookingTime}
-                            onChangeText={setCookingTime}
+                        <CustomInput
+                            control={control}
+                            name="cookingTime"
+                            label="Valmistusaika (min)"
+                            placeholder="Esim. 30"
+                            variant="form"
                             keyboardType="numeric"
                         />
 
@@ -1041,13 +1102,15 @@ const AddMealForm = ({ onSubmit }) => {
                                             key={value}
                                             style={styles.checkboxGridItem}
                                             onPress={() => {
-                                                setSelectedRoles((prev) =>
-                                                    prev.includes(value)
-                                                        ? prev.filter(
-                                                              (r) => r !== value
-                                                          )
+                                                setSelectedRoles((prev) => {
+                                                    const next = prev.includes(value)
+                                                        ? prev.filter((r) => r !== value)
                                                         : [...prev, value]
-                                                )
+                                                    if (next.length > 0) {
+                                                        setFormErrors((e) => ({ ...e, roles: undefined }))
+                                                    }
+                                                    return next
+                                                })
                                             }}
                                         >
                                             <View
@@ -1078,6 +1141,12 @@ const AddMealForm = ({ onSubmit }) => {
                                 )}
                             </View>
                         </View>
+                        {formErrors.roles && (
+                            <View ref={rolesErrorRef} style={styles.errorRow}>
+                                <MaterialIcons name="error" color="#e53e3e" size={14} />
+                                <CustomText style={styles.errorMsg}>{formErrors.roles}</CustomText>
+                            </View>
+                        )}
 
                         <CustomText style={styles.label}>Ruokalaji</CustomText>
                         <MealCategorySelector
@@ -1215,6 +1284,12 @@ const AddMealForm = ({ onSubmit }) => {
                                 location="meal"
                                 allowDuplicates={true}
                             />
+                            {formErrors.foodItems && (
+                                <View ref={foodItemsErrorRef} style={[styles.errorRow, { marginTop: 8 }]}>
+                                    <MaterialIcons name="error" color="#e53e3e" size={14} />
+                                    <CustomText style={styles.errorMsg}>{formErrors.foodItems}</CustomText>
+                                </View>
+                            )}
 
                             <View style={[styles.manualAddContainer, isDesktop && styles.desktopButtonContainer]}>
                                 <Button
@@ -1286,7 +1361,28 @@ const AddMealForm = ({ onSubmit }) => {
                         <View style={styles.buttonGroup}>
                             <Button
                                 title="Tallenna ateria"
-                                onPress={handleFormSubmit}
+                                onPress={() => {
+                                    const customErrors = {}
+                                    if (!selectedRoles || selectedRoles.length === 0) {
+                                        customErrors.roles = 'Valitse vähintään yksi ateriatyyppi'
+                                    }
+                                    if (!foodItems || foodItems.length === 0) {
+                                        customErrors.foodItems = 'Lisää vähintään yksi raaka-aine'
+                                    }
+                                    setFormErrors(customErrors)
+                                    handleRHFSubmit(
+                                        (data) => handleFormSubmit(data),
+                                        (rhfErrors) => {
+                                            // RHF-validointi epäonnistui — scrollaa ensimmäiseen virheeseen
+                                            scrollToFirstError(rhfErrors, customErrors)
+                                        }
+                                    )()
+                                    // Jos custom-kentissä virheitä, scrollaa niihin
+                                    if (Object.keys(customErrors).length > 0) {
+                                        // Pieni viive jotta ref ehtii renderöityä
+                                        setTimeout(() => scrollToFirstError(null, customErrors), 50)
+                                    }
+                                }}
                                 style={[
                                     styles.primaryButton,
                                     isDesktop && styles.desktopPrimaryButton,
@@ -1320,13 +1416,13 @@ const styles = StyleSheet.create({
         paddingBottom: 20,
     },
     label: {
-        marginTop: 10,
+        paddingTop: 10,
         marginBottom: 5,
     },
     labelWithInfo: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 10,
+        paddingTop: 10,
         marginBottom: 5,
     },
     labelTitle: {
@@ -1344,6 +1440,20 @@ const styles = StyleSheet.create({
         padding: 10,
         borderRadius: 4,
         marginBottom: 5,
+    },
+    inputError: {
+        borderColor: '#e53e3e',
+        borderWidth: 2,
+    },
+    errorRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 6,
+    },
+    errorMsg: {
+        color: '#e53e3e',
+        marginLeft: 5,
+        fontSize: 13,
     },
     multilineInput: {
         height: 100,

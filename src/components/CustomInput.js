@@ -14,22 +14,31 @@ const CustomInput = ({
     secureTextEntry,
     style,
     inputStyle,
+    variant = 'auth', // 'auth' = tall/rounded (login screens), 'form' = compact (add/edit forms)
+    multiline = false,
+    numberOfLines,
+    keyboardType,
 }) => {
     const { isDesktop, isTablet } = useResponsiveDimensions()
     const getInputStyle = () => [
         styles.input,
-        isDesktop && styles.desktopInput,
-        isTablet && styles.tabletInput,
+        variant === 'form' && styles.formInput,
+        variant === 'auth' && isDesktop && styles.desktopInput,
+        variant === 'auth' && isTablet && styles.tabletInput,
         inputStyle,
     ]
 
     const getContainerStyle = () => [
         styles.container,
-        isDesktop && styles.desktopContainer,
+        variant === 'form' && styles.formContainer,
+        variant === 'auth' && isDesktop && styles.desktopContainer,
         style,
     ]
 
-    const getLabelStyle = () => [styles.label, isDesktop && styles.desktopLabel]
+    const getLabelStyle = () => [
+        styles.label,
+        variant === 'auth' && isDesktop && styles.desktopLabel,
+    ]
 
     if (!isControlled) {
         return (
@@ -63,6 +72,10 @@ const CustomInput = ({
                         style={getInputStyle()}
                         secureTextEntry={secureTextEntry}
                         placeholderTextColor="#999"
+                        multiline={multiline}
+                        numberOfLines={numberOfLines}
+                        keyboardType={keyboardType}
+                        textAlignVertical={multiline ? 'top' : 'auto'}
                     />
                     {error && (
                         <View style={styles.messageSection}>
@@ -79,6 +92,7 @@ const CustomInput = ({
 }
 
 const styles = StyleSheet.create({
+    // Auth variant (default) – login/signup screens
     container: {
         marginBottom: 16,
     },
@@ -87,6 +101,10 @@ const styles = StyleSheet.create({
         maxWidth: 400,
         alignSelf: 'center',
         width: '100%',
+    },
+    formContainer: {
+        marginTop: 10,
+        marginBottom: 5,
     },
     label: {
         fontSize: 14,
@@ -111,12 +129,24 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#1f2937',
         width: '100%',
-        // Focus states handled by platform
         ...(Platform.OS === 'web' && {
             outlineStyle: 'none',
             transition:
                 'border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
         }),
+    },
+    // Form variant input – matches FormAddMeal formInput
+    formInput: {
+        backgroundColor: 'white',
+        borderColor: '#bbb',
+        borderWidth: 1,
+        height: 40,
+        padding: 10,
+        paddingHorizontal: 10,
+        paddingVertical: 10,
+        borderRadius: 4,
+        fontSize: 16,
+        color: '#333',
     },
     desktopInput: {
         height: 52,
@@ -129,14 +159,6 @@ const styles = StyleSheet.create({
         backgroundColor: '#ffffff',
         ...(Platform.OS === 'web' && {
             boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-            '&:focus': {
-                borderColor: '#5844BB',
-                boxShadow:
-                    '0 0 0 3px rgba(156, 134, 252, 0.1), 0 1px 3px rgba(0, 0, 0, 0.1)',
-            },
-            '&:hover': {
-                borderColor: '#9ca3af',
-            },
         }),
     },
     tabletInput: {
@@ -158,15 +180,6 @@ const styles = StyleSheet.create({
         marginLeft: 6,
         flex: 1,
         fontWeight: '400',
-    },
-    // Legacy styles for backward compatibility
-    inputMetric: {
-        padding: 10,
-        fontSize: 20,
-    },
-    modalText: {
-        marginBottom: 15,
-        textAlign: 'center',
     },
 })
 

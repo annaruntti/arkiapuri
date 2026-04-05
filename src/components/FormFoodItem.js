@@ -25,6 +25,7 @@ import CustomRadioButton from './CustomRadioButton'
 import DateTimePicker from './DateTimePicker'
 import Button from './Button'
 import CustomText from './CustomText'
+import CustomInput from './CustomInput'
 import InlineCategorySelect from './InlineCategorySelect'
 import UnifiedFoodSearch from './UnifiedFoodSearch'
 import categories from '../data/categories'
@@ -671,41 +672,14 @@ const FormFoodItem = forwardRef(
                 {/* Row 1: Name and Category */}
                 <View style={styles.formSingleColumn}>
                     <View style={styles.fullWidth}>
-                        <CustomText style={styles.label}>
-                            Elintarvikkeen nimi
-                        </CustomText>
-                        <Controller
+                        <CustomInput
                             control={control}
-                            rules={{
-                                required: true,
-                            }}
-                            render={({
-                                field: { onChange, onBlur, value },
-                            }) => (
-                                <TextInput
-                                    style={styles.formInput}
-                                    placeholder="Esim. leivinpaperi"
-                                    placeholderTextColor="#999"
-                                    onBlur={onBlur}
-                                    onChangeText={onChange}
-                                    value={value}
-                                />
-                            )}
                             name="name"
-                            {...register('name')}
+                            label="Elintarvikkeen nimi"
+                            placeholder="Esim. leivinpaperi"
+                            rules={{ required: 'Tämä on pakollinen tieto' }}
+                            variant="form"
                         />
-                        {errors.name && (
-                            <View style={styles.messageSection}>
-                                <MaterialIcons
-                                    name="error"
-                                    color="red"
-                                    size={14}
-                                />
-                                <CustomText style={styles.errorMsg}>
-                                    Tämä on pakollinen tieto
-                                </CustomText>
-                            </View>
-                        )}
                     </View>
 
                     <View style={styles.fullWidth}>
@@ -751,40 +725,19 @@ const FormFoodItem = forwardRef(
                             Kappalemäärä
                         </CustomText>
                         <View style={styles.inputAndIcon}>
-                            <Controller
+                            <CustomInput
                                 control={control}
+                                name="quantity"
+                                placeholder="Esim. 0,5"
                                 rules={{
-                                    required: true,
-                                    valueAsNumber: true,
+                                    required: 'Määrä on pakollinen tieto',
                                     pattern: {
                                         value: /^(0|[1-9]\d*)([.,]\d+)?$/,
+                                        message: 'Syötä kelvollinen luku',
                                     },
                                 }}
-                                render={({
-                                    field: { onChange, onBlur, value },
-                                }) => (
-                                    <TextInput
-                                        style={styles.formInput}
-                                        placeholder="Esim. 0,5"
-                                        placeholderTextColor="#999"
-                                        onChangeText={(text) => {
-                                            // Allow empty string or numbers with optional decimal point
-                                            if (
-                                                text === '' ||
-                                                /^(0|[1-9]\d*)([.,]\d+)?$/.test(
-                                                    text
-                                                )
-                                            ) {
-                                                onChange(text)
-                                            }
-                                        }}
-                                        onBlur={onBlur}
-                                        value={value}
-                                        keyboardType="numeric"
-                                    />
-                                )}
-                                name="quantity"
-                                {...register('quantity')}
+                                variant="form"
+                                style={styles.flexField}
                             />
 
                             <Controller
@@ -887,28 +840,18 @@ const FormFoodItem = forwardRef(
                         <CustomText style={styles.label}>
                             Kalorit (per 100g/100ml)
                         </CustomText>
-                        <Controller
-                            control={control}
-                            render={({
-                                field: { onChange, onBlur, value },
-                            }) => (
-                                <View style={styles.inputAndIcon}>
-                                    <TextInput
-                                        style={styles.formInput}
-                                        placeholder="Esim. 250"
-                                        placeholderTextColor="#999"
-                                        onChangeText={onChange}
-                                        onBlur={onBlur}
-                                        value={value}
-                                        keyboardType="numeric"
-                                    />
-                                    <CustomText style={styles.inputMetric}>
-                                        kcal
-                                    </CustomText>
-                                </View>
-                            )}
-                            name="calories"
-                        />
+                        <View style={styles.inputAndIcon}>
+                            <CustomInput
+                                control={control}
+                                name="calories"
+                                placeholder="Esim. 250"
+                                variant="form"
+                                style={styles.flexField}
+                            />
+                            <CustomText style={styles.inputMetric}>
+                                kcal
+                            </CustomText>
+                        </View>
                     </View>
 
                     <View style={styles.fullWidth}>
@@ -981,49 +924,25 @@ const FormFoodItem = forwardRef(
                             <CustomText style={styles.label}>
                                 Arvioitu hinta
                             </CustomText>
-                            <Controller
-                                control={control}
-                                rules={{
-                                    maxLength: 4,
-                                    valueAsNumber: true,
-                                    pattern: {
-                                        value: /^(0|[1-9]\d*)(\.\d+)?$/,
-                                    },
-                                }}
-                                render={({
-                                    field: { onChange, onBlur, value },
-                                }) => (
-                                    <View style={styles.inputAndIcon}>
-                                        <TextInput
-                                            style={styles.formInput}
-                                            placeholder="Esim. 4"
-                                            placeholderTextColor="#999"
-                                            onChangeText={onChange}
-                                            onBlur={onBlur}
-                                            value={value}
-                                            keyboardType="numeric"
-                                        />
-                                        <CustomText style={styles.inputMetric}>
-                                            €
-                                        </CustomText>
-                                    </View>
-                                )}
-                                name="price"
-                                {...register('price')}
-                            />
-                            {errors.price && (
-                                <View style={styles.messageSection}>
-                                    <MaterialIcons
-                                        name="error"
-                                        color="red"
-                                        size={14}
-                                    />
-                                    <CustomText style={styles.errorMsg}>
-                                        Täytä arvioitu hinta numerona. Syötä
-                                        vähintään 1 ja maksimissaan 4 lukua.
-                                    </CustomText>
-                                </View>
-                            )}
+                            <View style={styles.inputAndIcon}>
+                                <CustomInput
+                                    control={control}
+                                    name="price"
+                                    placeholder="Esim. 4"
+                                    rules={{
+                                        maxLength: 4,
+                                        pattern: {
+                                            value: /^(0|[1-9]\d*)(\.\d+)?$/,
+                                            message: 'Täytä hinta numerona',
+                                        },
+                                    }}
+                                    variant="form"
+                                    style={styles.flexField}
+                                />
+                                <CustomText style={styles.inputMetric}>
+                                    €
+                                </CustomText>
+                            </View>
                         </View>
                     </View>
                 )}
@@ -1155,13 +1074,10 @@ const FormFoodItem = forwardRef(
 
                     <View style={styles.buttonContainer}>
                         <Button
-                            style={[
-                                styles.secondaryButton,
-                                isDesktop && styles.desktopButton,
-                            ]}
-                            textStyle={styles.buttonText}
                             title="Tallenna tuote"
                             onPress={handleSubmit(handleFormSubmit)}
+                            style={styles.submitButton}
+                            textStyle={styles.submitButtonText}
                         />
                     </View>
                 </View>
@@ -1255,6 +1171,11 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         width: '100%',
     },
+    // Shared input style for inline metric fields (quantity, calories, price)
+    flexField: {
+        flex: 1,
+        marginBottom: 0,
+    },
     unifiedSearchSection: {
         marginBottom: 15,
         paddingHorizontal: 15,
@@ -1313,57 +1234,38 @@ const styles = StyleSheet.create({
         textAlign: 'left',
         fontSize: 16,
     },
-    formInput: {
-        backgroundColor: 'white',
-        borderColor: '#bbb',
-        borderStyle: 'solid',
-        borderWidth: 1,
-        height: 40,
-        padding: 10,
-        borderRadius: 4,
-        width: '100%',
-        flex: 1,
-        marginBottom: 5,
-    },
-    unitFormInput: {
-        backgroundColor: 'white',
-        borderColor: '#bbb',
-        borderStyle: 'solid',
-        borderWidth: 1,
-        height: 40,
-        padding: 10,
-        borderRadius: 4,
-        width: 65,
-        marginLeft: 10,
-    },
+    // inputAndIcon: rivi jossa input + yksikköteksti vierekkäin
     inputAndIcon: {
         flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 5,
+        alignItems: 'flex-start',
         width: '100%',
-        minHeight: 36,
-        position: 'relative',
-    },
-    messageSection: {
-        flex: 1,
-        flexDirection: 'row',
-        justifyContent: 'left',
-        alignItems: 'left',
-        backgroundColor: '#fff',
     },
     inputMetric: {
         paddingLeft: 10,
-        paddingVertical: 8,
+        paddingTop: 10,
         fontSize: 16,
         color: '#666',
         fontWeight: '500',
+        alignSelf: 'flex-start',
+    },
+    // unitFormInput: pieni numerosyöttö lokaatiorivillä
+    unitFormInput: {
+        backgroundColor: 'white',
+        borderColor: '#d1d5db',
+        borderWidth: 1,
+        height: 48,
+        paddingHorizontal: 14,
+        borderRadius: 8,
+        fontSize: 16,
+        width: 65,
+        marginLeft: 10,
     },
     buttonContainer: {
         alignItems: 'center',
         width: '100%',
         marginVertical: 10,
     },
-    primaryButton: {
+    submitButton: {
         borderRadius: 25,
         paddingTop: 7,
         paddingBottom: 7,
@@ -1372,31 +1274,22 @@ const styles = StyleSheet.create({
         elevation: 2,
         backgroundColor: '#9C86FC',
         width: '100%',
+        marginBottom: 10,
     },
-    desktopButton: {
-        width: 'auto',
-        alignSelf: 'flex-start',
-        minWidth: 200,
-        maxWidth: 250,
-    },
-    buttonText: {
+    submitButtonText: {
         color: '#000000',
         fontWeight: 'bold',
         textAlign: 'center',
     },
-    secondaryButton: {
-        borderRadius: 25,
-        paddingTop: 7,
-        paddingBottom: 7,
-        paddingLeft: 10,
-        paddingRight: 10,
-        elevation: 2,
-        backgroundColor: '#38E4D9',
-        width: '100%',
-    },
     errorMsg: {
-        color: 'red',
+        color: '#e53e3e',
         marginLeft: 5,
+        fontSize: 13,
+    },
+    messageSection: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 4,
     },
     locationSelector: {
         marginBottom: 15,
@@ -1434,24 +1327,26 @@ const styles = StyleSheet.create({
     },
     dateInputContainer: {
         flex: 0,
-        width: 120,
+        width: 130,
     },
     dateInput: {
         backgroundColor: 'white',
-        borderColor: '#bbb',
+        borderColor: '#d1d5db',
         borderWidth: 1,
-        height: 40,
-        padding: 10,
-        borderRadius: 4,
-        width: 120,
+        height: 48,
+        paddingHorizontal: 14,
+        borderRadius: 8,
+        fontSize: 16,
+        color: '#1f2937',
+        width: 130,
     },
     dateIcon: {
         padding: 8,
-        marginLeft: 124,
+        marginLeft: 134,
         position: 'absolute',
         justifyContent: 'center',
         alignItems: 'center',
-        height: 36,
+        height: 48,
     },
     shoppingListSelectorContainer: {
         marginLeft: 30,
@@ -1539,8 +1434,9 @@ const styles = StyleSheet.create({
     },
     // Unit Scroll Picker Styles
     unitScrollPicker: {
-        marginLeft: 10,
-        width: 55,
+        marginLeft: 8,
+        marginBottom: 5,
+        width: 58,
         height: 40,
         backgroundColor: 'white',
         borderColor: '#bbb',

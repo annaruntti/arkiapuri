@@ -6,7 +6,6 @@ import {
     FlatList,
     ScrollView,
     StyleSheet,
-    TextInput,
     TouchableOpacity,
     View,
 } from 'react-native'
@@ -14,6 +13,7 @@ import { getServerUrl } from '../utils/getServerUrl'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 import Button from './Button'
+import CustomInput from './CustomInput'
 import CustomText from './CustomText'
 import FormFoodItem from './FormFoodItem'
 import ResponsiveModal from './ResponsiveModal'
@@ -23,15 +23,11 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
     const [items, setItems] = useState([])
     const [showInlineFoodForm, setShowInlineFoodForm] = useState(false)
     const [pantryModalVisible, setPantryModalVisible] = useState(false)
-    const [name, setName] = useState('')
-    const [description, setDescription] = useState('')
-    const [totalEstimatedPrice, setTotalEstimatedPrice] = useState('')
     const [pantryItems, setPantryItems] = useState([])
     const [selectedShoppingListId] = useState(null)
     const [isLoading, setIsLoading] = useState(false)
 
-    const {
-    } = useForm({
+    const { control, handleSubmit } = useForm({
         defaultValues: {
             name: '',
             description: '',
@@ -116,9 +112,9 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
             })
 
             const shoppingListData = {
-                name,
-                description,
-                totalEstimatedPrice: totalEstimatedPrice || 0,
+                name: data.name,
+                description: data.description || '',
+                totalEstimatedPrice: data.totalEstimatedPrice || 0,
                 items: processedItems,
             }
 
@@ -135,9 +131,6 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
 
             if (response.data) {
                 onSubmit(response.data)
-                setName('')
-                setDescription('')
-                setTotalEstimatedPrice('')
                 setItems([])
                 onClose()
             }
@@ -213,33 +206,29 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
                 showsVerticalScrollIndicator={false}
             >
                 <View style={styles.formContainer}>
-                    <CustomText style={styles.label}>
-                        Ostoslistan nimi
-                    </CustomText>
-                    <TextInput
-                        style={styles.formInput}
-                        value={name}
-                        onChangeText={setName}
+                    <CustomInput
+                        control={control}
+                        name="name"
+                        label="Ostoslistan nimi"
                         placeholder="Kirjoita ostoslistan nimi"
+                        rules={{ required: 'Ostoslistan nimi on pakollinen tieto' }}
+                        variant="form"
                     />
 
-                    <CustomText style={styles.label}>Kuvaus</CustomText>
-                    <TextInput
-                        style={styles.formInput}
-                        value={description}
-                        onChangeText={setDescription}
+                    <CustomInput
+                        control={control}
+                        name="description"
+                        label="Kuvaus"
                         placeholder="Kirjoita kuvaus"
+                        variant="form"
                     />
 
-                    <CustomText style={styles.label}>
-                        Arvioitu kokonaishinta
-                    </CustomText>
-                    <TextInput
-                        style={styles.formInput}
-                        value={totalEstimatedPrice}
-                        onChangeText={setTotalEstimatedPrice}
+                    <CustomInput
+                        control={control}
+                        name="totalEstimatedPrice"
+                        label="Arvioitu kokonaishinta"
                         placeholder="Syötä arvioitu kokonaishinta"
-                        keyboardType="numeric"
+                        variant="form"
                     />
 
                     {showInlineFoodForm && (
@@ -298,7 +287,7 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
                             ]}
                             textStyle={styles.buttonText}
                             title="Tallenna ostoslista"
-                            onPress={handleSubmitForm}
+                            onPress={handleSubmit(handleSubmitForm)}
                         />
                     </View>
                 </View>
@@ -358,22 +347,6 @@ const styles = StyleSheet.create({
     formContainer: {
         paddingBottom: 20,
         paddingTop: 10,
-    },
-    label: {
-        paddingTop: 10,
-        fontWeight: 'bold',
-        textAlign: 'left',
-        marginBottom: 5,
-    },
-    formInput: {
-        backgroundColor: 'white',
-        borderColor: '#bbb',
-        borderStyle: 'solid',
-        borderWidth: 1,
-        height: 40,
-        padding: 10,
-        borderRadius: 4,
-        marginBottom: 15,
     },
     itemsList: {
         marginTop: 10,
