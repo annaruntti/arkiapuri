@@ -587,7 +587,7 @@ const ShoppingListDetail = ({
         <View style={styles.container}>
             {loading && (
                 <View style={styles.loadingOverlay}>
-                    <ActivityIndicator size="large" color="#9C86FC" />
+                    <ActivityIndicator size="large" color="#5844BB" />
                 </View>
             )}
             {showItemForm ? (
@@ -947,7 +947,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         minHeight: 48,
         borderWidth: 3,
-        borderColor: '#9C86FC',
+        borderColor: '#5844BB',
         whiteSpace: 'nowrap',
     },
     buttonContainer: {

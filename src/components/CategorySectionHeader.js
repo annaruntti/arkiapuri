@@ -21,7 +21,7 @@ const styles = {
         marginTop: 15,
         marginBottom: 8,
         borderLeftWidth: 4,
-        borderLeftColor: '#9C86FC',
+        borderLeftColor: '#5844BB',
         boxShadow: 'rgba(0, 0, 0, 0.1) 0px 1px 2px',
     },
     sectionHeaderText: {

@@ -222,7 +222,7 @@ const RandomMealCard = ({ onMealPress, iconImage, filterByPantry = false }) => {
                     styles.loadingCard,
                 ]}
             >
-                <ActivityIndicator size="large" color="#9C86FC" />
+                <ActivityIndicator size="large" color="#5844BB" />
             </View>
         )
     }
@@ -329,7 +329,7 @@ const RandomMealCard = ({ onMealPress, iconImage, filterByPantry = false }) => {
                 <MaterialIcons
                     name="casino"
                     size={isDesktop ? 28 : 24}
-                    color="#9C86FC"
+                    color="#5844BB"
                 />
             </TouchableOpacity>
         </TouchableOpacity>

@@ -236,7 +236,7 @@ const FamilyManagementScreen = ({ navigation }) => {
                         <MaterialIcons
                             name="people-outline"
                             size={80}
-                            color="#9C86FC"
+                            color="#5844BB"
                         />
                         <CustomText style={styles.emptyTitle}>
                             Et ole vielä osa perhettä
@@ -288,7 +288,7 @@ const FamilyManagementScreen = ({ navigation }) => {
                                 <MaterialIcons
                                     name="person-add"
                                     size={20}
-                                    color="#9C86FC"
+                                    color="#5844BB"
                                 />
                                 <CustomText style={styles.inviteButtonText}>
                                     Kutsu
@@ -388,7 +388,7 @@ const FamilyManagementScreen = ({ navigation }) => {
                                     <MaterialIcons
                                         name="mail-outline"
                                         size={24}
-                                        color="#9C86FC"
+                                        color="#5844BB"
                                     />
                                     <View style={styles.invitationInfo}>
                                         <CustomText
@@ -508,7 +508,7 @@ const styles = StyleSheet.create({
     },
     ownerBadge: {
         fontSize: 14,
-        color: '#9C86FC',
+        color: '#5844BB',
         fontWeight: '600',
     },
     section: {
@@ -537,7 +537,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
     },
     inviteButtonText: {
-        color: '#9C86FC',
+        color: '#5844BB',
         fontWeight: '600',
         fontSize: 14,
     },
@@ -559,7 +559,7 @@ const styles = StyleSheet.create({
         borderRadius: 28,
         marginRight: 16,
         borderWidth: 2,
-        borderColor: '#9C86FC',
+        borderColor: '#5844BB',
     },
     memberInfo: {
         flex: 1,
@@ -573,7 +573,7 @@ const styles = StyleSheet.create({
     youBadge: {
         fontSize: 14,
         fontWeight: '400',
-        color: '#9C86FC',
+        color: '#5844BB',
     },
     memberEmail: {
         fontSize: 14,
@@ -582,7 +582,7 @@ const styles = StyleSheet.create({
     },
     memberRole: {
         fontSize: 12,
-        color: '#9C86FC',
+        color: '#5844BB',
         fontWeight: '500',
     },
     removeButton: {
@@ -632,7 +632,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         width: '100%',
         borderWidth: 2,
-        borderColor: '#9C86FC',
+        borderColor: '#5844BB',
     },
     dangerButton: {
         borderRadius: 25,

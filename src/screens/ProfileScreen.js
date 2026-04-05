@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
         marginBottom: 24,
         borderWidth: 3,
-        borderColor: '#9C86FC',
+        borderColor: '#5844BB',
         position: 'relative',
         ...(Platform.OS === 'web' && {
             cursor: 'pointer',
@@ -425,7 +425,7 @@ const styles = StyleSheet.create({
         width: '90%',
         marginBottom: 10,
         borderWidth: 3,
-        borderColor: '#9C86FC',
+        borderColor: '#5844BB',
     },
     buttonText: {
         color: '#000000',

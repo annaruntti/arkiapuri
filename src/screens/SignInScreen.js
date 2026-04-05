@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
         marginBottom: 24,
     },
     forgotPassword: {
-        color: '#9C86FC',
+        color: '#5844BB',
         fontSize: 14,
         fontWeight: '500',
         textAlign: 'right',
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
         alignSelf: 'center',
         marginBottom: 10,
         borderWidth: 3,
-        borderColor: '#9C86FC',
+        borderColor: '#5844BB',
     },
     buttonText: {
         color: '#000000',

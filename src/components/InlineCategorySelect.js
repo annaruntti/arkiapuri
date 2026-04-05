@@ -245,7 +245,7 @@ const InlineCategorySelect = ({
                                                         size={20}
                                                         color={
                                                             isSelected
-                                                                ? '#9C86FC'
+                                                                ? '#5844BB'
                                                                 : '#666'
                                                         }
                                                     />
@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
         minHeight: 5,
     },
     selectButtonActive: {
-        borderColor: '#9C86FC',
+        borderColor: '#5844BB',
         borderWidth: 2,
     },
     selectText: {

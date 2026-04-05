@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
         ...(Platform.OS === 'web' && {
             boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
             '&:focus': {
-                borderColor: '#9C86FC',
+                borderColor: '#5844BB',
                 boxShadow:
                     '0 0 0 3px rgba(156, 134, 252, 0.1), 0 1px 3px rgba(0, 0, 0, 0.1)',
             },

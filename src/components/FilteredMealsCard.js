@@ -43,7 +43,7 @@ const FilteredMealsCard = ({
             <MaterialIcons
                 name="arrow-forward"
                 size={isDesktop ? 28 : 24}
-                color="#9C86FC"
+                color="#5844BB"
                 style={styles.arrow}
             />
         </TouchableOpacity>

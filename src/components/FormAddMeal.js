@@ -1002,7 +1002,7 @@ const AddMealForm = ({ onSubmit }) => {
                                     <MaterialIcons
                                         name="add-a-photo"
                                         size={40}
-                                        color="#9C86FC"
+                                        color="#5844BB"
                                     />
                                     <CustomText
                                         style={styles.imagePlaceholderText}
@@ -1494,7 +1494,7 @@ const styles = StyleSheet.create({
         height: 24,
         borderRadius: 4,
         borderWidth: 2,
-        borderColor: '#9C86FC',
+        borderColor: '#5844BB',
         marginRight: 10,
         justifyContent: 'center',
         alignItems: 'center',
@@ -1663,7 +1663,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         width: 'auto',
         borderWidth: 3,
-        borderColor: '#9C86FC',
+        borderColor: '#5844BB',
     },
     tertiaryButtonDesktop: {
         width: 'auto',
@@ -1676,7 +1676,7 @@ const styles = StyleSheet.create({
     },
     imagePicker: {
         borderWidth: 2,
-        borderColor: '#9C86FC',
+        borderColor: '#5844BB',
         borderStyle: 'dashed',
         borderRadius: 8,
         marginBottom: 20,
@@ -1690,7 +1690,7 @@ const styles = StyleSheet.create({
     },
     imagePlaceholderText: {
         marginTop: 8,
-        color: '#9C86FC',
+        color: '#5844BB',
         fontSize: 16,
         fontWeight: '500',
     },
@@ -1777,7 +1777,7 @@ const styles = StyleSheet.create({
         gap: 6,
         backgroundColor: 'transparent',
         borderWidth: 2,
-        borderColor: '#9C86FC',
+        borderColor: '#5844BB',
         borderRadius: 25,
         paddingVertical: 6,
         paddingHorizontal: 12,

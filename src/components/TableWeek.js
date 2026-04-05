@@ -1283,7 +1283,7 @@ const styles = StyleSheet.create({
     },
     currentWeekLink: {
         fontSize: 14,
-        color: '#9C86FC',
+        color: '#5844BB',
         marginTop: 4,
         textDecorationLine: 'underline',
         textAlign: 'center',
@@ -1466,13 +1466,13 @@ const styles = StyleSheet.create({
         opacity: 0.5,
         backgroundColor: '#e3f2fd',
         borderWidth: 2,
-        borderColor: '#9C86FC',
+        borderColor: '#5844BB',
         borderStyle: 'dashed',
     },
     dateSectionDropTarget: {
         backgroundColor: '#f0f8ff',
         borderWidth: 2,
-        borderColor: '#9C86FC',
+        borderColor: '#5844BB',
         borderStyle: 'dashed',
     },
     dropIndicator: {
@@ -1649,7 +1649,7 @@ const styles = StyleSheet.create({
     },
     bottomCurrentWeekLink: {
         fontSize: 11,
-        color: '#9C86FC',
+        color: '#5844BB',
         marginTop: 2,
         textDecorationLine: 'underline',
         textAlign: 'center',

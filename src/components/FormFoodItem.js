@@ -33,6 +33,7 @@ const FormFoodItem = forwardRef(
     (
         {
             onSubmit,
+            onClose,
             location = 'meal',
             showLocationSelector = false,
             shoppingLists = [],
@@ -656,6 +657,17 @@ const FormFoodItem = forwardRef(
 
         const renderForm = () => (
             <View style={styles.formContainer}>
+                {onClose && (
+                    <TouchableOpacity
+                        style={styles.backButton}
+                        onPress={onClose}
+                    >
+                        <MaterialIcons name="arrow-back" size={22} color="#5844BB" />
+                        <CustomText style={styles.backButtonText}>
+                            Takaisin
+                        </CustomText>
+                    </TouchableOpacity>
+                )}
                 {/* Row 1: Name and Category */}
                 <View style={styles.formSingleColumn}>
                     <View style={styles.fullWidth}>
@@ -1044,7 +1056,7 @@ const FormFoodItem = forwardRef(
                                                 onPress={() =>
                                                     handleLocationToggle(loc)
                                                 }
-                                                color="#9C86FC"
+                                                color="#5844BB"
                                                 disabled={loc === 'meal'} // Meal is always required
                                             />
                                             <CustomText
@@ -1129,7 +1141,7 @@ const FormFoodItem = forwardRef(
                                     <MaterialIcons
                                         name="add-a-photo"
                                         size={40}
-                                        color="#9C86FC"
+                                        color="#5844BB"
                                     />
                                     <CustomText
                                         style={styles.imagePlaceholderText}
@@ -1210,6 +1222,21 @@ const FormFoodItem = forwardRef(
 FormFoodItem.displayName = 'FormFoodItem'
 
 const styles = StyleSheet.create({
+    backButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 8,
+        paddingBottom: 12,
+        marginBottom: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+    backButtonText: {
+        color: '#5844BB',
+        fontSize: 15,
+        marginLeft: 4,
+        fontWeight: '500',
+    },
     formContainer: {
         paddingTop: 5,
         paddingBottom: 20,
@@ -1446,7 +1473,7 @@ const styles = StyleSheet.create({
         minHeight: 40,
     },
     shoppingListButtonActive: {
-        borderColor: '#9C86FC',
+        borderColor: '#5844BB',
         borderWidth: 2,
     },
     shoppingListButtonText: {
@@ -1499,7 +1526,7 @@ const styles = StyleSheet.create({
     },
     shoppingListOptionSelected: {
         backgroundColor: '#f8f5ff',
-        borderColor: '#9C86FC',
+        borderColor: '#5844BB',
     },
     shoppingListOptionText: {
         fontSize: 16,
@@ -1559,7 +1586,7 @@ const styles = StyleSheet.create({
     },
     imagePicker: {
         borderWidth: 2,
-        borderColor: '#9C86FC',
+        borderColor: '#5844BB',
         borderStyle: 'dashed',
         borderRadius: 8,
         marginBottom: 20,
@@ -1573,7 +1600,7 @@ const styles = StyleSheet.create({
     },
     imagePlaceholderText: {
         marginTop: 8,
-        color: '#9C86FC',
+        color: '#5844BB',
         fontSize: 16,
         fontWeight: '500',
     },

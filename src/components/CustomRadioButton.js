@@ -3,7 +3,7 @@ import { StyleSheet, TouchableOpacity, View } from 'react-native'
 const CustomRadioButton = ({
     status,
     onPress,
-    color = '#9C86FC',
+    color = '#5844BB',
     size = 20,
 }) => {
     const isChecked = status === 'checked'

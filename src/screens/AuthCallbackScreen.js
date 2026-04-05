@@ -61,7 +61,7 @@ const AuthCallbackScreen = () => {
 
     return (
         <View style={styles.container}>
-            <ActivityIndicator size="large" color="#9C86FC" />
+            <ActivityIndicator size="large" color="#5844BB" />
             <CustomText style={styles.title}>Kirjautuminen onnistui!</CustomText>
             <CustomText style={styles.subtitle}>
                 Voit nyt sulkea tämän ikkunan.

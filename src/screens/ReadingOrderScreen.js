@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
         borderBottomColor: 'transparent',
     },
     activeTabButton: {
-        borderBottomColor: '#9C86FC',
+        borderBottomColor: '#5844BB',
         backgroundColor: '#fff',
     },
     tabButtonText: {
@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
         color: '#666',
     },
     activeTabButtonText: {
-        color: '#9C86FC',
+        color: '#5844BB',
         fontWeight: 'bold',
     },
     contentContainer: {

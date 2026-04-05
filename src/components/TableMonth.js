@@ -486,7 +486,7 @@ const TableMonth = () => {
         <View style={styles.container}>
             {isLoading && (
                 <View style={styles.loadingOverlay}>
-                    <ActivityIndicator size="large" color="#9C86FC" />
+                    <ActivityIndicator size="large" color="#5844BB" />
                 </View>
             )}
             {/* Month Navigation */}
@@ -579,7 +579,7 @@ const styles = StyleSheet.create({
     navButtonText: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: '#9C86FC',
+        color: '#5844BB',
     },
     monthTitle: {
         fontSize: 16,
@@ -618,7 +618,7 @@ const styles = StyleSheet.create({
     },
     todayContainer: {
         backgroundColor: '#f0f8ff',
-        borderColor: '#9C86FC',
+        borderColor: '#5844BB',
     },
     emptyDay: {
         flex: 1,
@@ -635,7 +635,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     todayText: {
-        color: '#9C86FC',
+        color: '#5844BB',
     },
     mealsContainer: {
         flex: 1,

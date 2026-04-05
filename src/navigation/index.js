@@ -215,7 +215,7 @@ const UserProfile = ({ isActive = false }) => {
             <FontAwesome6
                 name="circle-user"
                 size={24}
-                color={isActive ? '#9C86FC' : 'black'}
+                color={isActive ? '#5844BB' : 'black'}
             />
         </TouchableOpacity>
     )
@@ -444,7 +444,7 @@ function TabNavigator() {
                       },
                 tabBarIcon: ({ focused }) => {
                     let iconName
-                    let iconColor = focused ? '#9C86FC' : 'black'
+                    let iconColor = focused ? '#5844BB' : 'black'
                     let IconComponent
                     let finnishLabel = ''
 
@@ -486,7 +486,7 @@ function TabNavigator() {
                                 tabBarItemStyle,
                                 focused && {
                                     borderTopWidth: 3,
-                                    borderTopColor: '#9C86FC',
+                                    borderTopColor: '#5844BB',
                                 },
                             ]}
                         >
@@ -498,7 +498,7 @@ function TabNavigator() {
                             <CustomText
                                 style={[
                                     tabBarLabelStyle,
-                                    focused && { color: '#9C86FC' },
+                                    focused && { color: '#5844BB' },
                                 ]}
                             >
                                 {finnishLabel}

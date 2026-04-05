@@ -211,14 +211,14 @@ const styles = StyleSheet.create({
         borderBottomColor: 'transparent',
     },
     activeTab: {
-        borderBottomColor: '#9C86FC',
+        borderBottomColor: '#5844BB',
     },
     tabText: {
         fontSize: 16,
         color: '#666',
     },
     activeTabText: {
-        color: '#9C86FC',
+        color: '#5844BB',
         fontWeight: 'bold',
     },
     detailSection: {
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
     },
     input: {
         borderBottomWidth: 1,
-        borderBottomColor: '#9C86FC',
+        borderBottomColor: '#5844BB',
         padding: 2,
         minWidth: 50,
         textAlign: 'right',
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
         gap: 6,
         backgroundColor: 'transparent',
         borderWidth: 2,
-        borderColor: '#9C86FC',
+        borderColor: '#5844BB',
         borderRadius: 25,
         paddingVertical: 6,
         paddingHorizontal: 12,

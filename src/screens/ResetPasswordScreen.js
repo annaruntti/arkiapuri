@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
         width: '100%',
         marginBottom: 10,
         borderWidth: 3,
-        borderColor: '#9C86FC',
+        borderColor: '#5844BB',
     },
     buttonText: {
         color: '#000',

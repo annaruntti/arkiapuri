@@ -62,7 +62,7 @@ const DesktopNavigation = ({ activeRoute }) => {
                             <IconComponent
                                 name={item.icon}
                                 size={20}
-                                color={isActive ? '#9C86FC' : '#666'}
+                                color={isActive ? '#5844BB' : '#666'}
                                 style={styles.icon}
                             />
                             <CustomText
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     activeNavigationItem: {
         backgroundColor: '#f0edff',
         borderWidth: 1,
-        borderColor: '#9C86FC',
+        borderColor: '#5844BB',
     },
     icon: {
         marginRight: 12,
@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     activeNavigationText: {
-        color: '#9C86FC',
+        color: '#5844BB',
         fontWeight: '600',
     },
 })

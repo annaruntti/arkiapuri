@@ -429,7 +429,7 @@ const PantryItemDetails = ({ item, visible, onClose, onUpdate }) => {
                                     <MaterialIcons
                                         name="edit"
                                         size={20}
-                                        color="#9C86FC"
+                                        color="#5844BB"
                                     />
                                     <CustomText style={styles.imageActionText}>
                                         Change
@@ -462,7 +462,7 @@ const PantryItemDetails = ({ item, visible, onClose, onUpdate }) => {
                                 <MaterialIcons
                                     name="add-a-photo"
                                     size={40}
-                                    color="#9C86FC"
+                                    color="#5844BB"
                                 />
                                 <CustomText style={styles.addImageText}>
                                     Add Image
@@ -640,7 +640,7 @@ const styles = StyleSheet.create({
     },
     addImageButton: {
         borderWidth: 2,
-        borderColor: '#9C86FC',
+        borderColor: '#5844BB',
         borderStyle: 'dashed',
         borderRadius: 8,
         padding: 40,
@@ -650,7 +650,7 @@ const styles = StyleSheet.create({
     },
     addImageText: {
         marginTop: 8,
-        color: '#9C86FC',
+        color: '#5844BB',
         fontSize: 16,
         fontWeight: '500',
     },
@@ -677,7 +677,7 @@ const styles = StyleSheet.create({
     },
     input: {
         borderBottomWidth: 1,
-        borderBottomColor: '#9C86FC',
+        borderBottomColor: '#5844BB',
         padding: 2,
         minWidth: 50,
         textAlign: 'right',

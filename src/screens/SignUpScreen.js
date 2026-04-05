@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
         lineHeight: 18,
     },
     link: {
-        color: '#7B6BC9',
+        color: '#5844BB',
         fontWeight: '600',
         textDecorationLine: 'underline',
     },
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
         alignSelf: 'center',
         marginBottom: 10,
         borderWidth: 3,
-        borderColor: '#9C86FC',
+        borderColor: '#5844BB',
     },
     buttonText: {
         color: '#000000',

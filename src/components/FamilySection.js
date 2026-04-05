@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
         borderRadius: 24,
         marginRight: 12,
         borderWidth: 2,
-        borderColor: '#9C86FC',
+        borderColor: '#5844BB',
     },
     memberInfo: {
         flex: 1,
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
     ownerBadge: {
         fontSize: 14,
         fontWeight: '400',
-        color: '#9C86FC',
+        color: '#5844BB',
     },
     memberEmail: {
         fontSize: 14,

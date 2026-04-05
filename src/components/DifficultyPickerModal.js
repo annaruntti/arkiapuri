@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
         color: '#333',
     },
     selectedOptionText: {
-        color: '#9C86FC',
+        color: '#5844BB',
         fontWeight: 'bold',
     },
 })

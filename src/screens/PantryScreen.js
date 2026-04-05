@@ -795,7 +795,7 @@ const styles = StyleSheet.create({
     },
     toggleInstructionsText: {
         fontSize: 14,
-        color: '#9C86FC',
+        color: '#5844BB',
         fontWeight: '600',
         textDecorationLine: 'underline',
     },

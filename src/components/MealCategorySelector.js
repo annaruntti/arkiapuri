@@ -57,13 +57,13 @@ const styles = StyleSheet.create({
         height: 24,
         borderRadius: 12,
         borderWidth: 2,
-        borderColor: '#9C86FC',
+        borderColor: '#5844BB',
         marginRight: 10,
         justifyContent: 'center',
         alignItems: 'center',
     },
     radioButtonChecked: {
-        borderColor: '#9C86FC',
+        borderColor: '#5844BB',
     },
     radioButtonInner: {
         width: 12,

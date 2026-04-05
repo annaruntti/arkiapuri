@@ -403,7 +403,7 @@ const styles = StyleSheet.create({
     },
     input: {
         borderBottomWidth: 1,
-        borderBottomColor: '#9C86FC',
+        borderBottomColor: '#5844BB',
         padding: 2,
         minWidth: 50,
         textAlign: 'right',

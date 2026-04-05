@@ -24,7 +24,7 @@ const ActiveFilterBanner = ({
 
     return (
         <View style={styles.activeFilterBanner}>
-            <MaterialIcons name="filter-list" size={20} color="#9C86FC" />
+            <MaterialIcons name="filter-list" size={20} color="#5844BB" />
             <CustomText style={styles.activeFilterText}>
                 Näytetään:{' '}
                 {(filterDifficulty || selectedDifficultyFilter) &&
@@ -59,7 +59,7 @@ const styles = StyleSheet.create({
     activeFilterBanner: {
         backgroundColor: '#F3F0FF',
         borderLeftWidth: 4,
-        borderLeftColor: '#9C86FC',
+        borderLeftColor: '#5844BB',
         padding: 12,
         marginTop: 10,
         marginBottom: 10,

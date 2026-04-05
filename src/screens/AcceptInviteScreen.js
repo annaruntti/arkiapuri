@@ -143,7 +143,7 @@ const AcceptInviteScreen = () => {
         return (
             <View style={styles.container}>
                 <View style={styles.centerContent}>
-                    <ActivityIndicator size="large" color="#9C86FC" />
+                    <ActivityIndicator size="large" color="#5844BB" />
                     <CustomText style={styles.loadingText}>
                         Tarkistetaan kutsua...
                     </CustomText>
@@ -202,7 +202,7 @@ const AcceptInviteScreen = () => {
                     <MaterialIcons
                         name="people-outline"
                         size={80}
-                        color="#9C86FC"
+                        color="#5844BB"
                         style={styles.icon}
                     />
 
@@ -259,7 +259,7 @@ const AcceptInviteScreen = () => {
                             <MaterialIcons
                                 name="info-outline"
                                 size={20}
-                                color="#9C86FC"
+                                color="#5844BB"
                             />
                             <CustomText style={styles.loginNoticeText}>
                                 Sinulla ei ole vielä tiliä? Luo tili osoitteella{' '}

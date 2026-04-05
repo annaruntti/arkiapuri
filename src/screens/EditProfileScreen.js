@@ -549,7 +549,7 @@ const styles = StyleSheet.create({
     passwordToggleText: {
         fontSize: 14,
         fontWeight: '600',
-        color: '#7B6BC9',
+        color: '#5844BB',
         textAlign: 'center',
     },
     passwordSection: {

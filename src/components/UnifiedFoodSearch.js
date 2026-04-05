@@ -544,7 +544,7 @@ const UnifiedFoodSearch = ({
                             <Ionicons
                                 name="add-circle-outline"
                                 size={20}
-                                color="#9C86FC"
+                                color="#5844BB"
                             />
                         )}
                     </View>
@@ -622,7 +622,7 @@ const UnifiedFoodSearch = ({
                         <Ionicons
                             name="add-circle-outline"
                             size={20}
-                            color="#9C86FC"
+                            color="#5844BB"
                         />
                     </View>
                 </View>
@@ -740,7 +740,7 @@ const UnifiedFoodSearch = ({
                     {loading && (
                         <ActivityIndicator
                             size="small"
-                            color="#9C86FC"
+                            color="#5844BB"
                             style={styles.loadingIndicator}
                         />
                     )}
@@ -749,7 +749,7 @@ const UnifiedFoodSearch = ({
                     style={styles.scanButton}
                     onPress={() => setShowScanner(true)}
                 >
-                    <Ionicons name="barcode" size={24} color="#9C86FC" />
+                    <Ionicons name="barcode" size={24} color="#5844BB" />
                 </TouchableOpacity>
             </View>
 
@@ -900,7 +900,7 @@ const styles = StyleSheet.create({
         height: 40,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: '#9C86FC',
+        borderColor: '#5844BB',
         backgroundColor: '#fff',
         alignItems: 'center',
         justifyContent: 'center',
@@ -931,14 +931,14 @@ const styles = StyleSheet.create({
     },
     activeTab: {
         borderBottomWidth: 2,
-        borderBottomColor: '#9C86FC',
+        borderBottomColor: '#5844BB',
     },
     tabText: {
         fontSize: 12,
         color: '#666',
     },
     activeTabText: {
-        color: '#9C86FC',
+        color: '#5844BB',
         fontWeight: 'bold',
     },
     resultsList: {

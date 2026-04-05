@@ -64,7 +64,7 @@ const styles = {
     },
     filterChipSelected: {
         backgroundColor: '#9C86FC',
-        borderColor: '#9C86FC',
+        borderColor: '#5844BB',
     },
     filterChipDisabled: {
         backgroundColor: '#f5f5f5',
