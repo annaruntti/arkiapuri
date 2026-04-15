@@ -1,4 +1,3 @@
-import * as React from 'react'
 import { ImageBackground, StyleSheet, View } from 'react-native'
 import Svg, { Path } from 'react-native-svg'
 import Button from '../components/Button'
@@ -11,10 +10,13 @@ const image = {
 }
 
 const LandingScreen = ({ navigation }) => {
-    const { isDesktop, isTablet, containerMaxWidth } = useResponsiveDimensions()
+    const { isDesktop, isTablet } = useResponsiveDimensions()
 
     const onSignUpPress = () => {
-        navigation.navigate('Kirjaudu sisään')
+        navigation.navigate('Main', {
+            screen: 'HomeStack',
+            params: { screen: 'Arkiapuri' },
+        })
     }
     return (
         <FullWidthLayout>
@@ -72,8 +74,7 @@ const LandingScreen = ({ navigation }) => {
                                         isDesktop && styles.desktopIntroText,
                                     ]}
                                 >
-                                    Arkiapuri tuo apua jokaisen jokapäiväiseen
-                                    elämään.
+                                    Arkiapuri tekee arjen ruokahuollon suunnittelusta helppoa ja nopeaa.
                                 </CustomText>
                                 <CustomText
                                     style={[
@@ -84,8 +85,8 @@ const LandingScreen = ({ navigation }) => {
                                     ]}
                                 >
                                     {isDesktop || isTablet
-                                        ? 'Käytättääksesi Arkiapuria, sinun on luotava itsellesi käyttäjätunnus.\nSe on helppoa, ilmaista ja vie vain hetken!'
-                                        : 'Käytättääksesi Arkiapuria, sinun on luotava itsellesi käyttäjätunnus. Se on helppoa, ilmaista ja vie vain hetken!'}
+                                        ? 'Luo omat ateriat ja reseptit, suunnittele viikon ruokailut ja pidä kirjaa ruokakomerosi sisällöstä.\nNäe mitä aineksia sinulla on ja lisää puuttuvat suoraan ostoslistalle.'
+                                        : 'Luo omat ateriat ja reseptit, suunnittele viikon ruokailut ja pidä kirjaa ruokakomerosi sisällöstä.\nNäe mitä aineksia sinulla on ja lisää puuttuvat suoraan ostoslistalle.'}
                                 </CustomText>
                                 <Button
                                     title="Aloitetaan!"

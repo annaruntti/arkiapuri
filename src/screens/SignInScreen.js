@@ -1,4 +1,4 @@
-import { useNavigation } from '@react-navigation/native'
+import { useNavigation, useRoute } from '@react-navigation/native'
 import axios from 'axios'
 import React from 'react'
 import { useForm } from 'react-hook-form'
@@ -17,6 +17,7 @@ const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/
 
 const SignInScreen = () => {
     const navigation = useNavigation()
+    const route = useRoute()
     const { login } = useLogin()
 
     const { control, handleSubmit, setError } = useForm()
@@ -31,6 +32,16 @@ const SignInScreen = () => {
             if (response.data.success) {
                 await storage.setItem('userToken', response.data.token)
                 await login(response.data.user)
+                
+                // Navigate back to previous screen if came from prompt, otherwise go to Main
+                if (route.params?.fromPrompt) {
+                    navigation.navigate('Main')
+                } else {
+                    navigation.reset({
+                        index: 0,
+                        routes: [{ name: 'Main' }],
+                    })
+                }
             } else {
                 console.error('Sign in failed:', response.data.message)
                 const message =
@@ -82,7 +93,9 @@ const SignInScreen = () => {
     }
 
     const onSignUpPress = () => {
-        navigation.navigate('Luo tunnus')
+        navigation.navigate('Luo tunnus', {
+            fromPrompt: route.params?.fromPrompt,
+        })
     }
 
     const onSocialSignIn = async (provider, data) => {
@@ -100,6 +113,16 @@ const SignInScreen = () => {
                 )
                 await storage.setItem('userToken', data.token)
                 await login(data.user)
+                
+                // Navigate after successful social login
+                if (route.params?.fromPrompt) {
+                    navigation.navigate('Main')
+                } else {
+                    navigation.reset({
+                        index: 0,
+                        routes: [{ name: 'Main' }],
+                    })
+                }
                 return
             }
 
@@ -112,6 +135,16 @@ const SignInScreen = () => {
             if (response.data.success) {
                 await storage.setItem('userToken', response.data.token)
                 await login(response.data.user)
+                
+                // Navigate after successful social login
+                if (route.params?.fromPrompt) {
+                    navigation.navigate('Main')
+                } else {
+                    navigation.reset({
+                        index: 0,
+                        routes: [{ name: 'Main' }],
+                    })
+                }
             } else {
                 Alert.alert(
                     'Virhe',

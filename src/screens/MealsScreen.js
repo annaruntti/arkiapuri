@@ -15,6 +15,7 @@ import AddMealForm from '../components/FormAddMeal'
 import GenericFilter from '../components/GenericFilter'
 import MealItem from '../components/MealItem'
 import MealItemDetail from '../components/MealItemDetail'
+import LoginPromptModal from '../components/LoginPromptModal'
 import ResponsiveLayout from '../components/ResponsiveLayout'
 import ResponsiveModal from '../components/ResponsiveModal'
 import SearchSection from '../components/SearchSection'
@@ -43,6 +44,8 @@ import storage from '../utils/storage'
 
 const MealsScreen = ({ route, navigation }) => {
     const [modalVisible, setModalVisible] = useState(false)
+    const [loginPromptVisible, setLoginPromptVisible] = useState(false)
+    const [loginPromptTrigger, setLoginPromptTrigger] = useState('meal_create')
     const [meals, setMeals] = useState([])
     const [loading, setLoading] = useState(true)
     const [selectedMeal, setSelectedMeal] = useState(null)
@@ -55,6 +58,11 @@ const MealsScreen = ({ route, navigation }) => {
     const [selectedCookingTimeFilter, setSelectedCookingTimeFilter] =
         useState(null)
     const { isDesktop } = useResponsiveDimensions()
+
+    const openLoginPrompt = (trigger = 'meal_create') => {
+        setLoginPromptTrigger(trigger)
+        setLoginPromptVisible(true)
+    }
 
     // Get filter params from navigation, use only if they have actual values
     const filterDifficulty =
@@ -115,6 +123,12 @@ const MealsScreen = ({ route, navigation }) => {
         try {
             setLoading(true)
             const token = await storage.getItem('userToken')
+
+            if (!token) {
+                setMeals([])
+                return
+            }
+
             const response = await axios.get(getServerUrl('/meals'), {
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -125,7 +139,9 @@ const MealsScreen = ({ route, navigation }) => {
             }
         } catch (error) {
             console.error('Error fetching meals:', error)
-            Alert.alert('Virhe', 'Aterioiden haku epäonnistui')
+            if (error?.response?.status !== 401) {
+                Alert.alert('Virhe', 'Aterioiden haku epäonnistui')
+            }
         } finally {
             setLoading(false)
         }
@@ -392,6 +408,15 @@ const MealsScreen = ({ route, navigation }) => {
         setDetailModalVisible(true)
     }
 
+    const handleOpenAddMeal = async () => {
+        const token = await storage.getItem('userToken')
+        if (!token) {
+            openLoginPrompt('meal_create')
+            return
+        }
+        setModalVisible(true)
+    }
+
     const renderHeader = () => (
         <View style={styles.headerContainer}>
             <CustomText
@@ -416,6 +441,12 @@ const MealsScreen = ({ route, navigation }) => {
                     onClose={() => setModalVisible(false)}
                 />
             </ResponsiveModal>
+
+            <LoginPromptModal
+                visible={loginPromptVisible}
+                onClose={() => setLoginPromptVisible(false)}
+                triggerType={loginPromptTrigger}
+            />
 
             {renderHeader()}
 
@@ -443,7 +474,7 @@ const MealsScreen = ({ route, navigation }) => {
                 noResultsText="Aterioita ei löytynyt"
                 showButtonSection={true}
                 buttonTitle="+ Lisää ateria"
-                onButtonPress={() => setModalVisible(true)}
+                onButtonPress={handleOpenAddMeal}
                 buttonStyle={styles.primaryButton}
                 buttonTextStyle={styles.buttonText}
                 showFilters={showFilters}

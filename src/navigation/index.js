@@ -112,9 +112,10 @@ function LogoTitle() {
                 params: { screen: 'Arkiapuri' },
             })
         } else {
-            // Navigate to LandingScreen when not logged in
-            navigation.navigate('Auth', {
-                screen: 'Tervetuloa',
+            // Navigate to HomeScreen in guest mode when not logged in
+            navigation.navigate('Main', {
+                screen: 'HomeStack',
+                params: { screen: 'Arkiapuri' },
             })
         }
     }
@@ -674,17 +675,14 @@ export default function Navigation() {
                 onStateChange={(state) => setStoredState(state)}
             >
                 <RootStack.Navigator screenOptions={{ headerShown: false }}>
-                    {isLoggedIn ? (
-                        <RootStack.Screen
-                            name="Main"
-                            component={TabNavigator}
-                        />
-                    ) : (
-                        <RootStack.Screen
-                            name="Auth"
-                            component={AuthStackScreen}
-                        />
-                    )}
+                    <RootStack.Screen name="Main" component={TabNavigator} />
+                    <RootStack.Screen
+                        name="Auth"
+                        component={AuthStackScreen}
+                        options={{
+                            presentation: 'modal',
+                        }}
+                    />
                     <RootStack.Screen
                         name="AcceptInvite"
                         component={AcceptInviteScreen}
@@ -702,13 +700,27 @@ export default function Navigation() {
 function AuthStackScreen() {
     return (
         <HomeStack.Navigator
-            screenOptions={{
+            screenOptions={({ route, navigation }) => ({
                 headerStyle: {
                     backgroundColor: '#fff',
                 },
                 headerTitle: (props) => <LogoTitle {...props} />,
-                headerLeft: () => <ConditionalBackButton />,
-            }}
+                headerLeft: () =>
+                    route.params?.fromPrompt ? (
+                        <TouchableOpacity
+                            onPress={() => navigation.navigate('Main')}
+                            style={[styles.iconButton, styles.backButton]}
+                        >
+                            <Feather
+                                name="arrow-left"
+                                size={24}
+                                color="black"
+                            />
+                        </TouchableOpacity>
+                    ) : (
+                        <ConditionalBackButton />
+                    ),
+            })}
         >
             <HomeStack.Screen
                 name="Tervetuloa"

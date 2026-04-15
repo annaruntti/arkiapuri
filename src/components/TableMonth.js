@@ -29,7 +29,7 @@ import MealItemDetail from './MealItemDetail'
 import MealSelectionList, { PLACEHOLDER_IMAGE_URL } from './MealSelectionList'
 import ResponsiveModal from './ResponsiveModal'
 
-const TableMonth = () => {
+const TableMonth = ({ onRequireLogin }) => {
     const [currentMonth, setCurrentMonth] = useState(new Date())
     const [monthDates, setMonthDates] = useState([])
     const [mealsByDate, setMealsByDate] = useState({})
@@ -39,6 +39,17 @@ const TableMonth = () => {
     const [availableMeals, setAvailableMeals] = useState([])
     const [selectedMeal, setSelectedMeal] = useState(null)
     const [detailModalVisible, setDetailModalVisible] = useState(false)
+
+    const getAuthTokenOrPrompt = async (trigger = 'sync') => {
+        const token = await storage.getItem('userToken')
+        if (!token) {
+            if (onRequireLogin) {
+                onRequireLogin(trigger)
+            }
+            return null
+        }
+        return token
+    }
 
     // Generate calendar dates for the current month
     useEffect(() => {
@@ -64,6 +75,11 @@ const TableMonth = () => {
         try {
             setIsLoading(true)
             const token = await storage.getItem('userToken')
+
+            if (!token) {
+                setMealsByDate({})
+                return
+            }
 
             // Fetch all meals and filter by planned dates on frontend
             const response = await axios.get(getServerUrl('/meals'), {
@@ -115,8 +131,10 @@ const TableMonth = () => {
                 setMealsByDate(mealsByDateObj)
             }
         } catch (error) {
-            console.error('Error fetching meal data:', error)
-            Alert.alert('Virhe', 'Aterioiden haku epäonnistui')
+            if (error?.response?.status !== 401) {
+                console.error('Error fetching meal data:', error)
+                Alert.alert('Virhe', 'Aterioiden haku epäonnistui')
+            }
         } finally {
             setIsLoading(false)
         }
@@ -133,7 +151,8 @@ const TableMonth = () => {
     const handleDatePress = async (date) => {
         try {
             setSelectedDates([date]) // Initialize with the clicked date
-            const token = await storage.getItem('userToken')
+            const token = await getAuthTokenOrPrompt('sync')
+            if (!token) return
             const response = await axios.get(getServerUrl('/meals'), {
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -154,7 +173,8 @@ const TableMonth = () => {
         if (selectedDates.length === 0) return
 
         try {
-            const token = await storage.getItem('userToken')
+            const token = await getAuthTokenOrPrompt('sync')
+            if (!token) return
             const formattedDates = selectedDates.map(
                 (date) =>
                     new Date(date).toISOString().split('T')[0] +
@@ -249,7 +269,8 @@ const TableMonth = () => {
 
     const updateMealDates = async (mealId, newDates) => {
         try {
-            const token = await storage.getItem('userToken')
+            const token = await getAuthTokenOrPrompt('sync')
+            if (!token) return
 
             await axios.put(
                 getServerUrl(`/meals/${mealId}`),
@@ -278,7 +299,8 @@ const TableMonth = () => {
 
     const deleteMealCompletely = async (mealId) => {
         try {
-            const token = await storage.getItem('userToken')
+            const token = await getAuthTokenOrPrompt('sync')
+            if (!token) return
 
             await axios.delete(getServerUrl(`/meals/${mealId}`), {
                 headers: {
@@ -345,7 +367,8 @@ const TableMonth = () => {
                 return
             }
 
-            const token = await storage.getItem('userToken')
+            const token = await getAuthTokenOrPrompt('sync')
+            if (!token) return
 
             const cleanedMeal = {
                 name: updatedMeal.name,

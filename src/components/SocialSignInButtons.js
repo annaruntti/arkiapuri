@@ -59,7 +59,7 @@ const SocialSignInButtons = ({ onSocialSignIn }) => {
 
         const popup = window.open(
             authUrl,
-            `${provider} Login`,
+            `${provider} - Kirjautuminen`,
             `width=${width},height=${height},left=${left},top=${top}`
         )
 

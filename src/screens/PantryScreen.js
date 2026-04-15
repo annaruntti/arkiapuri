@@ -16,6 +16,7 @@ import CategoryFilterSection from '../components/CategoryFilterSection'
 import CategorySectionHeader from '../components/CategorySectionHeader'
 import CustomText from '../components/CustomText'
 import FormFoodItem from '../components/FormFoodItem'
+import LoginPromptModal from '../components/LoginPromptModal'
 import PantryItemDetails from '../components/PantryItemDetails'
 import ResponsiveLayout from '../components/ResponsiveLayout'
 import ResponsiveModal from '../components/ResponsiveModal'
@@ -33,6 +34,8 @@ const PANTRY_PLACEHOLDER_IMAGE_URL =
 const PantryScreen = ({}) => {
     const { isDesktop } = useResponsiveDimensions()
     const [showItemForm, setShowItemForm] = useState(false)
+    const [loginPromptVisible, setLoginPromptVisible] = useState(false)
+    const [loginPromptTrigger, setLoginPromptTrigger] = useState('save')
     const [pantryItems, setPantryItems] = useState([])
     const [loading, setLoading] = useState(true)
     const [selectedItem, setSelectedItem] = useState(null)
@@ -42,6 +45,11 @@ const PantryScreen = ({}) => {
     const [showAddItemSearch, setShowAddItemSearch] = useState(false)
     const [selectedCategoryFilters, setSelectedCategoryFilters] = useState([])
     const [showFilters, setShowFilters] = useState(false)
+
+    const openLoginPrompt = (trigger = 'save') => {
+        setLoginPromptTrigger(trigger)
+        setLoginPromptVisible(true)
+    }
 
     // Get ingredient categories from categories.json
     const ingredientCategories =
@@ -175,6 +183,12 @@ const PantryScreen = ({}) => {
         try {
             setLoading(true)
             const token = await storage.getItem('userToken')
+
+            if (!token) {
+                setPantryItems([])
+                return
+            }
+
             const response = await axios.get(getServerUrl('/pantry'), {
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -193,13 +207,15 @@ const PantryScreen = ({}) => {
             }
         } catch (error) {
             console.error('Error fetching pantry items:', error)
-            Alert.alert(
-                'Virhe',
-                'Pentterin tietojen haku epäonnistui: ' +
-                    (error.message === 'timeout exceeded'
-                        ? 'Yhteys aikakatkaistiin'
-                        : error.message || 'Tuntematon virhe')
-            )
+            if (error?.response?.status !== 401) {
+                Alert.alert(
+                    'Virhe',
+                    'Pentterin tietojen haku epäonnistui: ' +
+                        (error.message === 'timeout exceeded'
+                            ? 'Yhteys aikakatkaistiin'
+                            : error.message || 'Tuntematon virhe')
+                )
+            }
             setPantryItems([])
         } finally {
             setLoading(false)
@@ -220,6 +236,11 @@ const PantryScreen = ({}) => {
     const handleAddItem = async (itemData) => {
         try {
             const token = await storage.getItem('userToken')
+
+            if (!token) {
+                openLoginPrompt('save')
+                return
+            }
 
             // Validate required fields
             if (!itemData.name || !itemData.unit) {
@@ -309,6 +330,12 @@ const PantryScreen = ({}) => {
 
     const handleScanPantry = async () => {
         try {
+            const token = await storage.getItem('userToken')
+            if (!token) {
+                openLoginPrompt('ai_feature')
+                return
+            }
+
             setLoading(true)
             const response = await scanItems('pantry')
 
@@ -336,6 +363,11 @@ const PantryScreen = ({}) => {
     const handleRemoveItem = async (itemId) => {
         try {
             const token = await storage.getItem('userToken')
+
+            if (!token) {
+                openLoginPrompt('save')
+                return
+            }
 
             // Show confirmation dialog
             Alert.alert(
@@ -400,6 +432,12 @@ const PantryScreen = ({}) => {
     const handleUpdateItem = async (itemId, updatedData) => {
         try {
             const token = await storage.getItem('userToken')
+
+            if (!token) {
+                openLoginPrompt('save')
+                return
+            }
+
             setLoading(true)
 
             const response = await axios.put(
@@ -433,6 +471,12 @@ const PantryScreen = ({}) => {
 
     const handleSearchItemSelect = async (item) => {
         try {
+            const token = await storage.getItem('userToken')
+            if (!token) {
+                openLoginPrompt('save')
+                return
+            }
+
             // The UnifiedFoodSearch component should handle the actual addition
             // We just need to refresh the list and close the modal
             await fetchPantryItems()
@@ -481,6 +525,16 @@ const PantryScreen = ({}) => {
         </View>
     )
 
+    const handleOpenAddItemSearch = async () => {
+        const token = await storage.getItem('userToken')
+        if (!token) {
+            openLoginPrompt('save')
+            return
+        }
+
+        setShowAddItemSearch(true)
+    }
+
     return (
         <ResponsiveLayout>
             <View
@@ -489,6 +543,12 @@ const PantryScreen = ({}) => {
                 }
             >
                 <View style={styles.container}>
+                    <LoginPromptModal
+                        visible={loginPromptVisible}
+                        onClose={() => setLoginPromptVisible(false)}
+                        triggerType={loginPromptTrigger}
+                    />
+
                     <ResponsiveModal
                         visible={showItemForm}
                         onClose={() => setShowItemForm(false)}
@@ -643,7 +703,7 @@ const PantryScreen = ({}) => {
                             noResultsText="Tuotteita ei löytynyt"
                             showButtonSection={true}
                             buttonTitle="+ Luo uusi tuote"
-                            onButtonPress={() => setShowAddItemSearch(true)}
+                            onButtonPress={handleOpenAddItemSearch}
                             buttonStyle={styles.primaryButton}
                             buttonTextStyle={styles.buttonText}
                             filterComponent={

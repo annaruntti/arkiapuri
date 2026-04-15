@@ -136,7 +136,7 @@ const DraggableMealItem = ({
     )
 }
 
-const Table = () => {
+const Table = ({ onRequireLogin }) => {
     const { isDesktop } = useResponsiveDimensions()
     const [dates, setDates] = useState([])
     const [mealsByDate, setMealsByDate] = useState({})
@@ -164,6 +164,17 @@ const Table = () => {
     const draggingFromDateRef = useRef(null)
     const scrollOffsetRef = useRef(0)
 
+    const getAuthTokenOrPrompt = async (trigger = 'sync') => {
+        const token = await storage.getItem('userToken')
+        if (!token) {
+            if (onRequireLogin) {
+                onRequireLogin(trigger)
+            }
+            return null
+        }
+        return token
+    }
+
     // Generate 7 days based on week offset
     useEffect(() => {
         const today = new Date()
@@ -184,6 +195,10 @@ const Table = () => {
     const fetchMealData = async (datesToFetch, debugMealId = null) => {
         try {
             const token = await storage.getItem('userToken')
+            if (!token) {
+                setMealsByDate({})
+                return
+            }
 
             // Format dates for filtering
             const formattedDates = datesToFetch.map((date) =>
@@ -239,13 +254,16 @@ const Table = () => {
                 setMealsByDate(mealsByDate)
             }
         } catch (error) {
-            console.error('Error fetching meal data:', error)
+            if (error?.response?.status !== 401) {
+                console.error('Error fetching meal data:', error)
+            }
         }
     }
 
     const handleAddMeal = async (date) => {
         try {
-            const token = await storage.getItem('userToken')
+            const token = await getAuthTokenOrPrompt('sync')
+            if (!token) return
             const response = await axios.get(getServerUrl('/meals'), {
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -269,7 +287,8 @@ const Table = () => {
 
     const handleSelectMeal = async (meal) => {
         try {
-            const token = await storage.getItem('userToken')
+            const token = await getAuthTokenOrPrompt('sync')
+            if (!token) return
             const formattedDates = selectedDates.map(
                 (date) =>
                     new Date(date).toISOString().split('T')[0] +
@@ -376,7 +395,8 @@ const Table = () => {
 
     const updateMealDates = async (mealId, newDates) => {
         try {
-            const token = await storage.getItem('userToken')
+            const token = await getAuthTokenOrPrompt('sync')
+            if (!token) return
 
             await axios.put(
                 getServerUrl(`/meals/${mealId}`),
@@ -405,7 +425,8 @@ const Table = () => {
 
     const deleteMealCompletely = async (mealId) => {
         try {
-            const token = await storage.getItem('userToken')
+            const token = await getAuthTokenOrPrompt('sync')
+            if (!token) return
 
             await axios.delete(getServerUrl(`/meals/${mealId}`), {
                 headers: {
@@ -477,7 +498,8 @@ const Table = () => {
                         'T00:00:00.000Z',
                 ])
 
-            const token = await storage.getItem('userToken')
+            const token = await getAuthTokenOrPrompt('sync')
+            if (!token) return
 
             await axios.put(
                 getServerUrl(`/meals/${mealToMove._id}`),
@@ -537,7 +559,8 @@ const Table = () => {
                         'T00:00:00.000Z',
                 ])
 
-            const token = await storage.getItem('userToken')
+            const token = await getAuthTokenOrPrompt('sync')
+            if (!token) return
 
             await axios.put(
                 getServerUrl(`/meals/${meal._id}`),
@@ -724,7 +747,8 @@ const Table = () => {
                 return
             }
 
-            const token = await storage.getItem('userToken')
+            const token = await getAuthTokenOrPrompt('sync')
+            if (!token) return
 
             // Prepare the meal data for API call
             const cleanedMeal = {

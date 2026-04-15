@@ -46,9 +46,15 @@ const SignUpScreen = () => {
                 const signInRes = signInResponse.data
                 if (signInRes.success) {
                     await AsyncStorage.setItem('userToken', signInRes.token)
-                    navigation.navigate('Lataa profiilikuva', {
-                        token: signInRes.token,
-                    })
+                    
+                    // If came from prompt, go directly to Main after signup
+                    if (route.params?.fromPrompt) {
+                        navigation.navigate('Main')
+                    } else {
+                        navigation.navigate('Lataa profiilikuva', {
+                            token: signInRes.token,
+                        })
+                    }
                 } else {
                     Alert.alert(
                         'Virhe',
@@ -72,7 +78,9 @@ const SignUpScreen = () => {
     }
 
     const onSignInPress = () => {
-        navigation.navigate('Kirjaudu sisään')
+        navigation.navigate('Kirjaudu sisään', {
+            fromPrompt: route.params?.fromPrompt,
+        })
     }
 
     const onTermsOfUsePressed = () => {

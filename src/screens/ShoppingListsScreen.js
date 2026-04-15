@@ -4,6 +4,7 @@ import { Alert, FlatList, StyleSheet, View } from 'react-native'
 import Button from '../components/Button'
 import CustomText from '../components/CustomText'
 import FormAddShoppingList from '../components/FormAddShoppingList'
+import LoginPromptModal from '../components/LoginPromptModal'
 import ShoppingListDetail from '../components/ShoppingListDetail'
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
@@ -14,13 +15,25 @@ import { useResponsiveDimensions } from '../utils/responsive'
 
 const ShoppingListsScreen = () => {
     const [modalVisible, setModalVisible] = useState(false)
+    const [loginPromptVisible, setLoginPromptVisible] = useState(false)
+    const [loginPromptTrigger, setLoginPromptTrigger] = useState('shopping_list')
     const [shoppingLists, setShoppingLists] = useState([])
     const [selectedList, setSelectedList] = useState(null)
     const { isDesktop } = useResponsiveDimensions()
 
+    const openLoginPrompt = (trigger = 'shopping_list') => {
+        setLoginPromptTrigger(trigger)
+        setLoginPromptVisible(true)
+    }
+
     const fetchShoppingLists = async () => {
         try {
             const token = await storage.getItem('userToken')
+
+            if (!token) {
+                setShoppingLists([])
+                return
+            }
 
             const response = await axios.get(getServerUrl('/shopping-lists'), {
                 headers: {
@@ -43,13 +56,20 @@ const ShoppingListsScreen = () => {
                 'Error fetching shopping lists:',
                 error?.response?.data || error
             )
-            Alert.alert('Virhe', 'Ostoslistojen haku epäonnistui')
+            if (error?.response?.status !== 401) {
+                Alert.alert('Virhe', 'Ostoslistojen haku epäonnistui')
+            }
         }
     }
 
     const fetchPantryItems = async () => {
         try {
             const token = await storage.getItem('userToken')
+
+            if (!token) {
+                return []
+            }
+
             const response = await axios.get(getServerUrl('/pantry'), {
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -65,7 +85,9 @@ const ShoppingListsScreen = () => {
             }
         } catch (error) {
             console.error('Error fetching pantry items:', error)
-            Alert.alert('Virhe', 'Pentterin tietojen haku epäonnistui')
+            if (error?.response?.status !== 401) {
+                Alert.alert('Virhe', 'Pentterin tietojen haku epäonnistui')
+            }
             return []
         }
     }
@@ -82,6 +104,15 @@ const ShoppingListsScreen = () => {
         } catch (error) {
             Alert.alert('Virhe', 'Ostoslistan luonti epäonnistui')
         }
+    }
+
+    const handleOpenCreateList = async () => {
+        const token = await storage.getItem('userToken')
+        if (!token) {
+            openLoginPrompt('shopping_list')
+            return
+        }
+        setModalVisible(true)
     }
 
     const handleViewList = (list) => {
@@ -156,7 +187,7 @@ const ShoppingListsScreen = () => {
             >
                 <Button
                     title="Luo uusi ostoslista"
-                    onPress={() => setModalVisible(true)}
+                    onPress={handleOpenCreateList}
                     style={[
                         styles.primaryButton,
                         isDesktop && styles.desktopPrimaryButton,
@@ -187,6 +218,12 @@ const ShoppingListsScreen = () => {
                         />
                     </ResponsiveModal>
 
+                    <LoginPromptModal
+                        visible={loginPromptVisible}
+                        onClose={() => setLoginPromptVisible(false)}
+                        triggerType={loginPromptTrigger}
+                    />
+
                     <ResponsiveModal
                         visible={!!selectedList}
                         onClose={() => setSelectedList(null)}
@@ -200,6 +237,9 @@ const ShoppingListsScreen = () => {
                                 onUpdate={handleListUpdate}
                                 fetchShoppingLists={fetchShoppingLists}
                                 fetchPantryItems={fetchPantryItems}
+                                onRequireLogin={(trigger) =>
+                                    openLoginPrompt(trigger || 'ai_feature')
+                                }
                             />
                         )}
                     </ResponsiveModal>

@@ -144,8 +144,11 @@ const ProfileScreen = () => {
     const handleLogout = async () => {
         try {
             await logout()
-            // Navigation will be handled automatically by the Navigation component
-            // since it's watching isLoggedIn state
+            // Navigate to Auth screen after logout
+            navigation.reset({
+                index: 0,
+                routes: [{ name: 'Auth', params: { screen: 'Tervetuloa' } }],
+            })
         } catch (error) {
             console.error('Logout error:', error)
             Alert.alert('Virhe', 'Uloskirjautuminen epäonnistui')

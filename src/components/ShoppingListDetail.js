@@ -33,6 +33,7 @@ const ShoppingListDetail = ({
     onUpdate,
     fetchShoppingLists,
     fetchPantryItems,
+    onRequireLogin,
 }) => {
     const [checkedItems, setCheckedItems] = useState([])
     const [showItemForm, setShowItemForm] = useState(false)
@@ -355,6 +356,16 @@ const ShoppingListDetail = ({
 
     const handleScanProduct = async () => {
         try {
+            const token = await storage.getItem('userToken')
+            if (!token) {
+                if (onRequireLogin) {
+                    onRequireLogin('ai_feature')
+                } else {
+                    Alert.alert('Kirjaudu sisään', 'Luo tili käyttääksesi tätä ominaisuutta.')
+                }
+                return
+            }
+
             const { status } = await ImagePicker.requestCameraPermissionsAsync()
             if (status !== 'granted') {
                 Alert.alert(

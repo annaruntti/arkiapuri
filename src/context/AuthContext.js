@@ -9,6 +9,7 @@ export const AuthProvider = ({ children }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
     const [user, setUser] = useState(null)
+    const [isGuest, setIsGuest] = useState(true) // Guest mode by default
 
     useEffect(() => {
         checkAuthStatus()
@@ -27,6 +28,7 @@ export const AuthProvider = ({ children }) => {
                 if (response.data.success) {
                     setUser(response.data.user)
                     setIsAuthenticated(true)
+                    setIsGuest(false) // Exit guest mode
                 } else {
                     await storage.removeItem('userToken')
                 }
@@ -44,6 +46,7 @@ export const AuthProvider = ({ children }) => {
             await storage.setItem('userToken', token)
             setUser(userData)
             setIsAuthenticated(true)
+            setIsGuest(false) // Exit guest mode
         } catch (error) {
             console.error('Login failed:', error)
         }
@@ -54,6 +57,7 @@ export const AuthProvider = ({ children }) => {
             await storage.removeItem('userToken')
             setUser(null)
             setIsAuthenticated(false)
+            setIsGuest(true) // Return to guest mode
         } catch (error) {
             console.error('Logout failed:', error)
         }
@@ -65,6 +69,7 @@ export const AuthProvider = ({ children }) => {
                 isAuthenticated,
                 isLoading,
                 user,
+                isGuest,
                 login,
                 logout,
             }}
