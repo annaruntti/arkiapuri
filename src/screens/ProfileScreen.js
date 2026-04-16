@@ -21,7 +21,7 @@ import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 
 const ProfileScreen = () => {
-    const { logout, profile, setProfile } = useLogin()
+    const { logout, profile, setProfile, isLoggedIn } = useLogin()
     const navigation = useNavigation()
     const { isDesktop, isTablet } = useResponsiveDimensions()
     const [household, setHousehold] = React.useState(null)
@@ -176,77 +176,153 @@ const ProfileScreen = () => {
             >
                 <View style={getContainerStyle()}>
                     <View style={getContentStyle()}>
-                        <View style={styles.header}>
-                            <TouchableOpacity onPress={pickImage}>
-                                <View
-                                    style={[
-                                        styles.profileImageContainer,
-                                        isDesktop && styles.desktopProfileImage,
-                                        isTablet && styles.tabletProfileImage,
-                                    ]}
-                                >
-                                    <Image
-                                        source={
-                                            profile?.profileImage
-                                                ? { uri: profile.profileImage }
-                                                : defaultImage
-                                        }
-                                        style={styles.profileImage}
-                                    />
-                                    <View style={styles.editOverlay}>
-                                        <CustomText style={styles.editText}>
-                                            Muokkaa
+                        {!isLoggedIn ? (
+                            // Guest view - show login/signup buttons
+                            <>
+                                <View style={styles.header}>
+                                    <View
+                                        style={[
+                                            styles.profileImageContainer,
+                                            isDesktop &&
+                                                styles.desktopProfileImage,
+                                            isTablet && styles.tabletProfileImage,
+                                        ]}
+                                    >
+                                        <Image
+                                            source={defaultImage}
+                                            style={styles.profileImage}
+                                        />
+                                    </View>
+
+                                    <View style={styles.userInfo}>
+                                        <CustomText
+                                            style={[
+                                                styles.username,
+                                                isDesktop &&
+                                                    styles.desktopUsername,
+                                            ]}
+                                        >
+                                            Vierailija
+                                        </CustomText>
+                                        <CustomText
+                                            style={[
+                                                styles.email,
+                                                isDesktop && styles.desktopEmail,
+                                            ]}
+                                        >
+                                            Kirjaudu sisään hallitaksesi profiiliasi
                                         </CustomText>
                                     </View>
                                 </View>
-                            </TouchableOpacity>
 
-                            <View style={styles.userInfo}>
-                                <CustomText
-                                    style={[
-                                        styles.username,
-                                        isDesktop && styles.desktopUsername,
-                                    ]}
-                                >
-                                    {profile?.username}
-                                </CustomText>
-                                <CustomText
-                                    style={[
-                                        styles.email,
-                                        isDesktop && styles.desktopEmail,
-                                    ]}
-                                >
-                                    {profile?.email}
-                                </CustomText>
-                            </View>
-                        </View>
-                        <Button
-                            title="Muokkaa tietoja"
-                            style={styles.primaryButton}
-                            textStyle={styles.buttonText}
-                            onPress={() =>
-                                navigation.navigate('Muokkaa tietoja')
-                            }
-                        />
+                                <View style={styles.buttonSection}>
+                                    <Button
+                                        title="Kirjaudu sisään"
+                                        style={styles.primaryButton}
+                                        textStyle={styles.buttonText}
+                                        onPress={() =>
+                                            navigation.navigate('Auth', {
+                                                screen: 'Kirjaudu sisään',
+                                            })
+                                        }
+                                    />
+                                    <Button
+                                        title="Luo käyttäjätunnus"
+                                        style={styles.tertiaryButton}
+                                        textStyle={styles.buttonText}
+                                        onPress={() =>
+                                            navigation.navigate('Auth', {
+                                                screen: 'Luo tunnus',
+                                            })
+                                        }
+                                    />
+                                </View>
+                            </>
+                        ) : (
+                            // Logged in view - show profile
+                            <>
+                                <View style={styles.header}>
+                                    <TouchableOpacity onPress={pickImage}>
+                                        <View
+                                            style={[
+                                                styles.profileImageContainer,
+                                                isDesktop &&
+                                                    styles.desktopProfileImage,
+                                                isTablet &&
+                                                    styles.tabletProfileImage,
+                                            ]}
+                                        >
+                                            <Image
+                                                source={
+                                                    profile?.profileImage
+                                                        ? {
+                                                              uri: profile.profileImage,
+                                                          }
+                                                        : defaultImage
+                                                }
+                                                style={styles.profileImage}
+                                            />
+                                            <View style={styles.editOverlay}>
+                                                <CustomText
+                                                    style={styles.editText}
+                                                >
+                                                    Muokkaa
+                                                </CustomText>
+                                            </View>
+                                        </View>
+                                    </TouchableOpacity>
 
-                        {/* Family Section */}
-                        {!loadingHousehold && (
-                            <FamilySection
-                                household={household}
-                                onManagePress={() =>
-                                    navigation.navigate('Hallinnoi perhettä')
-                                }
-                            />
+                                    <View style={styles.userInfo}>
+                                        <CustomText
+                                            style={[
+                                                styles.username,
+                                                isDesktop &&
+                                                    styles.desktopUsername,
+                                            ]}
+                                        >
+                                            {profile?.username}
+                                        </CustomText>
+                                        <CustomText
+                                            style={[
+                                                styles.email,
+                                                isDesktop && styles.desktopEmail,
+                                            ]}
+                                        >
+                                            {profile?.email}
+                                        </CustomText>
+                                    </View>
+                                </View>
+                                <Button
+                                    title="Muokkaa tietoja"
+                                    style={styles.primaryButton}
+                                    textStyle={styles.buttonText}
+                                    onPress={() =>
+                                        navigation.navigate('Muokkaa tietoja')
+                                    }
+                                />
+
+                                {/* Family Section */}
+                                {!loadingHousehold && (
+                                    <FamilySection
+                                        household={household}
+                                        onManagePress={() =>
+                                            navigation.navigate(
+                                                'Hallinnoi perhettä'
+                                            )
+                                        }
+                                    />
+                                )}
+
+                                <View style={styles.buttonSection}>
+                                    <Button
+                                        title="Kirjaudu ulos"
+                                        style={styles.tertiaryButton}
+                                        textStyle={styles.buttonText}
+                                        onPress={handleLogout}
+                                    />
+                                </View>
+                            </>
                         )}
-
-                        <View style={styles.buttonSection}>
-                            <Button
-                                title="Kirjaudu ulos"
-                                style={styles.tertiaryButton}
-                                textStyle={styles.buttonText}
-                                onPress={handleLogout}
-                            />
-                        </View>
                     </View>
                 </View>
             </ScrollView>
@@ -393,7 +469,7 @@ const styles = StyleSheet.create({
     },
     buttonSection: {
         width: '100%',
-        gap: 16,
+        gap: 10,
         alignItems: 'center',
     },
     primaryButton: {

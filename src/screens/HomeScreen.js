@@ -13,8 +13,10 @@ import CustomText from '../components/CustomText'
 import FilteredMealsCard from '../components/FilteredMealsCard'
 import MealItemDetail from '../components/MealItemDetail'
 import RandomMealCard from '../components/RandomMealCard'
+import Info from '../components/Info'
 import ResponsiveLayout from '../components/ResponsiveLayout'
 import { useResponsiveDimensions } from '../utils/responsive'
+import { te } from 'date-fns/locale'
 
 const mealImage = {
     uri: 'https://images.ctfassets.net/hef5a6s5axrs/1fvToRJqesGgl6dJCFyyJl/0f484ccfe293cca2a0a4ab57d3324c34/undraw_breakfast_rgx5.png',
@@ -64,24 +66,28 @@ const HomeScreen = () => {
             image: mealImage,
             route: 'MealsStack',
             screen: 'Ateriat',
+            text: 'Ateriat-osiossa voit selata ja suunnitella aterioita ja reseptejä.',
         },
         {
             title: 'Pentteri',
             image: pantryImage,
             route: 'PantryStack',
             screen: 'Pentteri',
+            text: 'Pentteri tarkoittaa virtuaalista ruokavarastoasi. Ylläpidä pentteriäsi, jotta Arkiapuri voi ehdottaa aterioita, jotka voit valmistaa niistä.',
         },
         {
             title: 'Ostoslista',
             image: shoppingListImage,
             route: 'ShoppingListStack',
             screen: 'Ostoslista',
+            text: 'Ostoslista-osiossa voit luoda älykkäitä ostoslistoja, jotka perustuvat ateriasuunnitelmiisi.',
         },
         {
             title: 'Lukujärjestys',
             image: readingOrderImage,
             route: 'ReadingOrderStack',
             screen: 'Lukujärjestys',
+            text: 'Lukujärjestykseen voit lisätä luomiasi aterioita eri päiville ja aikoihin, jotta näet selkeän suunnitelman siitä, mitä aiot syödä ja milloin.',
         },
     ]
 
@@ -105,6 +111,9 @@ const HomeScreen = () => {
                         <View style={styles.desktopCardContent}>
                             <CustomText style={styles.desktopCardTitle}>
                                 {card.title}
+                            </CustomText>
+                            <CustomText style={styles.desktopCardText}>
+                                {card.text}
                             </CustomText>
                         </View>
                     </TouchableOpacity>
@@ -339,6 +348,10 @@ const HomeScreen = () => {
                                     <CustomText style={styles.boxTextTitle}>
                                         Ateriat
                                     </CustomText>
+                                    <Info
+                                        title="Ateriat"
+                                        content="Ateriat-osiossa voit selata ja suunnitella aterioita ja reseptejä. Käytä pentteriä hyväksesi löytääksesi aterioita, jotka voit valmistaa olemassa olevista aineksista, tai selaa koko reseptikokoelmaamme inspiraatiota varten. Aterioiden puuttuvat ainekset voit helposti lisätä ostoslistalle."
+                                    />
                                 </View>
                             </TouchableOpacity>
                             <TouchableOpacity
@@ -360,6 +373,10 @@ const HomeScreen = () => {
                                     <CustomText style={styles.boxTextTitle}>
                                         Pentteri
                                     </CustomText>
+                                     <Info
+                                        title="Pentteri"
+                                        content="Pentteri tarkoittaa virtuaalista ruokavarastoasi. Ylläpidä pentteriäsi, jotta Arkiapuri voi ehdottaa aterioita, jotka voit valmistaa niistä."
+                                    />
                                 </View>
                             </TouchableOpacity>
                         </View>
@@ -383,6 +400,10 @@ const HomeScreen = () => {
                                     <CustomText style={styles.boxTextTitle}>
                                         Ostoslista
                                     </CustomText>
+                                     <Info
+                                        title="Ostoslista"
+                                        content="Ostoslista-osiossa voit luoda älykkäitä ostoslistoja, jotka perustuvat ateriasuunnitelmiisi. Voit helposti lisätä aterioiden ainesosia ostoslistalle ja siirtää ostetut tuotteet Pentteriin, jolloin pysyt ajan tasalla siitä, mitä sinun vielä tarvitsee hankkia."
+                                    />
                                 </View>
                             </TouchableOpacity>
                             <TouchableOpacity
@@ -404,6 +425,10 @@ const HomeScreen = () => {
                                     <CustomText style={styles.boxTextTitle}>
                                         Lukujärjestys
                                     </CustomText>
+                                     <Info
+                                        title="Lukujärjestys"
+                                        content="Lukujärjestykseen voit lisätä luomiasi aterioita eri päiville ja aikoihin, jotta näet selkeän suunnitelman siitä, mitä aiot syödä ja milloin"
+                                    />
                                 </View>
                             </TouchableOpacity>
                         </View>
@@ -612,6 +637,7 @@ const styles = StyleSheet.create({
     },
     boxTextContent: {
         alignItems: 'center',
+        flexDirection: 'row',
     },
     boxTextTitle: {
         fontSize: 16,
@@ -688,9 +714,8 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     desktopCardContent: {
-        paddingHorizontal: 20,
-        paddingBottom: 20,
-        paddingTop: 10,
+        paddingHorizontal: 30,
+        paddingBottom: 30,
         alignItems: 'center',
     },
     desktopCardTitle: {
@@ -699,4 +724,10 @@ const styles = StyleSheet.create({
         color: '#333',
         textAlign: 'center',
     },
+    desktopCardText: {
+        fontSize: 14,
+        color: '#333',
+        textAlign: 'center',
+        marginTop: 8,
+    }
 })

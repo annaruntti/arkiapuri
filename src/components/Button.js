@@ -58,9 +58,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: 8,
-        paddingVertical: 12,
-        paddingHorizontal: 24,
-        minHeight: 48,
+        paddingVertical: 10,
+        paddingHorizontal: 22,
+        minHeight: 46,
         flexDirection: 'row',
         ...(Platform.OS === 'web' && {
             cursor: 'pointer',
@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
 
     // Text styles
     text: {
-        fontSize: 16,
+        fontSize: 15,
         fontWeight: '600',
         textAlign: 'center',
     },
@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     mediumText: {
-        fontSize: 16,
+        fontSize: 15,
         fontWeight: '600',
     },
     largeText: {

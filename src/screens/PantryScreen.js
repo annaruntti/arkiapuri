@@ -802,7 +802,7 @@ const styles = StyleSheet.create({
         flex: 1,
         width: '100%',
         maxWidth: 960,
-        alignSelf: 'center',
+        alignSelf: 'left',
         paddingHorizontal: 40,
     },
     mainScrollView: {

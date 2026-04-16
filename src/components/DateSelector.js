@@ -117,11 +117,7 @@ const styles = StyleSheet.create({
         color: '#333',
     },
     selectedDateButtonText: {
-        color: '#fff',
-        fontWeight: 'bold',
-    },
-    selectedDateButtonText: {
-        color: '#fff',
+        color: '#000',
         fontWeight: 'bold',
     },
 })

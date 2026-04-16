@@ -372,6 +372,7 @@ const styles = StyleSheet.create({
         paddingBottom: 7,
         paddingLeft: 10,
         paddingRight: 10,
+        minWidth: 165,
         elevation: 2,
         backgroundColor: '#9C86FC',
         width: '100%',
@@ -471,7 +472,7 @@ const styles = StyleSheet.create({
         flex: 1,
         width: '100%',
         maxWidth: 960,
-        alignSelf: 'center',
+        alignSelf: 'left',
         paddingHorizontal: 40,
     },
     fullWidth: {
