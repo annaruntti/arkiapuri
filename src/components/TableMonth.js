@@ -177,8 +177,7 @@ const TableMonth = ({ onRequireLogin }) => {
             if (!token) return
             const formattedDates = selectedDates.map(
                 (date) =>
-                    new Date(date).toISOString().split('T')[0] +
-                    'T00:00:00.000Z'
+                    format(date, 'yyyy-MM-dd') + 'T00:00:00.000Z'
             )
 
             const response = await axios.put(
