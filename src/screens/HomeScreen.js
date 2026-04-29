@@ -66,7 +66,7 @@ const HomeScreen = () => {
             image: mealImage,
             route: 'MealsStack',
             screen: 'Ateriat',
-            text: 'Ateriat-osiossa voit selata ja suunnitella aterioita ja reseptejä.',
+            text: 'Ateriat-osiossa voit selata ja suunnitella aterioita ja reseptejä. Käytä pentterin sisältöä avuksesi luodessasi aterioita, ja lisää luodut ateriat lukujärjestykseesi.',
         },
         {
             title: 'Pentteri',
@@ -710,12 +710,12 @@ const styles = StyleSheet.create({
         height: 120,
         resizeMode: 'contain',
         alignSelf: 'center',
-        marginTop: 20,
+        marginTop: 25,
         marginBottom: 10,
     },
     desktopCardContent: {
         paddingHorizontal: 30,
-        paddingBottom: 30,
+        paddingBottom: 40,
         alignItems: 'center',
     },
     desktopCardTitle: {
@@ -725,9 +725,9 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     desktopCardText: {
-        fontSize: 14,
+        fontSize: 16,
         color: '#333',
         textAlign: 'center',
-        marginTop: 8,
+        marginTop: 10,
     }
 })

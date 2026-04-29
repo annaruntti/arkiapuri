@@ -1,6 +1,3 @@
-import { useFocusEffect, useNavigation } from '@react-navigation/native'
-import axios from 'axios'
-import * as ImagePicker from 'expo-image-picker'
 import * as React from 'react'
 import {
     Alert,
@@ -11,6 +8,9 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native'
+import { useFocusEffect, useNavigation } from '@react-navigation/native'
+import axios from 'axios'
+import * as ImagePicker from 'expo-image-picker'
 import Button from '../components/Button'
 import CustomText from '../components/CustomText'
 import FamilySection from '../components/FamilySection'
@@ -351,7 +351,6 @@ const styles = StyleSheet.create({
         paddingVertical: 60,
         alignItems: 'center',
         backgroundColor: '#fafafa',
-        minHeight: '100vh',
     },
     tabletContainer: {
         paddingHorizontal: 32,

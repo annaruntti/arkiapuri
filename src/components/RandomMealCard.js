@@ -440,6 +440,7 @@ const styles = StyleSheet.create({
     },
     desktopSubtitle: {
         fontSize: 16,
+        marginLeft: 10,
     },
     raffleButton: {
         marginLeft: 8,
