@@ -1,9 +1,6 @@
-import axios from 'axios'
 import { useEffect, useState } from 'react'
 import {
-    Alert,
     Image,
-    Platform,
     ScrollView,
     StyleSheet,
     TouchableOpacity,
@@ -21,35 +18,39 @@ import {
     subMonths,
 } from 'date-fns'
 import { fi } from 'date-fns/locale'
-import { getServerUrl } from '../utils/getServerUrl'
-import storage from '../utils/storage'
 import CustomText from './CustomText'
 import DateSelector from './DateSelector'
 import MealItemDetail from './MealItemDetail'
 import MealSelectionList, { PLACEHOLDER_IMAGE_URL } from './MealSelectionList'
 import ResponsiveModal from './ResponsiveModal'
+import { useMealCalendar } from '../hooks/useMealCalendar'
+import { 
+    removeMealFromDate as removeMealUtil,
+    toggleDateSelection as toggleDateUtil,
+    clearDateSelection as clearDateUtil,
+} from '../utils/mealCalendarUtils'
 
 const TableMonth = ({ onRequireLogin }) => {
     const [currentMonth, setCurrentMonth] = useState(new Date())
     const [monthDates, setMonthDates] = useState([])
-    const [mealsByDate, setMealsByDate] = useState({})
-    const [isLoading, setIsLoading] = useState(true)
-    const [isModalVisible, setIsModalVisible] = useState(false)
-    const [selectedDates, setSelectedDates] = useState([])
-    const [availableMeals, setAvailableMeals] = useState([])
-    const [selectedMeal, setSelectedMeal] = useState(null)
-    const [detailModalVisible, setDetailModalVisible] = useState(false)
 
-    const getAuthTokenOrPrompt = async (trigger = 'sync') => {
-        const token = await storage.getItem('userToken')
-        if (!token) {
-            if (onRequireLogin) {
-                onRequireLogin(trigger)
-            }
-            return null
-        }
-        return token
-    }
+    const {
+        mealsByDate,
+        isLoading,
+        isModalVisible,
+        selectedDates,
+        availableMeals,
+        selectedMeal,
+        detailModalVisible,
+        setIsModalVisible,
+        setSelectedDates,
+        setDetailModalVisible,
+        fetchMealData: fetchMealsBase,
+        handleDatePress: handleDatePressBase,
+        handleMealSelection: handleMealSelectionBase,
+        updateMealDates: updateMealDatesBase,
+        handleMealUpdate: handleMealUpdateBase,
+    } = useMealCalendar({ onRequireLogin })
 
     // Generate calendar dates for the current month
     useEffect(() => {
@@ -67,77 +68,7 @@ const TableMonth = ({ onRequireLogin }) => {
         }
 
         setMonthDates(dates)
-        fetchMealData(dates)
-    }
-
-    // Fetch meal data for the month dates
-    const fetchMealData = async (datesToFetch, debugMealId = null) => {
-        try {
-            setIsLoading(true)
-            const token = await storage.getItem('userToken')
-
-            if (!token) {
-                setMealsByDate({})
-                return
-            }
-
-            // Fetch all meals and filter by planned dates on frontend
-            const response = await axios.get(getServerUrl('/meals'), {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            })
-
-            if (response.data.success) {
-                const allMeals = response.data.meals || []
-                const mealsByDateObj = {}
-
-                // Initialize all dates with empty arrays
-                datesToFetch.forEach((date) => {
-                    const dateStr = format(date, 'yyyy-MM-dd')
-                    mealsByDateObj[dateStr] = []
-                })
-
-                // Group meals by their planned eating dates (or cooking date if no eating dates)
-                allMeals.forEach((meal) => {
-                    // Use plannedEatingDates if available and not empty, otherwise fall back to plannedCookingDate
-                    let datesToDisplay = []
-
-                    if (
-                        meal.plannedEatingDates &&
-                        Array.isArray(meal.plannedEatingDates) &&
-                        meal.plannedEatingDates.length > 0
-                    ) {
-                        // Use eating dates
-                        datesToDisplay = meal.plannedEatingDates
-                    } else if (meal.plannedCookingDate) {
-                        // Fall back to cooking date
-                        datesToDisplay = [meal.plannedCookingDate]
-                    }
-
-                    datesToDisplay.forEach((dateValue) => {
-                        if (dateValue) {
-                            const mealDate = format(
-                                new Date(dateValue),
-                                'yyyy-MM-dd'
-                            )
-                            if (mealsByDateObj.hasOwnProperty(mealDate)) {
-                                mealsByDateObj[mealDate].push(meal)
-                            }
-                        }
-                    })
-                })
-
-                setMealsByDate(mealsByDateObj)
-            }
-        } catch (error) {
-            if (error?.response?.status !== 401) {
-                console.error('Error fetching meal data:', error)
-                Alert.alert('Virhe', 'Aterioiden haku epäonnistui')
-            }
-        } finally {
-            setIsLoading(false)
-        }
+        fetchMealsBase(dates)
     }
 
     const navigateMonth = (direction) => {
@@ -148,171 +79,32 @@ const TableMonth = ({ onRequireLogin }) => {
         setCurrentMonth(newMonth)
     }
 
-    const handleDatePress = async (date) => {
-        try {
-            setSelectedDates([date]) // Initialize with the clicked date
-            const token = await getAuthTokenOrPrompt('sync')
-            if (!token) return
-            const response = await axios.get(getServerUrl('/meals'), {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            })
-
-            if (response.data.success) {
-                setAvailableMeals(response.data.meals || [])
-                setIsModalVisible(true)
-            }
-        } catch (error) {
-            console.error('Error fetching available meals:', error)
-            Alert.alert('Virhe', 'Aterioiden haku epäonnistui')
-        }
+    const handleDatePress = (date) => {
+        handleDatePressBase(date)
     }
 
-    const handleMealSelection = async (meal) => {
-        if (selectedDates.length === 0) return
-
-        try {
-            const token = await getAuthTokenOrPrompt('sync')
-            if (!token) return
-            const formattedDates = selectedDates.map(
-                (date) =>
-                    format(date, 'yyyy-MM-dd') + 'T00:00:00.000Z'
-            )
-
-            const response = await axios.put(
-                getServerUrl(`/meals/${meal._id}`),
-                {
-                    plannedEatingDates: formattedDates,
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                    },
-                }
-            )
-
-            if (response.data.success) {
-                // Refresh the meal data for the current month
-                generateMonthDates(currentMonth)
-                setIsModalVisible(false)
-                const dateText =
-                    selectedDates.length === 1
-                        ? format(selectedDates[0], 'd.M.yyyy')
-                        : `${selectedDates.length} päivälle`
-                Alert.alert('Onnistui', `Ateria lisätty ${dateText}`)
-            }
-        } catch (error) {
-            console.error('Error adding meal to date:', error)
-            Alert.alert('Virhe', 'Aterian lisääminen epäonnistui')
-        }
+    const handleMealSelection = (meal) => {
+        handleMealSelectionBase(meal, () => generateMonthDates(currentMonth))
     }
 
-    const handleMealPress = (meal) => {
-        setSelectedMeal(meal)
-        setDetailModalVisible(true)
+    const updateMealDates = (mealId, newDates) => {
+        updateMealDatesBase(mealId, newDates, () => generateMonthDates(currentMonth))
+    }
+
+    const handleMealUpdate = (mealId, updatedMeal) => {
+        handleMealUpdateBase(mealId, updatedMeal, () => generateMonthDates(currentMonth))
+    }
+
+    const removeMealFromDate = (meal, date) => {
+        removeMealUtil(meal, date, updateMealDates)
     }
 
     const toggleDateSelection = (date) => {
-        setSelectedDates((prev) => {
-            const isSelected = prev.some((d) => d.getTime() === date.getTime())
-            if (isSelected) {
-                return prev.filter((d) => d.getTime() !== date.getTime())
-            } else {
-                return [...prev, date]
-            }
-        })
+        toggleDateUtil(date, selectedDates, setSelectedDates)
     }
 
     const clearDateSelection = () => {
-        setSelectedDates([])
-    }
-
-    const removeMealFromDate = async (meal, date) => {
-        try {
-            // Get current plannedEatingDates
-            const currentDates = meal.plannedEatingDates || []
-
-            // If meal has no plannedEatingDates, it's using plannedCookingDate
-            if (currentDates.length === 0 && meal.plannedCookingDate) {
-                const cookingDate = format(
-                    new Date(meal.plannedCookingDate),
-                    'yyyy-MM-dd'
-                )
-                const targetDate = format(date, 'yyyy-MM-dd')
-
-                // If trying to remove the cooking date, set plannedEatingDates to empty array
-                if (cookingDate === targetDate) {
-                    await updateMealDates(meal._id, [])
-                    return
-                } else {
-                    // Date doesn't match cooking date, nothing to remove
-                    return
-                }
-            }
-
-            // Remove the specific date from the array
-            const updatedDates = currentDates.filter((dateStr) => {
-                const mealDate = format(new Date(dateStr), 'yyyy-MM-dd')
-                const targetDate = format(date, 'yyyy-MM-dd')
-                return mealDate !== targetDate
-            })
-
-            // Update with remaining dates (or empty array if no dates left)
-            await updateMealDates(meal._id, updatedDates)
-        } catch (error) {
-            console.error('Error removing meal from date:', error)
-        }
-    }
-
-    const updateMealDates = async (mealId, newDates) => {
-        try {
-            const token = await getAuthTokenOrPrompt('sync')
-            if (!token) return
-
-            await axios.put(
-                getServerUrl(`/meals/${mealId}`),
-                {
-                    plannedEatingDates: newDates,
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                    },
-                }
-            )
-
-            // Refresh the meal data
-            await fetchMealData(monthDates, mealId)
-        } catch (error) {
-            console.error('Error updating meal dates:', error)
-            if (Platform.OS === 'web') {
-                alert('Virhe: Aterian päivitys epäonnistui')
-            } else {
-                Alert.alert('Virhe', 'Aterian päivitys epäonnistui')
-            }
-        }
-    }
-
-    const deleteMealCompletely = async (mealId) => {
-        try {
-            const token = await getAuthTokenOrPrompt('sync')
-            if (!token) return
-
-            await axios.delete(getServerUrl(`/meals/${mealId}`), {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            })
-
-            // Refresh the meal data
-            generateMonthDates(currentMonth)
-        } catch (error) {
-            console.error('Error deleting meal:', error)
-            Alert.alert('Virhe', 'Aterian poistaminen epäonnistui')
-        }
+        clearDateUtil(setSelectedDates)
     }
 
     const handleCloseDetail = () => {
@@ -358,54 +150,6 @@ const TableMonth = ({ onRequireLogin }) => {
             </TouchableOpacity>
         </View>
     )
-
-    const handleMealUpdate = async (mealId, updatedMeal) => {
-        try {
-            if (!mealId) {
-                Alert.alert('Virhe', 'Aterian ID puuttuu')
-                return
-            }
-
-            const token = await getAuthTokenOrPrompt('sync')
-            if (!token) return
-
-            const cleanedMeal = {
-                name: updatedMeal.name,
-                cookingTime: parseInt(updatedMeal.cookingTime) || 0,
-                difficultyLevel:
-                    updatedMeal.difficultyLevel?.toString() || 'easy',
-                defaultRoles: Array.isArray(updatedMeal.defaultRoles)
-                    ? updatedMeal.defaultRoles
-                    : [updatedMeal.defaultRoles?.toString() || 'dinner'],
-                plannedCookingDate: updatedMeal.plannedCookingDate,
-                plannedEatingDates: updatedMeal.plannedEatingDates || [],
-                recipe: updatedMeal.recipe || '',
-                foodItems:
-                    updatedMeal.foodItems?.map((item) => item._id || item) ||
-                    [],
-            }
-
-            const response = await axios.put(
-                getServerUrl(`/meals/${mealId}`),
-                cleanedMeal,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                    },
-                }
-            )
-
-            if (response.data.success) {
-                generateMonthDates(currentMonth)
-                setDetailModalVisible(false)
-                Alert.alert('Onnistui', 'Ateria päivitetty')
-            }
-        } catch (error) {
-            console.error('Error updating meal:', error)
-            Alert.alert('Virhe', 'Aterian päivittäminen epäonnistui')
-        }
-    }
 
     const renderCalendarDay = (date) => {
         const dateStr = format(date, 'yyyy-MM-dd')

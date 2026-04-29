@@ -27,6 +27,12 @@ import Animated, {
 import { getServerUrl } from '../utils/getServerUrl'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
+import { useMealCalendar } from '../hooks/useMealCalendar'
+import { 
+    removeMealFromDate as removeMealUtil,
+    toggleDateSelection as toggleDateUtil,
+    clearDateSelection as clearDateUtil,
+} from '../utils/mealCalendarUtils'
 
 import Button from './Button'
 import CustomText from './CustomText'
@@ -139,30 +145,71 @@ const DraggableMealItem = ({
 const Table = ({ onRequireLogin }) => {
     const { isDesktop } = useResponsiveDimensions()
     const [dates, setDates] = useState([])
-    const [mealsByDate, setMealsByDate] = useState({})
-    const [isModalVisible, setIsModalVisible] = useState(false)
-    const [selectedDate, setSelectedDate] = useState(null)
-    const [selectedDates, setSelectedDates] = useState([])
-    const [availableMeals, setAvailableMeals] = useState([])
-    const [selectedMeal, setSelectedMeal] = useState(null)
-    const [detailModalVisible, setDetailModalVisible] = useState(false)
     const [weekOffset, setWeekOffset] = useState(0) // 0 = current week, -1 = previous, +1 = next
     const [moveMealModalVisible, setMoveMealModalVisible] = useState(false)
     const [mealToMove, setMealToMove] = useState(null)
     const [moveFromDate, setMoveFromDate] = useState(null)
 
+    const {
+        mealsByDate,
+        isModalVisible,
+        selectedDates,
+        availableMeals,
+        selectedMeal,
+        detailModalVisible,
+        setIsModalVisible,
+        setSelectedDates,
+        setDetailModalVisible,
+        setAvailableMeals,
+        fetchMealData: fetchMealsBase,
+        updateMealDates: updateMealDatesBase,
+        handleMealPress: handleMealPressBase,
+        handleMealUpdate: handleMealUpdateBase,
+    } = useMealCalendar({ onRequireLogin })
+
     // Drag and drop state
     const [draggingMeal, setDraggingMeal] = useState(null)
-    const [draggingFromDate, setDraggingFromDate] = useState(null)
     const [dropTargetDate, setDropTargetDate] = useState(null)
     const [isScrollEnabled, setIsScrollEnabled] = useState(true)
     const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 })
     const dayRefs = useRef(new Map())
-    const scrollViewRef = useRef(null)
     const flatListRef = useRef(null)
     const draggingMealRef = useRef(null)
     const draggingFromDateRef = useRef(null)
     const scrollOffsetRef = useRef(0)
+
+    // Wrapper functions that pass refresh callback to hook functions
+    const fetchMealData = (datesToFetch) => {
+        fetchMealsBase(datesToFetch)
+    }
+
+    const updateMealDates = (mealId, newDates) => {
+        updateMealDatesBase(mealId, newDates, () => fetchMealData(dates))
+    }
+
+    const handleMealPress = (meal) => {
+        handleMealPressBase(meal)
+    }
+
+    const handleMealUpdate = (mealId, updatedMeal) => {
+        handleMealUpdateBase(mealId, updatedMeal, () => fetchMealData(dates))
+    }
+
+    const removeMealFromDate = (meal, date) => {
+        removeMealUtil(meal, date, updateMealDates)
+    }
+
+    const toggleDateSelection = (date) => {
+        toggleDateUtil(date, selectedDates, setSelectedDates)
+    }
+
+    const clearDateSelection = () => {
+        clearDateUtil(setSelectedDates)
+    }
+
+    const handleCloseDetail = () => {
+        setDetailModalVisible(false)
+    }
 
     const getAuthTokenOrPrompt = async (trigger = 'sync') => {
         const token = await storage.getItem('userToken')
@@ -191,75 +238,6 @@ const Table = ({ onRequireLogin }) => {
         fetchMealData(weekDays)
     }, [weekOffset])
 
-    // Fetch meal data for the dates
-    const fetchMealData = async (datesToFetch, debugMealId = null) => {
-        try {
-            const token = await storage.getItem('userToken')
-            if (!token) {
-                setMealsByDate({})
-                return
-            }
-
-            // Format dates for filtering
-            const formattedDates = datesToFetch.map((date) =>
-                format(date, 'yyyy-MM-dd')
-            )
-
-            // Fetch all meals and filter by planned dates on frontend
-            const response = await axios.get(getServerUrl('/meals'), {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            })
-
-            if (response.data.success) {
-                const allMeals = response.data.meals || []
-                const mealsByDate = {}
-
-                // Initialize empty arrays for each date
-                formattedDates.forEach((date) => {
-                    mealsByDate[date] = []
-                })
-
-                // Group meals by their planned eating dates (or cooking date if no eating dates)
-                allMeals.forEach((meal) => {
-                    // Use plannedEatingDates if available and not empty, otherwise fall back to plannedCookingDate
-                    let datesToDisplay = []
-
-                    if (
-                        meal.plannedEatingDates &&
-                        Array.isArray(meal.plannedEatingDates) &&
-                        meal.plannedEatingDates.length > 0
-                    ) {
-                        // Use eating dates
-                        datesToDisplay = meal.plannedEatingDates
-                    } else if (meal.plannedCookingDate) {
-                        // Fall back to cooking date
-                        datesToDisplay = [meal.plannedCookingDate]
-                    }
-
-                    datesToDisplay.forEach((dateValue) => {
-                        if (dateValue) {
-                            const mealDate = format(
-                                new Date(dateValue),
-                                'yyyy-MM-dd'
-                            )
-                            if (mealsByDate.hasOwnProperty(mealDate)) {
-                                mealsByDate[mealDate].push(meal)
-                            }
-                        }
-                    })
-                })
-
-                setMealsByDate(mealsByDate)
-            }
-        } catch (error) {
-            if (error?.response?.status !== 401) {
-                console.error('Error fetching meal data:', error)
-            }
-        }
-    }
-
     const handleAddMeal = async (date) => {
         try {
             const token = await getAuthTokenOrPrompt('sync')
@@ -274,7 +252,6 @@ const Table = ({ onRequireLogin }) => {
                 // Show all meals for now, remove the filter temporarily
                 const availableMeals = response.data.meals
                 setAvailableMeals(availableMeals)
-                setSelectedDate(date)
                 // Always start fresh with the clicked date
                 setSelectedDates([date])
                 setIsModalVisible(true)
@@ -290,9 +267,7 @@ const Table = ({ onRequireLogin }) => {
             const token = await getAuthTokenOrPrompt('sync')
             if (!token) return
             const formattedDates = selectedDates.map(
-                (date) =>
-                    new Date(date).toISOString().split('T')[0] +
-                    'T00:00:00.000Z'
+                (date) => format(date, 'yyyy-MM-dd') + 'T00:00:00.000Z'
             )
 
             // Use PUT with the meal._id
@@ -336,117 +311,6 @@ const Table = ({ onRequireLogin }) => {
         }
     }
 
-    const handleMealPress = (meal) => {
-        setSelectedMeal(meal)
-        setDetailModalVisible(true)
-    }
-
-    const toggleDateSelection = (date) => {
-        setSelectedDates((prev) => {
-            const isSelected = prev.some((d) => d.getTime() === date.getTime())
-            if (isSelected) {
-                return prev.filter((d) => d.getTime() !== date.getTime())
-            } else {
-                return [...prev, date]
-            }
-        })
-    }
-
-    const clearDateSelection = () => {
-        setSelectedDates([])
-    }
-
-    const removeMealFromDate = async (meal, date) => {
-        try {
-            // Get current plannedEatingDates
-            const currentDates = meal.plannedEatingDates || []
-
-            // If meal has no plannedEatingDates, it's using plannedCookingDate
-            if (currentDates.length === 0 && meal.plannedCookingDate) {
-                const cookingDate = format(
-                    new Date(meal.plannedCookingDate),
-                    'yyyy-MM-dd'
-                )
-                const targetDate = format(date, 'yyyy-MM-dd')
-
-                // If trying to remove the cooking date, set plannedEatingDates to empty array
-                if (cookingDate === targetDate) {
-                    await updateMealDates(meal._id, [])
-                    return
-                } else {
-                    // Date doesn't match cooking date, nothing to remove
-                    return
-                }
-            }
-
-            // Remove the specific date from the array
-            const updatedDates = currentDates.filter((dateStr) => {
-                const mealDate = format(new Date(dateStr), 'yyyy-MM-dd')
-                const targetDate = format(date, 'yyyy-MM-dd')
-                return mealDate !== targetDate
-            })
-
-            // Update with remaining dates (or empty array if no dates left)
-            await updateMealDates(meal._id, updatedDates)
-        } catch (error) {
-            console.error('Error removing meal from date:', error)
-        }
-    }
-
-    const updateMealDates = async (mealId, newDates) => {
-        try {
-            const token = await getAuthTokenOrPrompt('sync')
-            if (!token) return
-
-            await axios.put(
-                getServerUrl(`/meals/${mealId}`),
-                {
-                    plannedEatingDates: newDates,
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                    },
-                }
-            )
-
-            // Refresh the meal data
-            await fetchMealData(dates, mealId)
-        } catch (error) {
-            console.error('Error updating meal dates:', error)
-            if (Platform.OS === 'web') {
-                alert('Virhe: Aterian päivitys epäonnistui')
-            } else {
-                Alert.alert('Virhe', 'Aterian päivitys epäonnistui')
-            }
-        }
-    }
-
-    const deleteMealCompletely = async (mealId) => {
-        try {
-            const token = await getAuthTokenOrPrompt('sync')
-            if (!token) return
-
-            await axios.delete(getServerUrl(`/meals/${mealId}`), {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            })
-
-            // Refresh the meal data
-            fetchMealData(dates)
-        } catch (error) {
-            console.error('Error deleting meal:', error)
-            Alert.alert('Virhe', 'Aterian poistaminen epäonnistui')
-        }
-    }
-
-    const handleCloseDetail = () => {
-        setDetailModalVisible(false)
-        setSelectedMeal(null)
-    }
-
     const goToPreviousWeek = () => {
         setWeekOffset((prev) => prev - 1)
     }
@@ -457,13 +321,6 @@ const Table = ({ onRequireLogin }) => {
 
     const goToCurrentWeek = () => {
         setWeekOffset(0)
-    }
-
-    const handleLongPress = (meal, date) => {
-        // Open modal to select target day
-        setMealToMove(meal)
-        setMoveFromDate(date)
-        setMoveMealModalVisible(true)
     }
 
     const handleMoveMealToDay = async (targetDate) => {
@@ -493,10 +350,7 @@ const Table = ({ onRequireLogin }) => {
                     const mealDate = format(new Date(dateStr), 'yyyy-MM-dd')
                     return mealDate !== fromDateStr
                 })
-                .concat([
-                    new Date(targetDate).toISOString().split('T')[0] +
-                        'T00:00:00.000Z',
-                ])
+                .concat([format(targetDate, 'yyyy-MM-dd') + 'T00:00:00.000Z'])
 
             const token = await getAuthTokenOrPrompt('sync')
             if (!token) return
@@ -554,10 +408,7 @@ const Table = ({ onRequireLogin }) => {
                     const mealDate = format(new Date(dateStr), 'yyyy-MM-dd')
                     return mealDate !== fromDateStr
                 })
-                .concat([
-                    new Date(toDate).toISOString().split('T')[0] +
-                        'T00:00:00.000Z',
-                ])
+                .concat([format(toDate, 'yyyy-MM-dd') + 'T00:00:00.000Z'])
 
             const token = await getAuthTokenOrPrompt('sync')
             if (!token) return
@@ -644,7 +495,6 @@ const Table = ({ onRequireLogin }) => {
             draggingMealRef.current = meal
             draggingFromDateRef.current = date
             setDraggingMeal(meal)
-            setDraggingFromDate(date)
             setIsScrollEnabled(false) // Disable scrolling during drag
         } catch (error) {
             // Silent fail for drag start
@@ -730,78 +580,12 @@ const Table = ({ onRequireLogin }) => {
             draggingFromDateRef.current = null
             screenPositionsRef.current.clear() // Clear screen positions
             setDraggingMeal(null)
-            setDraggingFromDate(null)
             setDropTargetDate(null)
             setDragPosition({ x: 0, y: 0 })
             setIsScrollEnabled(true) // Re-enable scrolling
         } catch (error) {
             screenPositionsRef.current.clear() // Clear on error too
             setIsScrollEnabled(true) // Re-enable scrolling even on error
-        }
-    }
-
-    const handleMealUpdate = async (mealId, updatedMeal) => {
-        try {
-            if (!mealId) {
-                Alert.alert('Virhe', 'Aterian ID puuttuu')
-                return
-            }
-
-            const token = await getAuthTokenOrPrompt('sync')
-            if (!token) return
-
-            // Prepare the meal data for API call
-            const cleanedMeal = {
-                name: updatedMeal.name,
-                cookingTime: parseInt(updatedMeal.cookingTime) || 0,
-                difficultyLevel:
-                    updatedMeal.difficultyLevel?.toString() || 'easy',
-                defaultRoles: Array.isArray(updatedMeal.defaultRoles)
-                    ? updatedMeal.defaultRoles
-                    : [updatedMeal.defaultRoles?.toString() || 'dinner'],
-                plannedCookingDate: updatedMeal.plannedCookingDate,
-                plannedEatingDates: updatedMeal.plannedEatingDates || [],
-                recipe: updatedMeal.recipe || '',
-                // Keep existing food items unchanged for now
-                foodItems:
-                    updatedMeal.foodItems?.map((item) => item._id || item) ||
-                    [],
-            }
-
-            // Send API call to update the meal
-            const response = await axios.put(
-                getServerUrl(`/meals/${mealId}`),
-                cleanedMeal,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                    },
-                }
-            )
-
-            if (response.data.success) {
-                // Update the meal in the local state with the response data
-                setMealsByDate((prev) => {
-                    const updated = { ...prev }
-                    Object.keys(updated).forEach((dateKey) => {
-                        updated[dateKey] = updated[dateKey].map((meal) =>
-                            meal._id === mealId ? response.data.meal : meal
-                        )
-                    })
-                    return updated
-                })
-
-                // Close the detail modal
-                setDetailModalVisible(false)
-                setSelectedMeal(null)
-            } else {
-                console.error('Failed to update meal:', response.data.message)
-                Alert.alert('Virhe', 'Aterian päivittäminen epäonnistui')
-            }
-        } catch (error) {
-            console.error('Error updating meal:', error)
-            Alert.alert('Virhe', 'Aterian päivittäminen epäonnistui')
         }
     }
 
@@ -830,7 +614,6 @@ const Table = ({ onRequireLogin }) => {
     )
 
     const renderMealItemWithRemove = (meal, date) => {
-        const isDraggingThis = draggingMeal && draggingMeal._id === meal._id
         return (
             <DraggableMealItem
                 meal={meal}
