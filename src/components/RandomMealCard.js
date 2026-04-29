@@ -234,6 +234,7 @@ const RandomMealCard = ({ onMealPress, iconImage, filterByPantry = false }) => {
                     styles.card,
                     isTablet && styles.tabletCard,
                     isDesktop && styles.desktopCard,
+                    styles.emptyCard,
                 ]}
             >
                 <CustomText
@@ -278,7 +279,7 @@ const RandomMealCard = ({ onMealPress, iconImage, filterByPantry = false }) => {
                 resizeMode="contain"
             />
             <View style={styles.content}>
-                <View style={styles.labelContainer}>
+                <View style={styles.headerRow}>
                     <CustomText
                         style={[styles.label, isDesktop && styles.desktopLabel]}
                     >
@@ -290,11 +291,11 @@ const RandomMealCard = ({ onMealPress, iconImage, filterByPantry = false }) => {
                         <View style={styles.badge}>
                             <MaterialIcons
                                 name="check-circle"
-                                size={14}
+                                size={12}
                                 color="#10B981"
                             />
                             <CustomText style={styles.badgeText}>
-                                Ainekset saatavilla
+                                Saatavilla
                             </CustomText>
                         </View>
                     )}
@@ -391,12 +392,12 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
     },
-    labelContainer: {
+    headerRow: {
         flexDirection: 'row',
-        alignItems: 'center',
         justifyContent: 'space-between',
+        alignItems: 'flex-start',
         marginBottom: 4,
-        flexWrap: 'wrap',
+        gap: 8,
     },
     label: {
         fontSize: 12,
@@ -413,16 +414,16 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#D1FAE5',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 12,
-        marginLeft: 8,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 8,
+        flexShrink: 0,
     },
     badgeText: {
-        fontSize: 10,
+        fontSize: 9,
         fontWeight: '600',
         color: '#065F46',
-        marginLeft: 4,
+        marginLeft: 3,
     },
     title: {
         fontSize: 16,
@@ -441,6 +442,12 @@ const styles = StyleSheet.create({
     desktopSubtitle: {
         fontSize: 16,
         marginLeft: 10,
+    },
+    emptyCard: {
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 24,
     },
     raffleButton: {
         marginLeft: 8,
