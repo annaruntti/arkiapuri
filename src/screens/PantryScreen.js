@@ -17,6 +17,7 @@ import CategorySectionHeader from '../components/CategorySectionHeader'
 import CustomText from '../components/CustomText'
 import FormFoodItem from '../components/FormFoodItem'
 import LoginPromptModal from '../components/LoginPromptModal'
+import useLoginPrompt from '../hooks/useLoginPrompt'
 import PantryItemDetails from '../components/PantryItemDetails'
 import ResponsiveLayout from '../components/ResponsiveLayout'
 import ResponsiveModal from '../components/ResponsiveModal'
@@ -33,9 +34,7 @@ const PANTRY_PLACEHOLDER_IMAGE_URL =
 
 const PantryScreen = ({}) => {
     const { isDesktop } = useResponsiveDimensions()
-    const [showItemForm, setShowItemForm] = useState(false)
-    const [loginPromptVisible, setLoginPromptVisible] = useState(false)
-    const [loginPromptTrigger, setLoginPromptTrigger] = useState('save')
+    const { showLoginPrompt, loginPromptProps } = useLoginPrompt()
     const [pantryItems, setPantryItems] = useState([])
     const [loading, setLoading] = useState(true)
     const [selectedItem, setSelectedItem] = useState(null)
@@ -45,11 +44,6 @@ const PantryScreen = ({}) => {
     const [showAddItemSearch, setShowAddItemSearch] = useState(false)
     const [selectedCategoryFilters, setSelectedCategoryFilters] = useState([])
     const [showFilters, setShowFilters] = useState(false)
-
-    const openLoginPrompt = (trigger = 'save') => {
-        setLoginPromptTrigger(trigger)
-        setLoginPromptVisible(true)
-    }
 
     // Get ingredient categories from categories.json
     const ingredientCategories =
@@ -238,7 +232,7 @@ const PantryScreen = ({}) => {
             const token = await storage.getItem('userToken')
 
             if (!token) {
-                openLoginPrompt('save')
+                showLoginPrompt('save')
                 return
             }
 
@@ -332,7 +326,7 @@ const PantryScreen = ({}) => {
         try {
             const token = await storage.getItem('userToken')
             if (!token) {
-                openLoginPrompt('ai_feature')
+                showLoginPrompt('ai_feature')
                 return
             }
 
@@ -365,7 +359,7 @@ const PantryScreen = ({}) => {
             const token = await storage.getItem('userToken')
 
             if (!token) {
-                openLoginPrompt('save')
+                showLoginPrompt('save')
                 return
             }
 
@@ -434,7 +428,7 @@ const PantryScreen = ({}) => {
             const token = await storage.getItem('userToken')
 
             if (!token) {
-                openLoginPrompt('save')
+                showLoginPrompt('save')
                 return
             }
 
@@ -473,7 +467,7 @@ const PantryScreen = ({}) => {
         try {
             const token = await storage.getItem('userToken')
             if (!token) {
-                openLoginPrompt('save')
+                showLoginPrompt('save')
                 return
             }
 
@@ -528,7 +522,7 @@ const PantryScreen = ({}) => {
     const handleOpenAddItemSearch = async () => {
         const token = await storage.getItem('userToken')
         if (!token) {
-            openLoginPrompt('save')
+            showLoginPrompt('save')
             return
         }
 
@@ -543,11 +537,7 @@ const PantryScreen = ({}) => {
                 }
             >
                 <View style={styles.container}>
-                    <LoginPromptModal
-                        visible={loginPromptVisible}
-                        onClose={() => setLoginPromptVisible(false)}
-                        triggerType={loginPromptTrigger}
-                    />
+                    <LoginPromptModal {...loginPromptProps} />
 
                     <ResponsiveModal
                         visible={showItemForm}

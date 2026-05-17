@@ -9,6 +9,7 @@ const LoginProvider = ({ children }) => {
     const [isLoggedIn, setIsLoggedIn] = useState(false)
     const [profile, setProfile] = useState({})
     const [isLoading, setIsLoading] = useState(true)
+    const [continueWithoutLogin, setContinueWithoutLogin] = useState(false)
 
     useEffect(() => {
         const checkToken = async () => {
@@ -85,9 +86,14 @@ const LoginProvider = ({ children }) => {
             await storage.removeItem('profile')
             setIsLoggedIn(false)
             setProfile({})
+            setContinueWithoutLogin(false)
         } catch (error) {
             console.error('Failed to clear login data', error)
         }
+    }
+
+    const allowContinueWithoutLogin = () => {
+        setContinueWithoutLogin(true)
     }
 
     return (
@@ -100,6 +106,8 @@ const LoginProvider = ({ children }) => {
                 isLoading,
                 login,
                 logout,
+                continueWithoutLogin,
+                allowContinueWithoutLogin,
             }}
         >
             {children}

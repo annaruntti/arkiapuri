@@ -5,6 +5,7 @@ import Button from '../components/Button'
 import CustomText from '../components/CustomText'
 import FormAddShoppingList from '../components/FormAddShoppingList'
 import LoginPromptModal from '../components/LoginPromptModal'
+import useLoginPrompt from '../hooks/useLoginPrompt'
 import ShoppingListDetail from '../components/ShoppingListDetail'
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
@@ -15,16 +16,10 @@ import { useResponsiveDimensions } from '../utils/responsive'
 
 const ShoppingListsScreen = () => {
     const [modalVisible, setModalVisible] = useState(false)
-    const [loginPromptVisible, setLoginPromptVisible] = useState(false)
-    const [loginPromptTrigger, setLoginPromptTrigger] = useState('shopping_list')
+    const { showLoginPrompt, loginPromptProps } = useLoginPrompt()
     const [shoppingLists, setShoppingLists] = useState([])
     const [selectedList, setSelectedList] = useState(null)
     const { isDesktop } = useResponsiveDimensions()
-
-    const openLoginPrompt = (trigger = 'shopping_list') => {
-        setLoginPromptTrigger(trigger)
-        setLoginPromptVisible(true)
-    }
 
     const fetchShoppingLists = async () => {
         try {
@@ -109,7 +104,7 @@ const ShoppingListsScreen = () => {
     const handleOpenCreateList = async () => {
         const token = await storage.getItem('userToken')
         if (!token) {
-            openLoginPrompt('shopping_list')
+            showLoginPrompt('shopping_list', () => setModalVisible(true))
             return
         }
         setModalVisible(true)
@@ -218,11 +213,7 @@ const ShoppingListsScreen = () => {
                         />
                     </ResponsiveModal>
 
-                    <LoginPromptModal
-                        visible={loginPromptVisible}
-                        onClose={() => setLoginPromptVisible(false)}
-                        triggerType={loginPromptTrigger}
-                    />
+                    <LoginPromptModal {...loginPromptProps} />
 
                     <ResponsiveModal
                         visible={!!selectedList}
@@ -238,7 +229,7 @@ const ShoppingListsScreen = () => {
                                 fetchShoppingLists={fetchShoppingLists}
                                 fetchPantryItems={fetchPantryItems}
                                 onRequireLogin={(trigger) =>
-                                    openLoginPrompt(trigger || 'ai_feature')
+                                    showLoginPrompt(trigger || 'ai_feature')
                                 }
                             />
                         )}

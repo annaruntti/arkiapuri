@@ -5,7 +5,9 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native'
+import Button from './Button'
 import CustomText from './CustomText'
+import GuestWarningBanner from './GuestWarningBanner'
 
 const PLACEHOLDER_IMAGE_URL =
     'https://images.ctfassets.net/2pij69ehhf4n/3b9imD6TDC4i68V4uHVgL1/1ac1194dccb086bb52ebd674c59983e3/undraw_breakfast_rgx5.png'
@@ -59,14 +61,24 @@ const MealSelectionList = ({
     availableMeals,
     selectedDates,
     onMealSelect,
-    showAllRoles = false, // If true, shows all roles; if false, shows only first role
+    onCreateMeal,
+    showAllRoles = false,
 }) => {
     if (availableMeals.length === 0) {
         return (
             <View style={styles.noMealsContainer}>
+                <GuestWarningBanner />
                 <CustomText style={styles.noMealsText}>
-                    Ei vapaita aterioita
+                    Ei tallennettuja aterioita
                 </CustomText>
+                {onCreateMeal ? (
+                    <Button
+                        title="+ Luo ateria"
+                        onPress={onCreateMeal}
+                        style={styles.createButton}
+                        textStyle={styles.createButtonText}
+                    />
+                ) : null}
             </View>
         )
     }
@@ -141,6 +153,19 @@ const styles = StyleSheet.create({
     noMealsText: {
         fontSize: 16,
         color: '#666',
+        marginBottom: 16,
+    },
+    createButton: {
+        borderRadius: 25,
+        paddingVertical: 9,
+        paddingHorizontal: 20,
+        backgroundColor: '#9C86FC',
+        marginTop: 4,
+    },
+    createButtonText: {
+        color: '#000',
+        fontWeight: 'bold',
+        textAlign: 'center',
     },
     mealItem: {
         backgroundColor: '#f8f8f8',

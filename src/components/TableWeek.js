@@ -28,6 +28,7 @@ import { getServerUrl } from '../utils/getServerUrl'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 import { useMealCalendar } from '../hooks/useMealCalendar'
+import { useLogin } from '../context/LoginProvider'
 import { 
     removeMealFromDate as removeMealUtil,
     toggleDateSelection as toggleDateUtil,
@@ -37,6 +38,7 @@ import {
 import Button from './Button'
 import CustomText from './CustomText'
 import DateSelector from './DateSelector'
+import FormAddMeal from './FormAddMeal'
 import MealItemDetail from './MealItemDetail'
 import MealSelectionList, {
     PLACEHOLDER_IMAGE_URL,
@@ -144,11 +146,13 @@ const DraggableMealItem = ({
 
 const Table = ({ onRequireLogin }) => {
     const { isDesktop } = useResponsiveDimensions()
+    const { continueWithoutLogin } = useLogin()
     const [dates, setDates] = useState([])
     const [weekOffset, setWeekOffset] = useState(0) // 0 = current week, -1 = previous, +1 = next
     const [moveMealModalVisible, setMoveMealModalVisible] = useState(false)
     const [mealToMove, setMealToMove] = useState(null)
     const [moveFromDate, setMoveFromDate] = useState(null)
+    const [addMealModalVisible, setAddMealModalVisible] = useState(false)
 
     const {
         mealsByDate,
@@ -211,11 +215,14 @@ const Table = ({ onRequireLogin }) => {
         setDetailModalVisible(false)
     }
 
-    const getAuthTokenOrPrompt = async (trigger = 'sync') => {
+    const getAuthTokenOrPrompt = async (trigger = 'sync', action = null) => {
         const token = await storage.getItem('userToken')
         if (!token) {
+            if (continueWithoutLogin) {
+                return 'guest'
+            }
             if (onRequireLogin) {
-                onRequireLogin(trigger)
+                onRequireLogin(trigger, action)
             }
             return null
         }
@@ -238,28 +245,39 @@ const Table = ({ onRequireLogin }) => {
         fetchMealData(weekDays)
     }, [weekOffset])
 
-    const handleAddMeal = async (date) => {
+    // Opens the add-meal modal for a given date, optionally fetching available meals.
+    // Called directly as the retry action when user chooses "Jatka ilman kirjautumista",
+    const openAddMealModal = async (date, token = null) => {
         try {
-            const token = await getAuthTokenOrPrompt('sync')
-            if (!token) return
-            const response = await axios.get(getServerUrl('/meals'), {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            })
-
-            if (response.data && response.data.meals) {
-                // Show all meals for now, remove the filter temporarily
-                const availableMeals = response.data.meals
-                setAvailableMeals(availableMeals)
-                // Always start fresh with the clicked date
-                setSelectedDates([date])
-                setIsModalVisible(true)
+            if (token && token !== 'guest') {
+                const response = await axios.get(getServerUrl('/meals'), {
+                    headers: { Authorization: `Bearer ${token}` },
+                })
+                if (response.data && response.data.meals) {
+                    setAvailableMeals(response.data.meals)
+                }
+            } else {
+                // Guest mode or no token: open with empty list
+                setAvailableMeals([])
             }
+            setSelectedDates([date])
+            setIsModalVisible(true)
         } catch (error) {
             console.error('Error fetching meals:', error)
             Alert.alert('Virhe', 'Aterioiden hakeminen epäonnistui')
         }
+    }
+
+    const handleAddMeal = async (date) => {
+        const token = await storage.getItem('userToken')
+        if (!token) {
+            if (onRequireLogin) {
+                // Pass openAddMealModal as retry — it bypasses auth check entirely
+                onRequireLogin('sync', () => openAddMealModal(date))
+            }
+            return
+        }
+        openAddMealModal(date, token)
     }
 
     const handleSelectMeal = async (meal) => {
@@ -766,30 +784,50 @@ const Table = ({ onRequireLogin }) => {
     }
 
     const renderMealSelectModal = () => (
-        <ResponsiveModal
-            visible={isModalVisible}
-            onClose={() => {
-                setIsModalVisible(false)
-                setSelectedDates([]) // Clear selected dates when modal closes
-            }}
-            title={`Valitse ateria ja päivät`}
-            maxWidth={700}
-        >
-            {/* Date Selection Section */}
-            <DateSelector
-                dates={dates}
-                selectedDates={selectedDates}
-                onToggleDateSelection={toggleDateSelection}
-                onClearSelection={clearDateSelection}
-            />
+        <>
+            <ResponsiveModal
+                visible={isModalVisible}
+                onClose={() => {
+                    setIsModalVisible(false)
+                    setSelectedDates([]) // Clear selected dates when modal closes
+                }}
+                title={`Valitse ateria ja päivät`}
+                maxWidth={700}
+            >
+                {/* Date Selection Section */}
+                <DateSelector
+                    dates={dates}
+                    selectedDates={selectedDates}
+                    onToggleDateSelection={toggleDateSelection}
+                    onClearSelection={clearDateSelection}
+                />
 
-            <MealSelectionList
-                availableMeals={availableMeals}
-                selectedDates={selectedDates}
-                onMealSelect={handleSelectMeal}
-                showAllRoles={false}
-            />
-        </ResponsiveModal>
+                <MealSelectionList
+                    availableMeals={availableMeals}
+                    selectedDates={selectedDates}
+                    onMealSelect={handleSelectMeal}
+                    onCreateMeal={() => {
+                        setIsModalVisible(false)
+                        setAddMealModalVisible(true)
+                    }}
+                    showAllRoles={false}
+                />
+            </ResponsiveModal>
+
+            <ResponsiveModal
+                visible={addMealModalVisible}
+                onClose={() => setAddMealModalVisible(false)}
+                title="Luo uusi ateria"
+                maxWidth={700}
+            >
+                <FormAddMeal
+                    onSubmit={() => {
+                        setAddMealModalVisible(false)
+                        fetchMealData(dates)
+                    }}
+                />
+            </ResponsiveModal>
+        </>
     )
 
     const renderMoveMealModal = () => (

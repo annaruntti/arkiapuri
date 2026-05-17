@@ -1,21 +1,18 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { StyleSheet, TouchableOpacity, View } from 'react-native'
 import CustomText from '../components/CustomText'
 import LoginPromptModal from '../components/LoginPromptModal'
 import ResponsiveLayout from '../components/ResponsiveLayout'
 import TableMonth from '../components/TableMonth'
 import TableWeek from '../components/TableWeek'
-import { useResponsiveDimensions } from '../utils/responsive'
+import useLoginPrompt from '../hooks/useLoginPrompt'
 
 const ReadingOrderScreen = ({}) => {
-    const { isDesktop } = useResponsiveDimensions()
+    const { showLoginPrompt, loginPromptProps } = useLoginPrompt()
     const [activeTab, setActiveTab] = useState('week')
-    const [loginPromptVisible, setLoginPromptVisible] = useState(false)
-    const [loginPromptTrigger, setLoginPromptTrigger] = useState('sync')
 
-    const handleRequireLogin = (trigger = 'sync') => {
-        setLoginPromptTrigger(trigger)
-        setLoginPromptVisible(true)
+    const handleRequireLogin = (trigger = 'sync', action = null) => {
+        showLoginPrompt(trigger, action)
     }
 
     const renderTabButton = (tabKey, title) => (
@@ -50,13 +47,9 @@ const ReadingOrderScreen = ({}) => {
                     )}
                 </View>
 
-                <LoginPromptModal
-                    visible={loginPromptVisible}
-                    onClose={() => setLoginPromptVisible(false)}
-                    triggerType={loginPromptTrigger}
-                />
+                <LoginPromptModal {...loginPromptProps} />
 
-                {/* Tab Navigation - Rendered last so it's on top */}
+                {/* Tab Navigation is rendered last so it's on top */}
                 <View style={styles.tabContainer}>
                     {renderTabButton('week', 'Viikko')}
                     {renderTabButton('month', 'Kuukausi')}

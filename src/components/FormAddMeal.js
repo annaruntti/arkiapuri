@@ -29,6 +29,7 @@ import CustomText from './CustomText'
 import DateTimePicker from './DateTimePicker'
 import DifficultySelector from './DifficultySelector'
 import FormFoodItem from './FormFoodItem'
+import GuestWarningBanner from './GuestWarningBanner'
 import MealCategorySelector from './MealCategorySelector'
 import UnifiedFoodSearch from './UnifiedFoodSearch'
 
@@ -1025,6 +1026,7 @@ const AddMealForm = ({ onSubmit }) => {
                 keyboardShouldPersistTaps="handled"
             >
                 <View style={[styles.formContainer, isDesktop && styles.formContainerDesktop]}>
+                    <GuestWarningBanner message="⚠️ Tietosi eivät tallennu pysyvästi ilman käyttäjätunnusta. Kirjaudu sisään tallentaaksesi ateriat." />
                         <View ref={nameErrorRef}>
                         <CustomInput
                             control={control}

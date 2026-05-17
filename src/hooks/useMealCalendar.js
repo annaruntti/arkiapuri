@@ -3,6 +3,7 @@ import { Alert } from 'react-native'
 import axios from 'axios'
 import { format } from 'date-fns'
 import { getServerUrl } from '../utils/getServerUrl'
+import { useLogin } from '../context/LoginProvider'
 import storage from '../utils/storage'
 
 /**
@@ -10,6 +11,7 @@ import storage from '../utils/storage'
  * Shared between TableWeek and TableMonth components
  */
 export const useMealCalendar = ({ onRequireLogin }) => {
+    const { continueWithoutLogin } = useLogin()
     const [mealsByDate, setMealsByDate] = useState({})
     const [isLoading, setIsLoading] = useState(true)
     const [isModalVisible, setIsModalVisible] = useState(false)
@@ -18,11 +20,12 @@ export const useMealCalendar = ({ onRequireLogin }) => {
     const [selectedMeal, setSelectedMeal] = useState(null)
     const [detailModalVisible, setDetailModalVisible] = useState(false)
 
-    const getAuthTokenOrPrompt = async (trigger = 'sync') => {
+    const getAuthTokenOrPrompt = async (trigger = 'sync', action = null) => {
         const token = await storage.getItem('userToken')
         if (!token) {
+            if (continueWithoutLogin) return 'guest'
             if (onRequireLogin) {
-                onRequireLogin(trigger)
+                onRequireLogin(trigger, action)
             }
             return null
         }
@@ -84,26 +87,39 @@ export const useMealCalendar = ({ onRequireLogin }) => {
         }
     }, [])
 
-    const handleDatePress = async (date) => {
+    // Opens the meal selection modal for a given date.
+    // This function does not check auth so safe to use as a retry action.
+    const openMealSelectModal = async (date, token = null) => {
         try {
             setSelectedDates([date])
-            const token = await getAuthTokenOrPrompt('sync')
-            if (!token) return
-            
-            const response = await axios.get(getServerUrl('/meals'), {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            })
-
-            if (response.data.success) {
-                setAvailableMeals(response.data.meals || [])
-                setIsModalVisible(true)
+            if (token && token !== 'guest') {
+                const response = await axios.get(getServerUrl('/meals'), {
+                    headers: { Authorization: `Bearer ${token}` },
+                })
+                if (response.data.success) {
+                    setAvailableMeals(response.data.meals || [])
+                }
+            } else {
+                setAvailableMeals([])
             }
+            setIsModalVisible(true)
         } catch (error) {
             console.error('Error fetching available meals:', error)
             Alert.alert('Virhe', 'Aterioiden haku epäonnistui')
         }
+    }
+
+    const handleDatePress = async (date) => {
+        const token = await storage.getItem('userToken')
+        if (!token) {
+            if (continueWithoutLogin) {
+                openMealSelectModal(date)
+            } else if (onRequireLogin) {
+                onRequireLogin('sync', () => openMealSelectModal(date))
+            }
+            return
+        }
+        openMealSelectModal(date, token)
     }
 
     const handleMealSelection = async (meal, refreshCallback) => {

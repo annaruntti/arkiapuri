@@ -42,11 +42,11 @@ const DifficultySelector = ({ value, onSelect, showLabel = true }) => {
                     )
                 })}
             </View>
-            {showLabel && value && (
+            {(showLabel && !!value) ? (
                 <CustomText style={styles.difficultyLabel}>
                     {getDifficultyLabel(parseInt(value))}
                 </CustomText>
-            )}
+            ) : null}
         </View>
     )
 }

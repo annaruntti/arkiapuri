@@ -20,6 +20,7 @@ import {
 import { fi } from 'date-fns/locale'
 import CustomText from './CustomText'
 import DateSelector from './DateSelector'
+import FormAddMeal from './FormAddMeal'
 import MealItemDetail from './MealItemDetail'
 import MealSelectionList, { PLACEHOLDER_IMAGE_URL } from './MealSelectionList'
 import ResponsiveModal from './ResponsiveModal'
@@ -33,6 +34,7 @@ import {
 const TableMonth = ({ onRequireLogin }) => {
     const [currentMonth, setCurrentMonth] = useState(new Date())
     const [monthDates, setMonthDates] = useState([])
+    const [addMealModalVisible, setAddMealModalVisible] = useState(false)
 
     const {
         mealsByDate,
@@ -109,7 +111,6 @@ const TableMonth = ({ onRequireLogin }) => {
 
     const handleCloseDetail = () => {
         setDetailModalVisible(false)
-        setSelectedMeal(null)
     }
 
     const renderMealItemWithRemove = (meal, date) => (
@@ -308,7 +309,25 @@ const TableMonth = ({ onRequireLogin }) => {
                     availableMeals={availableMeals}
                     selectedDates={selectedDates}
                     onMealSelect={handleMealSelection}
+                    onCreateMeal={() => {
+                        setIsModalVisible(false)
+                        setAddMealModalVisible(true)
+                    }}
                     showAllRoles={true}
+                />
+            </ResponsiveModal>
+
+            <ResponsiveModal
+                visible={addMealModalVisible}
+                onClose={() => setAddMealModalVisible(false)}
+                title="Luo uusi ateria"
+                maxWidth={700}
+            >
+                <FormAddMeal
+                    onSubmit={() => {
+                        setAddMealModalVisible(false)
+                        generateMonthDates(currentMonth)
+                    }}
                 />
             </ResponsiveModal>
 

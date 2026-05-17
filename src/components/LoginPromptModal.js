@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigation } from '@react-navigation/native'
 import axios from 'axios'
 import {
@@ -28,6 +28,7 @@ const LoginPromptModal = ({
     customMessage,
     onLoginSuccess,
     onSocialSignIn,
+    onContinueWithoutLogin,
 }) => {
     const [isSignup, setIsSignup] = useState(false)
     const navigation = useNavigation()
@@ -234,7 +235,12 @@ const LoginPromptModal = ({
 
                 <Button
                     title="Jatka ilman kirjautumista"
-                    onPress={onClose}
+                    onPress={() => {
+                        onClose()
+                        if (onContinueWithoutLogin) {
+                            onContinueWithoutLogin()
+                        }
+                    }}
                     type="TERTIARY"
                     style={styles.tertiaryButton}
                     textStyle={styles.tertiaryButtonText}

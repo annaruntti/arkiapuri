@@ -17,6 +17,7 @@ import MealItem from '../components/MealItem'
 import MealItemDetail from '../components/MealItemDetail'
 import LoginPromptModal from '../components/LoginPromptModal'
 import ResponsiveLayout from '../components/ResponsiveLayout'
+import useLoginPrompt from '../hooks/useLoginPrompt'
 import ResponsiveModal from '../components/ResponsiveModal'
 import SearchSection from '../components/SearchSection'
 import { getServerUrl } from '../utils/getServerUrl'
@@ -44,8 +45,7 @@ import storage from '../utils/storage'
 
 const MealsScreen = ({ route, navigation }) => {
     const [modalVisible, setModalVisible] = useState(false)
-    const [loginPromptVisible, setLoginPromptVisible] = useState(false)
-    const [loginPromptTrigger, setLoginPromptTrigger] = useState('meal_create')
+    const { showLoginPrompt, loginPromptProps } = useLoginPrompt()
     const [meals, setMeals] = useState([])
     const [loading, setLoading] = useState(true)
     const [selectedMeal, setSelectedMeal] = useState(null)
@@ -58,11 +58,6 @@ const MealsScreen = ({ route, navigation }) => {
     const [selectedCookingTimeFilter, setSelectedCookingTimeFilter] =
         useState(null)
     const { isDesktop } = useResponsiveDimensions()
-
-    const openLoginPrompt = (trigger = 'meal_create') => {
-        setLoginPromptTrigger(trigger)
-        setLoginPromptVisible(true)
-    }
 
     // Get filter params from navigation, use only if they have actual values
     const filterDifficulty =
@@ -411,7 +406,8 @@ const MealsScreen = ({ route, navigation }) => {
     const handleOpenAddMeal = async () => {
         const token = await storage.getItem('userToken')
         if (!token) {
-            openLoginPrompt('meal_create')
+            // Retry action opens the modal directly — no re-auth check needed
+            showLoginPrompt('meal_create', () => setModalVisible(true))
             return
         }
         setModalVisible(true)
@@ -442,11 +438,7 @@ const MealsScreen = ({ route, navigation }) => {
                 />
             </ResponsiveModal>
 
-            <LoginPromptModal
-                visible={loginPromptVisible}
-                onClose={() => setLoginPromptVisible(false)}
-                triggerType={loginPromptTrigger}
-            />
+            <LoginPromptModal {...loginPromptProps} />
 
             {renderHeader()}
 
