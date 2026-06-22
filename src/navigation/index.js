@@ -1,10 +1,3 @@
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
-import {
-    NavigationContainer,
-    useFocusEffect,
-    useNavigation,
-} from '@react-navigation/native'
-import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import * as React from 'react'
 import {
     Image,
@@ -13,10 +6,18 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native'
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
+import {
+    NavigationContainer,
+    useFocusEffect,
+    useNavigation,
+} from '@react-navigation/native'
+import { createNativeStackNavigator } from '@react-navigation/native-stack'
+import { AntDesign, Feather, FontAwesome6 } from '@expo/vector-icons'
+
 import { useLogin } from '../context/LoginProvider'
 import { useResponsiveDimensions } from '../utils/responsive'
-
-import { AntDesign, Feather, FontAwesome6 } from '@expo/vector-icons'
+import storage from '../utils/storage'
 
 import CustomText from '../components/CustomText'
 import AcceptInviteScreen from '../screens/AcceptInviteScreen'
@@ -545,24 +546,27 @@ const RootStack = createNativeStackNavigator()
 const NAVIGATION_STATE_KEY = '@navigation_state'
 
 const getStoredState = async () => {
-    // Only use state persistence on mobile (web uses URL-based linking)
     if (Platform.OS !== 'web') {
         try {
-            const state = sessionStorage.getItem(NAVIGATION_STATE_KEY)
-            return state ? JSON.parse(state) : undefined
+            const state = await storage.getItem(NAVIGATION_STATE_KEY)
+
+            return state ?? undefined
         } catch (e) {
             console.warn('Failed to get navigation state', e)
             return undefined
         }
     }
+
     return undefined
 }
 
 const setStoredState = async (state) => {
-    // Only persist state on mobile (web uses URL-based linking)
     if (Platform.OS !== 'web') {
         try {
-            sessionStorage.setItem(NAVIGATION_STATE_KEY, JSON.stringify(state))
+            await storage.setItem(
+                NAVIGATION_STATE_KEY,
+                state
+            )
         } catch (e) {
             console.warn('Failed to save navigation state', e)
         }
@@ -636,7 +640,7 @@ const linking = {
 }
 
 export default function Navigation() {
-    const { isLoggedIn, isLoading } = useLogin()
+    const { isLoading } = useLogin()
     const [isReady, setIsReady] = React.useState(Platform.OS === 'web') // Web is ready immediately (uses linking)
     const [initialState, setInitialState] = React.useState()
 
