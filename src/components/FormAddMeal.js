@@ -1026,18 +1026,17 @@ const AddMealForm = ({ onSubmit }) => {
                 keyboardShouldPersistTaps="handled"
             >
                 <View style={[styles.formContainer, isDesktop && styles.formContainerDesktop]}>
-                    <GuestWarningBanner message="⚠️ Tietosi eivät tallennu pysyvästi ilman käyttäjätunnusta. Kirjaudu sisään tallentaaksesi ateriat." />
+                    <GuestWarningBanner message="Tietosi eivät tallennu pysyvästi ilman käyttäjätunnusta. Kirjaudu sisään tallentaaksesi tiedot." />
                         <View ref={nameErrorRef}>
-                        <CustomInput
-                            control={control}
-                            name="name"
-                            label="Aterian nimi"
-                            placeholder="Esim. kasvisrisotto"
-                            rules={{ required: 'Aterian nimi on pakollinen tieto' }}
-                            variant="form"
-                        />
+                            <CustomInput
+                                control={control}
+                                name="name"
+                                label="Aterian nimi"
+                                placeholder="Esim. kasvisrisotto"
+                                rules={{ required: 'Aterian nimi on pakollinen tieto' }}
+                                variant="form"
+                            />
                         </View>
-
                         <CustomInput
                             control={control}
                             name="recipe"
@@ -1048,7 +1047,6 @@ const AddMealForm = ({ onSubmit }) => {
                             numberOfLines={4}
                             inputStyle={styles.multilineInput}
                         />
-
                         <CustomText style={styles.label}>
                             Aterian kuva
                         </CustomText>
@@ -1076,7 +1074,6 @@ const AddMealForm = ({ onSubmit }) => {
                                 </View>
                             )}
                         </TouchableOpacity>
-
                         <CustomText style={styles.label}>
                             Vaikeustaso (1-5)
                         </CustomText>

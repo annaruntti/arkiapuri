@@ -1,6 +1,3 @@
-import { MaterialIcons } from '@expo/vector-icons'
-import { useFocusEffect } from '@react-navigation/native'
-import axios from 'axios'
 import { useCallback, useEffect, useState } from 'react'
 import {
     Alert,
@@ -11,6 +8,10 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native'
+import axios from 'axios'
+import { MaterialIcons } from '@expo/vector-icons'
+import { useFocusEffect } from '@react-navigation/native'
+
 import CategoryFilter from '../components/CategoryFilter'
 import CategoryFilterSection from '../components/CategoryFilterSection'
 import CategorySectionHeader from '../components/CategorySectionHeader'
@@ -23,6 +24,8 @@ import ResponsiveLayout from '../components/ResponsiveLayout'
 import ResponsiveModal from '../components/ResponsiveModal'
 import SearchSection from '../components/SearchSection'
 import UnifiedFoodSearch from '../components/UnifiedFoodSearch'
+import GuestWarningBanner from '../components/GuestWarningBanner'
+
 import categoriesData from '../data/categories.json'
 import { getServerUrl } from '../utils/getServerUrl'
 import { useResponsiveDimensions } from '../utils/responsive'
@@ -35,6 +38,7 @@ const PANTRY_PLACEHOLDER_IMAGE_URL =
 const PantryScreen = ({}) => {
     const { isDesktop } = useResponsiveDimensions()
     const { showLoginPrompt, loginPromptProps } = useLoginPrompt()
+    const [showItemForm, setShowItemForm] = useState(false)
     const [pantryItems, setPantryItems] = useState([])
     const [loading, setLoading] = useState(true)
     const [selectedItem, setSelectedItem] = useState(null)
@@ -522,10 +526,9 @@ const PantryScreen = ({}) => {
     const handleOpenAddItemSearch = async () => {
         const token = await storage.getItem('userToken')
         if (!token) {
-            showLoginPrompt('save')
+            showLoginPrompt('save', () => setShowAddItemSearch(true))
             return
         }
-
         setShowAddItemSearch(true)
     }
 
@@ -562,6 +565,7 @@ const PantryScreen = ({}) => {
                             showsVerticalScrollIndicator={true}
                             contentContainerStyle={styles.addItemModalContainer}
                         >
+                            <GuestWarningBanner style={styles.GuestWarningBanner} message="Tietosi eivät tallennu pysyvästi ilman käyttäjätunnusta. Kirjaudu sisään tallentaaksesi ateriat." />
                             {/* Search section */}
                             <View style={styles.searchSection}>
                                 <CustomText style={styles.searchSectionTitle}>
@@ -988,6 +992,9 @@ const styles = StyleSheet.create({
     modalScrollView: {
         maxHeight: '80vh', // Limit height on web
         flex: 1,
+    },
+    GuestWarningBanner: {
+        marginBottom: 20,
     },
     searchSectionTitle: {
         fontSize: 18,

@@ -22,7 +22,7 @@ const GuestWarningBanner = ({ message, style }) => {
 
     const text =
         message ||
-        '⚠️ Tietosi eivät tallennu pysyvästi ilman käyttäjätunnusta. Kirjaudu sisään tallentaaksesi tiedot.'
+        'Tietosi eivät tallennu pysyvästi ilman käyttäjätunnusta. Kirjaudu sisään tallentaaksesi tiedot.'
 
     return (
         <View style={[styles.banner, style]}>
