@@ -4,7 +4,7 @@ import { Dimensions, Platform } from 'react-native'
 // Breakpoints for responsive design
 export const BREAKPOINTS = {
     mobile: 0,
-    tablet: 768,
+    tablet: 690,
     desktop: 1024,
     large: 1440,
 }
@@ -64,7 +64,7 @@ export const getContainerMaxWidth = () => {
 
     if (width >= BREAKPOINTS.large) return 1200
     if (width >= BREAKPOINTS.desktop) return 960
-    if (width >= BREAKPOINTS.tablet) return 720
+    if (width >= BREAKPOINTS.tablet) return 690
     return 400 // Mobile max width (current)
 }
 

@@ -154,12 +154,12 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#000',
         textAlign: 'center',
-        marginBottom: 8,
+        marginBottom: 10,
     },
     introText: {
         textAlign: 'center',
         fontSize: 19,
-        marginBottom: 25,
+        marginBottom: 10,
     },
     layer: {
         height: '100%',
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
     desktopIntroTextTitle: {
         fontSize: 36,
         fontWeight: '700',
-        marginBottom: 16,
+        marginBottom: 0,
         color: '#333',
         textAlign: 'center',
         paddingTop: 20,
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
     desktopIntroText: {
         fontSize: 21,
         lineHeight: 32,
-        marginBottom: 20,
+        marginBottom: 0,
         color: '#555',
         textAlign: 'center',
         fontWeight: '400',
