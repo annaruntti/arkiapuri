@@ -76,6 +76,21 @@ export const markShoppingListItemBought = async (listId, itemId) => {
     return data
 }
 
+export const updateShoppingListItem = async (listId, itemId, updates) => {
+    const response = await axios.put(
+        getServerUrl(`/shopping-lists/${listId}/items/${itemId}`),
+        updates,
+        await authConfig()
+    )
+
+    const data = response.data
+    if (!data.success) {
+        throw new Error(data.message || 'Failed to update shopping list item')
+    }
+
+    return data
+}
+
 export const addShoppingListItems = async (shoppingListId, items) => {
     const response = await axios.post(
         getServerUrl(`/shopping-lists/${shoppingListId}/items`),

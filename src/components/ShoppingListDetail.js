@@ -1,4 +1,3 @@
-import axios from 'axios'
 import { useState } from 'react'
 import {
     Alert,
@@ -23,13 +22,19 @@ import PantryItemDetails from './PantryItemDetails'
 import ResponsiveModal from './ResponsiveModal'
 import SearchSection from './SearchSection'
 import { useFilteredItemList } from '../hooks/useFilteredItemList'
-import { getServerUrl } from '../utils/getServerUrl'
+import {
+    addShoppingListItems,
+    markShoppingListItemBought,
+    updateShoppingListItem,
+} from '../services/collectionApi'
+import { findOrCreateFoodItem } from '../services/foodItemApi'
 import {
     SHOPPING_SORT_OPTIONS,
     SORT_OPTION_IDS,
 } from '../utils/listSort'
 import { useResponsiveDimensions } from '../utils/responsive'
-import storage from '../utils/storage'
+
+const getListItemId = (item) => String(item?._id ?? item?.id ?? '')
 
 const ShoppingListDetail = ({
     shoppingList,
@@ -65,7 +70,9 @@ const ShoppingListDetail = ({
     })
 
     const handleCheckItem = (item) => {
-        const itemId = String(item._id)
+        const itemId = getListItemId(item)
+        if (!itemId) return
+
         setCheckedItems((prev) =>
             prev.includes(itemId)
                 ? prev.filter((id) => id !== itemId)
@@ -74,89 +81,80 @@ const ShoppingListDetail = ({
     }
 
     const moveCheckedToPantry = async (checkedItemIds) => {
-        try {
-            setLoading(true)
-            const token = await storage.getItem('userToken')
-            let updatedList = shoppingList
+        setLoading(true)
+        let updatedList = shoppingList
+        const movedItemIds = []
+        let firstError = null
 
-            for (const rawItemId of checkedItemIds) {
-                const itemId = String(rawItemId)
-                const response = await axios.post(
-                    getServerUrl(
-                        `/shopping-lists/${shoppingList._id}/items/${itemId}/bought`
-                    ),
-                    {},
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                    }
+        for (const rawItemId of checkedItemIds) {
+            const itemId = String(rawItemId)
+            try {
+                const data = await markShoppingListItemBought(
+                    shoppingList._id,
+                    itemId
                 )
 
-                if (!response.data?.success) {
-                    throw new Error(
-                        response.data?.message ||
-                            'Tuotteen siirto pentteriin epäonnistui'
-                    )
+                if (data.shoppingList) {
+                    updatedList = data.shoppingList
                 }
-
-                if (response.data.shoppingList) {
-                    updatedList = response.data.shoppingList
-                }
+                movedItemIds.push(itemId)
+            } catch (error) {
+                console.error('Error moving item to pantry:', itemId, error)
+                console.error('Error response:', error.response?.data)
+                if (!firstError) firstError = error
             }
-
-            Alert.alert('Onnistui', 'Tuotteet siirretty pentteriin')
-            setCheckedItems([])
-            await fetchShoppingLists()
-            await fetchPantryItems()
-            onUpdate(updatedList)
-        } catch (error) {
-            console.error('Error moving items to pantry:', error)
-            console.error('Error response:', error.response?.data)
-            Alert.alert('Virhe', 'Tuotteiden siirto pentteriin epäonnistui')
-        } finally {
-            setLoading(false)
         }
+
+        // Keep only the items that failed checked, so the user can retry them
+        setCheckedItems((prev) =>
+            prev.filter((id) => !movedItemIds.includes(id))
+        )
+
+        if (movedItemIds.length > 0) {
+            onUpdate(updatedList)
+        }
+
+        await fetchShoppingLists()
+        await fetchPantryItems()
+
+        if (firstError) {
+            Alert.alert(
+                'Virhe',
+                movedItemIds.length > 0
+                    ? 'Osa tuotteista siirtyi pentteriin, mutta kaikkien siirto epäonnistui'
+                    : 'Tuotteiden siirto pentteriin epäonnistui'
+            )
+        } else {
+            Alert.alert('Onnistui', 'Tuotteet siirretty pentteriin')
+        }
+
+        setLoading(false)
     }
 
     const handleAddItem = async (itemData) => {
         try {
-            const token = await storage.getItem('userToken')
-
-            // Create a FoodItem first so we can attach images later
+            // Find or create a FoodItem so we can attach images later and
+            // keep quantities in sync, without ever resending the whole
+            // shopping list (which could resurrect already-removed items
+            // if this component's local state happened to be stale).
             let foodItemId = itemData.foodId
 
             if (!foodItemId) {
                 try {
-                    const foodItemData = {
+                    const foodItemResult = await findOrCreateFoodItem({
                         name: itemData.name,
                         category: itemData.category || [],
                         unit: itemData.unit || 'kpl',
                         price: itemData.price || 0,
                         calories: itemData.calories || 0,
                         location: 'shopping-list',
-                        locations: ['shopping-list'],
-                        quantity: itemData.quantity || 1,
                         quantities: {
                             meal: 0,
                             'shopping-list': itemData.quantity || 1,
                             pantry: 0,
                         },
-                    }
-
-                    const foodItemResponse = await axios.post(
-                        getServerUrl('/food-items'),
-                        foodItemData,
-                        {
-                            headers: {
-                                Authorization: `Bearer ${token}`,
-                            },
-                        }
-                    )
-
-                    if (foodItemResponse.data.success) {
-                        foodItemId = foodItemResponse.data.foodItem._id
-                    }
+                    })
+                    foodItemId = foodItemResult.foodItem?._id
                 } catch (foodItemError) {
                     console.error('Error creating food item:', foodItemError)
                     // Continue without foodId
@@ -169,39 +167,31 @@ const ShoppingListDetail = ({
                 location: 'shopping-list',
             }
 
-            // Clean existing items to ensure foodId is just an ID
-            const cleanedExistingItems = shoppingList.items.map((item) => ({
-                ...item,
-                foodId: item.foodId?._id || item.foodId,
-            }))
-
-            const response = await axios.put(
-                getServerUrl(`/shopping-lists/${shoppingList._id}`),
-                {
-                    items: [...cleanedExistingItems, newItem],
-                    totalEstimatedPrice: shoppingList.totalEstimatedPrice || 0,
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            )
-
-            if (response.data.success) {
-                // Updating the list with the correct data
-                const updatedList = response.data.shoppingList
-                onUpdate(updatedList)
-                setShowItemForm(false)
-            }
+            const data = await addShoppingListItems(shoppingList._id, [
+                newItem,
+            ])
+            onUpdate(data.shoppingList)
+            setShowItemForm(false)
         } catch (error) {
             console.error('Error adding item:', error?.response?.data || error)
             Alert.alert('Virhe', 'Tuotteen lisääminen epäonnistui')
         }
     }
 
-    const handleSearchItemSelect = async (selectedItem) => {
+    const handleSearchItemSelect = async (selectedItem, meta = {}) => {
         try {
+            // Open Food Facts products (and any other item UnifiedFoodSearch
+            // already persisted) are fully added — FoodItem created AND
+            // attached to this shopping list — before this callback fires.
+            // Adding it again here would create a duplicate shopping list
+            // entry (and a duplicate/incorrect quantity, defaulting to 1).
+            // We only need to refresh so the new item shows up.
+            if (meta.alreadyAdded) {
+                await fetchShoppingLists()
+                setShowItemForm(false)
+                return
+            }
+
             // Transform the selected food item to shopping list item format
             const itemData = {
                 name: selectedItem.name,
@@ -228,18 +218,17 @@ const ShoppingListDetail = ({
 
     const handleUpdateItem = async (itemId, updatedData) => {
         try {
-            const token = await storage.getItem('userToken')
-
-            // Find the item in the shopping list
-            const itemIndex = shoppingList.items.findIndex(
-                (item) => item._id === itemId
+            // Find the item in the shopping list (read-only, just to fill in
+            // gaps for FoodItem creation below — we never resend the whole
+            // items array, only the single-item update endpoint).
+            const currentItem = shoppingList.items.find(
+                (item) => getListItemId(item) === String(itemId)
             )
-            if (itemIndex === -1) {
+            if (!currentItem) {
                 Alert.alert('Virhe', 'Tuotetta ei löytynyt')
                 return
             }
 
-            const currentItem = shoppingList.items[itemIndex]
             let foodItemId = currentItem.foodId?._id || currentItem.foodId
 
             // If foodId is being updated (from image upload), extract the ID
@@ -248,10 +237,10 @@ const ShoppingListDetail = ({
                 updatedData.foodId = foodItemId
             }
 
-            // If there's no foodId but we need one (e.g., for image upload), create a FoodItem
+            // If there's no foodId but we need one (e.g., for image upload), find or create a FoodItem
             if (!foodItemId && (updatedData.image || updatedData.category)) {
                 try {
-                    const foodItemData = {
+                    const foodItemResult = await findOrCreateFoodItem({
                         name: updatedData.name || currentItem.name,
                         category:
                             updatedData.category || currentItem.category || [],
@@ -260,9 +249,6 @@ const ShoppingListDetail = ({
                         calories:
                             updatedData.calories || currentItem.calories || 0,
                         location: 'shopping-list',
-                        locations: ['shopping-list'],
-                        quantity:
-                            updatedData.quantity || currentItem.quantity || 1,
                         quantities: {
                             meal: 0,
                             'shopping-list':
@@ -271,20 +257,9 @@ const ShoppingListDetail = ({
                                 1,
                             pantry: 0,
                         },
-                    }
-
-                    const foodItemResponse = await axios.post(
-                        getServerUrl('/food-items'),
-                        foodItemData,
-                        {
-                            headers: {
-                                Authorization: `Bearer ${token}`,
-                            },
-                        }
-                    )
-
-                    if (foodItemResponse.data.success) {
-                        foodItemId = foodItemResponse.data.foodItem._id
+                    })
+                    foodItemId = foodItemResult.foodItem?._id
+                    if (foodItemId) {
                         updatedData.foodId = foodItemId
                     }
                 } catch (foodItemError) {
@@ -293,51 +268,13 @@ const ShoppingListDetail = ({
                 }
             }
 
-            // Update the items array
-            const updatedItems = [...shoppingList.items]
-            updatedItems[itemIndex] = {
-                ...updatedItems[itemIndex],
-                ...updatedData,
-            }
-
-            // Clean items to ensure foodId is just an ID, not a populated object
-            const cleanedItems = updatedItems.map((item) => ({
-                ...item,
-                foodId: item.foodId?._id || item.foodId,
-            }))
-
-            // Calculate total estimated price
-            const totalEstimatedPrice = cleanedItems.reduce(
-                (total, item) => total + (parseFloat(item.price) || 0),
-                0
+            const data = await updateShoppingListItem(
+                shoppingList._id,
+                itemId,
+                updatedData
             )
-
-            // Update the shopping list - send only items and totalEstimatedPrice
-            const response = await axios.put(
-                getServerUrl(`/shopping-lists/${shoppingList._id}`),
-                {
-                    items: cleanedItems,
-                    totalEstimatedPrice: totalEstimatedPrice,
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            )
-
-            if (response.data.success) {
-                console.log(
-                    'Update response:',
-                    JSON.stringify(
-                        response.data.shoppingList.items[itemIndex],
-                        null,
-                        2
-                    )
-                )
-                onUpdate(response.data.shoppingList)
-                setShowItemDetails(false)
-            }
+            onUpdate(data.shoppingList)
+            setShowItemDetails(false)
         } catch (error) {
             console.error('Error updating item:', error)
             console.error('Error response:', error.response?.data)
@@ -358,13 +295,13 @@ const ShoppingListDetail = ({
                 >
                     <MaterialIcons
                         name={
-                            checkedItems.includes(String(item._id))
+                            checkedItems.includes(getListItemId(item))
                                 ? 'check-box'
                                 : 'check-box-outline-blank'
                         }
                         size={24}
                         color={
-                            checkedItems.includes(String(item._id))
+                            checkedItems.includes(getListItemId(item))
                                 ? '#38E4D9'
                                 : '#666'
                         }

@@ -75,18 +75,24 @@ const mergeDuplicatePantryItems = (items = []) => {
               ? `food:${foodId}`
               : `id:${item._id}`
 
-        const existing = groups.get(key)
+        const itemUnit = item.unit === 'pcs' ? 'kpl' : item.unit || 'kpl'
+        // Keep different units of the same product separate so quantities
+        // are not summed across incompatible units (e.g. 1 kpl + 500 g).
+        const mergeKey = `${key}:unit:${itemUnit}`
+
+        const existing = groups.get(mergeKey)
         if (!existing) {
-            groups.set(key, {
+            groups.set(mergeKey, {
                 ...item,
                 name: displayName || item.name,
-                unit: item.unit === 'pcs' ? 'kpl' : item.unit || 'kpl',
+                unit: itemUnit,
             })
             continue
         }
 
         existing.quantity =
             (Number(existing.quantity) || 0) + (Number(item.quantity) || 0)
+        existing.unit = itemUnit
 
         if (
             /\s/.test(displayName) &&
@@ -107,10 +113,6 @@ const mergeDuplicatePantryItems = (items = []) => {
         if (!getFoodItemImageUrl(existing) && getFoodItemImageUrl(item)) {
             existing.image = item.image
             existing.foodId = item.foodId
-        }
-
-        if (existing.unit === 'pcs') {
-            existing.unit = 'kpl'
         }
     }
 

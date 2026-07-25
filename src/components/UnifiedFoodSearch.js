@@ -389,7 +389,9 @@ const UnifiedFoodSearch = ({
                     },
                 }
 
-                onSelectItem(foodItem)
+                // Nothing has been persisted yet — the caller (meal form) is
+                // responsible for actually creating the FoodItem.
+                onSelectItem(foodItem, { alreadyAdded: false })
                 setSearchQuery('')
                 setIsListVisible(false)
                 return
@@ -427,7 +429,11 @@ const UnifiedFoodSearch = ({
                         'Invalid collection data received from server'
                     )
                 }
-                onSelectItem(data.foodItem)
+                // The FoodItem was already created AND already added to the
+                // collection (pantry/shopping list) above — the caller must
+                // NOT add it again (that would create a duplicate entry with
+                // the wrong default quantity of 1).
+                onSelectItem(data.foodItem, { alreadyAdded: true })
                 setSearchQuery('')
                 setIsListVisible(false)
             } else {
@@ -452,7 +458,9 @@ const UnifiedFoodSearch = ({
 
         // Always track added items for visual feedback (but allow re-selection in meal context)
         setAddedItems((prev) => new Set(prev).add(item._id))
-        onSelectItem(item)
+        // A local item hasn't been added to any collection yet — the caller
+        // still needs to do that (find-or-create + add).
+        onSelectItem(item, { alreadyAdded: false })
 
         // Auto-hide after selection
         setTimeout(() => {

@@ -27,7 +27,7 @@ const ShoppingListsScreen = () => {
 
             if (!token) {
                 setShoppingLists([])
-                return
+                return []
             }
 
             const response = await axios.get(getServerUrl('/shopping-lists'), {
@@ -38,7 +38,16 @@ const ShoppingListsScreen = () => {
 
             // Extract shopping lists from response
             if (response.data.success) {
-                setShoppingLists(response.data.shoppingLists)
+                const lists = response.data.shoppingLists
+                setShoppingLists(lists)
+                setSelectedList((prev) => {
+                    if (!prev) return prev
+                    const refreshed = lists.find(
+                        (list) => String(list._id) === String(prev._id)
+                    )
+                    return refreshed ?? prev
+                })
+                return lists
             } else {
                 console.error(
                     'Failed to fetch shopping lists:',
@@ -117,10 +126,11 @@ const ShoppingListsScreen = () => {
     const handleListUpdate = (updatedList) => {
         setShoppingLists((prev) =>
             prev.map((list) =>
-                list._id === updatedList._id ? updatedList : list
+                String(list._id) === String(updatedList._id)
+                    ? updatedList
+                    : list
             )
         )
-        // Also update the selected list to show the new item immediately
         setSelectedList(updatedList)
     }
 
