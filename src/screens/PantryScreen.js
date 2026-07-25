@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
     Alert,
-    Image,
     ScrollView,
     SectionList,
     StyleSheet,
@@ -18,6 +17,7 @@ import CategorySectionHeader from '../components/CategorySectionHeader'
 import CustomText from '../components/CustomText'
 import FormFoodItem from '../components/FormFoodItem'
 import AddFoodItemPanel from '../components/AddFoodItemPanel'
+import FoodListItemRow from '../components/FoodListItemRow'
 import LoginPromptModal from '../components/LoginPromptModal'
 import useLoginPrompt from '../hooks/useLoginPrompt'
 import PantryItemDetails from '../components/PantryItemDetails'
@@ -25,19 +25,12 @@ import ResponsiveLayout from '../components/ResponsiveLayout'
 import ResponsiveModal from '../components/ResponsiveModal'
 import SearchSection from '../components/SearchSection'
 
-import {
-    categoryMatches,
-    getFoodProductCategories,
-    groupItemsByFoodCategory,
-} from '../utils/foodCategories'
+import { useFilteredItemList } from '../hooks/useFilteredItemList'
+import { groupItemsByFoodCategory } from '../utils/foodCategories'
 import { getServerUrl } from '../utils/getServerUrl'
 import { getFoodItemImageUrl } from '../utils/openFoodFactsMapper'
 import { useResponsiveDimensions } from '../utils/responsive'
-import { scanItems } from '../utils/scanItems'
 import storage from '../utils/storage'
-
-const PANTRY_PLACEHOLDER_IMAGE_URL =
-    'https://images.ctfassets.net/2pij69ehhf4n/1YIQLI04JJpf76ARo3k0b9/87322f1b9ccec07d2f2af66f7d61d53d/undraw_online-groceries_n03y.png'
 
 const normalizePantryName = (name) =>
     String(name || '')
@@ -131,86 +124,25 @@ const PantryScreen = ({}) => {
     const [selectedItem, setSelectedItem] = useState(null)
     const [detailsVisible, setDetailsVisible] = useState(false)
     const [showFullInstructions, setShowFullInstructions] = useState(false)
-    const [searchQuery, setSearchQuery] = useState('')
     const [showAddItemSearch, setShowAddItemSearch] = useState(false)
-    const [selectedCategoryFilters, setSelectedCategoryFilters] = useState([])
-    const [showFilters, setShowFilters] = useState(false)
 
-    // Product categories for pantry sections and filters (incl. Säilykkeet, Juomat, …)
-    const ingredientCategories = getFoodProductCategories()
-
-    // Filter pantry items based on search query
-    const filterItemsBySearch = (items) => {
-        if (!searchQuery.trim()) {
-            return items
-        }
-        return items.filter((item) =>
-            item.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
-        )
-    }
-
-    // Filter pantry items based on selected category filters
-    const filterItemsByCategory = (items) => {
-        if (selectedCategoryFilters.length === 0) {
-            return items
-        }
-
-        return items.filter((item) => {
-            if (!item.category || item.category.length === 0) {
-                return false
-            }
-
-            return selectedCategoryFilters.some((filterId) => {
-                const category = ingredientCategories.find(
-                    (cat) => String(cat.id) === String(filterId)
-                )
-                if (!category) return false
-                return item.category.some((itemCat) =>
-                    categoryMatches(itemCat, category)
-                )
-            })
-        })
-    }
-
-    const toggleCategoryFilter = (categoryId) => {
-        setSelectedCategoryFilters((prev) => {
-            const normalizedId = String(categoryId)
-
-            // Check is selected already normalize for comparison
-            const isSelected = prev.some((id) => String(id) === normalizedId)
-
-            if (isSelected) {
-                return prev.filter((id) => String(id) !== normalizedId)
-            } else {
-                return [...prev, normalizedId]
-            }
-        })
-    }
-
-    const getCategoryItemCounts = () => {
-        const counts = {}
-        const searchedItems = filterItemsBySearch(pantryItems)
-
-        ingredientCategories.forEach((category) => {
-            counts[category.id] = searchedItems.filter((item) => {
-                if (!item.category || item.category.length === 0) {
-                    return false
-                }
-                return item.category.some((itemCat) =>
-                    categoryMatches(itemCat, category)
-                )
-            }).length
-        })
-
-        return counts
-    }
-
-    // Apply both search and category filters, then collapse duplicate product rows
-    const filteredPantryItems = mergeDuplicatePantryItems(
-        filterItemsByCategory(filterItemsBySearch(pantryItems))
-    )
-
-    const pantryItemSections = groupItemsByFoodCategory(filteredPantryItems)
+    const {
+        searchQuery,
+        setSearchQuery,
+        selectedCategoryFilters,
+        setSelectedCategoryFilters,
+        showFilters,
+        setShowFilters,
+        ingredientCategories,
+        toggleCategoryFilter,
+        getCategoryItemCounts,
+        filteredItems: filteredPantryItems,
+        itemSections: pantryItemSections,
+    } = useFilteredItemList({
+        items: pantryItems,
+        postFilter: mergeDuplicatePantryItems,
+        groupItems: groupItemsByFoodCategory,
+    })
 
     const fetchPantryItems = async () => {
         try {
@@ -361,38 +293,6 @@ const PantryScreen = ({}) => {
         }
     }
 
-    const handleScanPantry = async () => {
-        try {
-            const token = await storage.getItem('userToken')
-            if (!token) {
-                showLoginPrompt('ai_feature')
-                return
-            }
-
-            setLoading(true)
-            const response = await scanItems('pantry')
-
-            if (response?.success) {
-                await fetchPantryItems()
-                Alert.alert('Onnistui', 'Pentterin tiedot päivitetty')
-            } else {
-                throw new Error('Skannaus epäonnistui')
-            }
-        } catch (error) {
-            console.error('Error scanning pantry:', error)
-            Alert.alert(
-                'Virhe',
-                'Skannaus epäonnistui: ' +
-                    (error.message === 'timeout exceeded'
-                        ? 'Yhteys aikakatkaistiin'
-                        : error.message || 'Tuntematon virhe')
-            )
-            await fetchPantryItems() // Try to restore pantry items
-        } finally {
-            setLoading(false)
-        }
-    }
-
     const handleRemoveItem = async (itemId) => {
         try {
             const token = await storage.getItem('userToken')
@@ -522,42 +422,25 @@ const PantryScreen = ({}) => {
     }
 
     const renderItem = ({ item }) => (
-        <View style={styles.itemContainer}>
-            <TouchableOpacity
-                style={styles.itemInfo}
-                onPress={() => {
-                    setSelectedItem(item)
-                    setDetailsVisible(true)
-                }}
-            >
-                <Image
-                    source={{
-                        uri:
-                            getFoodItemImageUrl(item) ||
-                            PANTRY_PLACEHOLDER_IMAGE_URL,
-                    }}
-                    style={styles.itemImage}
-                    resizeMode="cover"
-                />
-                <View style={styles.itemTextContainer}>
-                    <CustomText style={styles.itemName}>{item.name}</CustomText>
-                    <CustomText style={styles.itemDetails}>
-                        {item.quantity} {item.unit}
-                    </CustomText>
+        <FoodListItemRow
+            item={item}
+            onPress={() => {
+                setSelectedItem(item)
+                setDetailsVisible(true)
+            }}
+            trailingAction={
+                <View style={styles.itemActions}>
+                    <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() => handleRemoveItem(item._id)}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                        <MaterialIcons name="delete" size={20} color="#666" />
+                    </TouchableOpacity>
                 </View>
-            </TouchableOpacity>
-            <View style={styles.itemActions}>
-                <TouchableOpacity
-                    style={styles.deleteButton}
-                    onPress={(e) => {
-                        handleRemoveItem(item._id)
-                    }}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
-                    <MaterialIcons name="delete" size={20} color="#666" />
-                </TouchableOpacity>
-            </View>
-        </View>
+            }
+            style={styles.pantryItemRow}
+        />
     )
 
     const handleOpenAddItemSearch = async () => {
@@ -925,6 +808,19 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 2,
+    },
+    pantryItemRow: {
+        backgroundColor: '#f8f8f8',
+        borderRadius: 10,
+        marginBottom: 10,
         shadowColor: '#000',
         shadowOffset: {
             width: 0,

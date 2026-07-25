@@ -2,7 +2,6 @@ import axios from 'axios'
 import { useState } from 'react'
 import {
     Alert,
-    Image,
     ScrollView,
     SectionList,
     StyleSheet,
@@ -11,27 +10,21 @@ import {
     ActivityIndicator,
 } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
-import * as ImagePicker from 'expo-image-picker'
 
-import {
-    categoryMatches,
-    getFoodProductCategories,
-    groupItemsByFoodCategory,
-} from '../utils/foodCategories'
-import { getServerUrl } from '../utils/getServerUrl'
-import { getFoodItemImageUrl } from '../utils/openFoodFactsMapper'
-import { analyzeImage } from '../utils/googleVision'
-import { useResponsiveDimensions } from '../utils/responsive'
-import storage from '../utils/storage'
-
+import AddFoodItemPanel from './AddFoodItemPanel'
 import Button from './Button'
 import CategorySectionHeader from './CategorySectionHeader'
 import CustomText from './CustomText'
-import FormFoodItem from './FormFoodItem'
+import FoodListItemRow from './FoodListItemRow'
 import GenericFilter from './GenericFilter'
 import GenericFilterSection from './GenericFilterSection'
 import PantryItemDetails from './PantryItemDetails'
+import ResponsiveModal from './ResponsiveModal'
 import SearchSection from './SearchSection'
+import { useFilteredItemList } from '../hooks/useFilteredItemList'
+import { getServerUrl } from '../utils/getServerUrl'
+import { useResponsiveDimensions } from '../utils/responsive'
+import storage from '../utils/storage'
 
 const ShoppingListDetail = ({
     shoppingList,
@@ -42,161 +35,79 @@ const ShoppingListDetail = ({
 }) => {
     const [checkedItems, setCheckedItems] = useState([])
     const [showItemForm, setShowItemForm] = useState(false)
-    const [scannedProduct, setScannedProduct] = useState(null)
     const [loading, setLoading] = useState(false)
     const [selectedItem, setSelectedItem] = useState(null)
     const [showItemDetails, setShowItemDetails] = useState(false)
-    const [searchQuery, setSearchQuery] = useState('')
-    const [selectedCategoryFilters, setSelectedCategoryFilters] = useState([])
-    const [showFilters, setShowFilters] = useState(false)
     const { isDesktop } = useResponsiveDimensions()
 
-    const SHOPPING_LIST_PLACEHOLDER_IMAGE_URL =
-        'https://images.ctfassets.net/2pij69ehhf4n/1YIQLI04JJpf76ARo3k0b9/87322f1b9ccec07d2f2af66f7d61d53d/undraw_online-groceries_n03y.png'
-
-    // Group items by category for section list
-    const groupItemsByCategory = groupItemsByFoodCategory
-
-    // Get ingredient categories from categories.json
-    const ingredientCategories = getFoodProductCategories()
-
-    // Filter items based on search query
-    const filterItemsBySearch = (items) => {
-        if (!searchQuery.trim()) {
-            return items
-        }
-
-        return items.filter((item) =>
-            item.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
-        )
-    }
-
-    // Filter items based on selected category filters
-    const filterItemsByCategory = (items) => {
-        if (selectedCategoryFilters.length === 0) {
-            return items
-        }
-
-        return items.filter((item) => {
-            if (!item.category || item.category.length === 0) {
-                return false
-            }
-
-            return selectedCategoryFilters.some((filterId) => {
-                const category = ingredientCategories.find(
-                    (cat) => String(cat.id) === String(filterId)
-                )
-                if (!category) return false
-                return item.category.some((itemCat) =>
-                    categoryMatches(itemCat, category)
-                )
-            })
-        })
-    }
-
-    const toggleCategoryFilter = (categoryId) => {
-        setSelectedCategoryFilters((prev) => {
-            // Normalize to string for consistent comparison
-            const normalizedId = String(categoryId)
-
-            // Check if already selected (normalize for comparison)
-            const isSelected = prev.some((id) => String(id) === normalizedId)
-
-            if (isSelected) {
-                return prev.filter((id) => String(id) !== normalizedId)
-            } else {
-                return [...prev, normalizedId]
-            }
-        })
-    }
-
-    const getCategoryItemCounts = () => {
-        const counts = {}
-        const searchedItems = filterItemsBySearch(shoppingList.items || [])
-
-        ingredientCategories.forEach((category) => {
-            counts[category.id] = searchedItems.filter((item) => {
-                if (!item.category || item.category.length === 0) {
-                    return false
-                }
-                return item.category.some((itemCat) =>
-                    categoryMatches(itemCat, category)
-                )
-            }).length
-        })
-
-        return counts
-    }
-
-    // Apply both search and category filters
-    const filteredItems = filterItemsByCategory(
-        filterItemsBySearch(shoppingList.items || [])
-    )
-
-    const itemSections = groupItemsByCategory(filteredItems)
+    const {
+        searchQuery,
+        setSearchQuery,
+        selectedCategoryFilters,
+        setSelectedCategoryFilters,
+        showFilters,
+        setShowFilters,
+        ingredientCategories,
+        toggleCategoryFilter,
+        getCategoryItemCounts,
+        filteredItems,
+        itemSections,
+    } = useFilteredItemList({
+        items: shoppingList.items || [],
+    })
 
     const handleCheckItem = (item) => {
+        const itemId = String(item._id)
         setCheckedItems((prev) =>
-            prev.includes(item._id)
-                ? prev.filter((id) => id !== item._id)
-                : [...prev, item._id]
+            prev.includes(itemId)
+                ? prev.filter((id) => id !== itemId)
+                : [...prev, itemId]
         )
     }
 
     const moveCheckedToPantry = async (checkedItemIds) => {
         try {
+            setLoading(true)
             const token = await storage.getItem('userToken')
+            let updatedList = shoppingList
 
-            // Process each checked item
-            for (const itemId of checkedItemIds) {
-                try {
-                    const response = await axios.post(
-                        getServerUrl(
-                            `/shopping-lists/${shoppingList._id}/items/${itemId}/bought`
-                        ),
-                        {},
-                        {
-                            headers: {
-                                Authorization: `Bearer ${token}`,
-                            },
-                        }
+            for (const rawItemId of checkedItemIds) {
+                const itemId = String(rawItemId)
+                const response = await axios.post(
+                    getServerUrl(
+                        `/shopping-lists/${shoppingList._id}/items/${itemId}/bought`
+                    ),
+                    {},
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                )
+
+                if (!response.data?.success) {
+                    throw new Error(
+                        response.data?.message ||
+                            'Tuotteen siirto pentteriin epäonnistui'
                     )
-                } catch (itemError) {
-                    console.error(`Error processing item ${itemId}:`, itemError)
-                    throw itemError
+                }
+
+                if (response.data.shoppingList) {
+                    updatedList = response.data.shoppingList
                 }
             }
-            Alert.alert('Onnistui', 'Tuotteet siirretty ruokavarastoon')
 
-            // Remove moved items from the shopping list
-            const updatedItems = shoppingList.items.filter(
-                (item) => !checkedItemIds.includes(item._id)
-            )
-            const updatedList = { ...shoppingList, items: updatedItems }
-
-            // Update the shopping list
-            await axios.put(
-                getServerUrl(`/shopping-lists/${shoppingList._id}`),
-                updatedList,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            )
-
-            // Clear checked items
+            Alert.alert('Onnistui', 'Tuotteet siirretty pentteriin')
             setCheckedItems([])
-
-            // Refresh the shopping lists and pantry items
             await fetchShoppingLists()
             await fetchPantryItems()
             onUpdate(updatedList)
         } catch (error) {
             console.error('Error moving items to pantry:', error)
             console.error('Error response:', error.response?.data)
-            console.error('Error status:', error.response?.status)
-            Alert.alert('Virhe', 'Tuotteiden siirto ruokavarastoon epäonnistui')
+            Alert.alert('Virhe', 'Tuotteiden siirto pentteriin epäonnistui')
+        } finally {
+            setLoading(false)
         }
     }
 
@@ -278,82 +189,6 @@ const ShoppingListDetail = ({
         } catch (error) {
             console.error('Error adding item:', error?.response?.data || error)
             Alert.alert('Virhe', 'Tuotteen lisääminen epäonnistui')
-        }
-    }
-
-    const processVisionResults = (visionResponse) => {
-        const products = []
-
-        // Process text detection
-        if (visionResponse.textAnnotations) {
-            const text = visionResponse.textAnnotations[0]?.description || ''
-            // logic to extract product information from text
-        }
-
-        // Process object detection
-        if (visionResponse.localizedObjectAnnotations) {
-            visionResponse.localizedObjectAnnotations.forEach((object) => {
-                if (object.score > 0.5) {
-                    products.push({
-                        name: object.name,
-                        confidence: object.score,
-                    })
-                }
-            })
-        }
-
-        return products
-    }
-
-    const handleScanProduct = async () => {
-        try {
-            const token = await storage.getItem('userToken')
-            if (!token) {
-                if (onRequireLogin) {
-                    onRequireLogin('ai_feature')
-                } else {
-                    Alert.alert('Kirjaudu sisään', 'Luo tili käyttääksesi tätä ominaisuutta.')
-                }
-                return
-            }
-
-            const { status } = await ImagePicker.requestCameraPermissionsAsync()
-            if (status !== 'granted') {
-                Alert.alert(
-                    'Virhe',
-                    'Tarvitsemme kameran käyttöoikeuden skannataksemme tuotteita'
-                )
-                return
-            }
-
-            const result = await ImagePicker.launchCameraAsync({
-                mediaTypes: 'images',
-                quality: 0.8,
-                base64: true,
-            })
-
-            if (!result.canceled) {
-                setLoading(true)
-
-                const visionResponse = await analyzeImage(
-                    result.assets[0].base64
-                )
-                const detectedProduct = processVisionResults(visionResponse)
-
-                if (detectedProduct.length > 0) {
-                    // Open add item form with pre-filled data
-                    setShowItemForm(true)
-                    // Pass the detected product to form component
-                    setScannedProduct(detectedProduct[0])
-                } else {
-                    Alert.alert('Virhe', 'Tuotetta ei tunnistettu')
-                }
-            }
-        } catch (error) {
-            console.error('Error scanning product:', error)
-            Alert.alert('Virhe', 'Skannaus epäonnistui')
-        } finally {
-            setLoading(false)
         }
     }
 
@@ -503,27 +338,11 @@ const ShoppingListDetail = ({
     }
 
     const renderItem = ({ item }) => (
-        <View style={styles.itemRow}>
-            <TouchableOpacity
-                style={styles.itemContainer}
-                onPress={() => handleItemPress(item)}
-                onLongPress={() => handleCheckItem(item)}
-            >
-                <Image
-                    source={{
-                        uri:
-                            getFoodItemImageUrl(item) ||
-                            SHOPPING_LIST_PLACEHOLDER_IMAGE_URL,
-                    }}
-                    style={styles.itemImage}
-                    resizeMode="cover"
-                />
-                <View style={styles.itemContent}>
-                    <CustomText style={styles.itemName}>{item.name}</CustomText>
-                    <CustomText style={styles.itemDetails}>
-                        {item.quantity} {item.unit}
-                    </CustomText>
-                </View>
+        <FoodListItemRow
+            item={item}
+            onPress={() => handleItemPress(item)}
+            onLongPress={() => handleCheckItem(item)}
+            trailingAction={
                 <TouchableOpacity
                     style={styles.checkboxContainer}
                     onPress={() => handleCheckItem(item)}
@@ -531,18 +350,20 @@ const ShoppingListDetail = ({
                 >
                     <MaterialIcons
                         name={
-                            checkedItems.includes(item._id)
+                            checkedItems.includes(String(item._id))
                                 ? 'check-box'
                                 : 'check-box-outline-blank'
                         }
                         size={24}
                         color={
-                            checkedItems.includes(item._id) ? '#38E4D9' : '#666'
+                            checkedItems.includes(String(item._id))
+                                ? '#38E4D9'
+                                : '#666'
                         }
                     />
                 </TouchableOpacity>
-            </TouchableOpacity>
-        </View>
+            }
+        />
     )
 
     return (
@@ -552,45 +373,27 @@ const ShoppingListDetail = ({
                     <ActivityIndicator size="large" color="#5844BB" />
                 </View>
             )}
-            {showItemForm ? (
-                <View style={styles.formWrapper}>
-                    <View style={styles.formHeader}>
-                        <TouchableOpacity
-                            onPress={() => {
-                                setShowItemForm(false)
-                                setScannedProduct(null)
-                            }}
-                            style={styles.backButton}
-                        >
-                            <MaterialIcons
-                                name="arrow-back"
-                                size={24}
-                                color="#000"
-                            />
-                        </TouchableOpacity>
-                        <CustomText style={styles.formTitle}>
-                            Lisää tuote ostoslistaan
-                        </CustomText>
-                    </View>
-                    <FormFoodItem
-                        onSubmit={handleAddItem}
-                        location="shopping-list"
-                        initialData={scannedProduct}
-                        onClose={() => {
-                            setShowItemForm(false)
-                            setScannedProduct(null)
-                        }}
-                        showUnifiedSearch={true}
-                        onSearchItemSelect={handleSearchItemSelect}
-                        shoppingListId={shoppingList._id}
-                    />
-                </View>
-            ) : (
-                <ScrollView
-                    style={styles.mainScrollView}
-                    stickyHeaderIndices={[1]}
-                    showsVerticalScrollIndicator={false}
-                >
+
+            <ResponsiveModal
+                visible={showItemForm}
+                onClose={() => setShowItemForm(false)}
+                title="Lisää tuote ostoslistaan"
+                maxWidth={700}
+            >
+                <AddFoodItemPanel
+                    location="shopping-list"
+                    shoppingListId={shoppingList._id}
+                    onSelectItem={handleSearchItemSelect}
+                    onSubmitNewItem={handleAddItem}
+                    onCloseForm={() => setShowItemForm(false)}
+                />
+            </ResponsiveModal>
+
+            <ScrollView
+                style={styles.mainScrollView}
+                stickyHeaderIndices={[1]}
+                showsVerticalScrollIndicator={false}
+            >
                     {/* Header section that scrolls away */}
                     <View style={styles.headerSection}>
                         <View style={styles.header}>
@@ -716,7 +519,6 @@ const ShoppingListDetail = ({
                         )}
                     </View>
                 </ScrollView>
-            )}
 
             {/* Item Details Modal */}
             <PantryItemDetails

@@ -174,9 +174,13 @@ class OpenFoodFactsApi {
      */
     async addToFoodItems(
         barcode,
-        location = 'shopping-list',
-        quantity = 1,
-        unit = 'pcs'
+        {
+            location = 'shopping-list',
+            quantity = 1,
+            unit = 'pcs',
+            shoppingListId = null,
+            mealId = null,
+        } = {}
     ) {
         try {
             const response = await fetch(
@@ -188,6 +192,8 @@ class OpenFoodFactsApi {
                         location,
                         quantity,
                         unit,
+                        shoppingListId,
+                        mealId,
                     }),
                 }
             )

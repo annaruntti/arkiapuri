@@ -16,6 +16,8 @@ import { Ionicons } from '@expo/vector-icons'
 import { getServerUrl } from '../utils/getServerUrl'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
+import openFoodFactsApi from '../services/openFoodFactsApi'
+import { addPantryItem, addShoppingListItems } from '../services/collectionApi'
 import BarcodeScanner from './BarcodeScanner'
 import CustomText from './CustomText'
 import { mapOpenFoodFactsToFoodItemFields } from '../utils/openFoodFactsMapper'
@@ -224,10 +226,11 @@ const UnifiedFoodSearch = ({
             // Search Open Food Facts
             if (activeTab === 'all' || activeTab === 'openfoodfacts') {
                 try {
-                    const response = await fetch(
-                        `${getServerUrl('')}/api/openfoodfacts/search?q=${encodeURIComponent(query)}&limit=8`
+                    const data = await openFoodFactsApi.searchByText(
+                        query,
+                        1,
+                        8
                     )
-                    const data = await response.json()
 
                     if (data.success) {
                         const processedProducts = dedupeFoodItems(
@@ -271,11 +274,7 @@ const UnifiedFoodSearch = ({
         setLoading(true)
 
         try {
-            // First, try to find in Open Food Facts
-            const response = await fetch(
-                `${getServerUrl('')}/api/openfoodfacts/barcode/${barcode}`
-            )
-            const data = await response.json()
+            const data = await openFoodFactsApi.searchByBarcode(barcode)
 
             if (data.success && data.product) {
                 // Show product details and option to add
@@ -333,15 +332,12 @@ const UnifiedFoodSearch = ({
 
     const addToPantry = async (foodItem, collectionData) => {
         try {
-            const token = await storage.getItem('userToken')
-
-            // Add error handling for undefined collectionData
             if (!collectionData) {
                 console.error('collectionData is undefined in addToPantry')
                 throw new Error('Collection data is missing')
             }
 
-            const pantryItemData = {
+            await addPantryItem({
                 name: foodItem.name,
                 quantity: collectionData.quantity || 1,
                 unit: collectionData.unit || 'kpl',
@@ -351,21 +347,7 @@ const UnifiedFoodSearch = ({
                 calories: foodItem.calories || 0,
                 price: 0,
                 addedFrom: 'pantry',
-            }
-
-            const response = await fetch(`${getServerUrl('')}/pantry/items`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify(pantryItemData),
             })
-
-            const data = await response.json()
-            if (!data.success) {
-                throw new Error(data.message || 'Failed to add to pantry')
-            }
         } catch (error) {
             console.error('Error adding to pantry:', error)
             throw error
@@ -374,37 +356,17 @@ const UnifiedFoodSearch = ({
 
     const addToShoppingList = async (foodItem, collectionData) => {
         try {
-            const token = await storage.getItem('userToken')
-            const shoppingListItemData = {
-                name: foodItem.name,
-                quantity: collectionData.quantity,
-                unit: collectionData.unit,
-                foodId: foodItem._id,
-                category: foodItem.category || [],
-                calories: foodItem.calories || 0,
-                price: 0,
-            }
-
-            const response = await fetch(
-                `${getServerUrl('')}/shopping-lists/${collectionData.shoppingListId}`,
+            await addShoppingListItems(collectionData.shoppingListId, [
                 {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({
-                        items: [shoppingListItemData], // Add to existing items
-                    }),
-                }
-            )
-
-            const data = await response.json()
-            if (!data.success) {
-                throw new Error(
-                    data.message || 'Failed to add to shopping list'
-                )
-            }
+                    name: foodItem.name,
+                    quantity: collectionData.quantity,
+                    unit: collectionData.unit,
+                    foodId: foodItem._id,
+                    category: foodItem.category || [],
+                    calories: foodItem.calories || 0,
+                    price: 0,
+                },
+            ])
         } catch (error) {
             console.error('Error adding to shopping list:', error)
             throw error
@@ -435,26 +397,13 @@ const UnifiedFoodSearch = ({
 
             // For other locations (shopping-list, pantry), use the API
             const mapped = mapOpenFoodFactsToFoodItemFields(product)
-            const token = await storage.getItem('userToken')
-            const response = await fetch(
-                `${getServerUrl('')}/api/openfoodfacts/add/${product.barcode}`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({
-                        location: location,
-                        quantity: mapped.packageQuantity || 1,
-                        unit: mapped.unit || 'kpl',
-                        shoppingListId: shoppingListId,
-                        mealId: mealId,
-                    }),
-                }
-            )
-
-            const data = await response.json()
+            const data = await openFoodFactsApi.addToFoodItems(product.barcode, {
+                location,
+                quantity: mapped.packageQuantity || 1,
+                unit: mapped.unit || 'kpl',
+                shoppingListId,
+                mealId,
+            })
 
             if (data.success) {
                 // Now add to the specific collection using the same flow as manual addition
