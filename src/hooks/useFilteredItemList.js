@@ -4,18 +4,21 @@ import {
     getFoodProductCategories,
     groupItemsByFoodCategory,
 } from '../utils/foodCategories'
+import { SORT_OPTION_IDS, sortListItems } from '../utils/listSort'
 
 /**
- * Shared search + category filter state for pantry and shopping list screens.
+ * Shared search + category filter + sort state for pantry and shopping list screens.
  */
 export const useFilteredItemList = ({
     items = [],
     postFilter = (filtered) => filtered,
     groupItems = groupItemsByFoodCategory,
+    defaultSortId = SORT_OPTION_IDS.NAME_ASC,
 }) => {
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedCategoryFilters, setSelectedCategoryFilters] = useState([])
     const [showFilters, setShowFilters] = useState(false)
+    const [sortId, setSortId] = useState(defaultSortId)
 
     const ingredientCategories = useMemo(
         () => getFoodProductCategories(),
@@ -93,8 +96,18 @@ export const useFilteredItemList = ({
     }, [filterItemsBySearch, ingredientCategories, items])
 
     const filteredItems = useMemo(
-        () => postFilter(filterItemsByCategory(filterItemsBySearch(items))),
-        [filterItemsByCategory, filterItemsBySearch, items, postFilter]
+        () =>
+            sortListItems(
+                postFilter(filterItemsByCategory(filterItemsBySearch(items))),
+                sortId
+            ),
+        [
+            filterItemsByCategory,
+            filterItemsBySearch,
+            items,
+            postFilter,
+            sortId,
+        ]
     )
 
     const itemSections = useMemo(
@@ -109,6 +122,8 @@ export const useFilteredItemList = ({
         setSelectedCategoryFilters,
         showFilters,
         setShowFilters,
+        sortId,
+        setSortId,
         ingredientCategories,
         toggleCategoryFilter,
         getCategoryItemCounts,

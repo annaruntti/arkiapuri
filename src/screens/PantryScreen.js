@@ -13,6 +13,7 @@ import { useFocusEffect } from '@react-navigation/native'
 
 import CategoryFilter from '../components/CategoryFilter'
 import CategoryFilterSection from '../components/CategoryFilterSection'
+import ListSortControl from '../components/ListSortControl'
 import CategorySectionHeader from '../components/CategorySectionHeader'
 import CustomText from '../components/CustomText'
 import FormFoodItem from '../components/FormFoodItem'
@@ -26,6 +27,7 @@ import ResponsiveModal from '../components/ResponsiveModal'
 import SearchSection from '../components/SearchSection'
 
 import { useFilteredItemList } from '../hooks/useFilteredItemList'
+import { PANTRY_SORT_OPTIONS, SORT_OPTION_IDS } from '../utils/listSort'
 import { groupItemsByFoodCategory } from '../utils/foodCategories'
 import { getServerUrl } from '../utils/getServerUrl'
 import { getFoodItemImageUrl } from '../utils/openFoodFactsMapper'
@@ -138,10 +140,13 @@ const PantryScreen = ({}) => {
         getCategoryItemCounts,
         filteredItems: filteredPantryItems,
         itemSections: pantryItemSections,
+        sortId,
+        setSortId,
     } = useFilteredItemList({
         items: pantryItems,
         postFilter: mergeDuplicatePantryItems,
         groupItems: groupItemsByFoodCategory,
+        defaultSortId: SORT_OPTION_IDS.NAME_ASC,
     })
 
     const fetchPantryItems = async () => {
@@ -591,7 +596,7 @@ const PantryScreen = ({}) => {
                             buttonStyle={styles.primaryButton}
                             buttonTextStyle={styles.buttonText}
                             filterComponent={
-                                <CategoryFilter
+                                <GenericFilter
                                     selectedFilters={selectedCategoryFilters}
                                     showFilters={showFilters}
                                     onToggleShowFilters={() =>
@@ -601,16 +606,16 @@ const PantryScreen = ({}) => {
                             }
                         />
 
-                        {/* Category filters section */}
-                        <CategoryFilterSection
-                            categories={ingredientCategories}
+                        <GenericFilterSection
                             selectedFilters={selectedCategoryFilters}
+                            showFilters={showFilters}
+                            filterTitle="Suodata kategorioittain:"
+                            categories={ingredientCategories}
                             onToggleFilter={toggleCategoryFilter}
                             onClearFilters={() =>
                                 setSelectedCategoryFilters([])
                             }
-                            showFilters={showFilters}
-                            itemCounts={getCategoryItemCounts()}
+                            getItemCounts={getCategoryItemCounts}
                         />
 
                         {/* Product list container */}
@@ -623,6 +628,11 @@ const PantryScreen = ({}) => {
                                         ? `${filteredPantryItems.length} / ${pantryItems?.length || 0}`
                                         : `${pantryItems?.length || 0} kpl`}
                                 </CustomText>
+                                <ListSortControl
+                                    options={PANTRY_SORT_OPTIONS}
+                                    value={sortId}
+                                    onChange={setSortId}
+                                />
                             </View>
                             <SectionList
                                 sections={pantryItemSections}
@@ -767,8 +777,11 @@ const styles = StyleSheet.create({
     stats: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        zIndex: 1,
+        alignItems: 'center',
+        zIndex: 5,
         position: 'relative',
+        overflow: 'visible',
+        marginBottom: 8,
     },
     primaryButton: {
         borderRadius: 25,

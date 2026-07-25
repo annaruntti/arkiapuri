@@ -1,14 +1,30 @@
+import axios from 'axios'
 import { getServerUrl } from '../utils/getServerUrl'
 import { getAuthHeaders } from './foodItemApi'
 
-export const addPantryItem = async (pantryItemData) => {
-    const response = await fetch(`${getServerUrl('')}/pantry/items`, {
-        method: 'POST',
-        headers: await getAuthHeaders(),
-        body: JSON.stringify(pantryItemData),
-    })
+const authConfig = async () => ({
+    headers: await getAuthHeaders(),
+})
 
-    const data = await response.json()
+export const getPantryItems = async () => {
+    const response = await axios.get(getServerUrl('/pantry'), await authConfig())
+    const data = response.data
+
+    if (!data.success) {
+        throw new Error(data.message || 'Failed to fetch pantry')
+    }
+
+    return data.pantry?.items || data.items || []
+}
+
+export const addPantryItem = async (pantryItemData) => {
+    const response = await axios.post(
+        getServerUrl('/pantry/items'),
+        pantryItemData,
+        await authConfig()
+    )
+
+    const data = response.data
     if (!data.success) {
         throw new Error(data.message || 'Failed to add to pantry')
     }
@@ -16,17 +32,58 @@ export const addPantryItem = async (pantryItemData) => {
     return data
 }
 
-export const addShoppingListItems = async (shoppingListId, items) => {
-    const response = await fetch(
-        `${getServerUrl('')}/shopping-lists/${shoppingListId}/items`,
-        {
-            method: 'POST',
-            headers: await getAuthHeaders(),
-            body: JSON.stringify({ items }),
-        }
+export const updatePantryItem = async (itemId, updatedData) => {
+    const response = await axios.put(
+        getServerUrl(`/pantry/items/${itemId}`),
+        updatedData,
+        await authConfig()
     )
 
-    const data = await response.json()
+    const data = response.data
+    if (!data.success) {
+        throw new Error(data.message || 'Failed to update pantry item')
+    }
+
+    return data
+}
+
+export const deletePantryItem = async (itemId) => {
+    const response = await axios.delete(
+        getServerUrl(`/pantry/items/${itemId}`),
+        await authConfig()
+    )
+
+    const data = response.data
+    if (!data.success) {
+        throw new Error(data.message || 'Failed to delete pantry item')
+    }
+
+    return data
+}
+
+export const markShoppingListItemBought = async (listId, itemId) => {
+    const response = await axios.post(
+        getServerUrl(`/shopping-lists/${listId}/items/${itemId}/bought`),
+        {},
+        await authConfig()
+    )
+
+    const data = response.data
+    if (!data.success) {
+        throw new Error(data.message || 'Failed to move item to pantry')
+    }
+
+    return data
+}
+
+export const addShoppingListItems = async (shoppingListId, items) => {
+    const response = await axios.post(
+        getServerUrl(`/shopping-lists/${shoppingListId}/items`),
+        { items },
+        await authConfig()
+    )
+
+    const data = response.data
     if (!data.success) {
         throw new Error(data.message || 'Failed to add to shopping list')
     }
