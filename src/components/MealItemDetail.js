@@ -36,7 +36,11 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
     const [showDatePicker, setShowDatePicker] = useState(false)
     const [editingFoodItem, setEditingFoodItem] = useState(null)
     const [showFoodItemForm, setShowFoodItemForm] = useState(false)
+    const [shoppingLists, setShoppingLists] = useState([])
     const [selectedShoppingListId, setSelectedShoppingListId] = useState(null)
+    const [pendingShoppingListItem, setPendingShoppingListItem] = useState(null)
+    const [showShoppingListPicker, setShowShoppingListPicker] = useState(false)
+    const [isAddingToShoppingList, setIsAddingToShoppingList] = useState(false)
     const [foodItemsWithAvailability, setFoodItemsWithAvailability] = useState([])
 
     useEffect(() => {
@@ -60,8 +64,15 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
             })
             if (response.data.success) {
                 const lists = response.data.shoppingLists || []
-                if (lists.length > 0) {
+                setShoppingLists(lists)
+                if (lists.length === 1) {
                     setSelectedShoppingListId(lists[0]._id)
+                } else if (
+                    lists.length > 1 &&
+                    selectedShoppingListId &&
+                    !lists.some((list) => list._id === selectedShoppingListId)
+                ) {
+                    setSelectedShoppingListId(null)
                 }
             }
         } catch (error) {
@@ -185,44 +196,128 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
         }))
     }
 
-    const addItemToShoppingList = async (item) => {
+    const requestAddToShoppingList = async (item) => {
+        let lists = shoppingLists
+        if (!lists.length) {
+            const token = await storage.getItem('userToken')
+            const response = await axios.get(getServerUrl('/shopping-lists'), {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            })
+            lists = response.data.shoppingLists || []
+            setShoppingLists(lists)
+        }
+
+        if (!lists.length) {
+            Alert.alert(
+                'Virhe',
+                'Sinulla ei ole ostoslistaa. Luo ensin ostoslista.'
+            )
+            return
+        }
+
+        setPendingShoppingListItem(item)
+
+        if (lists.length === 1) {
+            setSelectedShoppingListId(lists[0]._id)
+            await addItemToShoppingList(item, lists[0]._id)
+            return
+        }
+
+        setShowShoppingListPicker(true)
+    }
+
+    const addItemToShoppingList = async (item, listId) => {
+        const listIdToUse = listId || selectedShoppingListId
+        if (!item || !listIdToUse) {
+            Alert.alert('Virhe', 'Valitse ostoslista')
+            return
+        }
+
+        setIsAddingToShoppingList(true)
         try {
-            let listIdToUse = selectedShoppingListId
-            if (!listIdToUse) {
-                const token = await storage.getItem('userToken')
-                const response = await axios.get(getServerUrl('/shopping-lists'), {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
+            const token = await storage.getItem('userToken')
+            const quantity =
+                parseFloat(item.quantities?.meal) ||
+                parseFloat(item.quantity) ||
+                1
+            const categoryArray = Array.isArray(item.category)
+                ? item.category
+                : []
+            const foodItemId = item._id || item.foodId?._id || item.foodId
+
+            let foodItem = item
+
+            if (foodItemId) {
+                const quantityResponse = await axios.put(
+                    getServerUrl(`/food-items/${foodItemId}/quantity`),
+                    {
+                        location: 'shopping-list',
+                        quantity,
+                        action: 'add',
                     },
-                })
-                if (response.data.success && response.data.shoppingLists?.length > 0) {
-                    listIdToUse = response.data.shoppingLists[0]._id
-                    setSelectedShoppingListId(listIdToUse)
-                } else {
-                    Alert.alert('Virhe', 'Sinulla ei ole ostoslistaa. Luo ensin ostoslista.')
-                    return
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                )
+
+                if (!quantityResponse.data?.success) {
+                    throw new Error(
+                        quantityResponse.data?.message ||
+                            'Food item quantity update failed'
+                    )
                 }
+
+                foodItem = quantityResponse.data.foodItem
+            } else {
+                const findOrCreateResponse = await axios.post(
+                    getServerUrl('/food-items/find-or-create'),
+                    {
+                        name: item.name,
+                        unit: item.unit || 'kpl',
+                        category: categoryArray,
+                        calories: parseInt(item.calories) || 0,
+                        price: parseFloat(item.price) || 0,
+                        location: 'shopping-list',
+                        quantities: {
+                            'shopping-list': quantity,
+                        },
+                    },
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                )
+
+                if (!findOrCreateResponse.data?.success) {
+                    throw new Error(
+                        findOrCreateResponse.data?.message ||
+                            'Food item sync failed'
+                    )
+                }
+
+                foodItem = findOrCreateResponse.data.foodItem
             }
 
-            const token = await storage.getItem('userToken')
-            const quantity = item.quantities?.meal || item.quantity || 1
-
-            const categoryArray = Array.isArray(item.category) ? item.category : []
-
-            const findOrCreateResponse = await axios.post(
-                getServerUrl('/food-items/find-or-create'),
+            const shoppingListResponse = await axios.post(
+                getServerUrl(`/shopping-lists/${listIdToUse}/items`),
                 {
-                    name: item.name,
-                    unit: item.unit || 'kpl',
-                    category: categoryArray,
-                    calories: parseInt(item.calories) || 0,
-                    price: parseFloat(item.price) || 0,
-                    location: 'shopping-list',
-                    quantities: {
-                        meal: 0,
-                        'shopping-list': quantity,
-                        pantry: 0,
-                    },
+                    items: [
+                        {
+                            foodId: foodItem._id,
+                            name: item.name,
+                            estimatedPrice: parseFloat(item.price) || 0,
+                            quantity,
+                            unit: item.unit || 'kpl',
+                            category: categoryArray,
+                            calories: parseInt(item.calories) || 0,
+                            price: parseFloat(item.price) || 0,
+                        },
+                    ],
                 },
                 {
                     headers: {
@@ -231,59 +326,95 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                 }
             )
 
-            const foodItem = findOrCreateResponse.data.foodItem
-
-            const shoppingListItem = {
-                foodId: foodItem._id,
-                name: item.name,
-                estimatedPrice: parseFloat(item.price) || 0,
-                quantity: quantity,
-                unit: item.unit || 'kpl',
-                category: categoryArray,
-                calories: parseInt(item.calories) || 0,
-                price: parseFloat(item.price) || 0,
+            if (!shoppingListResponse.data?.success) {
+                throw new Error(
+                    shoppingListResponse.data?.message ||
+                        'Shopping list update failed'
+                )
             }
 
-            await axios.post(
-                getServerUrl(`/shopping-lists/${listIdToUse}/items`),
-                { items: [shoppingListItem] },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            )
+            setSelectedShoppingListId(listIdToUse)
+            setShowShoppingListPicker(false)
+            setPendingShoppingListItem(null)
 
-            // Refresh availability
-            await checkFoodItemsAvailability(editedValues.foodItems)
-            Alert.alert('Onnistui', 'Tuote lisätty ostoslistaan')
+            const nextFoodItems = editedValues.foodItems.map((foodItemEntry) => {
+                const entryId =
+                    foodItemEntry._id ||
+                    foodItemEntry.foodId?._id ||
+                    foodItemEntry.foodId
+                if (
+                    entryId &&
+                    foodItem._id &&
+                    String(entryId) === String(foodItem._id)
+                ) {
+                    return {
+                        ...foodItemEntry,
+                        ...foodItem,
+                        quantities: foodItem.quantities,
+                        locations: foodItem.locations,
+                    }
+                }
+                if (foodItemEntry.name === item.name) {
+                    return {
+                        ...foodItemEntry,
+                        quantities: foodItem.quantities,
+                        locations: foodItem.locations,
+                    }
+                }
+                return foodItemEntry
+            })
+
+            setEditedValues((prev) => ({
+                ...prev,
+                foodItems: nextFoodItems,
+            }))
+
+            await checkFoodItemsAvailability(nextFoodItems)
+
+            const selectedList = shoppingLists.find(
+                (list) => list._id === listIdToUse
+            )
+            Alert.alert(
+                'Onnistui',
+                selectedList
+                    ? `Tuote lisätty listalle "${selectedList.name}"`
+                    : 'Tuote lisätty ostoslistaan'
+            )
         } catch (error) {
             console.error('Error adding to shopping list:', error)
-            Alert.alert('Virhe', 'Tuotteen lisääminen ostoslistaan epäonnistui')
+            Alert.alert(
+                'Virhe',
+                error.response?.data?.message ||
+                    error.response?.data?.error ||
+                    'Tuotteen lisääminen ostoslistaan epäonnistui'
+            )
+        } finally {
+            setIsAddingToShoppingList(false)
         }
     }
 
     const addItemToPantry = async (item) => {
         try {
             const token = await storage.getItem('userToken')
-            const quantity = item.quantities?.meal || item.quantity || 1
+            const quantity =
+                parseFloat(item.quantities?.meal) ||
+                parseFloat(item.quantity) ||
+                1
+            const categoryArray = Array.isArray(item.category)
+                ? item.category
+                : []
+            const foodItemId = item._id || item.foodId?._id || item.foodId
 
-            const categoryArray = Array.isArray(item.category) ? item.category : []
-
-            const findOrCreateResponse = await axios.post(
-                getServerUrl('/food-items/find-or-create'),
+            const pantryResponse = await axios.post(
+                getServerUrl('/pantry/items'),
                 {
                     name: item.name,
-                    unit: item.unit || 'kpl',
                     category: categoryArray,
-                    calories: parseInt(item.calories) || 0,
+                    quantity,
+                    unit: item.unit || 'kpl',
                     price: parseFloat(item.price) || 0,
-                    location: 'pantry',
-                    quantities: {
-                        meal: 0,
-                        'shopping-list': 0,
-                        pantry: quantity,
-                    },
+                    calories: parseInt(item.calories) || 0,
+                    foodId: foodItemId,
                 },
                 {
                     headers: {
@@ -292,12 +423,58 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                 }
             )
 
-            // Refresh availability
-            await checkFoodItemsAvailability(editedValues.foodItems)
+            if (!pantryResponse.data?.success) {
+                throw new Error(
+                    pantryResponse.data?.message ||
+                        pantryResponse.data?.error ||
+                        'Pantry update failed'
+                )
+            }
+
+            const foodItem = pantryResponse.data.foodItem
+
+            const nextFoodItems = editedValues.foodItems.map((foodItemEntry) => {
+                const entryId =
+                    foodItemEntry._id ||
+                    foodItemEntry.foodId?._id ||
+                    foodItemEntry.foodId
+                if (
+                    entryId &&
+                    foodItem?._id &&
+                    String(entryId) === String(foodItem._id)
+                ) {
+                    return {
+                        ...foodItemEntry,
+                        ...foodItem,
+                        quantities: foodItem.quantities,
+                        locations: foodItem.locations,
+                    }
+                }
+                if (foodItemEntry.name === item.name) {
+                    return {
+                        ...foodItemEntry,
+                        quantities: foodItem?.quantities || foodItemEntry.quantities,
+                        locations: foodItem?.locations || foodItemEntry.locations,
+                    }
+                }
+                return foodItemEntry
+            })
+
+            setEditedValues((prev) => ({
+                ...prev,
+                foodItems: nextFoodItems,
+            }))
+
+            await checkFoodItemsAvailability(nextFoodItems)
             Alert.alert('Onnistui', 'Tuote lisätty ruokavarastoon')
         } catch (error) {
             console.error('Error adding to pantry:', error)
-            Alert.alert('Virhe', 'Tuotteen lisääminen ruokavarastoon epäonnistui')
+            Alert.alert(
+                'Virhe',
+                error.response?.data?.message ||
+                    error.response?.data?.error ||
+                    'Tuotteen lisääminen ruokavarastoon epäonnistui'
+            )
         }
     }
 
@@ -549,7 +726,7 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                                     handleChange('recipe', text)
                                 }
                                 onToggleRecipeEdit={() => toggleEdit('recipe')}
-                                onAddToShoppingList={addItemToShoppingList}
+                                onAddToShoppingList={requestAddToShoppingList}
                                 onAddToPantry={addItemToPantry}
                             />
 
@@ -563,6 +740,50 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                         </View>
                     </ScrollView>
                 )}
+            </ResponsiveModal>
+
+            <ResponsiveModal
+                visible={showShoppingListPicker}
+                onClose={() => {
+                    if (isAddingToShoppingList) return
+                    setShowShoppingListPicker(false)
+                    setPendingShoppingListItem(null)
+                }}
+                title="Valitse ostoslista"
+                maxWidth={420}
+            >
+                <View style={styles.shoppingListPickerContent}>
+                    <CustomText style={styles.shoppingListPickerHint}>
+                        {pendingShoppingListItem
+                            ? `Mille listalle lisätään "${pendingShoppingListItem.name}"?`
+                            : 'Valitse ostoslista'}
+                    </CustomText>
+                    {shoppingLists.map((list) => (
+                        <TouchableOpacity
+                            key={list._id}
+                            style={[
+                                styles.shoppingListOption,
+                                selectedShoppingListId === list._id &&
+                                    styles.shoppingListOptionSelected,
+                            ]}
+                            disabled={isAddingToShoppingList}
+                            onPress={() => {
+                                setSelectedShoppingListId(list._id)
+                                addItemToShoppingList(
+                                    pendingShoppingListItem,
+                                    list._id
+                                )
+                            }}
+                        >
+                            <CustomText style={styles.shoppingListOptionText}>
+                                {list.name}
+                            </CustomText>
+                            <CustomText style={styles.shoppingListOptionMeta}>
+                                {list.items?.length || 0} tuotetta
+                            </CustomText>
+                        </TouchableOpacity>
+                    ))}
+                </View>
             </ResponsiveModal>
         </>
     )
@@ -608,6 +829,38 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         paddingHorizontal: 20,
         minWidth: 200,
+    },
+    shoppingListPickerContent: {
+        paddingHorizontal: 20,
+        paddingBottom: 24,
+        gap: 10,
+    },
+    shoppingListPickerHint: {
+        fontSize: 15,
+        color: '#374151',
+        marginBottom: 8,
+    },
+    shoppingListOption: {
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        borderRadius: 12,
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+        backgroundColor: '#F9FAFB',
+    },
+    shoppingListOptionSelected: {
+        borderColor: '#5844BB',
+        backgroundColor: '#F3F0FF',
+    },
+    shoppingListOptionText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#111827',
+    },
+    shoppingListOptionMeta: {
+        marginTop: 4,
+        fontSize: 13,
+        color: '#6B7280',
     },
 })
 

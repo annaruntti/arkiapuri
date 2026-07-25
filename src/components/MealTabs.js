@@ -99,7 +99,17 @@ const MealTabs = ({
                                                     {!availability.inPantry && (
                                                         <TouchableOpacity
                                                             style={styles.suggestionButton}
-                                                            onPress={() => onAddToPantry(item)}
+                                                            activeOpacity={0.7}
+                                                            onPress={async () => {
+                                                                try {
+                                                                    await onAddToPantry(item)
+                                                                } catch (error) {
+                                                                    console.error(
+                                                                        'Error adding to pantry from MealTabs:',
+                                                                        error
+                                                                    )
+                                                                }
+                                                            }}
                                                         >
                                                             <MaterialIcons name="kitchen" size={16} color="#000000" />
                                                             <CustomText style={styles.suggestionButtonText}>
