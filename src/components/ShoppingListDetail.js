@@ -18,11 +18,16 @@ import CustomText from './CustomText'
 import FoodListItemRow from './FoodListItemRow'
 import GenericFilter from './GenericFilter'
 import GenericFilterSection from './GenericFilterSection'
+import ListSortControl from './ListSortControl'
 import PantryItemDetails from './PantryItemDetails'
 import ResponsiveModal from './ResponsiveModal'
 import SearchSection from './SearchSection'
 import { useFilteredItemList } from '../hooks/useFilteredItemList'
 import { getServerUrl } from '../utils/getServerUrl'
+import {
+    SHOPPING_SORT_OPTIONS,
+    SORT_OPTION_IDS,
+} from '../utils/listSort'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 
@@ -52,8 +57,11 @@ const ShoppingListDetail = ({
         getCategoryItemCounts,
         filteredItems,
         itemSections,
+        sortId,
+        setSortId,
     } = useFilteredItemList({
         items: shoppingList.items || [],
+        defaultSortId: SORT_OPTION_IDS.NAME_ASC,
     })
 
     const handleCheckItem = (item) => {
@@ -455,27 +463,35 @@ const ShoppingListDetail = ({
                     {/* Items list container */}
                     <View style={styles.itemsListContainer}>
                         <View style={styles.stats}>
-                            <CustomText>
-                                Tuotteita:{' '}
-                                {searchQuery.length > 0 ||
-                                selectedCategoryFilters.length > 0
-                                    ? `${filteredItems.length} / ${shoppingList.items?.length || 0}`
-                                    : `${shoppingList.items?.length || 0} kpl`}
-                            </CustomText>
-                            <CustomText>
-                                Kokonaishinta:{' '}
-                                {filteredItems && filteredItems.length > 0
-                                    ? filteredItems
-                                          .reduce(
-                                              (sum, item) =>
-                                                  sum +
-                                                  (parseFloat(item.price) || 0),
-                                              0
-                                          )
-                                          .toFixed(2)
-                                    : shoppingList.totalEstimatedPrice || 0}
-                                €
-                            </CustomText>
+                            <View style={styles.statsTextColumn}>
+                                <CustomText>
+                                    Tuotteita:{' '}
+                                    {searchQuery.length > 0 ||
+                                    selectedCategoryFilters.length > 0
+                                        ? `${filteredItems.length} / ${shoppingList.items?.length || 0}`
+                                        : `${shoppingList.items?.length || 0} kpl`}
+                                </CustomText>
+                                <CustomText>
+                                    Kokonaishinta:{' '}
+                                    {filteredItems && filteredItems.length > 0
+                                        ? filteredItems
+                                              .reduce(
+                                                  (sum, item) =>
+                                                      sum +
+                                                      (parseFloat(item.price) ||
+                                                          0),
+                                                  0
+                                              )
+                                              .toFixed(2)
+                                        : shoppingList.totalEstimatedPrice || 0}
+                                    €
+                                </CustomText>
+                            </View>
+                            <ListSortControl
+                                options={SHOPPING_SORT_OPTIONS}
+                                value={sortId}
+                                onChange={setSortId}
+                            />
                         </View>
                         <SectionList
                             sections={itemSections}
@@ -605,12 +621,19 @@ const styles = StyleSheet.create({
     stats: {
         flexDirection: 'row',
         justifyContent: 'space-between',
+        alignItems: 'flex-start',
         marginBottom: 10,
         paddingBottom: 5,
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
-        zIndex: 1,
+        zIndex: 5,
         position: 'relative',
+        overflow: 'visible',
+    },
+    statsTextColumn: {
+        flex: 1,
+        gap: 2,
+        paddingRight: 8,
     },
     listContent: {
         paddingBottom: 20,

@@ -13,6 +13,7 @@ import CategorySectionHeader from '../components/CategorySectionHeader'
 import CustomText from '../components/CustomText'
 import AddMealForm from '../components/FormAddMeal'
 import GenericFilter from '../components/GenericFilter'
+import ListSortControl from '../components/ListSortControl'
 import MealItem from '../components/MealItem'
 import MealItemDetail from '../components/MealItemDetail'
 import LoginPromptModal from '../components/LoginPromptModal'
@@ -21,6 +22,11 @@ import useLoginPrompt from '../hooks/useLoginPrompt'
 import ResponsiveModal from '../components/ResponsiveModal'
 import SearchSection from '../components/SearchSection'
 import { getServerUrl } from '../utils/getServerUrl'
+import {
+    MEAL_SORT_OPTIONS,
+    SORT_OPTION_IDS,
+    sortListItems,
+} from '../utils/listSort'
 import {
     getDifficultyText,
     getMealRoleText,
@@ -52,6 +58,7 @@ const MealsScreen = ({ route, navigation }) => {
     const [detailModalVisible, setDetailModalVisible] = useState(false)
     const [selectedDietFilters, setSelectedDietFilters] = useState([])
     const [showFilters, setShowFilters] = useState(false)
+    const [sortId, setSortId] = useState(SORT_OPTION_IDS.NAME_ASC)
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedDifficultyFilter, setSelectedDifficultyFilter] =
         useState(null)
@@ -568,40 +575,74 @@ const MealsScreen = ({ route, navigation }) => {
                             difficultyFiltered,
                             selectedCookingTimeFilter || filterMaxCookingTime
                         )
-                        const groupedMeals = groupMealsByCategory(filteredMeals)
+                        const sortedMeals = sortListItems(filteredMeals, sortId)
+                        const groupedMeals = groupMealsByCategory(sortedMeals)
 
-                        if (Object.keys(groupedMeals).length === 0) {
-                            if (
-                                searchQuery.trim() &&
-                                selectedDietFilters.length > 0
-                            ) {
-                                return (
-                                    <CustomText style={styles.emptyText}>
-                                        Ei aterioita hakusanalla "{searchQuery}"
-                                        ja valituilla suodattimilla. Kokeile eri
-                                        hakusanaa tai suodatinyhdistelmää.
+                        return (
+                            <>
+                                <View style={styles.listSortRow}>
+                                    <CustomText style={styles.listSortCount}>
+                                        Aterioita: {filteredMeals.length} kpl
                                     </CustomText>
-                                )
-                            } else if (searchQuery.trim()) {
-                                return (
-                                    <CustomText style={styles.emptyText}>
-                                        Ei aterioita hakusanalla "{searchQuery}
-                                        ". Kokeile eri hakusanaa.
-                                    </CustomText>
-                                )
-                            } else if (selectedDietFilters.length > 0) {
-                                return (
-                                    <CustomText style={styles.emptyText}>
-                                        Ei aterioita valituilla suodattimilla.
-                                        Kokeile eri suodatinyhdistelmää.
-                                    </CustomText>
-                                )
-                            }
-                        }
+                                    <ListSortControl
+                                        options={MEAL_SORT_OPTIONS}
+                                        value={sortId}
+                                        onChange={setSortId}
+                                    />
+                                </View>
+                                {(() => {
+                                    if (
+                                        Object.keys(groupedMeals).length === 0
+                                    ) {
+                                        if (
+                                            searchQuery.trim() &&
+                                            selectedDietFilters.length > 0
+                                        ) {
+                                            return (
+                                                <CustomText
+                                                    style={styles.emptyText}
+                                                >
+                                                    Ei aterioita hakusanalla "
+                                                    {searchQuery}" ja valituilla
+                                                    suodattimilla. Kokeile eri
+                                                    hakusanaa tai
+                                                    suodatinyhdistelmää.
+                                                </CustomText>
+                                            )
+                                        } else if (searchQuery.trim()) {
+                                            return (
+                                                <CustomText
+                                                    style={styles.emptyText}
+                                                >
+                                                    Ei aterioita hakusanalla "
+                                                    {searchQuery}". Kokeile eri
+                                                    hakusanaa.
+                                                </CustomText>
+                                            )
+                                        } else if (
+                                            selectedDietFilters.length > 0
+                                        ) {
+                                            return (
+                                                <CustomText
+                                                    style={styles.emptyText}
+                                                >
+                                                    Ei aterioita valituilla
+                                                    suodattimilla. Kokeile eri
+                                                    suodatinyhdistelmää.
+                                                </CustomText>
+                                            )
+                                        }
+                                    }
 
-                        return Object.entries(groupedMeals).map(
-                            ([category, mealsInCategory]) =>
-                                renderCategorySection(category, mealsInCategory)
+                                    return Object.entries(groupedMeals).map(
+                                        ([category, mealsInCategory]) =>
+                                            renderCategorySection(
+                                                category,
+                                                mealsInCategory
+                                            )
+                                    )
+                                })()}
+                            </>
                         )
                     })()}
                 </ScrollView>
@@ -673,6 +714,20 @@ const styles = StyleSheet.create({
     },
     listContent: {
         paddingBottom: 20,
+    },
+    listSortRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 10,
+        zIndex: 5,
+        position: 'relative',
+        overflow: 'visible',
+    },
+    listSortCount: {
+        flex: 1,
+        paddingRight: 8,
+        color: '#333',
     },
     emptyText: {
         textAlign: 'center',
