@@ -13,8 +13,13 @@ import {
 import { MaterialIcons } from '@expo/vector-icons'
 import * as ImagePicker from 'expo-image-picker'
 
-import categoriesData from '../data/categories.json'
+import {
+    categoryMatches,
+    getFoodProductCategories,
+    groupItemsByFoodCategory,
+} from '../utils/foodCategories'
 import { getServerUrl } from '../utils/getServerUrl'
+import { getFoodItemImageUrl } from '../utils/openFoodFactsMapper'
 import { analyzeImage } from '../utils/googleVision'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
@@ -50,68 +55,10 @@ const ShoppingListDetail = ({
         'https://images.ctfassets.net/2pij69ehhf4n/1YIQLI04JJpf76ARo3k0b9/87322f1b9ccec07d2f2af66f7d61d53d/undraw_online-groceries_n03y.png'
 
     // Group items by category for section list
-    const groupItemsByCategory = (items) => {
-        // Get all ingredient categories from categories.json
-        const ingredientCategories =
-            categoriesData.find((cat) => cat.id === 'ingredients')?.children ||
-            []
-
-        // Create a map of category id to category name
-        const categoryMap = {}
-        ingredientCategories.forEach((cat) => {
-            categoryMap[cat.id] = cat.name
-        })
-
-        // Group items by their first ingredient category
-        const grouped = {}
-        const uncategorized = []
-
-        items.forEach((item) => {
-            if (item.category && item.category.length > 0) {
-                // Find the first matching ingredient category
-                let foundCategory = false
-                for (const categoryId of item.category) {
-                    if (categoryMap[categoryId]) {
-                        const categoryName = categoryMap[categoryId]
-                        if (!grouped[categoryName]) {
-                            grouped[categoryName] = []
-                        }
-                        grouped[categoryName].push(item)
-                        foundCategory = true
-                        break
-                    }
-                }
-
-                if (!foundCategory) {
-                    uncategorized.push(item)
-                }
-            } else {
-                uncategorized.push(item)
-            }
-        })
-
-        // Convert to section list format
-        const sections = Object.keys(grouped)
-            .sort()
-            .map((categoryName) => ({
-                title: categoryName,
-                data: grouped[categoryName],
-            }))
-
-        // Add uncategorized items at the end if any
-        if (uncategorized.length > 0) {
-            sections.push({
-                title: 'Muut',
-                data: uncategorized,
-            })
-        }
-
-        return sections
-    }
+    const groupItemsByCategory = groupItemsByFoodCategory
 
     // Get ingredient categories from categories.json
-    const ingredientCategories =
-        categoriesData.find((cat) => cat.id === 'ingredients')?.children || []
+    const ingredientCategories = getFoodProductCategories()
 
     // Filter items based on search query
     const filterItemsBySearch = (items) => {
@@ -135,13 +82,15 @@ const ShoppingListDetail = ({
                 return false
             }
 
-            // Item must have at least one of the selected category filters
-            // Normalize both sides to strings for consistent comparison
-            return selectedCategoryFilters.some((filterId) =>
-                item.category.some(
-                    (itemCatId) => String(itemCatId) === String(filterId)
+            return selectedCategoryFilters.some((filterId) => {
+                const category = ingredientCategories.find(
+                    (cat) => String(cat.id) === String(filterId)
                 )
-            )
+                if (!category) return false
+                return item.category.some((itemCat) =>
+                    categoryMatches(itemCat, category)
+                )
+            })
         })
     }
 
@@ -170,7 +119,9 @@ const ShoppingListDetail = ({
                 if (!item.category || item.category.length === 0) {
                     return false
                 }
-                return item.category.includes(String(category.id))
+                return item.category.some((itemCat) =>
+                    categoryMatches(itemCat, category)
+                )
             }).length
         })
 
@@ -561,7 +512,7 @@ const ShoppingListDetail = ({
                 <Image
                     source={{
                         uri:
-                            item.image?.url ||
+                            getFoodItemImageUrl(item) ||
                             SHOPPING_LIST_PLACEHOLDER_IMAGE_URL,
                     }}
                     style={styles.itemImage}

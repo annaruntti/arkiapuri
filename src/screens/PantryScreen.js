@@ -25,14 +25,102 @@ import ResponsiveLayout from '../components/ResponsiveLayout'
 import ResponsiveModal from '../components/ResponsiveModal'
 import SearchSection from '../components/SearchSection'
 
-import categoriesData from '../data/categories.json'
+import {
+    categoryMatches,
+    getFoodProductCategories,
+    groupItemsByFoodCategory,
+} from '../utils/foodCategories'
 import { getServerUrl } from '../utils/getServerUrl'
+import { getFoodItemImageUrl } from '../utils/openFoodFactsMapper'
 import { useResponsiveDimensions } from '../utils/responsive'
 import { scanItems } from '../utils/scanItems'
 import storage from '../utils/storage'
 
 const PANTRY_PLACEHOLDER_IMAGE_URL =
     'https://images.ctfassets.net/2pij69ehhf4n/1YIQLI04JJpf76ARo3k0b9/87322f1b9ccec07d2f2af66f7d61d53d/undraw_online-groceries_n03y.png'
+
+const normalizePantryName = (name) =>
+    String(name || '')
+        .normalize('NFKC')
+        .toLowerCase()
+        .replace(/[\u200B-\u200D\uFEFF]/g, '')
+        .trim()
+        .replace(/\s+/g, ' ')
+
+/** Treat "Kevyt maito" and "Kevytmaito" as the same product. */
+const pantryItemMergeKey = (name) =>
+    normalizePantryName(name)
+        .replace(/[^a-zåäö0-9]+/gi, '')
+        .toLowerCase()
+        .trim()
+
+const getPantryFoodId = (item) => {
+    if (!item?.foodId) return null
+    if (typeof item.foodId === 'object') {
+        return String(item.foodId._id || item.foodId.id || '')
+    }
+    return String(item.foodId)
+}
+
+/** Show the same product only once; sum quantities. Name is the merge key. */
+const mergeDuplicatePantryItems = (items = []) => {
+    const groups = new Map()
+
+    for (const item of items) {
+        const foodName =
+            item.foodId && typeof item.foodId === 'object'
+                ? item.foodId.name
+                : ''
+        const displayName = (item.name || foodName || '').trim()
+        const nameKey = pantryItemMergeKey(displayName)
+        const foodId = getPantryFoodId(item)
+        const key = nameKey
+            ? `name:${nameKey}`
+            : foodId
+              ? `food:${foodId}`
+              : `id:${item._id}`
+
+        const existing = groups.get(key)
+        if (!existing) {
+            groups.set(key, {
+                ...item,
+                name: displayName || item.name,
+                unit: item.unit === 'pcs' ? 'kpl' : item.unit || 'kpl',
+            })
+            continue
+        }
+
+        existing.quantity =
+            (Number(existing.quantity) || 0) + (Number(item.quantity) || 0)
+
+        if (
+            /\s/.test(displayName) &&
+            !/\s/.test(String(existing.name || ''))
+        ) {
+            existing.name = displayName
+        }
+
+        if (
+            item.expirationDate &&
+            (!existing.expirationDate ||
+                new Date(item.expirationDate) <
+                    new Date(existing.expirationDate))
+        ) {
+            existing.expirationDate = item.expirationDate
+        }
+
+        if (!getFoodItemImageUrl(existing) && getFoodItemImageUrl(item)) {
+            existing.image = item.image
+            existing.foodId = item.foodId
+        }
+
+        if (existing.unit === 'pcs') {
+            existing.unit = 'kpl'
+        }
+    }
+
+    return [...groups.values()]
+}
 
 const PantryScreen = ({}) => {
     const { isDesktop } = useResponsiveDimensions()
@@ -48,9 +136,8 @@ const PantryScreen = ({}) => {
     const [selectedCategoryFilters, setSelectedCategoryFilters] = useState([])
     const [showFilters, setShowFilters] = useState(false)
 
-    // Get ingredient categories from categories.json
-    const ingredientCategories =
-        categoriesData.find((cat) => cat.id === 'ingredients')?.children || []
+    // Product categories for pantry sections and filters (incl. Säilykkeet, Juomat, …)
+    const ingredientCategories = getFoodProductCategories()
 
     // Filter pantry items based on search query
     const filterItemsBySearch = (items) => {
@@ -73,12 +160,15 @@ const PantryScreen = ({}) => {
                 return false
             }
 
-            // Item must have at least one of the selected category filters
-            return selectedCategoryFilters.some((filterId) =>
-                item.category.some(
-                    (itemCatId) => String(itemCatId) === String(filterId)
+            return selectedCategoryFilters.some((filterId) => {
+                const category = ingredientCategories.find(
+                    (cat) => String(cat.id) === String(filterId)
                 )
-            )
+                if (!category) return false
+                return item.category.some((itemCat) =>
+                    categoryMatches(itemCat, category)
+                )
+            })
         })
     }
 
@@ -106,75 +196,21 @@ const PantryScreen = ({}) => {
                 if (!item.category || item.category.length === 0) {
                     return false
                 }
-                return item.category.includes(String(category.id))
+                return item.category.some((itemCat) =>
+                    categoryMatches(itemCat, category)
+                )
             }).length
         })
 
         return counts
     }
 
-    // Apply both search and category filters
-    const filteredPantryItems = filterItemsByCategory(
-        filterItemsBySearch(pantryItems)
+    // Apply both search and category filters, then collapse duplicate product rows
+    const filteredPantryItems = mergeDuplicatePantryItems(
+        filterItemsByCategory(filterItemsBySearch(pantryItems))
     )
 
-    // Group items by category for section list
-    const groupItemsByCategory = (items) => {
-        // Create a map of category id to category name
-        const categoryMap = {}
-        ingredientCategories.forEach((cat) => {
-            categoryMap[cat.id] = cat.name
-        })
-
-        // Group items by their ingredient category
-        const grouped = {}
-        const uncategorized = []
-
-        items.forEach((item) => {
-            if (item.category && item.category.length > 0) {
-                // Find the first matching ingredient category
-                let foundCategory = false
-                for (const categoryId of item.category) {
-                    if (categoryMap[categoryId]) {
-                        const categoryName = categoryMap[categoryId]
-                        if (!grouped[categoryName]) {
-                            grouped[categoryName] = []
-                        }
-                        grouped[categoryName].push(item)
-                        foundCategory = true
-                        break // Only add to the first matching ingredient category
-                    }
-                }
-
-                // If no ingredient category was found, add to uncategorized
-                if (!foundCategory) {
-                    uncategorized.push(item)
-                }
-            } else {
-                uncategorized.push(item)
-            }
-        })
-
-        // Convert to section list format
-        const sections = Object.keys(grouped)
-            .sort()
-            .map((categoryName) => ({
-                title: categoryName,
-                data: grouped[categoryName],
-            }))
-
-        // Add uncategorized items at the end if any
-        if (uncategorized.length > 0) {
-            sections.push({
-                title: 'Muut',
-                data: uncategorized,
-            })
-        }
-
-        return sections
-    }
-
-    const pantryItemSections = groupItemsByCategory(filteredPantryItems)
+    const pantryItemSections = groupItemsByFoodCategory(filteredPantryItems)
 
     const fetchPantryItems = async () => {
         try {
@@ -196,7 +232,7 @@ const PantryScreen = ({}) => {
             if (response.data.success) {
                 const items =
                     response.data.pantry?.items || response.data.items || []
-                setPantryItems(items)
+                setPantryItems(mergeDuplicatePantryItems(items))
             } else {
                 console.error('Failed to fetch pantry items:', response.data)
                 Alert.alert('Virhe', 'Pentterin sisältöä ei voitu hakea')
@@ -496,7 +532,9 @@ const PantryScreen = ({}) => {
             >
                 <Image
                     source={{
-                        uri: item.image?.url || PANTRY_PLACEHOLDER_IMAGE_URL,
+                        uri:
+                            getFoodItemImageUrl(item) ||
+                            PANTRY_PLACEHOLDER_IMAGE_URL,
                     }}
                     style={styles.itemImage}
                     resizeMode="cover"

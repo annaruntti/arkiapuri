@@ -18,6 +18,61 @@ import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 import BarcodeScanner from './BarcodeScanner'
 import CustomText from './CustomText'
+import { mapOpenFoodFactsToFoodItemFields } from '../utils/openFoodFactsMapper'
+
+const normalizeItemName = (name) =>
+    String(name || '')
+        .toLowerCase()
+        .trim()
+
+const getItemIdentity = (item) => {
+    if (item?._id) return `id:${item._id}`
+    if (item?.barcode) return `barcode:${item.barcode}`
+    return null
+}
+
+/** Prefer richer / more recently used food item when collapsing duplicates. */
+const scoreFoodItem = (item) => {
+    const locationCount = Array.isArray(item.locations) ? item.locations.length : 0
+    const quantityTotal = item.quantities
+        ? Object.values(item.quantities).reduce(
+              (sum, value) => sum + (Number(value) || 0),
+              0
+          )
+        : 0
+    const hasImage = item.image?.url || item.imageUrl ? 1 : 0
+    const hasOff = item.openFoodFactsData ? 1 : 0
+    const updatedAt = item.updatedAt ? new Date(item.updatedAt).getTime() : 0
+    return locationCount * 1000 + quantityTotal * 10 + hasImage * 5 + hasOff * 3 + updatedAt / 1e12
+}
+
+const dedupeFoodItems = (items = []) => {
+    const byIdentity = new Map()
+
+    for (const item of items) {
+        const identity = getItemIdentity(item)
+        if (!identity) {
+            byIdentity.set(`anon:${byIdentity.size}`, item)
+            continue
+        }
+        const existing = byIdentity.get(identity)
+        if (!existing || scoreFoodItem(item) > scoreFoodItem(existing)) {
+            byIdentity.set(identity, item)
+        }
+    }
+
+    const byName = new Map()
+    for (const item of byIdentity.values()) {
+        const name = normalizeItemName(item.name)
+        if (!name) continue
+        const existing = byName.get(name)
+        if (!existing || scoreFoodItem(item) > scoreFoodItem(existing)) {
+            byName.set(name, item)
+        }
+    }
+
+    return [...byName.values()]
+}
 
 const UnifiedFoodSearch = ({
     onSelectItem,
@@ -114,7 +169,7 @@ const UnifiedFoodSearch = ({
             })
 
             if (response.data.success) {
-                setLocalFoodItems(response.data.foodItems)
+                setLocalFoodItems(dedupeFoodItems(response.data.foodItems || []))
             }
         } catch (error) {
             console.error('Error fetching local food items:', error)
@@ -128,17 +183,17 @@ const UnifiedFoodSearch = ({
 
         try {
             // Search local items with better filtering
-            const queryLower = query.toLowerCase().trim()
-            const localFiltered = localFoodItems
-                .filter((item) => {
+            const queryLower = normalizeItemName(query)
+            const localFiltered = dedupeFoodItems(
+                localFoodItems.filter((item) => {
                     if (!item.name) return false
-                    const nameLower = item.name.toLowerCase()
-                    return nameLower.includes(queryLower)
+                    return normalizeItemName(item.name).includes(queryLower)
                 })
+            )
                 .sort((a, b) => {
                     // Prioritize exact matches and starts-with matches
-                    const aName = a.name.toLowerCase()
-                    const bName = b.name.toLowerCase()
+                    const aName = normalizeItemName(a.name)
+                    const bName = normalizeItemName(b.name)
                     const aExact = aName === queryLower
                     const bExact = bName === queryLower
                     const aStarts = aName.startsWith(queryLower)
@@ -153,6 +208,7 @@ const UnifiedFoodSearch = ({
                 .slice(0, 15) // Limit to 15 local items max
                 .map((item) => ({
                     ...item,
+                    source: item.source || 'local',
                     // Ensure local items have proper structure
                     name: item.name || 'Nimetön tuote',
                     category: Array.isArray(item.category)
@@ -174,8 +230,8 @@ const UnifiedFoodSearch = ({
                     const data = await response.json()
 
                     if (data.success) {
-                        const processedProducts = (data.products || []).map(
-                            (product) => ({
+                        const processedProducts = dedupeFoodItems(
+                            (data.products || []).map((product) => ({
                                 ...product,
                                 source: 'openfoodfacts',
                                 name: String(product.name || 'Nimetön tuote'),
@@ -189,10 +245,12 @@ const UnifiedFoodSearch = ({
                                     : product.category
                                       ? [product.category]
                                       : [],
-                            })
+                            }))
                         )
 
                         setOpenFoodFactsItems(processedProducts)
+                    } else {
+                        setOpenFoodFactsItems([])
                     }
                 } catch (offError) {
                     console.error('Error searching Open Food Facts:', offError)
@@ -357,28 +415,13 @@ const UnifiedFoodSearch = ({
         try {
             // For meal context, just add the item directly without API calls
             if (location === 'meal') {
+                const mapped = mapOpenFoodFactsToFoodItemFields(product)
                 const foodItem = {
-                    _id: `openfoodfacts-${product.barcode}`,
-                    name: product.product_name || product.name,
-                    barcode: product.barcode,
-                    unit: 'kpl',
-                    category: (() => {
-                        if (!product.categories) return []
-                        if (Array.isArray(product.categories))
-                            return product.categories
-                        if (typeof product.categories === 'string') {
-                            return product.categories
-                                .split(',')
-                                .map((cat) => cat.trim())
-                        }
-                        return []
-                    })(),
-                    calories: product.nutriments?.['energy-kcal_100g'] || 0,
-                    price: 0,
-                    source: 'openfoodfacts',
+                    _id: `openfoodfacts-${product.barcode || mapped.openFoodFactsData?.barcode || Date.now()}`,
+                    ...mapped,
                     locations: ['meal'],
                     quantities: {
-                        meal: 1,
+                        meal: mapped.packageQuantity || 1,
                         'shopping-list': 0,
                         pantry: 0,
                     },
@@ -391,6 +434,7 @@ const UnifiedFoodSearch = ({
             }
 
             // For other locations (shopping-list, pantry), use the API
+            const mapped = mapOpenFoodFactsToFoodItemFields(product)
             const token = await storage.getItem('userToken')
             const response = await fetch(
                 `${getServerUrl('')}/api/openfoodfacts/add/${product.barcode}`,
@@ -402,8 +446,8 @@ const UnifiedFoodSearch = ({
                     },
                     body: JSON.stringify({
                         location: location,
-                        quantity: 1,
-                        unit: 'pcs',
+                        quantity: mapped.packageQuantity || 1,
+                        unit: mapped.unit || 'kpl',
                         shoppingListId: shoppingListId,
                         mealId: mealId,
                     }),
@@ -561,9 +605,11 @@ const UnifiedFoodSearch = ({
             >
                 <View style={styles.itemContent}>
                     <View style={styles.imageItemLeft}>
-                        {item.imageUrl && (
+                        {(item.image?.url || item.imageUrl) && (
                             <Image
-                                source={{ uri: item.imageUrl }}
+                                source={{
+                                    uri: item.image?.url || item.imageUrl,
+                                }}
                                 style={styles.productImage}
                             />
                         )}
@@ -633,9 +679,9 @@ const UnifiedFoodSearch = ({
     const getFilteredData = () => {
         switch (activeTab) {
             case 'local':
-                return filteredLocalItems
+                return dedupeFoodItems(filteredLocalItems)
             case 'openfoodfacts':
-                return openFoodFactsItems
+                return dedupeFoodItems(openFoodFactsItems)
             default:
                 // Smart deduplication: prioritize local items, remove exact name duplicates
                 const seenNames = new Set()
@@ -643,9 +689,9 @@ const UnifiedFoodSearch = ({
                 const deduped = []
 
                 // First add local items (they have priority)
-                filteredLocalItems.forEach((item, index) => {
-                    const normalizedName = item.name?.toLowerCase().trim()
-                    const key = item._id || `local-${normalizedName}`
+                filteredLocalItems.forEach((item) => {
+                    const normalizedName = normalizeItemName(item.name)
+                    const key = getItemIdentity(item) || `local-${normalizedName}`
 
                     if (!seenNames.has(normalizedName) && !seenKeys.has(key)) {
                         seenNames.add(normalizedName)
@@ -656,8 +702,8 @@ const UnifiedFoodSearch = ({
 
                 // Then add Open Food Facts items (only if name doesn't exist)
                 openFoodFactsItems.forEach((item) => {
-                    const normalizedName = item.name?.toLowerCase().trim()
-                    const key = item.barcode || `off-${normalizedName}`
+                    const normalizedName = normalizeItemName(item.name)
+                    const key = getItemIdentity(item) || `off-${normalizedName}`
 
                     if (!seenNames.has(normalizedName) && !seenKeys.has(key)) {
                         seenNames.add(normalizedName)
@@ -699,13 +745,9 @@ const UnifiedFoodSearch = ({
     // Memoize the renderItem function to prevent re-renders
     const memoizedRenderItem = useCallback(
         ({ item, index }) => {
-            // More robust detection of Open Food Facts items
-            if (
-                item.source === 'openfoodfacts' ||
-                item.barcode ||
-                item.nutrition ||
-                item.nutritionGrade
-            ) {
+            const isOpenFoodFacts = item.source === 'openfoodfacts'
+
+            if (isOpenFoodFacts) {
                 return (
                     <React.Fragment key={item.__searchKey || index}>
                         {renderOpenFoodFactsItem({ item })}
