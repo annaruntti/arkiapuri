@@ -17,14 +17,13 @@ import CategoryFilterSection from '../components/CategoryFilterSection'
 import CategorySectionHeader from '../components/CategorySectionHeader'
 import CustomText from '../components/CustomText'
 import FormFoodItem from '../components/FormFoodItem'
+import AddFoodItemPanel from '../components/AddFoodItemPanel'
 import LoginPromptModal from '../components/LoginPromptModal'
 import useLoginPrompt from '../hooks/useLoginPrompt'
 import PantryItemDetails from '../components/PantryItemDetails'
 import ResponsiveLayout from '../components/ResponsiveLayout'
 import ResponsiveModal from '../components/ResponsiveModal'
 import SearchSection from '../components/SearchSection'
-import UnifiedFoodSearch from '../components/UnifiedFoodSearch'
-import GuestWarningBanner from '../components/GuestWarningBanner'
 
 import categoriesData from '../data/categories.json'
 import { getServerUrl } from '../utils/getServerUrl'
@@ -560,44 +559,14 @@ const PantryScreen = ({}) => {
                         title="Luo uusi tuote"
                         maxWidth={700}
                     >
-                        <ScrollView
-                            style={styles.modalScrollView}
-                            showsVerticalScrollIndicator={true}
-                            contentContainerStyle={styles.addItemModalContainer}
-                        >
-                            <GuestWarningBanner style={styles.GuestWarningBanner} message="Tietosi eivät tallennu pysyvästi ilman käyttäjätunnusta. Kirjaudu sisään tallentaaksesi ateriat." />
-                            {/* Search section */}
-                            <View style={styles.searchSection}>
-                                <CustomText style={styles.searchSectionTitle}>
-                                    Etsi tuote tietokannasta
-                                </CustomText>
-                                <UnifiedFoodSearch
-                                    onSelectItem={handleSearchItemSelect}
-                                    location="pantry"
-                                    addToLocation="pantry"
-                                />
-                            </View>
-
-                            {/* Divider */}
-                            <View style={styles.divider}>
-                                <View style={styles.dividerLine} />
-                                <CustomText style={styles.dividerText}>
-                                    TAI
-                                </CustomText>
-                                <View style={styles.dividerLine} />
-                            </View>
-
-                            {/* Manual form section */}
-                            <View style={styles.formSection}>
-                                <CustomText style={styles.formSectionTitle}>
-                                    Luo uusi tuote manuaalisesti
-                                </CustomText>
-                                <FormFoodItem
-                                    onSubmit={handleAddItem}
-                                    location="pantry"
-                                />
-                            </View>
-                        </ScrollView>
+                        <AddFoodItemPanel
+                            location="pantry"
+                            showGuestWarning={true}
+                            guestWarningMessage="Tietosi eivät tallennu pysyvästi ilman käyttäjätunnusta. Kirjaudu sisään tallentaaksesi ateriat."
+                            onSelectItem={handleSearchItemSelect}
+                            onSubmitNewItem={handleAddItem}
+                            onCloseForm={() => setShowAddItemSearch(false)}
+                        />
                     </ResponsiveModal>
 
                     <ScrollView
@@ -985,51 +954,6 @@ const styles = StyleSheet.create({
     },
     formContainer: {
         padding: 15,
-    },
-    addItemModalContainer: {
-        padding: 10,
-    },
-    modalScrollView: {
-        maxHeight: '80vh', // Limit height on web
-        flex: 1,
-    },
-    GuestWarningBanner: {
-        marginBottom: 20,
-    },
-    searchSectionTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 15,
-        color: '#333',
-        textAlign: 'left',
-    },
-    divider: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginVertical: 15,
-    },
-    dividerLine: {
-        flex: 1,
-        height: 1,
-        backgroundColor: '#ddd',
-    },
-    dividerText: {
-        marginHorizontal: 15,
-        fontSize: 14,
-        color: '#666',
-        fontWeight: 'bold',
-    },
-    formSection: {
-        marginTop: 5,
-        alignItems: 'flex-start',
-        width: '100%',
-    },
-    formSectionTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 15,
-        color: '#333',
-        textAlign: 'left',
     },
     fullWidth: {
         flex: 1,
