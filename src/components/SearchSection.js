@@ -2,7 +2,7 @@ import { TextInput, TouchableOpacity, View } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
 import Button from './Button'
 import CustomText from './CustomText'
-import { GenericFilterSection } from './GenericFilter'
+import GenericFilterSection from './GenericFilterSection'
 
 const SearchSection = ({
     searchQuery,
