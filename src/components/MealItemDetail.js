@@ -142,71 +142,79 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
     }
 
     return (
-        <>
-            <ResponsiveModal
-                visible={visible}
-                onClose={() => {
-                    if (showFoodItemForm) {
-                        setShowFoodItemForm(false)
-                        return
-                    }
-                    onClose()
-                }}
-                title={showFoodItemForm ? 'Lisää raaka-aine' : meal.name}
-                maxWidth={700}
-            >
-                {showFoodItemForm ? (
-                    <AddFoodItemPanel
-                        location="meal"
-                        mealId={meal._id}
-                        allowDuplicates={true}
-                        onSelectItem={addFoodItemToMeal}
-                        onSubmitNewItem={addFoodItemToMeal}
-                        onCloseForm={() => setShowFoodItemForm(false)}
-                    />
-                ) : (
-                    <ScrollView style={styles.detailScroll}>
-                        <MealDetailsForm
-                            meal={meal}
-                            editedValues={editedValues}
-                            editableFields={editableFields}
-                            editingFoodItem={editingFoodItem}
-                            foodItemsWithAvailability={
-                                foodItemsWithAvailability
-                            }
-                            onToggleEdit={toggleEdit}
-                            onChange={handleChange}
-                            onFoodItemChange={handleFoodItemChange}
-                            onPlannedEatingDatesChange={(dates) =>
-                                handleChange('plannedEatingDates', dates)
-                            }
-                            onAddFoodItem={() => setShowFoodItemForm(true)}
-                            onEditFoodItem={setEditingFoodItem}
-                            onRemoveFoodItem={handleRemoveFoodItem}
-                            onToggleRecipeEdit={() => toggleEdit('recipe')}
-                            onAddToShoppingList={requestAddToShoppingList}
-                            onAddToPantry={addItemToPantry}
-                            onImageUpdate={(updatedMeal) =>
-                                onUpdate(meal._id, updatedMeal)
-                            }
-                            onSave={handleSave}
-                        />
-                    </ScrollView>
-                )}
-            </ResponsiveModal>
-
-            <ShoppingListPickerModal
-                visible={showShoppingListPicker}
-                shoppingLists={shoppingLists}
-                selectedShoppingListId={selectedShoppingListId}
-                pendingItemName={pendingShoppingListItem?.name}
-                loading={isAddingToShoppingList}
-                onClose={closeShoppingListPicker}
-                onSelect={(listId) =>
-                    addItemToShoppingList(pendingShoppingListItem, listId)
+        <ResponsiveModal
+            visible={visible}
+            onClose={() => {
+                if (showShoppingListPicker) {
+                    closeShoppingListPicker()
+                    return
                 }
-            />
-        </>
+                if (showFoodItemForm) {
+                    setShowFoodItemForm(false)
+                    return
+                }
+                onClose()
+            }}
+            title={
+                showShoppingListPicker
+                    ? 'Valitse ostoslista'
+                    : showFoodItemForm
+                      ? 'Lisää raaka-aine'
+                      : meal.name
+            }
+            showBackButton={showFoodItemForm || showShoppingListPicker}
+            maxWidth={700}
+        >
+            {showShoppingListPicker ? (
+                <ShoppingListPickerModal
+                    embedded
+                    shoppingLists={shoppingLists}
+                    selectedShoppingListId={selectedShoppingListId}
+                    pendingItemName={pendingShoppingListItem?.name}
+                    loading={isAddingToShoppingList}
+                    onClose={closeShoppingListPicker}
+                    onSelect={(listId) =>
+                        addItemToShoppingList(pendingShoppingListItem, listId)
+                    }
+                />
+            ) : showFoodItemForm ? (
+                <AddFoodItemPanel
+                    location="meal"
+                    mealId={meal._id}
+                    allowDuplicates={true}
+                    onSelectItem={addFoodItemToMeal}
+                    onSubmitNewItem={addFoodItemToMeal}
+                    onCloseForm={() => setShowFoodItemForm(false)}
+                    showFormBackButton={false}
+                />
+            ) : (
+                <ScrollView style={styles.detailScroll}>
+                    <MealDetailsForm
+                        meal={meal}
+                        editedValues={editedValues}
+                        editableFields={editableFields}
+                        editingFoodItem={editingFoodItem}
+                        foodItemsWithAvailability={foodItemsWithAvailability}
+                        onToggleEdit={toggleEdit}
+                        onChange={handleChange}
+                        onFoodItemChange={handleFoodItemChange}
+                        onPlannedEatingDatesChange={(dates) =>
+                            handleChange('plannedEatingDates', dates)
+                        }
+                        onAddFoodItem={() => setShowFoodItemForm(true)}
+                        onEditFoodItem={setEditingFoodItem}
+                        onRemoveFoodItem={handleRemoveFoodItem}
+                        onToggleRecipeEdit={() => toggleEdit('recipe')}
+                        onAddToShoppingList={requestAddToShoppingList}
+                        onAddToPantry={addItemToPantry}
+                        onImageUpdate={(updatedMeal) =>
+                            onUpdate(meal._id, updatedMeal)
+                        }
+                        onSave={handleSave}
+                    />
+                </ScrollView>
+            )}
+        </ResponsiveModal>
     )
 }
 

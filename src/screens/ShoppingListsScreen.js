@@ -225,25 +225,17 @@ const ShoppingListsScreen = () => {
 
                     <LoginPromptModal {...loginPromptProps} />
 
-                    <ResponsiveModal
+                    <ShoppingListDetail
+                        shoppingList={selectedList}
                         visible={!!selectedList}
                         onClose={() => setSelectedList(null)}
-                        title="Ostoslistan tiedot"
-                        maxWidth={800}
-                    >
-                        {selectedList && (
-                            <ShoppingListDetail
-                                shoppingList={selectedList}
-                                onClose={() => setSelectedList(null)}
-                                onUpdate={handleListUpdate}
-                                fetchShoppingLists={fetchShoppingLists}
-                                fetchPantryItems={fetchPantryItems}
-                                onRequireLogin={(trigger) =>
-                                    showLoginPrompt(trigger || 'ai_feature')
-                                }
-                            />
-                        )}
-                    </ResponsiveModal>
+                        onUpdate={handleListUpdate}
+                        fetchShoppingLists={fetchShoppingLists}
+                        fetchPantryItems={fetchPantryItems}
+                        onRequireLogin={(trigger) =>
+                            showLoginPrompt(trigger || 'ai_feature')
+                        }
+                    />
 
                     <View style={styles.content}>
                         {shoppingLists.length > 0 ? (

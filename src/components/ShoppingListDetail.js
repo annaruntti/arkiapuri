@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
     Alert,
     ScrollView,
@@ -39,22 +39,37 @@ import { useResponsiveDimensions } from '../utils/responsive'
 
 const getListItemId = (item) => String(item?._id ?? item?.id ?? '')
 
+const MODAL_VIEWS = {
+    LIST: 'list',
+    ADD_ITEM: 'addItem',
+    ITEM_DETAILS: 'itemDetails',
+}
+
 const ShoppingListDetail = ({
     shoppingList,
+    visible,
+    onClose,
     onUpdate,
     fetchShoppingLists,
     fetchPantryItems,
     onRequireLogin,
 }) => {
     const [checkedItems, setCheckedItems] = useState([])
-    const [showItemForm, setShowItemForm] = useState(false)
+    const [modalView, setModalView] = useState(MODAL_VIEWS.LIST)
     const [loading, setLoading] = useState(false)
     const [selectedItem, setSelectedItem] = useState(null)
-    const [showItemDetails, setShowItemDetails] = useState(false)
     const { isDesktop } = useResponsiveDimensions()
-    const boughtItemCount = (shoppingList.items || []).filter(
+    const boughtItemCount = (shoppingList?.items || []).filter(
         (item) => item.bought
     ).length
+
+    useEffect(() => {
+        if (!visible) {
+            setModalView(MODAL_VIEWS.LIST)
+            setSelectedItem(null)
+            setCheckedItems([])
+        }
+    }, [visible])
 
     const {
         searchQuery,
@@ -71,10 +86,29 @@ const ShoppingListDetail = ({
         sortId,
         setSortId,
     } = useFilteredItemList({
-        items: shoppingList.items || [],
+        items: shoppingList?.items || [],
         defaultSortId: SORT_OPTION_IDS.NAME_ASC,
     })
 
+    const goToListView = () => {
+        setModalView(MODAL_VIEWS.LIST)
+        setSelectedItem(null)
+    }
+
+    const handleModalClose = () => {
+        if (modalView !== MODAL_VIEWS.LIST) {
+            goToListView()
+            return
+        }
+        onClose?.()
+    }
+
+    const modalTitle =
+        modalView === MODAL_VIEWS.ADD_ITEM
+            ? 'Lisää tuote ostoslistaan'
+            : modalView === MODAL_VIEWS.ITEM_DETAILS
+              ? 'Tuotteen tiedot'
+              : 'Ostoslistan tiedot'
     const handleCheckItem = (item) => {
         const itemId = getListItemId(item)
         if (!itemId) return
@@ -329,7 +363,7 @@ const ShoppingListDetail = ({
                 newItem,
             ])
             onUpdate(data.shoppingList)
-            setShowItemForm(false)
+            goToListView()
         } catch (error) {
             console.error('Error adding item:', error?.response?.data || error)
             Alert.alert('Virhe', 'Tuotteen lisääminen epäonnistui')
@@ -346,7 +380,7 @@ const ShoppingListDetail = ({
             // We only need to refresh so the new item shows up.
             if (meta.alreadyAdded) {
                 await fetchShoppingLists()
-                setShowItemForm(false)
+                goToListView()
                 return
             }
 
@@ -375,7 +409,7 @@ const ShoppingListDetail = ({
 
     const handleItemDetailsPress = (item) => {
         setSelectedItem(item)
-        setShowItemDetails(true)
+        setModalView(MODAL_VIEWS.ITEM_DETAILS)
     }
 
     const handleUpdateItem = async (itemId, updatedData) => {
@@ -436,7 +470,7 @@ const ShoppingListDetail = ({
                 updatedData
             )
             onUpdate(data.shoppingList)
-            setShowItemDetails(false)
+            goToListView()
         } catch (error) {
             console.error('Error updating item:', error)
             console.error('Error response:', error.response?.data)
@@ -483,207 +517,211 @@ const ShoppingListDetail = ({
     )
 
     return (
-        <View style={styles.container}>
-            {loading && (
-                <View style={styles.loadingOverlay}>
-                    <ActivityIndicator size="large" color="#5844BB" />
-                </View>
-            )}
-
-            <ResponsiveModal
-                visible={showItemForm}
-                onClose={() => setShowItemForm(false)}
-                title="Lisää tuote ostoslistaan"
-                maxWidth={700}
-            >
+        <ResponsiveModal
+            visible={visible}
+            onClose={handleModalClose}
+            title={modalTitle}
+            showBackButton={modalView !== MODAL_VIEWS.LIST}
+            maxWidth={800}
+        >
+            {!shoppingList ? null : modalView === MODAL_VIEWS.ADD_ITEM ? (
                 <AddFoodItemPanel
                     location="shopping-list"
                     shoppingListId={shoppingList._id}
                     onSelectItem={handleSearchItemSelect}
                     onSubmitNewItem={handleAddItem}
-                    onCloseForm={() => setShowItemForm(false)}
+                    onCloseForm={goToListView}
+                    showFormBackButton={false}
                 />
-            </ResponsiveModal>
-
-            <ScrollView
-                style={styles.mainScrollView}
-                stickyHeaderIndices={[1]}
-                showsVerticalScrollIndicator={false}
-            >
-                    {/* Header section that scrolls away */}
-                    <View style={styles.headerSection}>
-                        <View style={styles.header}>
-                            <CustomText style={styles.title}>
-                                {shoppingList.name}
-                            </CustomText>
-                            <CustomText style={styles.description}>
-                                {shoppingList.description}
-                            </CustomText>
+            ) : modalView === MODAL_VIEWS.ITEM_DETAILS && selectedItem ? (
+                <PantryItemDetails
+                    item={selectedItem}
+                    embedded
+                    onClose={goToListView}
+                    onUpdate={handleUpdateItem}
+                />
+            ) : (
+                <View style={styles.container}>
+                    {loading && (
+                        <View style={styles.loadingOverlay}>
+                            <ActivityIndicator size="large" color="#5844BB" />
                         </View>
+                    )}
 
-                        <CustomText style={styles.infoTitle}>
-                            Hae ja lisää tuotteita
-                        </CustomText>
-                        <CustomText style={styles.infoText}>
-                            Hae tuotteita nimellä tai skannaa viivakoodi.
-                            Tulokset sisältävät sekä omat tuotteesi että Open
-                            Food Facts -tietokannan.
-                        </CustomText>
-                    </View>
-
-                    {/* Search section with buttons */}
-                    <SearchSection
-                        searchQuery={searchQuery}
-                        onSearchChange={setSearchQuery}
-                        onClearSearch={() => setSearchQuery('')}
-                        placeholder="Hae ostoslistasta..."
-                        resultsCount={filteredItems.length}
-                        resultsText="Löytyi {count} tuotetta"
-                        noResultsText="Tuotteita ei löytynyt"
-                        showButtonSection={true}
-                        buttonTitle="+ Luo uusi tuote"
-                        onButtonPress={() => setShowItemForm(true)}
-                        buttonStyle={styles.smallPrimaryButton}
-                        buttonTextStyle={styles.buttonText}
-                        filterComponent={
-                            <GenericFilter
-                                selectedFilters={selectedCategoryFilters}
-                                showFilters={showFilters}
-                                onToggleShowFilters={() =>
-                                    setShowFilters(!showFilters)
-                                }
-                                buttonText="Suodata"
-                            />
-                        }
-                    />
-
-                    {/* Category filters section */}
-                    <GenericFilterSection
-                        selectedFilters={selectedCategoryFilters}
-                        showFilters={showFilters}
-                        filterTitle="Suodata kategorioittain:"
-                        categories={ingredientCategories}
-                        onToggleFilter={toggleCategoryFilter}
-                        onClearFilters={() => setSelectedCategoryFilters([])}
-                        getItemCounts={getCategoryItemCounts}
-                    />
-
-                    {/* Items list container */}
-                    <View style={styles.itemsListContainer}>
-                        <View style={styles.stats}>
-                            <View style={styles.statsTextColumn}>
-                                <CustomText>
-                                    Tuotteita:{' '}
-                                    {searchQuery.length > 0 ||
-                                    selectedCategoryFilters.length > 0
-                                        ? `${filteredItems.length} / ${shoppingList.items?.length || 0}`
-                                        : `${shoppingList.items?.length || 0} kpl`}
+                    <ScrollView
+                        style={styles.mainScrollView}
+                        stickyHeaderIndices={[1]}
+                        showsVerticalScrollIndicator={false}
+                    >
+                        <View style={styles.headerSection}>
+                            <View style={styles.header}>
+                                <CustomText style={styles.title}>
+                                    {shoppingList.name}
                                 </CustomText>
-                                <CustomText>
-                                    Kokonaishinta:{' '}
-                                    {filteredItems && filteredItems.length > 0
-                                        ? filteredItems
-                                              .reduce(
-                                                  (sum, item) =>
-                                                      sum +
-                                                      (parseFloat(item.price) ||
-                                                          0),
-                                                  0
-                                              )
-                                              .toFixed(2)
-                                        : shoppingList.totalEstimatedPrice || 0}
-                                    €
+                                <CustomText style={styles.description}>
+                                    {shoppingList.description}
                                 </CustomText>
                             </View>
-                            <ListSortControl
-                                options={SHOPPING_SORT_OPTIONS}
-                                value={sortId}
-                                onChange={setSortId}
-                            />
+
+                            <CustomText style={styles.infoTitle}>
+                                Hae ja lisää tuotteita
+                            </CustomText>
+                            <CustomText style={styles.infoText}>
+                                Hae tuotteita nimellä tai skannaa viivakoodi.
+                                Tulokset sisältävät sekä omat tuotteesi että
+                                Open Food Facts -tietokannan.
+                            </CustomText>
                         </View>
-                        <SectionList
-                            sections={itemSections}
-                            renderItem={renderItem}
-                            renderSectionHeader={({
-                                section: { title, data },
-                            }) => (
-                                <CategorySectionHeader
-                                    title={title}
-                                    count={data.length}
+
+                        <SearchSection
+                            searchQuery={searchQuery}
+                            onSearchChange={setSearchQuery}
+                            onClearSearch={() => setSearchQuery('')}
+                            placeholder="Hae ostoslistasta..."
+                            resultsCount={filteredItems.length}
+                            resultsText="Löytyi {count} tuotetta"
+                            noResultsText="Tuotteita ei löytynyt"
+                            showButtonSection={true}
+                            buttonTitle="+ Luo uusi tuote"
+                            onButtonPress={() =>
+                                setModalView(MODAL_VIEWS.ADD_ITEM)
+                            }
+                            buttonStyle={styles.smallPrimaryButton}
+                            buttonTextStyle={styles.buttonText}
+                            filterComponent={
+                                <GenericFilter
+                                    selectedFilters={selectedCategoryFilters}
+                                    showFilters={showFilters}
+                                    onToggleShowFilters={() =>
+                                        setShowFilters(!showFilters)
+                                    }
+                                    buttonText="Suodata"
                                 />
-                            )}
-                            keyExtractor={(item) => item._id}
-                            style={styles.itemsList}
-                            contentContainerStyle={styles.listContent}
-                            showsVerticalScrollIndicator={true}
-                            scrollEnabled={false}
-                            nestedScrollEnabled={true}
-                            stickySectionHeadersEnabled={false}
+                            }
                         />
-                        {checkedItems.length > 0 && (
-                            <View
-                                style={[
-                                    styles.buttonContainer,
-                                    isDesktop && styles.desktopButtonContainer,
-                                ]}
-                            >
-                                <Button
-                                    title={`Siirrä pentteriin (${checkedItems.length})`}
-                                    type="PRIMARY"
-                                    onPress={() =>
-                                        moveCheckedToPantry(checkedItems)
-                                    }
-                                    style={
-                                        isDesktop
-                                            ? styles.desktopActionButton
-                                            : styles.fullWidthActionButton
-                                    }
-                                    textStyle={styles.buttonText}
-                                />
-                                <Button
-                                    title={`Poista valitut tuotteet (${checkedItems.length})`}
-                                    type="TERTIARY"
-                                    onPress={() =>
-                                        deleteCheckedItems(checkedItems)
-                                    }
-                                    style={[
-                                        styles.tertiaryButton,
-                                        isDesktop
-                                            ? styles.desktopActionButton
-                                            : styles.fullWidthActionButton,
-                                    ]}
-                                    textStyle={styles.buttonText}
-                                />
-                            </View>
-                        )}
-                        {boughtItemCount > 0 && (
-                            <View style={styles.restoreBoughtContainer}>
-                                <Button
-                                    title={`Palauta kerätyt tuotteet ostoslistalle (${boughtItemCount})`}
-                                    onPress={restoreBoughtItemsToList}
-                                    style={[
-                                        styles.secondaryButton,
-                                        isDesktop &&
-                                            styles.desktopPrimaryButton,
-                                    ]}
-                                    textStyle={styles.buttonText}
-                                />
-                            </View>
-                        )}
-                    </View>
-                </ScrollView>
 
-            {/* Item Details Modal */}
-            <PantryItemDetails
-                item={selectedItem}
-                visible={showItemDetails}
-                onClose={() => {
-                    setShowItemDetails(false)
-                    setSelectedItem(null)
-                }}
-                onUpdate={handleUpdateItem}
-            />
-        </View>
+                        <GenericFilterSection
+                            selectedFilters={selectedCategoryFilters}
+                            showFilters={showFilters}
+                            filterTitle="Suodata kategorioittain:"
+                            categories={ingredientCategories}
+                            onToggleFilter={toggleCategoryFilter}
+                            onClearFilters={() =>
+                                setSelectedCategoryFilters([])
+                            }
+                            getItemCounts={getCategoryItemCounts}
+                        />
+
+                        <View style={styles.itemsListContainer}>
+                            <View style={styles.stats}>
+                                <View style={styles.statsTextColumn}>
+                                    <CustomText>
+                                        Tuotteita:{' '}
+                                        {searchQuery.length > 0 ||
+                                        selectedCategoryFilters.length > 0
+                                            ? `${filteredItems.length} / ${shoppingList.items?.length || 0}`
+                                            : `${shoppingList.items?.length || 0} kpl`}
+                                    </CustomText>
+                                    <CustomText>
+                                        Kokonaishinta:{' '}
+                                        {filteredItems &&
+                                        filteredItems.length > 0
+                                            ? filteredItems
+                                                  .reduce(
+                                                      (sum, item) =>
+                                                          sum +
+                                                          (parseFloat(
+                                                              item.price
+                                                          ) || 0),
+                                                      0
+                                                  )
+                                                  .toFixed(2)
+                                            : shoppingList.totalEstimatedPrice ||
+                                              0}
+                                        €
+                                    </CustomText>
+                                </View>
+                                <ListSortControl
+                                    options={SHOPPING_SORT_OPTIONS}
+                                    value={sortId}
+                                    onChange={setSortId}
+                                />
+                            </View>
+                            <SectionList
+                                sections={itemSections}
+                                renderItem={renderItem}
+                                renderSectionHeader={({
+                                    section: { title, data },
+                                }) => (
+                                    <CategorySectionHeader
+                                        title={title}
+                                        count={data.length}
+                                    />
+                                )}
+                                keyExtractor={(item) => item._id}
+                                style={styles.itemsList}
+                                contentContainerStyle={styles.listContent}
+                                showsVerticalScrollIndicator={true}
+                                scrollEnabled={false}
+                                nestedScrollEnabled={true}
+                                stickySectionHeadersEnabled={false}
+                            />
+                            {checkedItems.length > 0 && (
+                                <View
+                                    style={[
+                                        styles.buttonContainer,
+                                        isDesktop &&
+                                            styles.desktopButtonContainer,
+                                    ]}
+                                >
+                                    <Button
+                                        title={`Siirrä pentteriin (${checkedItems.length})`}
+                                        type="PRIMARY"
+                                        onPress={() =>
+                                            moveCheckedToPantry(checkedItems)
+                                        }
+                                        style={
+                                            isDesktop
+                                                ? styles.desktopActionButton
+                                                : styles.fullWidthActionButton
+                                        }
+                                        textStyle={styles.buttonText}
+                                    />
+                                    <Button
+                                        title={`Poista valitut tuotteet (${checkedItems.length})`}
+                                        type="TERTIARY"
+                                        onPress={() =>
+                                            deleteCheckedItems(checkedItems)
+                                        }
+                                        style={[
+                                            styles.tertiaryButton,
+                                            isDesktop
+                                                ? styles.desktopActionButton
+                                                : styles.fullWidthActionButton,
+                                        ]}
+                                        textStyle={styles.buttonText}
+                                    />
+                                </View>
+                            )}
+                            {boughtItemCount > 0 && (
+                                <View style={styles.restoreBoughtContainer}>
+                                    <Button
+                                        title={`Palauta kerätyt tuotteet ostoslistalle (${boughtItemCount})`}
+                                        onPress={restoreBoughtItemsToList}
+                                        style={[
+                                            styles.secondaryButton,
+                                            isDesktop &&
+                                                styles.desktopPrimaryButton,
+                                        ]}
+                                        textStyle={styles.buttonText}
+                                    />
+                                </View>
+                            )}
+                        </View>
+                    </ScrollView>
+                </View>
+            )}
+        </ResponsiveModal>
     )
 }
 

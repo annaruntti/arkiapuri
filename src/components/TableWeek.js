@@ -152,7 +152,7 @@ const Table = ({ onRequireLogin }) => {
     const [moveMealModalVisible, setMoveMealModalVisible] = useState(false)
     const [mealToMove, setMealToMove] = useState(null)
     const [moveFromDate, setMoveFromDate] = useState(null)
-    const [addMealModalVisible, setAddMealModalVisible] = useState(false)
+    const [mealSelectView, setMealSelectView] = useState('select') // 'select' | 'create'
 
     const {
         mealsByDate,
@@ -784,50 +784,51 @@ const Table = ({ onRequireLogin }) => {
     }
 
     const renderMealSelectModal = () => (
-        <>
-            <ResponsiveModal
-                visible={isModalVisible}
-                onClose={() => {
-                    setIsModalVisible(false)
-                    setSelectedDates([]) // Clear selected dates when modal closes
-                }}
-                title={`Valitse ateria ja päivät`}
-                maxWidth={700}
-            >
-                {/* Date Selection Section */}
-                <DateSelector
-                    dates={dates}
-                    selectedDates={selectedDates}
-                    onToggleDateSelection={toggleDateSelection}
-                    onClearSelection={clearDateSelection}
-                />
-
-                <MealSelectionList
-                    availableMeals={availableMeals}
-                    selectedDates={selectedDates}
-                    onMealSelect={handleSelectMeal}
-                    onCreateMeal={() => {
-                        setIsModalVisible(false)
-                        setAddMealModalVisible(true)
-                    }}
-                    showAllRoles={false}
-                />
-            </ResponsiveModal>
-
-            <ResponsiveModal
-                visible={addMealModalVisible}
-                onClose={() => setAddMealModalVisible(false)}
-                title="Luo uusi ateria"
-                maxWidth={700}
-            >
+        <ResponsiveModal
+            visible={isModalVisible}
+            onClose={() => {
+                if (mealSelectView === 'create') {
+                    setMealSelectView('select')
+                    return
+                }
+                setIsModalVisible(false)
+                setSelectedDates([])
+                setMealSelectView('select')
+            }}
+            title={
+                mealSelectView === 'create'
+                    ? 'Luo uusi ateria'
+                    : 'Valitse ateria ja päivät'
+            }
+            showBackButton={mealSelectView === 'create'}
+            maxWidth={700}
+        >
+            {mealSelectView === 'create' ? (
                 <FormAddMeal
                     onSubmit={() => {
-                        setAddMealModalVisible(false)
+                        setMealSelectView('select')
                         fetchMealData(dates)
                     }}
                 />
-            </ResponsiveModal>
-        </>
+            ) : (
+                <>
+                    <DateSelector
+                        dates={dates}
+                        selectedDates={selectedDates}
+                        onToggleDateSelection={toggleDateSelection}
+                        onClearSelection={clearDateSelection}
+                    />
+
+                    <MealSelectionList
+                        availableMeals={availableMeals}
+                        selectedDates={selectedDates}
+                        onMealSelect={handleSelectMeal}
+                        onCreateMeal={() => setMealSelectView('create')}
+                        showAllRoles={false}
+                    />
+                </>
+            )}
+        </ResponsiveModal>
     )
 
     const renderMoveMealModal = () => (

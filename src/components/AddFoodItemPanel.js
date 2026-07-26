@@ -19,6 +19,7 @@ const AddFoodItemPanel = ({
     guestWarningMessage,
     searchTitle = 'Etsi tuote tietokannasta',
     formTitle = 'Luo uusi tuote manuaalisesti',
+    showFormBackButton = true,
 }) => {
     return (
         <ScrollView
@@ -61,6 +62,7 @@ const AddFoodItemPanel = ({
                     onClose={onCloseForm}
                     location={location}
                     allowNonFood={location === 'shopping-list'}
+                    showBackButton={showFormBackButton}
                 />
             </View>
         </ScrollView>

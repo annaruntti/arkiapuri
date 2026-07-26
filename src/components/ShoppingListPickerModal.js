@@ -2,6 +2,38 @@ import { StyleSheet, TouchableOpacity, View } from 'react-native'
 import CustomText from './CustomText'
 import ResponsiveModal from './ResponsiveModal'
 
+const ShoppingListPickerContent = ({
+    shoppingLists = [],
+    selectedShoppingListId,
+    pendingItemName,
+    loading = false,
+    onSelect,
+}) => (
+    <View style={styles.content}>
+        <CustomText style={styles.hint}>
+            {pendingItemName
+                ? `Mille listalle lisätään "${pendingItemName}"?`
+                : 'Valitse ostoslista'}
+        </CustomText>
+        {shoppingLists.map((list) => (
+            <TouchableOpacity
+                key={list._id}
+                style={[
+                    styles.option,
+                    selectedShoppingListId === list._id && styles.optionSelected,
+                ]}
+                disabled={loading}
+                onPress={() => onSelect(list._id)}
+            >
+                <CustomText style={styles.optionText}>{list.name}</CustomText>
+                <CustomText style={styles.optionMeta}>
+                    {list.items?.length || 0} tuotetta
+                </CustomText>
+            </TouchableOpacity>
+        ))}
+    </View>
+)
+
 const ShoppingListPickerModal = ({
     visible,
     shoppingLists = [],
@@ -10,7 +42,22 @@ const ShoppingListPickerModal = ({
     loading = false,
     onClose,
     onSelect,
+    embedded = false,
 }) => {
+    const content = (
+        <ShoppingListPickerContent
+            shoppingLists={shoppingLists}
+            selectedShoppingListId={selectedShoppingListId}
+            pendingItemName={pendingItemName}
+            loading={loading}
+            onSelect={onSelect}
+        />
+    )
+
+    if (embedded) {
+        return content
+    }
+
     return (
         <ResponsiveModal
             visible={visible}
@@ -21,32 +68,7 @@ const ShoppingListPickerModal = ({
             title="Valitse ostoslista"
             maxWidth={420}
         >
-            <View style={styles.content}>
-                <CustomText style={styles.hint}>
-                    {pendingItemName
-                        ? `Mille listalle lisätään "${pendingItemName}"?`
-                        : 'Valitse ostoslista'}
-                </CustomText>
-                {shoppingLists.map((list) => (
-                    <TouchableOpacity
-                        key={list._id}
-                        style={[
-                            styles.option,
-                            selectedShoppingListId === list._id &&
-                                styles.optionSelected,
-                        ]}
-                        disabled={loading}
-                        onPress={() => onSelect(list._id)}
-                    >
-                        <CustomText style={styles.optionText}>
-                            {list.name}
-                        </CustomText>
-                        <CustomText style={styles.optionMeta}>
-                            {list.items?.length || 0} tuotetta
-                        </CustomText>
-                    </TouchableOpacity>
-                ))}
-            </View>
+            {content}
         </ResponsiveModal>
     )
 }

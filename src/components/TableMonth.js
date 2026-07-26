@@ -34,7 +34,7 @@ import {
 const TableMonth = ({ onRequireLogin }) => {
     const [currentMonth, setCurrentMonth] = useState(new Date())
     const [monthDates, setMonthDates] = useState([])
-    const [addMealModalVisible, setAddMealModalVisible] = useState(false)
+    const [mealSelectView, setMealSelectView] = useState('select') // 'select' | 'create'
 
     const {
         mealsByDate,
@@ -287,48 +287,51 @@ const TableMonth = ({ onRequireLogin }) => {
                 <View style={styles.calendarGrid}>{renderCalendarGrid()}</View>
             </ScrollView>
 
-            {/* Add Meal Modal */}
+            {/* Meal select / create modal */}
             <ResponsiveModal
                 visible={isModalVisible}
                 onClose={() => {
+                    if (mealSelectView === 'create') {
+                        setMealSelectView('select')
+                        return
+                    }
                     setIsModalVisible(false)
-                    setSelectedDates([]) // Clear selected dates when modal closes
+                    setSelectedDates([])
+                    setMealSelectView('select')
                 }}
-                title={`Valitse ateria ja päivät`}
+                title={
+                    mealSelectView === 'create'
+                        ? 'Luo uusi ateria'
+                        : 'Valitse ateria ja päivät'
+                }
+                showBackButton={mealSelectView === 'create'}
                 maxWidth={700}
             >
-                {/* Date Selection Section */}
-                <DateSelector
-                    dates={monthDates}
-                    selectedDates={selectedDates}
-                    onToggleDateSelection={toggleDateSelection}
-                    onClearSelection={clearDateSelection}
-                />
+                {mealSelectView === 'create' ? (
+                    <FormAddMeal
+                        onSubmit={() => {
+                            setMealSelectView('select')
+                            generateMonthDates(currentMonth)
+                        }}
+                    />
+                ) : (
+                    <>
+                        <DateSelector
+                            dates={monthDates}
+                            selectedDates={selectedDates}
+                            onToggleDateSelection={toggleDateSelection}
+                            onClearSelection={clearDateSelection}
+                        />
 
-                <MealSelectionList
-                    availableMeals={availableMeals}
-                    selectedDates={selectedDates}
-                    onMealSelect={handleMealSelection}
-                    onCreateMeal={() => {
-                        setIsModalVisible(false)
-                        setAddMealModalVisible(true)
-                    }}
-                    showAllRoles={true}
-                />
-            </ResponsiveModal>
-
-            <ResponsiveModal
-                visible={addMealModalVisible}
-                onClose={() => setAddMealModalVisible(false)}
-                title="Luo uusi ateria"
-                maxWidth={700}
-            >
-                <FormAddMeal
-                    onSubmit={() => {
-                        setAddMealModalVisible(false)
-                        generateMonthDates(currentMonth)
-                    }}
-                />
+                        <MealSelectionList
+                            availableMeals={availableMeals}
+                            selectedDates={selectedDates}
+                            onMealSelect={handleMealSelection}
+                            onCreateMeal={() => setMealSelectView('create')}
+                            showAllRoles={true}
+                        />
+                    </>
+                )}
             </ResponsiveModal>
 
             {/* Meal Detail Modal */}

@@ -1,5 +1,5 @@
 import { Modal, Platform, Pressable, StyleSheet, View } from 'react-native'
-import { AntDesign } from '@expo/vector-icons'
+import { AntDesign, MaterialIcons } from '@expo/vector-icons'
 import { useResponsiveDimensions } from '../utils/responsive'
 import CustomText from './CustomText'
 
@@ -9,6 +9,8 @@ const ResponsiveModal = ({
     title,
     children,
     showCloseButton = true,
+    showBackButton = false,
+    backButtonLabel = 'Takaisin',
     contentStyle,
     headerStyle,
     modalStyle,
@@ -53,7 +55,31 @@ const ResponsiveModal = ({
         >
             <View style={getModalViewStyle()}>
                 <View style={getModalContentStyle()}>
-                    {showCloseButton && (
+                    {showBackButton && (
+                        <Pressable
+                            onPress={onClose}
+                            style={[
+                                styles.backButton,
+                                isDesktop && styles.desktopBackButton,
+                            ]}
+                            hitSlop={{
+                                top: 10,
+                                bottom: 10,
+                                left: 10,
+                                right: 10,
+                            }}
+                        >
+                            <MaterialIcons
+                                name="arrow-back"
+                                size={isDesktop ? 22 : 20}
+                                color="#5844BB"
+                            />
+                            <CustomText style={styles.backButtonText}>
+                                {backButtonLabel}
+                            </CustomText>
+                        </Pressable>
+                    )}
+                    {showCloseButton && !showBackButton && (
                         <Pressable
                             onPress={onClose}
                             style={[
@@ -80,6 +106,10 @@ const ResponsiveModal = ({
                                 styles.modalHeader,
                                 headerStyle,
                                 isDesktop && styles.desktopModalHeader,
+                                showBackButton && styles.modalHeaderWithBack,
+                                showBackButton &&
+                                    isDesktop &&
+                                    styles.desktopModalHeaderWithBack,
                             ]}
                         >
                             <CustomText
@@ -128,6 +158,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 5,
     },
+    modalHeaderWithBack: {
+        paddingTop: 20,
+    },
     modalTitle: {
         fontSize: 20,
         fontWeight: 'bold',
@@ -136,6 +169,23 @@ const styles = StyleSheet.create({
     modalBody: {
         flex: 1,
         paddingHorizontal: 20,
+    },
+    backButton: {
+        position: 'absolute',
+        left: 8,
+        top: 8,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        zIndex: 2,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    backButtonText: {
+        color: '#5844BB',
+        fontSize: 15,
+        fontWeight: '500',
+        marginLeft: 2,
     },
     closeButton: {
         position: 'absolute',
@@ -186,6 +236,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         marginBottom: 10,
     },
+    desktopModalHeaderWithBack: {
+        paddingTop: 40,
+    },
     desktopModalTitle: {
         fontSize: 24,
         marginBottom: 15,
@@ -194,6 +247,14 @@ const styles = StyleSheet.create({
     desktopModalBody: {
         paddingHorizontal: 20,
         paddingBottom: 30,
+    },
+    desktopBackButton: {
+        left: 12,
+        top: 12,
+        paddingVertical: 12,
+        paddingHorizontal: 14,
+        borderRadius: 20,
+        backgroundColor: 'rgba(0, 0, 0, 0.05)',
     },
     desktopCloseButton: {
         right: 15,

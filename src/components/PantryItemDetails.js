@@ -28,7 +28,13 @@ import ResponsiveModal from './ResponsiveModal'
 const PANTRY_PLACEHOLDER_IMAGE_URL =
     'https://images.ctfassets.net/2pij69ehhf4n/1YIQLI04JJpf76ARo3k0b9/87322f1b9ccec07d2f2af66f7d61d53d/undraw_online-groceries_n03y.png'
 
-const PantryItemDetails = ({ item, visible, onClose, onUpdate }) => {
+const PantryItemDetails = ({
+    item,
+    visible,
+    onClose,
+    onUpdate,
+    embedded = false,
+}) => {
     const [editableFields, setEditableFields] = useState({})
     const [editedValues, setEditedValues] = useState({})
     const [showDatePicker, setShowDatePicker] = useState(false)
@@ -404,161 +410,108 @@ const PantryItemDetails = ({ item, visible, onClose, onUpdate }) => {
         )
     }
 
-    return (
-        <ResponsiveModal
-            visible={visible}
-            onClose={onClose}
-            title="Elintarvikkeen tiedot"
-            maxWidth={700}
-        >
-            <ScrollView style={styles.detailScroll}>
-                <View style={styles.itemDetails}>
-                    {item.image && item.image.url && (
-                        <View style={styles.imageContainer}>
-                            <Image
-                                source={{ uri: item.image.url }}
-                                style={styles.itemImage}
-                                resizeMode="cover"
-                            />
-                            <View style={styles.imageActions}>
-                                <TouchableOpacity
-                                    style={styles.imageActionButton}
-                                    onPress={pickImage}
-                                    disabled={isUploadingImage}
-                                >
-                                    <MaterialIcons
-                                        name="edit"
-                                        size={20}
-                                        color="#5844BB"
-                                    />
-                                    <CustomText style={styles.imageActionText}>
-                                        Change
-                                    </CustomText>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={styles.imageActionButton}
-                                    onPress={removeFoodItemImage}
-                                    disabled={isUploadingImage}
-                                >
-                                    <MaterialIcons
-                                        name="delete"
-                                        size={20}
-                                        color="#ff4444"
-                                    />
-                                    <CustomText style={styles.imageActionText}>
-                                        Remove
-                                    </CustomText>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    )}
-                    {(!item.image || !item.image.url) && (
-                        <View style={styles.noImageContainer}>
+    const content = (
+        <ScrollView style={styles.detailScroll}>
+            <View style={styles.itemDetails}>
+                {item.image && item.image.url && (
+                    <View style={styles.imageContainer}>
+                        <Image
+                            source={{ uri: item.image.url }}
+                            style={styles.itemImage}
+                            resizeMode="cover"
+                        />
+                        <View style={styles.imageActions}>
                             <TouchableOpacity
-                                style={styles.addImageButton}
+                                style={styles.imageActionButton}
                                 onPress={pickImage}
                                 disabled={isUploadingImage}
                             >
                                 <MaterialIcons
-                                    name="add-a-photo"
-                                    size={40}
+                                    name="edit"
+                                    size={20}
                                     color="#5844BB"
                                 />
-                                <CustomText style={styles.addImageText}>
-                                    Add Image
+                                <CustomText style={styles.imageActionText}>
+                                    Change
+                                </CustomText>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.imageActionButton}
+                                onPress={removeFoodItemImage}
+                                disabled={isUploadingImage}
+                            >
+                                <MaterialIcons
+                                    name="delete"
+                                    size={20}
+                                    color="#ff4444"
+                                />
+                                <CustomText style={styles.imageActionText}>
+                                    Remove
                                 </CustomText>
                             </TouchableOpacity>
                         </View>
-                    )}
-                    {renderEditableField('name', 'Nimi', item.name)}
-                    {renderEditableField(
-                        'quantity',
-                        'Määrä',
-                        item.quantity,
-                        'number'
-                    )}
-                    {renderEditableField('unit', 'Yksikkö', item.unit)}
-                    {renderEditableField(
-                        'calories',
-                        'Kalorit',
-                        item.calories || '0',
-                        'number'
-                    )}
-
-                    <View style={styles.detailRow}>
-                        <CustomText style={styles.label}>
-                            Kategoriat:
-                        </CustomText>
-                        <View style={styles.valueContainer}>
-                            <CategorySelect
-                                value={editedValues.category || []}
-                                onChange={handleCategoryChange}
-                                isModalVisible={showCategorySelect}
-                                setIsModalVisible={setShowCategorySelect}
-                                toggleModal={() =>
-                                    setShowCategorySelect(!showCategorySelect)
-                                }
-                                categories={categories}
-                            />
-                            <TouchableOpacity
-                                style={styles.editIcon}
-                                onPress={() => setShowCategorySelect(true)}
-                            >
-                                <Feather name="edit-2" size={18} color="#666" />
-                            </TouchableOpacity>
-                        </View>
                     </View>
-
-                    <View style={styles.detailRow}>
-                        <CustomText style={styles.label}>
-                            Viimeinen käyttöpäivä:
-                        </CustomText>
-                        {Platform.OS === 'web' ? (
-                            <DateTimePicker
-                                value={
-                                    new Date(
-                                        editedValues.expirationDate ||
-                                            item.expirationDate
-                                    )
-                                }
-                                mode="date"
-                                display="default"
-                                onChange={(event, selectedDate) => {
-                                    if (selectedDate) {
-                                        handleChange(
-                                            'expirationDate',
-                                            selectedDate
-                                        )
-                                    }
-                                }}
+                )}
+                {(!item.image || !item.image.url) && (
+                    <View style={styles.noImageContainer}>
+                        <TouchableOpacity
+                            style={styles.addImageButton}
+                            onPress={pickImage}
+                            disabled={isUploadingImage}
+                        >
+                            <MaterialIcons
+                                name="add-a-photo"
+                                size={40}
+                                color="#5844BB"
                             />
-                        ) : (
-                            <View style={styles.valueContainer}>
-                                <TouchableOpacity
-                                    onPress={() => setShowDatePicker(true)}
-                                >
-                                    <CustomText>
-                                        {formatDate(
-                                            editedValues.expirationDate ||
-                                                item.expirationDate
-                                        )}
-                                    </CustomText>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={styles.editIcon}
-                                    onPress={() => setShowDatePicker(true)}
-                                >
-                                    <Feather
-                                        name="calendar"
-                                        size={18}
-                                        color="#666"
-                                    />
-                                </TouchableOpacity>
-                            </View>
-                        )}
+                            <CustomText style={styles.addImageText}>
+                                Add Image
+                            </CustomText>
+                        </TouchableOpacity>
                     </View>
+                )}
+                {renderEditableField('name', 'Nimi', item.name)}
+                {renderEditableField(
+                    'quantity',
+                    'Määrä',
+                    item.quantity,
+                    'number'
+                )}
+                {renderEditableField('unit', 'Yksikkö', item.unit)}
+                {renderEditableField(
+                    'calories',
+                    'Kalorit',
+                    item.calories || '0',
+                    'number'
+                )}
 
-                    {Platform.OS !== 'web' && showDatePicker && (
+                <View style={styles.detailRow}>
+                    <CustomText style={styles.label}>Kategoriat:</CustomText>
+                    <View style={styles.valueContainer}>
+                        <CategorySelect
+                            value={editedValues.category || []}
+                            onChange={handleCategoryChange}
+                            isModalVisible={showCategorySelect}
+                            setIsModalVisible={setShowCategorySelect}
+                            toggleModal={() =>
+                                setShowCategorySelect(!showCategorySelect)
+                            }
+                            categories={categories}
+                        />
+                        <TouchableOpacity
+                            style={styles.editIcon}
+                            onPress={() => setShowCategorySelect(true)}
+                        >
+                            <Feather name="edit-2" size={18} color="#666" />
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
+                <View style={styles.detailRow}>
+                    <CustomText style={styles.label}>
+                        Viimeinen käyttöpäivä:
+                    </CustomText>
+                    {Platform.OS === 'web' ? (
                         <DateTimePicker
                             value={
                                 new Date(
@@ -569,25 +522,81 @@ const PantryItemDetails = ({ item, visible, onClose, onUpdate }) => {
                             mode="date"
                             display="default"
                             onChange={(event, selectedDate) => {
-                                setShowDatePicker(false)
                                 if (selectedDate) {
                                     handleChange('expirationDate', selectedDate)
                                 }
                             }}
                         />
-                    )}
-
-                    {Object.keys(editedValues).length > 0 && (
-                        <View style={styles.buttonContainer}>
-                            <Button
-                                title="Tallenna muutokset"
-                                onPress={handleSave}
-                                style={styles.saveButton}
-                            />
+                    ) : (
+                        <View style={styles.valueContainer}>
+                            <TouchableOpacity
+                                onPress={() => setShowDatePicker(true)}
+                            >
+                                <CustomText>
+                                    {formatDate(
+                                        editedValues.expirationDate ||
+                                            item.expirationDate
+                                    )}
+                                </CustomText>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.editIcon}
+                                onPress={() => setShowDatePicker(true)}
+                            >
+                                <Feather
+                                    name="calendar"
+                                    size={18}
+                                    color="#666"
+                                />
+                            </TouchableOpacity>
                         </View>
                     )}
                 </View>
-            </ScrollView>
+
+                {Platform.OS !== 'web' && showDatePicker && (
+                    <DateTimePicker
+                        value={
+                            new Date(
+                                editedValues.expirationDate ||
+                                    item.expirationDate
+                            )
+                        }
+                        mode="date"
+                        display="default"
+                        onChange={(event, selectedDate) => {
+                            setShowDatePicker(false)
+                            if (selectedDate) {
+                                handleChange('expirationDate', selectedDate)
+                            }
+                        }}
+                    />
+                )}
+
+                {Object.keys(editedValues).length > 0 && (
+                    <View style={styles.buttonContainer}>
+                        <Button
+                            title="Tallenna muutokset"
+                            onPress={handleSave}
+                            style={styles.saveButton}
+                        />
+                    </View>
+                )}
+            </View>
+        </ScrollView>
+    )
+
+    if (embedded) {
+        return content
+    }
+
+    return (
+        <ResponsiveModal
+            visible={visible}
+            onClose={onClose}
+            title="Elintarvikkeen tiedot"
+            maxWidth={700}
+        >
+            {content}
         </ResponsiveModal>
     )
 }

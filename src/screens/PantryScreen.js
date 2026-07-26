@@ -16,7 +16,6 @@ import GenericFilterSection from '../components/GenericFilterSection'
 import ListSortControl from '../components/ListSortControl'
 import CategorySectionHeader from '../components/CategorySectionHeader'
 import CustomText from '../components/CustomText'
-import FormFoodItem from '../components/FormFoodItem'
 import AddFoodItemPanel from '../components/AddFoodItemPanel'
 import FoodListItemRow from '../components/FoodListItemRow'
 import LoginPromptModal from '../components/LoginPromptModal'
@@ -122,7 +121,6 @@ const mergeDuplicatePantryItems = (items = []) => {
 const PantryScreen = ({}) => {
     const { isDesktop } = useResponsiveDimensions()
     const { showLoginPrompt, loginPromptProps } = useLoginPrompt()
-    const [showItemForm, setShowItemForm] = useState(false)
     const [pantryItems, setPantryItems] = useState([])
     const [loading, setLoading] = useState(true)
     const [selectedItem, setSelectedItem] = useState(null)
@@ -277,7 +275,6 @@ const PantryScreen = ({}) => {
                 )
 
                 if (pantryResponse.data.success) {
-                    setShowItemForm(false)
                     setShowAddItemSearch(false)
                     await fetchPantryItems()
                     Alert.alert(
@@ -470,21 +467,10 @@ const PantryScreen = ({}) => {
                     <LoginPromptModal {...loginPromptProps} />
 
                     <ResponsiveModal
-                        visible={showItemForm}
-                        onClose={() => setShowItemForm(false)}
-                        title="Lisää tuote pantteriin"
-                        maxWidth={600}
-                    >
-                        <FormFoodItem
-                            onSubmit={handleAddItem}
-                            location="pantry"
-                        />
-                    </ResponsiveModal>
-
-                    <ResponsiveModal
                         visible={showAddItemSearch}
                         onClose={() => setShowAddItemSearch(false)}
                         title="Luo uusi tuote"
+                        showBackButton
                         maxWidth={700}
                     >
                         <AddFoodItemPanel
@@ -494,6 +480,7 @@ const PantryScreen = ({}) => {
                             onSelectItem={handleSearchItemSelect}
                             onSubmitNewItem={handleAddItem}
                             onCloseForm={() => setShowAddItemSearch(false)}
+                            showFormBackButton={false}
                         />
                     </ResponsiveModal>
 

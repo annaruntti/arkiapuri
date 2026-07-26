@@ -16,7 +16,6 @@ import Button from './Button'
 import CustomInput from './CustomInput'
 import CustomText from './CustomText'
 import FormFoodItem from './FormFoodItem'
-import ResponsiveModal from './ResponsiveModal'
 
 const FormAddShoppingList = ({ onSubmit, onClose }) => {
     const { isDesktop } = useResponsiveDimensions()
@@ -205,106 +204,8 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
 
     return (
         <View style={styles.container}>
-            <ScrollView
-                style={styles.scrollView}
-                showsVerticalScrollIndicator={false}
-            >
-                <View style={styles.formContainer}>
-                    <CustomInput
-                        control={control}
-                        name="name"
-                        label="Ostoslistan nimi"
-                        placeholder="Kirjoita ostoslistan nimi"
-                        rules={{ required: 'Ostoslistan nimi on pakollinen tieto' }}
-                        variant="form"
-                    />
-
-                    <CustomInput
-                        control={control}
-                        name="description"
-                        label="Kuvaus"
-                        placeholder="Kirjoita kuvaus"
-                        variant="form"
-                    />
-
-                    <CustomInput
-                        control={control}
-                        name="totalEstimatedPrice"
-                        label="Arvioitu kokonaishinta"
-                        placeholder="Syötä arvioitu kokonaishinta"
-                        variant="form"
-                    />
-
-                    {showInlineFoodForm && (
-                        <View style={styles.inlineFoodFormContainer}>
-                            <CustomText style={styles.inlineFoodFormTitle}>
-                                Lisää uusi raaka-aine
-                            </CustomText>
-                            <FormFoodItem
-                                onSubmit={handleAddItem}
-                                onClose={() => setShowInlineFoodForm(false)}
-                                location="shopping-list"
-                                allowNonFood
-                                showLocationSelector={true}
-                                selectedShoppingListId={selectedShoppingListId}
-                            />
-                        </View>
-                    )}
-
-                    {items.length > 0 && (
-                        <View style={styles.itemsList}>
-                            <CustomText style={styles.subtitle}>
-                                Lisätyt tuotteet:
-                            </CustomText>
-                            {items.map((item, index) => (
-                                <View key={index} style={styles.itemRow}>
-                                    <CustomText>
-                                        {item.name} - {item.quantity}{' '}
-                                        {item.unit} - {item.estimatedPrice}€
-                                    </CustomText>
-                                </View>
-                            ))}
-                        </View>
-                    )}
-
-                    <View
-                        style={
-                            isDesktop
-                                ? styles.buttonsRowDesktop
-                                : styles.buttonsColumnMobile
-                        }
-                    >
-                        <Button
-                            style={[
-                                styles.secondaryButton,
-                                isDesktop && styles.desktopSecondaryButton,
-                            ]}
-                            textStyle={styles.buttonText}
-                            title="Lisää ostoslistalle tuote"
-                            onPress={() =>
-                                setShowInlineFoodForm(!showInlineFoodForm)
-                            }
-                        />
-                        <Button
-                            style={[
-                                styles.primaryButton,
-                                isDesktop && styles.desktopPrimaryButton,
-                            ]}
-                            textStyle={styles.buttonText}
-                            title="Tallenna ostoslista"
-                            onPress={handleSubmit(handleSubmitForm)}
-                        />
-                    </View>
-                </View>
-            </ScrollView>
-
-            <ResponsiveModal
-                visible={pantryModalVisible}
-                onClose={() => setPantryModalVisible(false)}
-                title="Valitse pentteristä"
-                maxWidth={600}
-            >
-                {isLoading ? (
+            {pantryModalVisible ? (
+                isLoading ? (
                     <CustomText style={styles.loadingText}>
                         Ladataan...
                     </CustomText>
@@ -321,6 +222,15 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
                         />
                         <View style={styles.modalButtonGroup}>
                             <Button
+                                title="Takaisin"
+                                onPress={() => setPantryModalVisible(false)}
+                                style={[
+                                    styles.secondaryButton,
+                                    styles.fullWidthButton,
+                                    isDesktop && styles.desktopSecondaryButton,
+                                ]}
+                            />
+                            <Button
                                 title="Lisää valitut"
                                 onPress={addSelectedPantryItems}
                                 style={[
@@ -331,8 +241,119 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
                             />
                         </View>
                     </View>
-                )}
-            </ResponsiveModal>
+                )
+            ) : (
+                <>
+                    <ScrollView
+                        style={styles.scrollView}
+                        showsVerticalScrollIndicator={false}
+                    >
+                        <View style={styles.formContainer}>
+                            <CustomInput
+                                control={control}
+                                name="name"
+                                label="Ostoslistan nimi"
+                                placeholder="Kirjoita ostoslistan nimi"
+                                rules={{
+                                    required:
+                                        'Ostoslistan nimi on pakollinen tieto',
+                                }}
+                                variant="form"
+                            />
+
+                            <CustomInput
+                                control={control}
+                                name="description"
+                                label="Kuvaus"
+                                placeholder="Kirjoita kuvaus"
+                                variant="form"
+                            />
+
+                            <CustomInput
+                                control={control}
+                                name="totalEstimatedPrice"
+                                label="Arvioitu kokonaishinta"
+                                placeholder="Syötä arvioitu kokonaishinta"
+                                variant="form"
+                            />
+
+                            {showInlineFoodForm && (
+                                <View style={styles.inlineFoodFormContainer}>
+                                    <CustomText
+                                        style={styles.inlineFoodFormTitle}
+                                    >
+                                        Lisää uusi raaka-aine
+                                    </CustomText>
+                                    <FormFoodItem
+                                        onSubmit={handleAddItem}
+                                        onClose={() =>
+                                            setShowInlineFoodForm(false)
+                                        }
+                                        location="shopping-list"
+                                        allowNonFood
+                                        showLocationSelector={true}
+                                        selectedShoppingListId={
+                                            selectedShoppingListId
+                                        }
+                                    />
+                                </View>
+                            )}
+
+                            {items.length > 0 && (
+                                <View style={styles.itemsList}>
+                                    <CustomText style={styles.subtitle}>
+                                        Lisätyt tuotteet:
+                                    </CustomText>
+                                    {items.map((item, index) => (
+                                        <View
+                                            key={index}
+                                            style={styles.itemRow}
+                                        >
+                                            <CustomText>
+                                                {item.name} - {item.quantity}{' '}
+                                                {item.unit} -{' '}
+                                                {item.estimatedPrice}€
+                                            </CustomText>
+                                        </View>
+                                    ))}
+                                </View>
+                            )}
+
+                            <View
+                                style={
+                                    isDesktop
+                                        ? styles.buttonsRowDesktop
+                                        : styles.buttonsColumnMobile
+                                }
+                            >
+                                <Button
+                                    style={[
+                                        styles.secondaryButton,
+                                        isDesktop &&
+                                            styles.desktopSecondaryButton,
+                                    ]}
+                                    textStyle={styles.buttonText}
+                                    title="Lisää ostoslistalle tuote"
+                                    onPress={() =>
+                                        setShowInlineFoodForm(
+                                            !showInlineFoodForm
+                                        )
+                                    }
+                                />
+                                <Button
+                                    style={[
+                                        styles.primaryButton,
+                                        isDesktop && styles.desktopPrimaryButton,
+                                    ]}
+                                    textStyle={styles.buttonText}
+                                    title="Tallenna ostoslista"
+                                    onPress={handleSubmit(handleSubmitForm)}
+                                />
+                            </View>
+                        </View>
+                    </ScrollView>
+                </>
+            )}
         </View>
     )
 }

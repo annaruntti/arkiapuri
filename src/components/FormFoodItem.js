@@ -45,6 +45,7 @@ const FormFoodItem = forwardRef(
             onSearchItemSelect,
             shoppingListId,
             allowNonFood = false,
+            showBackButton = true,
         },
         ref
     ) => {
@@ -676,7 +677,7 @@ const FormFoodItem = forwardRef(
 
         const renderForm = () => (
             <View style={styles.formContainer}>
-                {onClose && (
+                {onClose && showBackButton && (
                     <TouchableOpacity
                         style={styles.backButton}
                         onPress={onClose}
