@@ -107,14 +107,31 @@ const ShoppingListDetail = ({
 
         // Keep only the items that failed checked, so the user can retry them
         setCheckedItems((prev) =>
-            prev.filter((id) => !movedItemIds.includes(id))
+            prev.filter((id) => !movedItemIds.includes(String(id)))
         )
 
         if (movedItemIds.length > 0) {
-            onUpdate(updatedList)
+            const movedSet = new Set(movedItemIds.map(String))
+            // Always drop moved rows locally so the modal cannot keep showing
+            // them if a response/refetch is briefly stale.
+            const nextList = {
+                ...updatedList,
+                items: (updatedList.items || []).filter(
+                    (item) => !movedSet.has(getListItemId(item))
+                ),
+            }
+            onUpdate(nextList)
         }
 
-        await fetchShoppingLists()
+        const refreshedLists = await fetchShoppingLists()
+        if (Array.isArray(refreshedLists) && shoppingList?._id) {
+            const refreshed = refreshedLists.find(
+                (list) => String(list._id) === String(shoppingList._id)
+            )
+            if (refreshed) {
+                onUpdate(refreshed)
+            }
+        }
         await fetchPantryItems()
 
         if (firstError) {
