@@ -60,6 +60,7 @@ const AddFoodItemPanel = ({
                     onSubmit={onSubmitNewItem}
                     onClose={onCloseForm}
                     location={location}
+                    allowNonFood={location === 'shopping-list'}
                 />
             </View>
         </ScrollView>

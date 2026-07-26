@@ -63,7 +63,7 @@ export const deletePantryItem = async (itemId) => {
 
 export const markShoppingListItemBought = async (listId, itemId) => {
     const response = await axios.post(
-        getServerUrl(`/shopping-lists/${listId}/items/${itemId}/bought`),
+        getServerUrl(`/shopping-lists/${listId}/items/${itemId}/move-to-pantry`),
         {},
         await authConfig()
     )
@@ -71,6 +71,37 @@ export const markShoppingListItemBought = async (listId, itemId) => {
     const data = response.data
     if (!data.success) {
         throw new Error(data.message || 'Failed to move item to pantry')
+    }
+
+    return data
+}
+
+export const moveShoppingListItemToPantry = markShoppingListItemBought
+
+export const setShoppingListItemBought = async (listId, itemId, bought) => {
+    const response = await axios.patch(
+        getServerUrl(`/shopping-lists/${listId}/items/${itemId}/bought`),
+        { bought: Boolean(bought) },
+        await authConfig()
+    )
+
+    const data = response.data
+    if (!data.success) {
+        throw new Error(data.message || 'Failed to update bought status')
+    }
+
+    return data
+}
+
+export const deleteShoppingListItem = async (listId, itemId) => {
+    const response = await axios.delete(
+        getServerUrl(`/shopping-lists/${listId}/items/${itemId}`),
+        await authConfig()
+    )
+
+    const data = response.data
+    if (!data.success) {
+        throw new Error(data.message || 'Failed to delete shopping list item')
     }
 
     return data

@@ -45,12 +45,16 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
               )
             : []
 
+        const isFood = itemData.isFood !== false
         const newItem = {
             ...itemData,
+            isFood,
             location: 'shopping-list',
             quantity: itemData.quantity,
             unit: itemData.unit || 'kpl',
-            categories: transformedCategories,
+            categories: isFood ? transformedCategories : [],
+            category: isFood ? transformedCategories : [],
+            calories: isFood ? itemData.calories || 0 : 0,
         }
         setItems([...items, newItem])
         setShowInlineFoodForm(false)
@@ -240,6 +244,7 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
                                 onSubmit={handleAddItem}
                                 onClose={() => setShowInlineFoodForm(false)}
                                 location="shopping-list"
+                                allowNonFood
                                 showLocationSelector={true}
                                 selectedShoppingListId={selectedShoppingListId}
                             />

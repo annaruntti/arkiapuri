@@ -89,9 +89,11 @@ const styles = StyleSheet.create({
     primaryButton: {
         backgroundColor: '#9C86FC',
         borderWidth: 0,
+        borderRadius: 25,
     },
     desktopPrimaryButton: {
         backgroundColor: '#9C86FC',
+        borderRadius: 25,
         ...(Platform.OS === 'web' && {
             boxShadow: '0 2px 8px rgba(156, 134, 252, 0.3)',
             '&:hover': {
@@ -110,10 +112,12 @@ const styles = StyleSheet.create({
         backgroundColor: '#f3f4f6',
         borderWidth: 1,
         borderColor: '#d1d5db',
+        borderRadius: 25,
     },
     desktopSecondaryButton: {
         backgroundColor: '#ffffff',
         borderColor: '#e5e7eb',
+        borderRadius: 25,
         ...(Platform.OS === 'web' && {
             boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
             '&:hover': {

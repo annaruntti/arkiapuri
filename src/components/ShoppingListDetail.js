@@ -21,10 +21,13 @@ import ListSortControl from './ListSortControl'
 import PantryItemDetails from './PantryItemDetails'
 import ResponsiveModal from './ResponsiveModal'
 import SearchSection from './SearchSection'
+import ShoppingListItemQuantityControl from './ShoppingListItemQuantityControl'
 import { useFilteredItemList } from '../hooks/useFilteredItemList'
 import {
     addShoppingListItems,
-    markShoppingListItemBought,
+    deleteShoppingListItem,
+    moveShoppingListItemToPantry,
+    setShoppingListItemBought,
     updateShoppingListItem,
 } from '../services/collectionApi'
 import { findOrCreateFoodItem } from '../services/foodItemApi'
@@ -49,6 +52,9 @@ const ShoppingListDetail = ({
     const [selectedItem, setSelectedItem] = useState(null)
     const [showItemDetails, setShowItemDetails] = useState(false)
     const { isDesktop } = useResponsiveDimensions()
+    const boughtItemCount = (shoppingList.items || []).filter(
+        (item) => item.bought
+    ).length
 
     const {
         searchQuery,
@@ -80,49 +86,10 @@ const ShoppingListDetail = ({
         )
     }
 
-    const moveCheckedToPantry = async (checkedItemIds) => {
-        setLoading(true)
-        let updatedList = shoppingList
-        const movedItemIds = []
-        let firstError = null
-
-        for (const rawItemId of checkedItemIds) {
-            const itemId = String(rawItemId)
-            try {
-                const data = await markShoppingListItemBought(
-                    shoppingList._id,
-                    itemId
-                )
-
-                if (data.shoppingList) {
-                    updatedList = data.shoppingList
-                }
-                movedItemIds.push(itemId)
-            } catch (error) {
-                console.error('Error moving item to pantry:', itemId, error)
-                console.error('Error response:', error.response?.data)
-                if (!firstError) firstError = error
-            }
+    const applyListUpdate = async (data) => {
+        if (data?.shoppingList) {
+            onUpdate(data.shoppingList)
         }
-
-        // Keep only the items that failed checked, so the user can retry them
-        setCheckedItems((prev) =>
-            prev.filter((id) => !movedItemIds.includes(String(id)))
-        )
-
-        if (movedItemIds.length > 0) {
-            const movedSet = new Set(movedItemIds.map(String))
-            // Always drop moved rows locally so the modal cannot keep showing
-            // them if a response/refetch is briefly stale.
-            const nextList = {
-                ...updatedList,
-                items: (updatedList.items || []).filter(
-                    (item) => !movedSet.has(getListItemId(item))
-                ),
-            }
-            onUpdate(nextList)
-        }
-
         const refreshedLists = await fetchShoppingLists()
         if (Array.isArray(refreshedLists) && shoppingList?._id) {
             const refreshed = refreshedLists.find(
@@ -132,7 +99,43 @@ const ShoppingListDetail = ({
                 onUpdate(refreshed)
             }
         }
-        await fetchPantryItems()
+    }
+
+    const moveCheckedToPantry = async (checkedItemIds) => {
+        setLoading(true)
+        const movedItemIds = []
+        let firstError = null
+        let skippedNonFood = 0
+
+        for (const rawItemId of checkedItemIds) {
+            const itemId = String(rawItemId)
+            const listItem = (shoppingList.items || []).find(
+                (item) => getListItemId(item) === itemId
+            )
+            if (listItem && listItem.isFood === false) {
+                skippedNonFood += 1
+                continue
+            }
+            try {
+                const data = await moveShoppingListItemToPantry(
+                    shoppingList._id,
+                    itemId
+                )
+                await applyListUpdate(data)
+                movedItemIds.push(itemId)
+            } catch (error) {
+                console.error('Error moving item to pantry:', itemId, error)
+                if (!firstError) firstError = error
+            }
+        }
+
+        setCheckedItems((prev) =>
+            prev.filter((id) => !movedItemIds.includes(String(id)))
+        )
+
+        if (movedItemIds.length > 0) {
+            await fetchPantryItems()
+        }
 
         if (firstError) {
             Alert.alert(
@@ -141,11 +144,147 @@ const ShoppingListDetail = ({
                     ? 'Osa tuotteista siirtyi pentteriin, mutta kaikkien siirto epäonnistui'
                     : 'Tuotteiden siirto pentteriin epäonnistui'
             )
-        } else {
-            Alert.alert('Onnistui', 'Tuotteet siirretty pentteriin')
+        } else if (movedItemIds.length > 0) {
+            Alert.alert(
+                'Onnistui',
+                skippedNonFood > 0
+                    ? `Elintarvikkeet siirretty pentteriin. ${skippedNonFood} muuta tuotetta ohitettiin.`
+                    : 'Tuotteet siirretty pentteriin'
+            )
+        } else if (skippedNonFood > 0) {
+            Alert.alert(
+                'Huomio',
+                'Muut tuotteet eivät siirry pentteriin. Poista ne listalta tai merkitse ostetuiksi.'
+            )
         }
 
         setLoading(false)
+    }
+
+    const setCheckedBought = async (checkedItemIds, bought) => {
+        setLoading(true)
+        let firstError = null
+        const updatedIds = []
+
+        for (const rawItemId of checkedItemIds) {
+            const itemId = String(rawItemId)
+            try {
+                const data = await setShoppingListItemBought(
+                    shoppingList._id,
+                    itemId,
+                    bought
+                )
+                await applyListUpdate(data)
+                updatedIds.push(itemId)
+            } catch (error) {
+                console.error('Error updating bought status:', itemId, error)
+                if (!firstError) firstError = error
+            }
+        }
+
+        setCheckedItems((prev) =>
+            prev.filter((id) => !updatedIds.includes(String(id)))
+        )
+
+        if (firstError) {
+            Alert.alert('Virhe', 'Ostettu-tilan päivitys epäonnistui osittain')
+        }
+
+        setLoading(false)
+    }
+
+    const restoreBoughtItemsToList = async () => {
+        const boughtIds = (shoppingList.items || [])
+            .filter((item) => item.bought)
+            .map((item) => getListItemId(item))
+            .filter(Boolean)
+        if (boughtIds.length === 0) return
+        await setCheckedBought(boughtIds, false)
+    }
+
+    const deleteCheckedItems = async (checkedItemIds) => {
+        setLoading(true)
+        let firstError = null
+        const deletedIds = []
+
+        for (const rawItemId of checkedItemIds) {
+            const itemId = String(rawItemId)
+            try {
+                const data = await deleteShoppingListItem(
+                    shoppingList._id,
+                    itemId
+                )
+                await applyListUpdate(data)
+                deletedIds.push(itemId)
+            } catch (error) {
+                console.error('Error deleting item:', itemId, error)
+                if (!firstError) firstError = error
+            }
+        }
+
+        setCheckedItems((prev) =>
+            prev.filter((id) => !deletedIds.includes(String(id)))
+        )
+
+        if (firstError) {
+            Alert.alert(
+                'Virhe',
+                deletedIds.length > 0
+                    ? 'Osa tuotteista poistettiin, mutta kaikki eivät onnistuneet'
+                    : 'Tuotteiden poisto epäonnistui'
+            )
+        }
+
+        setLoading(false)
+    }
+
+    const toggleItemBought = async (item) => {
+        const itemId = getListItemId(item)
+        if (!itemId) return
+        try {
+            const data = await setShoppingListItemBought(
+                shoppingList._id,
+                itemId,
+                !item.bought
+            )
+            await applyListUpdate(data)
+        } catch (error) {
+            console.error('Error toggling bought:', error)
+            Alert.alert('Virhe', 'Ostettu-tilan päivitys epäonnistui')
+        }
+    }
+
+    const adjustItemQuantity = async (item, delta) => {
+        const itemId = getListItemId(item)
+        if (!itemId) return
+        const current = Number(item.quantity) || 0
+        const next = Math.max(0, current + delta)
+        if (next <= 0) {
+            await removeItem(item)
+            return
+        }
+        try {
+            const data = await updateShoppingListItem(shoppingList._id, itemId, {
+                quantity: next,
+            })
+            await applyListUpdate(data)
+        } catch (error) {
+            console.error('Error adjusting quantity:', error)
+            Alert.alert('Virhe', 'Määrän päivitys epäonnistui')
+        }
+    }
+
+    const removeItem = async (item) => {
+        const itemId = getListItemId(item)
+        if (!itemId) return
+        try {
+            const data = await deleteShoppingListItem(shoppingList._id, itemId)
+            await applyListUpdate(data)
+            setCheckedItems((prev) => prev.filter((id) => id !== itemId))
+        } catch (error) {
+            console.error('Error deleting item:', error)
+            Alert.alert('Virhe', 'Tuotteen poisto epäonnistui')
+        }
     }
 
     const handleAddItem = async (itemData) => {
@@ -160,6 +299,7 @@ const ShoppingListDetail = ({
                 try {
                     const foodItemResult = await findOrCreateFoodItem({
                         name: itemData.name,
+                        isFood: itemData.isFood !== false,
                         category: itemData.category || [],
                         unit: itemData.unit || 'kpl',
                         price: itemData.price || 0,
@@ -180,6 +320,7 @@ const ShoppingListDetail = ({
 
             const newItem = {
                 ...itemData,
+                isFood: itemData.isFood !== false,
                 foodId: foodItemId,
                 location: 'shopping-list',
             }
@@ -229,6 +370,10 @@ const ShoppingListDetail = ({
     }
 
     const handleItemPress = (item) => {
+        toggleItemBought(item)
+    }
+
+    const handleItemDetailsPress = (item) => {
         setSelectedItem(item)
         setShowItemDetails(true)
     }
@@ -302,28 +447,37 @@ const ShoppingListDetail = ({
     const renderItem = ({ item }) => (
         <FoodListItemRow
             item={item}
+            bought={Boolean(item.bought)}
+            showImageInfoIcon
+            hideQuantityInDetails
             onPress={() => handleItemPress(item)}
+            onImagePress={() => handleItemDetailsPress(item)}
             onLongPress={() => handleCheckItem(item)}
             trailingAction={
-                <TouchableOpacity
-                    style={styles.checkboxContainer}
-                    onPress={() => handleCheckItem(item)}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
-                    <MaterialIcons
-                        name={
-                            checkedItems.includes(getListItemId(item))
-                                ? 'check-box'
-                                : 'check-box-outline-blank'
-                        }
-                        size={24}
-                        color={
-                            checkedItems.includes(getListItemId(item))
-                                ? '#38E4D9'
-                                : '#666'
-                        }
+                <View style={styles.itemTrailing}>
+                    <TouchableOpacity
+                        style={styles.checkboxContainer}
+                        onPress={() => handleCheckItem(item)}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                        <MaterialIcons
+                            name={
+                                checkedItems.includes(getListItemId(item))
+                                    ? 'check-box'
+                                    : 'check-box-outline-blank'
+                            }
+                            size={22}
+                            color="#000000"
+                        />
+                    </TouchableOpacity>
+                    <ShoppingListItemQuantityControl
+                        quantity={item.quantity}
+                        unit={item.unit}
+                        onIncrease={() => adjustItemQuantity(item, 1)}
+                        onDecrease={() => adjustItemQuantity(item, -1)}
+                        onDelete={() => removeItem(item)}
                     />
-                </TouchableOpacity>
+                </View>
             }
         />
     )
@@ -474,10 +628,39 @@ const ShoppingListDetail = ({
                                 ]}
                             >
                                 <Button
-                                    title={`Siirrä ${checkedItems.length} tuotetta ruokavarastoon`}
+                                    title={`Siirrä pentteriin (${checkedItems.length})`}
+                                    type="PRIMARY"
                                     onPress={() =>
                                         moveCheckedToPantry(checkedItems)
                                     }
+                                    style={
+                                        isDesktop
+                                            ? styles.desktopActionButton
+                                            : styles.fullWidthActionButton
+                                    }
+                                    textStyle={styles.buttonText}
+                                />
+                                <Button
+                                    title={`Poista valitut tuotteet (${checkedItems.length})`}
+                                    type="TERTIARY"
+                                    onPress={() =>
+                                        deleteCheckedItems(checkedItems)
+                                    }
+                                    style={[
+                                        styles.tertiaryButton,
+                                        isDesktop
+                                            ? styles.desktopActionButton
+                                            : styles.fullWidthActionButton,
+                                    ]}
+                                    textStyle={styles.buttonText}
+                                />
+                            </View>
+                        )}
+                        {boughtItemCount > 0 && (
+                            <View style={styles.restoreBoughtContainer}>
+                                <Button
+                                    title={`Palauta kerätyt tuotteet ostoslistalle (${boughtItemCount})`}
+                                    onPress={restoreBoughtItemsToList}
                                     style={[
                                         styles.secondaryButton,
                                         isDesktop &&
@@ -623,6 +806,11 @@ const styles = StyleSheet.create({
     checkboxContainer: {
         marginLeft: 10,
     },
+    itemTrailing: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginLeft: 4,
+    },
     itemName: {
         fontSize: 16,
         fontWeight: 'bold',
@@ -694,7 +882,29 @@ const styles = StyleSheet.create({
     buttonContainer: {
         width: '100%',
         marginTop: 10,
+        marginBottom: 8,
+        flexDirection: 'column',
+        gap: 8,
+    },
+    fullWidthActionButton: {
+        width: '100%',
+        marginTop: 0,
+        marginBottom: 0,
+    },
+    desktopActionButton: {
+        width: '100%',
+        maxWidth: 300,
+        alignSelf: 'center',
+        marginTop: 0,
+        marginBottom: 0,
+    },
+    restoreBoughtContainer: {
+        width: '100%',
+        marginTop: 20,
         marginBottom: 30,
+        paddingTop: 8,
+        borderTopWidth: 1,
+        borderTopColor: '#eee',
     },
     addItemButtonsContainer: {
         flexDirection: 'row',

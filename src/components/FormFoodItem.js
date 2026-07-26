@@ -44,6 +44,7 @@ const FormFoodItem = forwardRef(
             showUnifiedSearch = false,
             onSearchItemSelect,
             shoppingListId,
+            allowNonFood = false,
         },
         ref
     ) => {
@@ -66,8 +67,15 @@ const FormFoodItem = forwardRef(
             formState: { errors },
             reset,
             watch,
+            setValue,
         } = useForm({
             defaultValues: {
+                isFood:
+                    initialValues.isFood === false
+                        ? false
+                        : initialValues.isFood === true
+                          ? true
+                          : true,
                 name: initialValues.name || '',
                 category: initialValues.category || [],
                 quantity: initialValues.quantity || '',
@@ -82,6 +90,8 @@ const FormFoodItem = forwardRef(
         })
 
         const currentUnit = watch('unit')
+        const isFood = watch('isFood') !== false
+        const showFoodFields = isFood
 
         const unitOptions = ['kpl', 'g', 'kg', 'l', 'dl', 'ml', 'tl', 'rkl']
 
@@ -349,11 +359,19 @@ const FormFoodItem = forwardRef(
 
                 const formData = {
                     name: data.name,
-                    category: processedCategories,
+                    isFood: data.isFood !== false,
+                    category:
+                        data.isFood === false ? [] : processedCategories,
                     unit: data.unit,
                     price: parseFloat(data.price) || 0,
-                    calories: parseInt(data.calories) || 0,
-                    expirationDate: data.expirationDate,
+                    calories:
+                        data.isFood === false
+                            ? 0
+                            : parseInt(data.calories) || 0,
+                    expirationDate:
+                        data.isFood === false
+                            ? undefined
+                            : data.expirationDate,
                     location: location,
                     locations: showLocationSelector
                         ? selectedLocations
@@ -669,19 +687,78 @@ const FormFoodItem = forwardRef(
                         </CustomText>
                     </TouchableOpacity>
                 )}
+
+                {allowNonFood && (
+                    <View style={styles.fullWidth}>
+                        <CustomText style={styles.label}>
+                            Onko kyseessä elintarvike?
+                        </CustomText>
+                        <View style={styles.isFoodRow}>
+                            <TouchableOpacity
+                                style={[
+                                    styles.isFoodOption,
+                                    showFoodFields && styles.isFoodOptionSelected,
+                                ]}
+                                onPress={() => setValue('isFood', true)}
+                            >
+                                <CustomText
+                                    style={[
+                                        styles.isFoodOptionText,
+                                        showFoodFields &&
+                                            styles.isFoodOptionTextSelected,
+                                    ]}
+                                >
+                                    Elintarvike
+                                </CustomText>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[
+                                    styles.isFoodOption,
+                                    !showFoodFields &&
+                                        styles.isFoodOptionSelected,
+                                ]}
+                                onPress={() => {
+                                    setValue('isFood', false)
+                                    setValue('category', [])
+                                    setValue('calories', '0')
+                                }}
+                            >
+                                <CustomText
+                                    style={[
+                                        styles.isFoodOptionText,
+                                        !showFoodFields &&
+                                            styles.isFoodOptionTextSelected,
+                                    ]}
+                                >
+                                    Muu tuote
+                                </CustomText>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                )}
+
                 {/* Row 1: Name and Category */}
                 <View style={styles.formSingleColumn}>
                     <View style={styles.fullWidth}>
                         <CustomInput
                             control={control}
                             name="name"
-                            label="Elintarvikkeen nimi"
-                            placeholder="Esim. leivinpaperi"
+                            label={
+                                showFoodFields
+                                    ? 'Elintarvikkeen nimi'
+                                    : 'Tuotteen nimi'
+                            }
+                            placeholder={
+                                showFoodFields
+                                    ? 'Esim. kevytmaito'
+                                    : 'Esim. tiskirätti'
+                            }
                             rules={{ required: 'Tämä on pakollinen tieto' }}
                             variant="form"
                         />
                     </View>
 
+                    {showFoodFields && (
                     <View style={styles.fullWidth}>
                         <CustomText style={styles.label}>
                             Elintarvikkeen tyyppi
@@ -690,7 +767,7 @@ const FormFoodItem = forwardRef(
                             control={control}
                             rules={{
                                 maxLength: 100,
-                                required: true,
+                                required: showFoodFields,
                             }}
                             render={({ field: { value, onChange } }) => (
                                 <InlineCategorySelect
@@ -716,6 +793,7 @@ const FormFoodItem = forwardRef(
                             </View>
                         )}
                     </View>
+                    )}
                 </View>
 
                 {/* Row 2: Quantity, Calories, and Date */}
@@ -836,6 +914,7 @@ const FormFoodItem = forwardRef(
                         )}
                     </View>
 
+                    {showFoodFields && (
                     <View style={styles.fullWidth}>
                         <CustomText style={styles.label}>
                             Kalorit (per 100g/100ml)
@@ -853,7 +932,9 @@ const FormFoodItem = forwardRef(
                             </CustomText>
                         </View>
                     </View>
+                    )}
 
+                    {showFoodFields && (
                     <View style={styles.fullWidth}>
                         <CustomText style={styles.label}>
                             Viimeinen käyttöpäivä
@@ -915,6 +996,7 @@ const FormFoodItem = forwardRef(
                             </>
                         )}
                     </View>
+                    )}
                 </View>
 
                 {/* Row 3: Price (if shopping-list) */}
@@ -1157,6 +1239,33 @@ const styles = StyleSheet.create({
         paddingTop: 5,
         paddingBottom: 20,
         width: '100%',
+    },
+    isFoodRow: {
+        flexDirection: 'row',
+        gap: 10,
+        marginBottom: 16,
+    },
+    isFoodOption: {
+        flex: 1,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#ccc',
+        backgroundColor: '#fff',
+        alignItems: 'center',
+    },
+    isFoodOptionSelected: {
+        borderColor: '#5844BB',
+        backgroundColor: '#F0EDFF',
+    },
+    isFoodOptionText: {
+        color: '#666',
+        fontWeight: '500',
+    },
+    isFoodOptionTextSelected: {
+        color: '#5844BB',
+        fontWeight: '700',
     },
     formSingleColumn: {
         width: '100%',
