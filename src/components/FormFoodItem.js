@@ -18,6 +18,7 @@ import * as ImagePicker from 'expo-image-picker'
 // Cross-platform picker: web uses input[type=date], native uses community picker
 import { format } from 'date-fns'
 import { fi } from 'date-fns/locale'
+import { useShowNutrition } from '../hooks/useShowNutrition'
 import { useResponsiveDimensions } from '../utils/responsive'
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
@@ -30,6 +31,33 @@ import InlineCategorySelect from './InlineCategorySelect'
 import UnifiedFoodSearch from './UnifiedFoodSearch'
 import categories from '../data/categories'
 import { formStyles } from '../styles/formStyles'
+
+const NUTRITION_FIELDS = [
+    { name: 'calories', label: 'Kalorit', unit: 'kcal' },
+    { name: 'proteins', label: 'Proteiini', unit: 'g' },
+    { name: 'carbohydrates', label: 'Hiilihydraatit', unit: 'g' },
+    { name: 'sugars', label: 'Sokerit', unit: 'g' },
+    { name: 'fat', label: 'Rasva', unit: 'g' },
+    { name: 'saturatedFat', label: 'Tyydyttynyt rasva', unit: 'g' },
+    { name: 'fiber', label: 'Kuitu', unit: 'g' },
+    { name: 'salt', label: 'Suola', unit: 'g' },
+]
+
+const getInitialNutritionValue = (initialValues, fieldName) => {
+    if (fieldName === 'calories') {
+        return (
+            initialValues?.nutrition?.calories ??
+            initialValues?.calories ??
+            initialValues?.openFoodFactsData?.nutrition?.calories ??
+            ''
+        )
+    }
+    return (
+        initialValues?.nutrition?.[fieldName] ??
+        initialValues?.openFoodFactsData?.nutrition?.[fieldName] ??
+        ''
+    )
+}
 
 const FormFoodItem = forwardRef(
     (
@@ -51,6 +79,14 @@ const FormFoodItem = forwardRef(
         ref
     ) => {
         const { isDesktop } = useResponsiveDimensions()
+        const showNutrition = useShowNutrition()
+        const hasInitialNutrition = NUTRITION_FIELDS.some((field) => {
+            const value = getInitialNutritionValue(initialValues, field.name)
+            return value !== '' && value != null && Number(value) !== 0
+        })
+        const [nutritionExpanded, setNutritionExpanded] = useState(
+            hasInitialNutrition
+        )
         const [date, setDate] = useState(new Date())
         const [show, setShow] = useState(false)
         const webDateInputRef = useRef(null)
@@ -88,7 +124,30 @@ const FormFoodItem = forwardRef(
                     : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
                 location: location,
                 unit: initialValues.unit || 'kpl',
-                calories: initialValues.calories || '0',
+                calories: String(
+                    getInitialNutritionValue(initialValues, 'calories') || ''
+                ),
+                proteins: String(
+                    getInitialNutritionValue(initialValues, 'proteins') || ''
+                ),
+                carbohydrates: String(
+                    getInitialNutritionValue(initialValues, 'carbohydrates') ||
+                        ''
+                ),
+                sugars: String(
+                    getInitialNutritionValue(initialValues, 'sugars') || ''
+                ),
+                fat: String(getInitialNutritionValue(initialValues, 'fat') || ''),
+                saturatedFat: String(
+                    getInitialNutritionValue(initialValues, 'saturatedFat') ||
+                        ''
+                ),
+                fiber: String(
+                    getInitialNutritionValue(initialValues, 'fiber') || ''
+                ),
+                salt: String(
+                    getInitialNutritionValue(initialValues, 'salt') || ''
+                ),
             },
         })
 
@@ -364,6 +423,21 @@ const FormFoodItem = forwardRef(
                     }
                 }
 
+                const nutrition =
+                    data.isFood === false
+                        ? undefined
+                        : {
+                              calories: parseFloat(data.calories) || 0,
+                              proteins: parseFloat(data.proteins) || 0,
+                              carbohydrates:
+                                  parseFloat(data.carbohydrates) || 0,
+                              sugars: parseFloat(data.sugars) || 0,
+                              fat: parseFloat(data.fat) || 0,
+                              saturatedFat: parseFloat(data.saturatedFat) || 0,
+                              fiber: parseFloat(data.fiber) || 0,
+                              salt: parseFloat(data.salt) || 0,
+                          }
+
                 const formData = {
                     name: data.name,
                     isFood: data.isFood !== false,
@@ -374,7 +448,8 @@ const FormFoodItem = forwardRef(
                     calories:
                         data.isFood === false
                             ? 0
-                            : parseInt(data.calories) || 0,
+                            : parseFloat(data.calories) || 0,
+                    nutrition,
                     expirationDate:
                         data.isFood === false
                             ? undefined
@@ -873,25 +948,59 @@ const FormFoodItem = forwardRef(
                         )}
                     </View>
 
-                    {showFoodFields && (
+                    {showFoodFields && showNutrition && (
                         <View style={formStyles.fieldGroup}>
-                            <CustomText style={formStyles.label}>
-                                Kalorit (per 100g/100ml)
-                            </CustomText>
-                            <View style={formStyles.inputRow}>
-                                <CustomInput
-                                    control={control}
-                                    name="calories"
-                                    placeholder="Esim. 250"
-                                    variant="form"
-                                    style={formStyles.inputInRow}
+                            <TouchableOpacity
+                                style={styles.nutritionToggle}
+                                onPress={() =>
+                                    setNutritionExpanded((prev) => !prev)
+                                }
+                                activeOpacity={0.7}
+                            >
+                                <CustomText style={formStyles.label}>
+                                    Ravintoarvot (per 100g/100ml)
+                                </CustomText>
+                                <MaterialIcons
+                                    name={
+                                        nutritionExpanded
+                                            ? 'expand-less'
+                                            : 'expand-more'
+                                    }
+                                    size={24}
+                                    color="#666"
                                 />
-                                <View style={formStyles.inputTrailing}>
-                                    <CustomText style={formStyles.inputMetric}>
-                                        kcal
-                                    </CustomText>
-                                </View>
-                            </View>
+                            </TouchableOpacity>
+                            {nutritionExpanded &&
+                                NUTRITION_FIELDS.map((field) => (
+                                    <View
+                                        key={field.name}
+                                        style={styles.nutritionField}
+                                    >
+                                        <CustomText style={formStyles.label}>
+                                            {field.label}
+                                        </CustomText>
+                                        <View style={formStyles.inputRow}>
+                                            <CustomInput
+                                                control={control}
+                                                name={field.name}
+                                                placeholder="Valinnainen"
+                                                variant="form"
+                                                style={formStyles.inputInRow}
+                                            />
+                                            <View
+                                                style={formStyles.inputTrailing}
+                                            >
+                                                <CustomText
+                                                    style={
+                                                        formStyles.inputMetric
+                                                    }
+                                                >
+                                                    {field.unit}
+                                                </CustomText>
+                                            </View>
+                                        </View>
+                                    </View>
+                                ))}
                         </View>
                     )}
 
@@ -1191,6 +1300,15 @@ const FormFoodItem = forwardRef(
 FormFoodItem.displayName = 'FormFoodItem'
 
 const styles = StyleSheet.create({
+    nutritionToggle: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 4,
+    },
+    nutritionField: {
+        marginTop: 12,
+    },
     backButton: {
         flexDirection: 'row',
         alignItems: 'center',

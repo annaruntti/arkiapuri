@@ -59,7 +59,7 @@ const LoginPromptModal = ({
             meal_create: {
                 title: 'Tallenna ateriasi myöhempää käyttöä varten',
                 subtitle:
-                    'Jatka sisään, niin reseptisi ja suunnitelmasi pysyvät tallessa.',
+                    'Kirjaudu sisään tai luo käyttäjätunnus, niin reseptisi ja ateriasuunnitelmasi pysyvät tallessa.',
                 description:
                     'Voit palata niihin milloin tahansa ilman, että aloitat alusta.',
             },
@@ -112,7 +112,7 @@ const LoginPromptModal = ({
             return 'Tallenna tietoni'
         }
 
-        return 'Jatka sähköpostiosoitteella'
+        return 'Kirjaudu sähköpostiosoitteella'
     }
 
     const message = getTriggerMessage()
@@ -200,7 +200,7 @@ const LoginPromptModal = ({
                     </CustomText>
                     <SocialSignInButtons
                         onSocialSignIn={handleSocialSignIn}
-                        layout="vertical"
+                        showDivider={false}
                     />
                 </View>
 

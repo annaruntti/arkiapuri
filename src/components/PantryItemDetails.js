@@ -16,6 +16,7 @@ import { fi } from 'date-fns/locale'
 import * as ImagePicker from 'expo-image-picker'
 
 import categories from '../data/categories'
+import { useShowNutrition } from '../hooks/useShowNutrition'
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
 
@@ -40,6 +41,7 @@ const PantryItemDetails = ({
     const [showDatePicker, setShowDatePicker] = useState(false)
     const [showCategorySelect, setShowCategorySelect] = useState(false)
     const [isUploadingImage, setIsUploadingImage] = useState(false)
+    const showNutrition = useShowNutrition()
 
     const getCategoryName = (id) => {
         // Search through all categories and their children to find the matching name
@@ -478,12 +480,13 @@ const PantryItemDetails = ({
                     'number'
                 )}
                 {renderEditableField('unit', 'Yksikkö', item.unit)}
-                {renderEditableField(
-                    'calories',
-                    'Kalorit',
-                    item.calories || '0',
-                    'number'
-                )}
+                {showNutrition &&
+                    renderEditableField(
+                        'calories',
+                        'Kalorit',
+                        item.calories || '0',
+                        'number'
+                    )}
 
                 <View style={styles.detailRow}>
                     <CustomText style={styles.label}>Kategoriat:</CustomText>

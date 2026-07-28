@@ -9,8 +9,7 @@ import {
     Alert,
 } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
-import { StackActions } from '@react-navigation/native'
-import { useLogin } from '../context/LoginProvider'
+import { useNavigation } from '@react-navigation/native'
 import axios from 'axios'
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
@@ -20,8 +19,8 @@ import CustomText from '../components/CustomText'
 
 const ImageUpload = (props) => {
     const [profileImage, setProfileImage] = useState('')
-    const { token } = props.route.params
-    const { setProfile, setIsLoggedIn } = useLogin()
+    const { token, fromPrompt, userData } = props.route.params || {}
+    const navigation = useNavigation()
 
     const openImageLibrary = async () => {
         const { status } =
@@ -44,15 +43,19 @@ const ImageUpload = (props) => {
         }
     }
 
-    const completeSignUp = async (userData) => {
+    const goToPersonalization = async (userDataOverride = {}) => {
         try {
-            await storage.setItem('userToken', token)
-            await storage.setItem('profile', JSON.stringify(userData))
-            await storage.setItem('isLoggedIn', 'true')
-            setProfile(userData)
-            setIsLoggedIn(true)
+            if (token) {
+                await storage.setItem('userToken', token)
+            }
+            navigation.navigate('Personoi Arkiapuri', {
+                token,
+                userData: { ...(userData || {}), ...userDataOverride },
+                fromPrompt,
+            })
         } catch (error) {
-            console.error('Error completing sign up:', error)
+            console.error('Error continuing to personalization:', error)
+            Alert.alert('Virhe', 'Jatkaminen epäonnistui')
         }
     }
 
@@ -77,7 +80,6 @@ const ImageUpload = (props) => {
                         type: 'image/jpeg',
                     })
 
-
                     formData.append('profileImage', file)
                 } catch (error) {
                     console.error('Error processing web image:', error)
@@ -90,7 +92,6 @@ const ImageUpload = (props) => {
                     name: 'profile.jpg',
                 })
             }
-
 
             const response = await axios.post(
                 getServerUrl('/profile/image'),
@@ -109,8 +110,7 @@ const ImageUpload = (props) => {
                     ...response.data.user,
                     profileImage: response.data.user.profileImage.url,
                 }
-                await completeSignUp(userData)
-                Alert.alert('Success', 'Profile image updated successfully')
+                await goToPersonalization(userData)
             } else {
                 throw new Error(response.data.message || 'Upload failed')
             }
@@ -131,11 +131,7 @@ const ImageUpload = (props) => {
     }
 
     const skipUpload = async () => {
-        try {
-            await completeSignUp({})
-        } catch (error) {
-            console.error('Error skipping upload:', error)
-        }
+        await goToPersonalization({})
     }
 
     return (

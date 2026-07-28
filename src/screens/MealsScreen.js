@@ -263,6 +263,8 @@ const MealsScreen = ({ route, navigation }) => {
     const handleUpdateMeal = async (mealId, updatedMeal) => {
         try {
             const token = await storage.getItem('userToken')
+            const isPersistedFoodItemId = (id) =>
+                typeof id === 'string' && /^[a-fA-F0-9]{24}$/.test(id)
 
             // First, handle each food item
             const processedFoodItems = await Promise.all(
@@ -292,9 +294,11 @@ const MealsScreen = ({ route, navigation }) => {
                     // Clean the food item data
                     const cleanedItem = {
                         name: item.name,
+                        isFood: item.isFood !== false,
                         quantity: parseFloat(item.quantity) || 0,
                         unit: item.unit || 'kpl',
                         calories: parseInt(item.calories) || 0,
+                        nutrition: item.nutrition,
                         price: parseFloat(item.price) || 0,
                         expirationDate: item.expirationDate,
                         category: categoryIds,
@@ -302,7 +306,10 @@ const MealsScreen = ({ route, navigation }) => {
                             ? item.locations
                             : ['meal'],
                         quantities: {
-                            meal: parseFloat(item.quantities?.meal) || 0,
+                            meal:
+                                parseFloat(item.quantities?.meal) ||
+                                parseFloat(item.quantity) ||
+                                0,
                             'shopping-list':
                                 parseFloat(
                                     item.quantities?.['shopping-list']
@@ -311,9 +318,9 @@ const MealsScreen = ({ route, navigation }) => {
                         },
                     }
 
-                    // If the item has an _id, it's an existing food item
-                    if (item._id) {
-                        // Update existing food item
+                    // Only PUT real Mongo ids. Temporary OFF ids like
+                    // "openfoodfacts-590..." must be created / find-or-created.
+                    if (isPersistedFoodItemId(String(item._id || ''))) {
                         const response = await axios.put(
                             getServerUrl(`/food-items/${item._id}`),
                             cleanedItem,
@@ -324,19 +331,27 @@ const MealsScreen = ({ route, navigation }) => {
                             }
                         )
                         return response.data.foodItem
-                    } else {
-                        // Create new food item
-                        const response = await axios.post(
-                            getServerUrl('/food-items'),
-                            cleanedItem,
-                            {
-                                headers: {
-                                    Authorization: `Bearer ${token}`,
-                                },
-                            }
-                        )
-                        return response.data.foodItem
                     }
+
+                    const response = await axios.post(
+                        getServerUrl('/food-items/find-or-create'),
+                        {
+                            name: cleanedItem.name,
+                            isFood: cleanedItem.isFood,
+                            unit: cleanedItem.unit,
+                            category: cleanedItem.category,
+                            calories: cleanedItem.calories,
+                            price: cleanedItem.price,
+                            location: 'meal',
+                            quantities: cleanedItem.quantities,
+                        },
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                            },
+                        }
+                    )
+                    return response.data.foodItem
                 })
             )
 

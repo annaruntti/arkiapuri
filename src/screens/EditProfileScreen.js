@@ -13,10 +13,12 @@ import {
 } from 'react-native'
 import Button from '../components/Button'
 import CustomInput from '../components/CustomInput'
+import CustomRadioButton from '../components/CustomRadioButton'
 import CustomText from '../components/CustomText'
 import ResponsiveLayout from '../components/ResponsiveLayout'
 import { useLogin } from '../context/LoginProvider'
 import { getServerUrl } from '../utils/getServerUrl'
+import { getShowNutrition } from '../utils/userPreferences'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 
@@ -26,6 +28,9 @@ const EditProfileScreen = () => {
     const { isDesktop, isTablet } = useResponsiveDimensions()
     const [loading, setLoading] = useState(false)
     const [showPasswordFields, setShowPasswordFields] = useState(false)
+    const [showNutrition, setShowNutrition] = useState(
+        getShowNutrition(profile)
+    )
 
     const { control, handleSubmit, watch, reset } = useForm({
         defaultValues: {
@@ -46,6 +51,9 @@ const EditProfileScreen = () => {
             // Prepare update data
             const updateData = {
                 username: data.username,
+                preferences: {
+                    showNutrition,
+                },
             }
 
             // If user wants to change password
@@ -72,7 +80,17 @@ const EditProfileScreen = () => {
                 // Update profile in context
                 setProfile({
                     ...profile,
+                    ...response.data.user,
                     username: data.username,
+                    preferences: {
+                        ...(profile?.preferences || {}),
+                        ...(response.data.user?.preferences || {}),
+                        showNutrition,
+                    },
+                    profileImage:
+                        response.data.user?.profileImage?.url ||
+                        profile?.profileImage ||
+                        null,
                 })
 
                 // Reset password fields after successful save
@@ -297,6 +315,58 @@ const EditProfileScreen = () => {
                                         Sähköpostia ei voi muuttaa
                                     </CustomText>
                                 </View>
+                            </View>
+
+                            <View style={styles.fieldContainer}>
+                                <CustomText style={styles.label}>
+                                    Näyttöasetukset
+                                </CustomText>
+                                <CustomText style={styles.helperText}>
+                                    Näytetäänkö elintarvikkeiden ja aterioiden
+                                    kalorit sekä ravintoarvot?
+                                </CustomText>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.preferenceOption,
+                                        showNutrition &&
+                                            styles.preferenceOptionSelected,
+                                    ]}
+                                    onPress={() => setShowNutrition(true)}
+                                    activeOpacity={0.7}
+                                >
+                                    <CustomRadioButton
+                                        status={
+                                            showNutrition
+                                                ? 'checked'
+                                                : 'unchecked'
+                                        }
+                                        onPress={() => setShowNutrition(true)}
+                                    />
+                                    <CustomText style={styles.preferenceLabel}>
+                                        Kyllä, näytä ravintoarvot
+                                    </CustomText>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.preferenceOption,
+                                        !showNutrition &&
+                                            styles.preferenceOptionSelected,
+                                    ]}
+                                    onPress={() => setShowNutrition(false)}
+                                    activeOpacity={0.7}
+                                >
+                                    <CustomRadioButton
+                                        status={
+                                            !showNutrition
+                                                ? 'checked'
+                                                : 'unchecked'
+                                        }
+                                        onPress={() => setShowNutrition(false)}
+                                    />
+                                    <CustomText style={styles.preferenceLabel}>
+                                        Ei, piilota ravintoarvot
+                                    </CustomText>
+                                </TouchableOpacity>
                             </View>
 
                             {/* Password Change Section */}
@@ -530,6 +600,27 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#9ca3af',
         marginTop: 4,
+    },
+    preferenceOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        borderWidth: 1,
+        borderColor: '#e5e7eb',
+        backgroundColor: '#f9fafb',
+        borderRadius: 8,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        marginTop: 8,
+    },
+    preferenceOptionSelected: {
+        borderColor: '#5844BB',
+        backgroundColor: '#f3f0ff',
+    },
+    preferenceLabel: {
+        fontSize: 15,
+        color: '#1f2937',
+        flex: 1,
     },
     passwordToggle: {
         paddingVertical: 12,

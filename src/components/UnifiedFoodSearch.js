@@ -13,6 +13,7 @@ import {
     View,
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import { useShowNutrition } from '../hooks/useShowNutrition'
 import { getServerUrl } from '../utils/getServerUrl'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
@@ -84,6 +85,7 @@ const UnifiedFoodSearch = ({
     allowDuplicates = false,
 }) => {
     const { isDesktop } = useResponsiveDimensions()
+    const showNutrition = useShowNutrition()
     const [searchQuery, setSearchQuery] = useState('')
     const [localFoodItems, setLocalFoodItems] = useState([])
     const [openFoodFactsItems, setOpenFoodFactsItems] = useState([])
@@ -375,22 +377,53 @@ const UnifiedFoodSearch = ({
 
     const addOpenFoodFactsProduct = async (product) => {
         try {
-            // For meal context, just add the item directly without API calls
+            // Persist OFF products immediately so meal save gets a real Mongo id
+            // (avoids PUT /food-items/openfoodfacts-<barcode> 400 errors).
             if (location === 'meal') {
                 const mapped = mapOpenFoodFactsToFoodItemFields(product)
+                const barcode =
+                    product.barcode || mapped.openFoodFactsData?.barcode
+                if (!barcode) {
+                    throw new Error('Product barcode is missing')
+                }
+
+                const data = await openFoodFactsApi.addToFoodItems(barcode, {
+                    location: 'meal',
+                    quantity: mapped.packageQuantity || 1,
+                    unit: mapped.unit || 'kpl',
+                    mealId,
+                })
+
+                if (!data.success || !data.foodItem) {
+                    throw new Error(
+                        data.message || 'Failed to add Open Food Facts product'
+                    )
+                }
+
                 const foodItem = {
-                    _id: `openfoodfacts-${product.barcode || mapped.openFoodFactsData?.barcode || Date.now()}`,
-                    ...mapped,
-                    locations: ['meal'],
+                    ...data.foodItem,
+                    quantity:
+                        data.foodItem.quantities?.meal ||
+                        mapped.packageQuantity ||
+                        1,
+                    unit: data.foodItem.unit || mapped.unit || 'kpl',
+                    locations: Array.from(
+                        new Set([
+                            ...(data.foodItem.locations || []),
+                            'meal',
+                        ])
+                    ),
                     quantities: {
-                        meal: mapped.packageQuantity || 1,
-                        'shopping-list': 0,
-                        pantry: 0,
+                        meal:
+                            data.foodItem.quantities?.meal ||
+                            mapped.packageQuantity ||
+                            1,
+                        'shopping-list':
+                            data.foodItem.quantities?.['shopping-list'] || 0,
+                        pantry: data.foodItem.quantities?.pantry || 0,
                     },
                 }
 
-                // Nothing has been persisted yet — the caller (meal form) is
-                // responsible for actually creating the FoodItem.
                 onSelectItem(foodItem, { alreadyAdded: false })
                 setSearchQuery('')
                 setIsListVisible(false)
@@ -500,7 +533,7 @@ const UnifiedFoodSearch = ({
         })()
 
         const calorieText =
-            item.calories && item.calories > 0
+            showNutrition && item.calories && item.calories > 0
                 ? String(`${item.calories} kcal`)
                 : null
 
@@ -588,7 +621,8 @@ const UnifiedFoodSearch = ({
                                 </CustomText>
                             ) : null}
                             <View style={styles.productMeta}>
-                                {item.nutritionGrade &&
+                                {showNutrition &&
+                                item.nutritionGrade &&
                                 item.nutritionGrade.trim().length > 0 &&
                                 String(item.nutritionGrade).trim() !== '' ? (
                                     <View
@@ -608,7 +642,8 @@ const UnifiedFoodSearch = ({
                                         </CustomText>
                                     </View>
                                 ) : null}
-                                {item.nutrition?.calories > 0 ? (
+                                {showNutrition &&
+                                item.nutrition?.calories > 0 ? (
                                     <CustomText style={styles.itemCalories}>
                                         {String(
                                             `${Math.round(item.nutrition.calories || 0)} kcal`

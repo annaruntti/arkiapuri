@@ -46,15 +46,13 @@ const SignUpScreen = () => {
                 const signInRes = signInResponse.data
                 if (signInRes.success) {
                     await AsyncStorage.setItem('userToken', signInRes.token)
-                    
-                    // If came from prompt, go directly to Main after signup
-                    if (route.params?.fromPrompt) {
-                        navigation.navigate('Main')
-                    } else {
-                        navigation.navigate('Lataa profiilikuva', {
-                            token: signInRes.token,
-                        })
-                    }
+
+                    // Always finish onboarding (image → personalization) after signup
+                    navigation.navigate('Lataa profiilikuva', {
+                        token: signInRes.token,
+                        fromPrompt: route.params?.fromPrompt,
+                        userData: signInRes.user,
+                    })
                 } else {
                     Alert.alert(
                         'Virhe',

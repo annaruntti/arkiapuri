@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form'
 import { Alert, StyleSheet, TouchableOpacity, View } from 'react-native'
 import { useLogin } from '../context/LoginProvider'
 import { getServerUrl } from '../utils/getServerUrl'
+import { hasCompletedPersonalization } from '../utils/userPreferences'
 import storage from '../utils/storage'
 
 import AuthLayout from '../components/AuthLayout'
@@ -22,6 +23,26 @@ const SignInScreen = () => {
 
     const { control, handleSubmit, setError } = useForm()
 
+    const navigateAfterAuth = (user, token) => {
+        if (!hasCompletedPersonalization(user)) {
+            navigation.navigate('Personoi Arkiapuri', {
+                token,
+                userData: user,
+                fromPrompt: route.params?.fromPrompt,
+            })
+            return
+        }
+
+        if (route.params?.fromPrompt) {
+            navigation.navigate('Main')
+        } else {
+            navigation.reset({
+                index: 0,
+                routes: [{ name: 'Main' }],
+            })
+        }
+    }
+
     const onSignInPressed = async (data) => {
         try {
             const response = await axios.post(getServerUrl('/sign-in'), {
@@ -32,16 +53,7 @@ const SignInScreen = () => {
             if (response.data.success) {
                 await storage.setItem('userToken', response.data.token)
                 await login(response.data.user)
-                
-                // Navigate back to previous screen if came from prompt, otherwise go to Main
-                if (route.params?.fromPrompt) {
-                    navigation.navigate('Main')
-                } else {
-                    navigation.reset({
-                        index: 0,
-                        routes: [{ name: 'Main' }],
-                    })
-                }
+                navigateAfterAuth(response.data.user, response.data.token)
             } else {
                 console.error('Sign in failed:', response.data.message)
                 const message =
@@ -113,16 +125,7 @@ const SignInScreen = () => {
                 )
                 await storage.setItem('userToken', data.token)
                 await login(data.user)
-                
-                // Navigate after successful social login
-                if (route.params?.fromPrompt) {
-                    navigation.navigate('Main')
-                } else {
-                    navigation.reset({
-                        index: 0,
-                        routes: [{ name: 'Main' }],
-                    })
-                }
+                navigateAfterAuth(data.user, data.token)
                 return
             }
 
@@ -135,16 +138,7 @@ const SignInScreen = () => {
             if (response.data.success) {
                 await storage.setItem('userToken', response.data.token)
                 await login(response.data.user)
-                
-                // Navigate after successful social login
-                if (route.params?.fromPrompt) {
-                    navigation.navigate('Main')
-                } else {
-                    navigation.reset({
-                        index: 0,
-                        routes: [{ name: 'Main' }],
-                    })
-                }
+                navigateAfterAuth(response.data.user, response.data.token)
             } else {
                 Alert.alert(
                     'Virhe',

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
     Platform,
     StyleSheet,
@@ -8,6 +8,11 @@ import {
 import { Feather } from '@expo/vector-icons'
 import { format } from 'date-fns'
 import { fi } from 'date-fns/locale'
+import { useShowNutrition } from '../hooks/useShowNutrition'
+import {
+    formatNutritionValue,
+    summarizeMealNutrition,
+} from '../utils/mealNutrition'
 import {
     getDifficultyText,
     getMealCategoryText,
@@ -41,9 +46,36 @@ const MealDetailsForm = ({
     onSave,
 }) => {
     const [showDatePicker, setShowDatePicker] = useState(false)
+    const showNutrition = useShowNutrition()
     const cookingDate = new Date(
         editedValues.plannedCookingDate || meal.plannedCookingDate
     )
+    const nutritionTotals = useMemo(
+        () => summarizeMealNutrition(editedValues.foodItems || []),
+        [editedValues.foodItems]
+    )
+    const nutritionRows = [
+        {
+            label: 'Kalorit',
+            value: formatNutritionValue(nutritionTotals.calories),
+            unit: 'kcal',
+        },
+        {
+            label: 'Proteiini',
+            value: formatNutritionValue(nutritionTotals.proteins, 1),
+            unit: 'g',
+        },
+        {
+            label: 'Hiilihydraatit',
+            value: formatNutritionValue(nutritionTotals.carbohydrates, 1),
+            unit: 'g',
+        },
+        {
+            label: 'Rasva',
+            value: formatNutritionValue(nutritionTotals.fat, 1),
+            unit: 'g',
+        },
+    ].filter((row) => row.value)
 
     return (
         <View style={styles.mealDetails}>
@@ -163,6 +195,24 @@ const MealDetailsForm = ({
                 onChange={onPlannedEatingDatesChange}
             />
 
+            {showNutrition && nutritionRows.length > 0 && (
+                <View style={styles.nutritionSummary}>
+                    <CustomText style={styles.nutritionTitle}>
+                        Ravintoarvot (arvio)
+                    </CustomText>
+                    {nutritionRows.map((row) => (
+                        <View key={row.label} style={styles.nutritionRow}>
+                            <CustomText style={styles.nutritionLabel}>
+                                {row.label}
+                            </CustomText>
+                            <CustomText style={styles.nutritionValue}>
+                                {row.value} {row.unit}
+                            </CustomText>
+                        </View>
+                    ))}
+                </View>
+            )}
+
             <MealTabs
                 foodItems={editedValues.foodItems}
                 foodItemsWithAvailability={foodItemsWithAvailability}
@@ -193,6 +243,35 @@ const MealDetailsForm = ({
 const styles = StyleSheet.create({
     mealDetails: {
         paddingTop: 10,
+    },
+    nutritionSummary: {
+        marginTop: 12,
+        marginBottom: 8,
+        padding: 12,
+        backgroundColor: '#f8f7fc',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#ebe7f8',
+    },
+    nutritionTitle: {
+        fontWeight: '600',
+        fontSize: 15,
+        color: '#1f2937',
+        marginBottom: 8,
+    },
+    nutritionRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingVertical: 4,
+    },
+    nutritionLabel: {
+        color: '#4b5563',
+        fontSize: 14,
+    },
+    nutritionValue: {
+        color: '#1f2937',
+        fontSize: 14,
+        fontWeight: '500',
     },
     detailRow: {
         flexDirection: 'row',

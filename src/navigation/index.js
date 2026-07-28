@@ -28,6 +28,7 @@ import FamilyManagementScreen from '../screens/FamilyManagementScreen'
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen'
 import HomeScreen from '../screens/HomeScreen'
 import ImageUploadScreen from '../screens/ImageUploadScreen'
+import PersonalizationScreen from '../screens/PersonalizationScreen'
 import LandingScreen from '../screens/LandingScreen'
 import MealsScreen from '../screens/MealsScreen'
 import PantryScreen from '../screens/PantryScreen'
@@ -593,6 +594,7 @@ const linking = {
                     'Vaihda salasana': 'reset-password',
                     'Vahvista sähköposti': 'confirm-email',
                     'Lataa profiilikuva': 'upload-image',
+                    'Personoi Arkiapuri': 'personalize',
                     AuthCallback: 'AuthCallback',
                 },
             },
@@ -712,7 +714,18 @@ function AuthStackScreen() {
                 headerLeft: () =>
                     route.params?.fromPrompt ? (
                         <TouchableOpacity
-                            onPress={() => navigation.navigate('Main')}
+                            onPress={() => {
+                                // Auth is a root modal — dismiss it to return
+                                // to the screen that opened the login prompt.
+                                const parent = navigation.getParent()
+                                if (parent?.canGoBack?.()) {
+                                    parent.goBack()
+                                } else if (navigation.canGoBack()) {
+                                    navigation.goBack()
+                                } else {
+                                    parent?.navigate?.('Main')
+                                }
+                            }}
                             style={[styles.iconButton, styles.backButton]}
                         >
                             <Feather
@@ -773,6 +786,14 @@ function AuthStackScreen() {
                     <>
                         <NavigationTracker screenName="Lataa profiilikuva" />
                         <ImageUploadScreen {...props} />
+                    </>
+                )}
+            </HomeStack.Screen>
+            <HomeStack.Screen name="Personoi Arkiapuri">
+                {(props) => (
+                    <>
+                        <NavigationTracker screenName="Personoi Arkiapuri" />
+                        <PersonalizationScreen {...props} />
                     </>
                 )}
             </HomeStack.Screen>

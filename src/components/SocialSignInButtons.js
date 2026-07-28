@@ -13,7 +13,7 @@ import CustomText from './CustomText'
 // Complete the auth session for better UX
 WebBrowser.maybeCompleteAuthSession()
 
-const SocialSignInButtons = ({ onSocialSignIn }) => {
+const SocialSignInButtons = ({ onSocialSignIn, showDivider = true }) => {
     // OAuth configuration
     const googleAuthUrl = `${getServerUrl('')}/auth/google`
     const appleAuthUrl = `${getServerUrl('')}/auth/apple`
@@ -167,11 +167,15 @@ const SocialSignInButtons = ({ onSocialSignIn }) => {
 
     return (
         <View style={styles.container}>
-            <View style={styles.dividerContainer}>
-                <View style={styles.divider} />
-                <CustomText style={styles.dividerText}>tai kirjaudu</CustomText>
-                <View style={styles.divider} />
-            </View>
+            {showDivider && (
+                <View style={styles.dividerContainer}>
+                    <View style={styles.divider} />
+                    <CustomText style={styles.dividerText}>
+                        tai kirjaudu
+                    </CustomText>
+                    <View style={styles.divider} />
+                </View>
+            )}
 
             <TouchableOpacity
                 style={[styles.socialButton, styles.googleButton]}

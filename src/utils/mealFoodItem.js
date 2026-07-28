@@ -17,6 +17,8 @@ export const normalizeMealFoodItem = (item) => ({
     unit: item.unit || 'kpl',
     price: parseFloat(item.price) || 0,
     calories: parseInt(item.calories, 10) || 0,
+    nutrition: item.nutrition || item.openFoodFactsData?.nutrition || undefined,
+    openFoodFactsData: item.openFoodFactsData,
 })
 
 export const mergeUpdatedFoodItem = (foodItems, sourceItem, updatedFoodItem) =>
@@ -57,4 +59,5 @@ export const prepareMealFoodItemsForSave = (foodItems = []) =>
         category: item.category || [],
         price: item.price || 0,
         calories: item.calories || 0,
+        nutrition: item.nutrition,
     }))
