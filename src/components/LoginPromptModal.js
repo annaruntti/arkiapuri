@@ -304,13 +304,13 @@ const styles = StyleSheet.create({
     primaryButton: {
         width: '100%',
         borderRadius: 25,
-        paddingVertical: 14,
-        paddingHorizontal: 20,
+        paddingVertical: 8,
+        paddingHorizontal: 16,
     },
     primaryButtonText: {
         color: '#000000',
         fontWeight: '600',
-        fontSize: 16,
+        fontSize: 14,
     },
     toggleSection: {
         flexDirection: 'row',
@@ -330,9 +330,9 @@ const styles = StyleSheet.create({
     tertiaryButton: {
         width: '100%',
         borderRadius: 25,
-        paddingVertical: 12,
-        paddingHorizontal: 20,
-        minHeight: 48,
+        paddingVertical: 7,
+        paddingHorizontal: 16,
+        minHeight: 40,
     },
     tertiaryButtonText: {
         textAlign: 'center',

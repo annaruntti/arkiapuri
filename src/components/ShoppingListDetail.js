@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
     Alert,
+    Platform,
     ScrollView,
     SectionList,
     StyleSheet,
@@ -26,7 +27,7 @@ import { useFilteredItemList } from '../hooks/useFilteredItemList'
 import {
     addShoppingListItems,
     deleteShoppingListItem,
-    moveShoppingListItemToPantry,
+    moveShoppingListItemsToPantry,
     setShoppingListItemBought,
     updateShoppingListItem,
 } from '../services/collectionApi'
@@ -37,7 +38,24 @@ import {
 } from '../utils/listSort'
 import { useResponsiveDimensions } from '../utils/responsive'
 
-const getListItemId = (item) => String(item?._id ?? item?.id ?? '')
+const getListItemId = (item) => {
+    if (!item) return ''
+    const candidate = item._id ?? item.id
+    if (candidate == null) return ''
+    if (typeof candidate === 'object') {
+        if (candidate.$oid) return String(candidate.$oid)
+        if (typeof candidate.toHexString === 'function') {
+            return candidate.toHexString()
+        }
+        if (candidate._id != null) return getListItemId({ _id: candidate._id })
+        if (typeof candidate.toString === 'function') {
+            const asString = candidate.toString()
+            if (asString && asString !== '[object Object]') return asString
+        }
+        return ''
+    }
+    return String(candidate).trim()
+}
 
 const MODAL_VIEWS = {
     LIST: 'list',
@@ -55,6 +73,8 @@ const ShoppingListDetail = ({
     onRequireLogin,
 }) => {
     const [checkedItems, setCheckedItems] = useState([])
+    const checkedItemsRef = useRef(checkedItems)
+    checkedItemsRef.current = checkedItems
     const [modalView, setModalView] = useState(MODAL_VIEWS.LIST)
     const [loading, setLoading] = useState(false)
     const [selectedItem, setSelectedItem] = useState(null)
@@ -62,6 +82,14 @@ const ShoppingListDetail = ({
     const boughtItemCount = (shoppingList?.items || []).filter(
         (item) => item.bought
     ).length
+    const checkedFoodItemIds = (shoppingList?.items || [])
+        .filter(
+            (item) =>
+                checkedItems.includes(getListItemId(item)) &&
+                item.isFood !== false
+        )
+        .map((item) => getListItemId(item))
+        .filter(Boolean)
 
     useEffect(() => {
         if (!visible) {
@@ -136,63 +164,126 @@ const ShoppingListDetail = ({
     }
 
     const moveCheckedToPantry = async (checkedItemIds) => {
-        setLoading(true)
-        const movedItemIds = []
-        let firstError = null
-        let skippedNonFood = 0
+        if (!shoppingList?._id) return
 
-        for (const rawItemId of checkedItemIds) {
-            const itemId = String(rawItemId)
-            const listItem = (shoppingList.items || []).find(
-                (item) => getListItemId(item) === itemId
-            )
-            if (listItem && listItem.isFood === false) {
-                skippedNonFood += 1
-                continue
-            }
-            try {
-                const data = await moveShoppingListItemToPantry(
-                    shoppingList._id,
-                    itemId
-                )
-                await applyListUpdate(data)
-                movedItemIds.push(itemId)
-            } catch (error) {
-                console.error('Error moving item to pantry:', itemId, error)
-                if (!firstError) firstError = error
-            }
+        // Prefer latest selection from ref (avoids stale press closures).
+        const rawIds =
+            Array.isArray(checkedItemIds) && checkedItemIds.length > 0
+                ? checkedItemIds
+                : checkedItemsRef.current
+
+        // Resolve selection against the current list so we always send real
+        // shopping-list item ids (not stale/food ids).
+        const selectedIds = new Set(
+            (rawIds || []).map((id) => String(id).trim()).filter(Boolean)
+        )
+        const selectedItems = (shoppingList.items || []).filter((item) =>
+            selectedIds.has(getListItemId(item))
+        )
+        const itemIds = [
+            ...new Set(selectedItems.map((item) => getListItemId(item))),
+        ]
+        if (itemIds.length === 0) {
+            Alert.alert('Huomio', 'Valittuja tuotteita ei löytynyt listalta')
+            setCheckedItems([])
+            return
         }
 
-        setCheckedItems((prev) =>
-            prev.filter((id) => !movedItemIds.includes(String(id)))
+        const nameById = Object.fromEntries(
+            selectedItems.map((item) => [getListItemId(item), item.name])
         )
 
-        if (movedItemIds.length > 0) {
-            await fetchPantryItems()
-        }
+        setLoading(true)
+        try {
+            const data = await moveShoppingListItemsToPantry(
+                shoppingList._id,
+                itemIds
+            )
+            const moved = Array.isArray(data.moved) ? data.moved : []
+            const skippedNonFood = Array.isArray(data.skippedNonFood)
+                ? data.skippedNonFood
+                : []
+            const removedNonFood = Array.isArray(data.removedNonFood)
+                ? data.removedNonFood
+                : skippedNonFood
+            const notFound = Array.isArray(data.notFound) ? data.notFound : []
 
-        if (firstError) {
-            Alert.alert(
-                'Virhe',
-                movedItemIds.length > 0
-                    ? 'Osa tuotteista siirtyi pentteriin, mutta kaikkien siirto epäonnistui'
-                    : 'Tuotteiden siirto pentteriin epäonnistui'
+            const clearedIdSet = new Set(
+                [...moved, ...removedNonFood]
+                    .map((item) => String(item.id).trim())
+                    .filter(Boolean)
             )
-        } else if (movedItemIds.length > 0) {
-            Alert.alert(
-                'Onnistui',
-                skippedNonFood > 0
-                    ? `Elintarvikkeet siirretty pentteriin. ${skippedNonFood} muuta tuotetta ohitettiin.`
-                    : 'Tuotteet siirretty pentteriin'
+            setCheckedItems((prev) =>
+                prev.filter((id) => !clearedIdSet.has(String(id).trim()))
             )
-        } else if (skippedNonFood > 0) {
-            Alert.alert(
-                'Huomio',
-                'Muut tuotteet eivät siirry pentteriin. Poista ne listalta tai merkitse ostetuiksi.'
-            )
-        }
+            // Trust the batch response list — a follow-up refetch can race
+            // and briefly reintroduce items if the DB write was still flushing.
+            if (data?.shoppingList) {
+                onUpdate(data.shoppingList)
+            } else {
+                await applyListUpdate(data)
+            }
+            if (moved.length > 0 && typeof fetchPantryItems === 'function') {
+                await fetchPantryItems()
+            }
 
-        setLoading(false)
+            if (moved.length > 0 || removedNonFood.length > 0) {
+                const movedNames = moved
+                    .map(
+                        (item) =>
+                            item.name || nameById[String(item.id)] || ''
+                    )
+                    .filter(Boolean)
+                const removedNames = removedNonFood
+                    .map(
+                        (item) =>
+                            item.name || nameById[String(item.id)] || ''
+                    )
+                    .filter(Boolean)
+                const parts = []
+                if (moved.length > 0) {
+                    parts.push(
+                        `${moved.length} elintarviketta pentteriin${
+                            movedNames.length
+                                ? `: ${movedNames.join(', ')}`
+                                : ''
+                        }`
+                    )
+                }
+                if (removedNonFood.length > 0) {
+                    parts.push(
+                        `${removedNonFood.length} muuta tuotetta poistettu listalta${
+                            removedNames.length
+                                ? `: ${removedNames.join(', ')}`
+                                : ''
+                        }`
+                    )
+                }
+                if (notFound.length > 0) {
+                    parts.push(
+                        `${notFound.length} valintaa ei löytynyt listalta`
+                    )
+                }
+                Alert.alert('Onnistui', parts.join('. ') + '.')
+            } else if (skippedNonFood.length > 0) {
+                Alert.alert(
+                    'Huomio',
+                    'Muut tuotteet eivät siirry pentteriin. Poista ne listalta tai merkitse ostetuiksi.'
+                )
+            } else {
+                Alert.alert(
+                    'Huomio',
+                    notFound.length > 0
+                        ? 'Valittuja tuotteita ei löytynyt listalta. Kokeile valita uudelleen.'
+                        : 'Valittuja tuotteita ei voitu siirtää'
+                )
+            }
+        } catch (error) {
+            console.error('Error moving items to pantry:', error)
+            Alert.alert('Virhe', 'Tuotteiden siirto pentteriin epäonnistui')
+        } finally {
+            setLoading(false)
+        }
     }
 
     const setCheckedBought = async (checkedItemIds, bought) => {
@@ -234,6 +325,15 @@ const ShoppingListDetail = ({
             .filter(Boolean)
         if (boughtIds.length === 0) return
         await setCheckedBought(boughtIds, false)
+    }
+
+    const deleteBoughtItemsFromList = async () => {
+        const boughtIds = (shoppingList.items || [])
+            .filter((item) => item.bought)
+            .map((item) => getListItemId(item))
+            .filter(Boolean)
+        if (boughtIds.length === 0) return
+        await deleteCheckedItems(boughtIds)
     }
 
     const deleteCheckedItems = async (checkedItemIds) => {
@@ -552,6 +652,11 @@ const ShoppingListDetail = ({
                         style={styles.mainScrollView}
                         stickyHeaderIndices={[1]}
                         showsVerticalScrollIndicator={false}
+                        contentContainerStyle={
+                            checkedItems.length > 0 || boughtItemCount > 0
+                                ? styles.scrollContentWithFloatingBar
+                                : undefined
+                        }
                     >
                         <View style={styles.headerSection}>
                             <View style={styles.header}>
@@ -666,59 +771,94 @@ const ShoppingListDetail = ({
                                 nestedScrollEnabled={true}
                                 stickySectionHeadersEnabled={false}
                             />
-                            {checkedItems.length > 0 && (
-                                <View
-                                    style={[
-                                        styles.buttonContainer,
-                                        isDesktop &&
-                                            styles.desktopButtonContainer,
-                                    ]}
-                                >
-                                    <Button
-                                        title={`Siirrä pentteriin (${checkedItems.length})`}
-                                        type="PRIMARY"
-                                        onPress={() =>
-                                            moveCheckedToPantry(checkedItems)
-                                        }
-                                        style={
-                                            isDesktop
-                                                ? styles.desktopActionButton
-                                                : styles.fullWidthActionButton
-                                        }
-                                        textStyle={styles.buttonText}
-                                    />
-                                    <Button
-                                        title={`Poista valitut tuotteet (${checkedItems.length})`}
-                                        type="TERTIARY"
-                                        onPress={() =>
-                                            deleteCheckedItems(checkedItems)
-                                        }
-                                        style={[
-                                            styles.tertiaryButton,
-                                            isDesktop
-                                                ? styles.desktopActionButton
-                                                : styles.fullWidthActionButton,
-                                        ]}
-                                        textStyle={styles.buttonText}
-                                    />
-                                </View>
-                            )}
-                            {boughtItemCount > 0 && (
-                                <View style={styles.restoreBoughtContainer}>
-                                    <Button
-                                        title={`Palauta kerätyt tuotteet ostoslistalle (${boughtItemCount})`}
-                                        onPress={restoreBoughtItemsToList}
-                                        style={[
-                                            styles.secondaryButton,
-                                            isDesktop &&
-                                                styles.desktopPrimaryButton,
-                                        ]}
-                                        textStyle={styles.buttonText}
-                                    />
-                                </View>
-                            )}
                         </View>
                     </ScrollView>
+
+                    {(checkedItems.length > 0 || boughtItemCount > 0) && (
+                        <View
+                            style={[
+                                styles.floatingActionBar,
+                                isDesktop && styles.desktopFloatingActionBar,
+                            ]}
+                            pointerEvents="box-none"
+                        >
+                            <View
+                                style={[
+                                    styles.floatingActionBarInner,
+                                    isDesktop &&
+                                        styles.desktopFloatingActionBarInner,
+                                ]}
+                            >
+                                {checkedItems.length > 0 && (
+                                    <>
+                                        {checkedFoodItemIds.length > 0 && (
+                                            <Button
+                                                title={`Siirrä pentteriin (${checkedFoodItemIds.length})`}
+                                                type="PRIMARY"
+                                                size="small"
+                                                onPress={() =>
+                                                    moveCheckedToPantry(
+                                                        checkedFoodItemIds
+                                                    )
+                                                }
+                                                style={
+                                                    styles.floatingActionButton
+                                                }
+                                                textStyle={
+                                                    styles.floatingActionButtonText
+                                                }
+                                            />
+                                        )}
+                                        <Button
+                                            title={`Poista valitut (${checkedItems.length})`}
+                                            type="TERTIARY"
+                                            size="small"
+                                            onPress={() =>
+                                                deleteCheckedItems(checkedItems)
+                                            }
+                                            style={[
+                                                styles.floatingActionButton,
+                                                styles.floatingTertiaryButton,
+                                            ]}
+                                            textStyle={
+                                                styles.floatingActionButtonText
+                                            }
+                                        />
+                                    </>
+                                )}
+                                {boughtItemCount > 0 && (
+                                    <>
+                                        <Button
+                                            title={`Palauta kerätyt (${boughtItemCount})`}
+                                            type="SECONDARY"
+                                            size="small"
+                                            onPress={restoreBoughtItemsToList}
+                                            style={[
+                                                styles.floatingActionButton,
+                                                styles.floatingSecondaryButton,
+                                            ]}
+                                            textStyle={
+                                                styles.floatingActionButtonText
+                                            }
+                                        />
+                                        <Button
+                                            title={`Poista kerätyt (${boughtItemCount})`}
+                                            type="TERTIARY"
+                                            size="small"
+                                            onPress={deleteBoughtItemsFromList}
+                                            style={[
+                                                styles.floatingActionButton,
+                                                styles.floatingTertiaryButton,
+                                            ]}
+                                            textStyle={
+                                                styles.floatingActionButtonText
+                                            }
+                                        />
+                                    </>
+                                )}
+                            </View>
+                        </View>
+                    )}
                 </View>
             )}
         </ResponsiveModal>
@@ -906,23 +1046,73 @@ const styles = StyleSheet.create({
     },
     tertiaryButton: {
         borderRadius: 25,
-        paddingTop: 7,
-        paddingBottom: 7,
+        paddingTop: 6,
+        paddingBottom: 6,
         paddingLeft: 10,
         paddingRight: 10,
         elevation: 2,
         backgroundColor: '#fff',
-        minHeight: 48,
-        borderWidth: 3,
+        minHeight: 40,
+        borderWidth: 2,
         borderColor: '#5844BB',
         whiteSpace: 'nowrap',
     },
-    buttonContainer: {
+    floatingActionBar: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 50,
+        paddingHorizontal: 12,
+        paddingTop: 8,
+        paddingBottom: Platform.OS === 'ios' ? 16 : 10,
+        backgroundColor: 'transparent',
+    },
+    desktopFloatingActionBar: {
+        paddingHorizontal: 24,
+        paddingBottom: 14,
+    },
+    floatingActionBarInner: {
         width: '100%',
-        marginTop: 10,
-        marginBottom: 8,
-        flexDirection: 'column',
-        gap: 8,
+        gap: 6,
+        alignItems: 'stretch',
+    },
+    desktopFloatingActionBarInner: {
+        maxWidth: 280,
+        alignSelf: 'center',
+        width: '100%',
+    },
+    floatingActionButton: {
+        width: '100%',
+        marginTop: 0,
+        marginBottom: 0,
+        minHeight: 34,
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.18,
+        shadowRadius: 4,
+        elevation: 4,
+        ...(Platform.OS === 'web' && {
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.18)',
+        }),
+    },
+    floatingSecondaryButton: {
+        backgroundColor: '#38E4D9',
+        borderWidth: 0,
+    },
+    floatingTertiaryButton: {
+        backgroundColor: '#fff',
+    },
+    floatingActionButtonText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#000000',
+        textAlign: 'center',
+    },
+    scrollContentWithFloatingBar: {
+        paddingBottom: 160,
     },
     fullWidthActionButton: {
         width: '100%',
@@ -935,14 +1125,6 @@ const styles = StyleSheet.create({
         alignSelf: 'center',
         marginTop: 0,
         marginBottom: 0,
-    },
-    restoreBoughtContainer: {
-        width: '100%',
-        marginTop: 20,
-        marginBottom: 30,
-        paddingTop: 8,
-        borderTopWidth: 1,
-        borderTopColor: '#eee',
     },
     addItemButtonsContainer: {
         flexDirection: 'row',
@@ -1014,10 +1196,6 @@ const styles = StyleSheet.create({
         color: '#000000',
         fontWeight: 'bold',
         textAlign: 'center',
-    },
-    desktopButtonContainer: {
-        justifyContent: 'center',
-        alignItems: 'center',
     },
 
     loadingOverlay: {

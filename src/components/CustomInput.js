@@ -3,6 +3,7 @@ import { Controller } from 'react-hook-form'
 import { MaterialIcons as Icon } from '@expo/vector-icons'
 import { useResponsiveDimensions } from '../utils/responsive'
 import CustomText from './CustomText'
+import { FIELD_SPACING, LABEL_SPACING } from '../styles/formStyles'
 
 const CustomInput = ({
     control,
@@ -37,6 +38,7 @@ const CustomInput = ({
 
     const getLabelStyle = () => [
         styles.label,
+        variant === 'form' && styles.formLabel,
         variant === 'auth' && isDesktop && styles.desktopLabel,
     ]
 
@@ -102,15 +104,20 @@ const styles = StyleSheet.create({
         alignSelf: 'center',
         width: '100%',
     },
+    /** Matches formStyles.fieldGroup spacing */
     formContainer: {
-        marginTop: 10,
-        marginBottom: 5,
+        width: '100%',
+        marginTop: 0,
+        marginBottom: FIELD_SPACING,
     },
     label: {
         fontSize: 14,
         fontWeight: '500',
         color: '#374151',
         marginBottom: 6,
+    },
+    formLabel: {
+        marginBottom: LABEL_SPACING,
     },
     desktopLabel: {
         fontSize: 15,
@@ -135,7 +142,7 @@ const styles = StyleSheet.create({
                 'border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
         }),
     },
-    // Form variant input – matches FormAddMeal formInput
+    // Form variant input – matches formStyles.formInput
     formInput: {
         backgroundColor: 'white',
         borderColor: '#bbb',

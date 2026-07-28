@@ -563,8 +563,8 @@ const styles = StyleSheet.create({
     },
     primaryButton: {
         borderRadius: 25,
-        paddingVertical: 14,
-        paddingHorizontal: 24,
+        paddingVertical: 8,
+        paddingHorizontal: 16,
         backgroundColor: '#9C86FC',
         elevation: 2,
         width: '100%',

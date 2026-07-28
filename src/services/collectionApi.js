@@ -78,6 +78,68 @@ export const markShoppingListItemBought = async (listId, itemId) => {
 
 export const moveShoppingListItemToPantry = markShoppingListItemBought
 
+export const moveShoppingListItemsToPantry = async (listId, itemIds) => {
+    try {
+        const response = await axios.post(
+            getServerUrl(`/shopping-lists/${listId}/items/move-to-pantry`),
+            { itemIds },
+            await authConfig()
+        )
+
+        const data = response.data
+        if (!data.success) {
+            throw new Error(data.message || 'Failed to move items to pantry')
+        }
+
+        return data
+    } catch (error) {
+        // Older API builds only support per-item move; fall back sequentially.
+        const status = error?.response?.status
+        if (status !== 404) {
+            throw error
+        }
+
+        const moved = []
+        const skippedNonFood = []
+        const notFound = []
+        let shoppingList = null
+
+        for (const itemId of itemIds) {
+            try {
+                const data = await moveShoppingListItemToPantry(listId, itemId)
+                shoppingList = data.shoppingList || shoppingList
+                moved.push({
+                    id: String(itemId),
+                    name: data.moved?.[0]?.name || '',
+                })
+            } catch (itemError) {
+                const message =
+                    itemError?.response?.data?.message ||
+                    itemError?.message ||
+                    ''
+                if (String(message).toLowerCase().includes('non-food')) {
+                    skippedNonFood.push({ id: String(itemId), name: '' })
+                } else if (
+                    itemError?.response?.status === 404 ||
+                    String(message).toLowerCase().includes('not found')
+                ) {
+                    notFound.push(String(itemId))
+                } else {
+                    throw itemError
+                }
+            }
+        }
+
+        return {
+            success: true,
+            shoppingList,
+            moved,
+            skippedNonFood,
+            notFound,
+        }
+    }
+}
+
 export const setShoppingListItemBought = async (listId, itemId, bought) => {
     const response = await axios.patch(
         getServerUrl(`/shopping-lists/${listId}/items/${itemId}/bought`),

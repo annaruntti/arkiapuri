@@ -289,7 +289,7 @@ const InlineCategorySelect = ({
 
 const styles = StyleSheet.create({
     container: {
-        marginBottom: 5,
+        marginBottom: 0,
     },
     selectButton: {
         flexDirection: 'row',

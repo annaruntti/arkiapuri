@@ -15,7 +15,7 @@ const GenericFilter = ({
             onPress={onToggleShowFilters}
             disabled={disabled}
         >
-            <MaterialIcons name="filter-list" size={20} color="#000" />
+            <MaterialIcons name="filter-list" size={18} color="#000" />
             <CustomText style={styles.tertiaryButtonText}>
                 {buttonText}
             </CustomText>
@@ -28,7 +28,7 @@ const GenericFilter = ({
             )}
             <MaterialIcons
                 name={showFilters ? 'expand-less' : 'expand-more'}
-                size={20}
+                size={18}
                 color="#000"
             />
         </TouchableOpacity>
@@ -43,13 +43,13 @@ const styles = {
         borderWidth: 2,
         borderColor: '#5844BB',
         borderRadius: 25,
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        gap: 6,
-        minHeight: 48,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        gap: 4,
+        minHeight: 40,
     },
     tertiaryButtonText: {
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: 'bold',
         color: '#000',
     },

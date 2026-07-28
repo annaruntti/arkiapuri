@@ -53,14 +53,14 @@ export default function Button(props) {
 }
 
 const styles = StyleSheet.create({
-    // Base button styles
+    // Base button styles (mobile-first, compact)
     button: {
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: 8,
-        paddingVertical: 10,
-        paddingHorizontal: 22,
-        minHeight: 46,
+        paddingVertical: 7,
+        paddingHorizontal: 14,
+        minHeight: 40,
         flexDirection: 'row',
         ...(Platform.OS === 'web' && {
             cursor: 'pointer',
@@ -70,19 +70,19 @@ const styles = StyleSheet.create({
 
     // Size variants
     smallButton: {
-        paddingVertical: 8,
-        paddingHorizontal: 16,
-        minHeight: 36,
+        paddingVertical: 5,
+        paddingHorizontal: 12,
+        minHeight: 30,
     },
     mediumButton: {
-        paddingVertical: 12,
-        paddingHorizontal: 24,
-        minHeight: 48,
+        paddingVertical: 7,
+        paddingHorizontal: 14,
+        minHeight: 40,
     },
     largeButton: {
-        paddingVertical: 16,
-        paddingHorizontal: 32,
-        minHeight: 56,
+        paddingVertical: 10,
+        paddingHorizontal: 18,
+        minHeight: 44,
     },
 
     // Type variants - PRIMARY
@@ -133,9 +133,9 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         borderColor: '#5844BB',
         borderRadius: 25,
-        paddingVertical: 6,
-        paddingHorizontal: 12,
-        minHeight: 32,
+        paddingVertical: 5,
+        paddingHorizontal: 10,
+        minHeight: 40,
     },
     desktopTertiaryButton: {
         backgroundColor: 'transparent',
@@ -185,9 +185,9 @@ const styles = StyleSheet.create({
         }),
     },
     tabletButton: {
-        paddingVertical: 7,
-        paddingHorizontal: 10,
-        minHeight: 50,
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        minHeight: 40,
     },
 
     // State styles
@@ -206,22 +206,22 @@ const styles = StyleSheet.create({
 
     // Text styles
     text: {
-        fontSize: 15,
+        fontSize: 14,
         fontWeight: '600',
         textAlign: 'center',
     },
 
     // Size text variants
     smallText: {
-        fontSize: 14,
+        fontSize: 13,
         fontWeight: '500',
     },
     mediumText: {
-        fontSize: 15,
+        fontSize: 14,
         fontWeight: '600',
     },
     largeText: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: '600',
     },
 

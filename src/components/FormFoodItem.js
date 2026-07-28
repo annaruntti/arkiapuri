@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { forwardRef, useState } from 'react'
+import { forwardRef, useRef, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import {
     Alert,
@@ -29,6 +29,7 @@ import CustomInput from './CustomInput'
 import InlineCategorySelect from './InlineCategorySelect'
 import UnifiedFoodSearch from './UnifiedFoodSearch'
 import categories from '../data/categories'
+import { formStyles } from '../styles/formStyles'
 
 const FormFoodItem = forwardRef(
     (
@@ -52,6 +53,7 @@ const FormFoodItem = forwardRef(
         const { isDesktop } = useResponsiveDimensions()
         const [date, setDate] = useState(new Date())
         const [show, setShow] = useState(false)
+        const webDateInputRef = useRef(null)
         const [mode, setMode] = useState('date')
         const [selectedLocations, setSelectedLocations] = useState(['meal'])
         const [quantities, setQuantities] = useState({
@@ -97,12 +99,16 @@ const FormFoodItem = forwardRef(
         const unitOptions = ['kpl', 'g', 'kg', 'l', 'dl', 'ml', 'tl', 'rkl']
 
         const showMode = () => {
-            if (Platform.OS === 'android') {
-                setShow(true)
-            } else {
-                // For iOS, show the picker immediately
-                setShow(true)
+            if (Platform.OS === 'web') {
+                const input = webDateInputRef.current
+                if (input?.showPicker) {
+                    input.showPicker()
+                } else {
+                    input?.click?.()
+                }
+                return
             }
+            setShow(true)
             setMode('date')
         }
 
@@ -554,7 +560,7 @@ const FormFoodItem = forwardRef(
 
             return (
                 <View style={styles.shoppingListContainer}>
-                    <CustomText style={styles.label}>
+                    <CustomText style={formStyles.label}>
                         Valitse ostoslista
                     </CustomText>
                     {/* Selection Button */}
@@ -690,47 +696,52 @@ const FormFoodItem = forwardRef(
                 )}
 
                 {allowNonFood && (
-                    <View style={styles.fullWidth}>
-                        <CustomText style={styles.label}>
+                    <View style={formStyles.fieldGroup}>
+                        <CustomText style={styles.isFoodQuestion}>
                             Onko kyseessä elintarvike?
                         </CustomText>
                         <View style={styles.isFoodRow}>
                             <TouchableOpacity
-                                style={[
-                                    styles.isFoodOption,
-                                    showFoodFields && styles.isFoodOptionSelected,
-                                ]}
+                                style={styles.isFoodOption}
                                 onPress={() => setValue('isFood', true)}
+                                activeOpacity={0.7}
                             >
-                                <CustomText
-                                    style={[
-                                        styles.isFoodOptionText,
-                                        showFoodFields &&
-                                            styles.isFoodOptionTextSelected,
-                                    ]}
-                                >
+                                <CustomRadioButton
+                                    status={
+                                        showFoodFields
+                                            ? 'checked'
+                                            : 'unchecked'
+                                    }
+                                    onPress={() => setValue('isFood', true)}
+                                    color="#5844BB"
+                                />
+                                <CustomText style={styles.isFoodOptionText}>
                                     Elintarvike
                                 </CustomText>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={[
-                                    styles.isFoodOption,
-                                    !showFoodFields &&
-                                        styles.isFoodOptionSelected,
-                                ]}
+                                style={styles.isFoodOption}
                                 onPress={() => {
                                     setValue('isFood', false)
                                     setValue('category', [])
                                     setValue('calories', '0')
                                 }}
+                                activeOpacity={0.7}
                             >
-                                <CustomText
-                                    style={[
-                                        styles.isFoodOptionText,
-                                        !showFoodFields &&
-                                            styles.isFoodOptionTextSelected,
-                                    ]}
-                                >
+                                <CustomRadioButton
+                                    status={
+                                        !showFoodFields
+                                            ? 'checked'
+                                            : 'unchecked'
+                                    }
+                                    onPress={() => {
+                                        setValue('isFood', false)
+                                        setValue('category', [])
+                                        setValue('calories', '0')
+                                    }}
+                                    color="#5844BB"
+                                />
+                                <CustomText style={styles.isFoodOptionText}>
                                     Muu tuote
                                 </CustomText>
                             </TouchableOpacity>
@@ -740,175 +751,122 @@ const FormFoodItem = forwardRef(
 
                 {/* Row 1: Name and Category */}
                 <View style={styles.formSingleColumn}>
-                    <View style={styles.fullWidth}>
-                        <CustomInput
-                            control={control}
-                            name="name"
-                            label={
-                                showFoodFields
-                                    ? 'Elintarvikkeen nimi'
-                                    : 'Tuotteen nimi'
-                            }
-                            placeholder={
-                                showFoodFields
-                                    ? 'Esim. kevytmaito'
-                                    : 'Esim. tiskirätti'
-                            }
-                            rules={{ required: 'Tämä on pakollinen tieto' }}
-                            variant="form"
-                        />
-                    </View>
+                    <CustomInput
+                        control={control}
+                        name="name"
+                        label={
+                            showFoodFields
+                                ? 'Elintarvikkeen nimi'
+                                : 'Tuotteen nimi'
+                        }
+                        placeholder={
+                            showFoodFields
+                                ? 'Esim. kevytmaito'
+                                : 'Esim. tiskirätti'
+                        }
+                        rules={{ required: 'Tämä on pakollinen tieto' }}
+                        variant="form"
+                    />
 
                     {showFoodFields && (
-                    <View style={styles.fullWidth}>
-                        <CustomText style={styles.label}>
-                            Elintarvikkeen tyyppi
-                        </CustomText>
-                        <Controller
-                            control={control}
-                            rules={{
-                                maxLength: 100,
-                                required: showFoodFields,
-                            }}
-                            render={({ field: { value, onChange } }) => (
-                                <InlineCategorySelect
-                                    value={value}
-                                    onChange={onChange}
-                                    categories={categories}
-                                    placeholder="Valitse elintarvikkeen kategoriat"
-                                />
-                            )}
-                            name="category"
-                            {...register('category')}
-                        />
-                        {errors.category && (
-                            <View style={styles.messageSection}>
-                                <MaterialIcons
-                                    name="error"
-                                    color="red"
-                                    size={14}
-                                />
-                                <CustomText style={styles.errorMsg}>
-                                    Tämä on pakollinen tieto
-                                </CustomText>
-                            </View>
-                        )}
-                    </View>
-                    )}
-                </View>
-
-                {/* Row 2: Quantity, Calories, and Date */}
-                <View style={styles.formSingleColumn}>
-                    <View style={styles.fullWidth}>
-                        <CustomText style={styles.label}>
-                            Kappalemäärä
-                        </CustomText>
-                        <View style={styles.inputAndIcon}>
-                            <CustomInput
-                                control={control}
-                                name="quantity"
-                                placeholder="Esim. 0,5"
-                                rules={{
-                                    required: 'Määrä on pakollinen tieto',
-                                    pattern: {
-                                        value: /^(0|[1-9]\d*)([.,]\d+)?$/,
-                                        message: 'Syötä kelvollinen luku',
-                                    },
-                                }}
-                                variant="form"
-                                style={styles.flexField}
-                            />
-
+                        <View style={formStyles.fieldGroup}>
+                            <CustomText style={formStyles.label}>
+                                Elintarvikkeen tyyppi
+                            </CustomText>
                             <Controller
                                 control={control}
                                 rules={{
-                                    required: true,
+                                    maxLength: 100,
+                                    required: showFoodFields,
                                 }}
-                                render={({ field: { onChange, value } }) => (
-                                    <View style={styles.unitScrollPicker}>
-                                        {/* Top scroll indicator */}
-                                        <View
-                                            style={
-                                                styles.unitScrollIndicatorTop
-                                            }
-                                        >
-                                            <MaterialIcons
-                                                name="keyboard-arrow-up"
-                                                size={16}
-                                                color="#999"
-                                            />
-                                        </View>
-
-                                        <ScrollView
-                                            style={styles.unitScrollView}
-                                            contentContainerStyle={
-                                                styles.unitScrollContent
-                                            }
-                                            showsVerticalScrollIndicator={false}
-                                            snapToInterval={32}
-                                            decelerationRate="fast"
-                                            onMomentumScrollEnd={(event) => {
-                                                const y =
-                                                    event.nativeEvent
-                                                        .contentOffset.y
-                                                const index = Math.round(y / 32)
-                                                const selectedUnit =
-                                                    unitOptions[index] ||
-                                                    unitOptions[0]
-                                                onChange(selectedUnit)
-                                            }}
-                                        >
-                                            {unitOptions.map((unit) => (
-                                                <TouchableOpacity
-                                                    key={unit}
-                                                    style={[
-                                                        styles.unitScrollOption,
-                                                        value === unit &&
-                                                            styles.unitScrollOptionSelected,
-                                                    ]}
-                                                    onPress={() =>
-                                                        onChange(unit)
-                                                    }
-                                                >
-                                                    <CustomText
-                                                        style={[
-                                                            styles.unitScrollOptionText,
-                                                            value === unit &&
-                                                                styles.unitScrollOptionTextSelected,
-                                                        ]}
-                                                    >
-                                                        {unit}
-                                                    </CustomText>
-                                                </TouchableOpacity>
-                                            ))}
-                                        </ScrollView>
-
-                                        {/* Bottom scroll indicator */}
-                                        <View
-                                            style={
-                                                styles.unitScrollIndicatorBottom
-                                            }
-                                        >
-                                            <MaterialIcons
-                                                name="keyboard-arrow-down"
-                                                size={16}
-                                                color="#999"
-                                            />
-                                        </View>
-                                    </View>
+                                render={({ field: { value, onChange } }) => (
+                                    <InlineCategorySelect
+                                        value={value}
+                                        onChange={onChange}
+                                        categories={categories}
+                                        placeholder="Valitse elintarvikkeen kategoriat"
+                                    />
                                 )}
-                                name="unit"
-                                {...register('unit')}
+                                name="category"
+                                {...register('category')}
                             />
+                            {errors.category && (
+                                <View style={formStyles.errorRow}>
+                                    <MaterialIcons
+                                        name="error"
+                                        color="red"
+                                        size={14}
+                                    />
+                                    <CustomText style={formStyles.errorMsg}>
+                                        Tämä on pakollinen tieto
+                                    </CustomText>
+                                </View>
+                            )}
                         </View>
+                    )}
+                </View>
+
+                {/* Row 2: Quantity, unit, calories, date */}
+                <View style={styles.formSingleColumn}>
+                    <CustomInput
+                        control={control}
+                        name="quantity"
+                        label="Määrä"
+                        placeholder="Esim. 0,5"
+                        rules={{
+                            required: 'Määrä on pakollinen tieto',
+                            pattern: {
+                                value: /^(0|[1-9]\d*)([.,]\d+)?$/,
+                                message: 'Syötä kelvollinen luku',
+                            },
+                        }}
+                        variant="form"
+                    />
+
+                    <View style={formStyles.fieldGroup}>
+                        <CustomText style={formStyles.label}>Yksikkö</CustomText>
+                        <Controller
+                            control={control}
+                            name="unit"
+                            rules={{ required: true }}
+                            render={({ field: { onChange, value } }) => (
+                                <View style={styles.unitChipRow}>
+                                    {unitOptions.map((unit) => {
+                                        const selected = value === unit
+                                        return (
+                                            <TouchableOpacity
+                                                key={unit}
+                                                style={[
+                                                    styles.unitChip,
+                                                    selected &&
+                                                        styles.unitChipSelected,
+                                                ]}
+                                                onPress={() => onChange(unit)}
+                                                activeOpacity={0.7}
+                                            >
+                                                <CustomText
+                                                    style={[
+                                                        styles.unitChipText,
+                                                        selected &&
+                                                            styles.unitChipTextSelected,
+                                                    ]}
+                                                >
+                                                    {unit}
+                                                </CustomText>
+                                            </TouchableOpacity>
+                                        )
+                                    })}
+                                </View>
+                            )}
+                        />
                         {(errors.quantity || errors.unit) && (
-                            <View style={styles.messageSection}>
+                            <View style={formStyles.errorRow}>
                                 <MaterialIcons
                                     name="error"
                                     color="red"
                                     size={14}
                                 />
-                                <CustomText style={styles.errorMsg}>
+                                <CustomText style={formStyles.errorMsg}>
                                     Määrä ja yksikkö ovat pakollisia tietoja
                                 </CustomText>
                             </View>
@@ -916,113 +874,125 @@ const FormFoodItem = forwardRef(
                     </View>
 
                     {showFoodFields && (
-                    <View style={styles.fullWidth}>
-                        <CustomText style={styles.label}>
-                            Kalorit (per 100g/100ml)
-                        </CustomText>
-                        <View style={styles.inputAndIcon}>
-                            <CustomInput
-                                control={control}
-                                name="calories"
-                                placeholder="Esim. 250"
-                                variant="form"
-                                style={styles.flexField}
-                            />
-                            <CustomText style={styles.inputMetric}>
-                                kcal
+                        <View style={formStyles.fieldGroup}>
+                            <CustomText style={formStyles.label}>
+                                Kalorit (per 100g/100ml)
                             </CustomText>
+                            <View style={formStyles.inputRow}>
+                                <CustomInput
+                                    control={control}
+                                    name="calories"
+                                    placeholder="Esim. 250"
+                                    variant="form"
+                                    style={formStyles.inputInRow}
+                                />
+                                <View style={formStyles.inputTrailing}>
+                                    <CustomText style={formStyles.inputMetric}>
+                                        kcal
+                                    </CustomText>
+                                </View>
+                            </View>
                         </View>
-                    </View>
                     )}
 
                     {showFoodFields && (
-                    <View style={styles.fullWidth}>
-                        <CustomText style={styles.label}>
-                            Viimeinen käyttöpäivä
-                        </CustomText>
-                        {Platform.OS === 'web' ? (
-                            <DateTimePicker
-                                testID="dateTimePicker"
-                                value={date}
-                                mode={mode}
-                                display="default"
-                                onChange={(event, selectedDate) => {
-                                    if (selectedDate) {
-                                        setDate(selectedDate)
-                                    }
-                                }}
-                                minimumDate={new Date()}
-                            />
-                        ) : (
-                            <>
-                                <View style={styles.inputAndIcon}>
+                        <View style={formStyles.fieldGroup}>
+                            <CustomText style={formStyles.label}>
+                                Viimeinen käyttöpäivä
+                            </CustomText>
+                            <View style={formStyles.inputRow}>
+                                {Platform.OS === 'web' ? (
+                                    <View style={formStyles.inputInRow}>
+                                        <DateTimePicker
+                                            ref={webDateInputRef}
+                                            testID="dateTimePicker"
+                                            value={date}
+                                            mode={mode}
+                                            display="default"
+                                            onChange={(event, selectedDate) => {
+                                                if (selectedDate) {
+                                                    setDate(selectedDate)
+                                                }
+                                            }}
+                                            minimumDate={new Date()}
+                                        />
+                                    </View>
+                                ) : (
                                     <TouchableOpacity
-                                        style={styles.dateInputContainer}
+                                        style={formStyles.inputInRow}
                                         onPress={showMode}
+                                        activeOpacity={0.7}
                                     >
                                         <TextInput
-                                            style={styles.dateInput}
+                                            style={formStyles.dateInput}
                                             value={formatDate(date)}
                                             editable={false}
                                             placeholder="Valitse päivämäärä"
                                             placeholderTextColor="#999"
+                                            pointerEvents="none"
                                         />
                                     </TouchableOpacity>
-                                    <TouchableOpacity
-                                        onPress={showMode}
-                                        style={styles.dateIcon}
-                                    >
-                                        <Fontisto
-                                            name="date"
-                                            size={24}
-                                            color="#666"
-                                        />
-                                    </TouchableOpacity>
-                                </View>
-                                {show && (
-                                    <DateTimePicker
-                                        testID="dateTimePicker"
-                                        value={date}
-                                        mode={mode}
-                                        display="default"
-                                        onChange={(event, selectedDate) => {
-                                            if (selectedDate) {
-                                                setDate(selectedDate)
-                                            }
-                                            setShow(Platform.OS === 'ios')
-                                        }}
-                                        minimumDate={new Date()}
-                                    />
                                 )}
-                            </>
-                        )}
-                    </View>
+                                <TouchableOpacity
+                                    onPress={showMode}
+                                    style={formStyles.inputTrailing}
+                                    activeOpacity={0.7}
+                                    hitSlop={{
+                                        top: 8,
+                                        bottom: 8,
+                                        left: 8,
+                                        right: 8,
+                                    }}
+                                >
+                                    <Fontisto
+                                        name="date"
+                                        size={22}
+                                        color="#666"
+                                    />
+                                </TouchableOpacity>
+                            </View>
+                            {Platform.OS !== 'web' && show && (
+                                <DateTimePicker
+                                    testID="dateTimePicker"
+                                    value={date}
+                                    mode={mode}
+                                    display="default"
+                                    onChange={(event, selectedDate) => {
+                                        if (selectedDate) {
+                                            setDate(selectedDate)
+                                        }
+                                        setShow(Platform.OS === 'ios')
+                                    }}
+                                    minimumDate={new Date()}
+                                />
+                            )}
+                        </View>
                     )}
                 </View>
 
                 {/* Row 3: Price (if shopping-list) */}
                 {location === 'shopping-list' && (
-                    <View style={styles.formSingleColumn}>
-                        <View style={styles.fullWidth}>
-                            <CustomText style={styles.label}>
-                                Arvioitu hinta
-                            </CustomText>
-                            <View style={styles.inputAndIcon}>
-                                <CustomInput
-                                    control={control}
-                                    name="price"
-                                    placeholder="Esim. 4"
-                                    rules={{
-                                        maxLength: 4,
-                                        pattern: {
-                                            value: /^(0|[1-9]\d*)(\.\d+)?$/,
-                                            message: 'Täytä hinta numerona',
-                                        },
-                                    }}
-                                    variant="form"
-                                    style={styles.flexField}
-                                />
-                                <CustomText style={styles.inputMetric}>
+                    <View style={formStyles.fieldGroup}>
+                        <CustomText style={formStyles.label}>
+                            Arvioitu hinta
+                        </CustomText>
+                        <View style={formStyles.inputRow}>
+                            <CustomInput
+                                control={control}
+                                name="price"
+                                placeholder="Esim. 4"
+                                rules={{
+                                    maxLength: 4,
+                                    pattern: {
+                                        value: /^(0|[1-9]\d*)(\.\d+)?$/,
+                                        message: 'Täytä hinta numerona',
+                                    },
+                                }}
+                                variant="form"
+                                style={formStyles.inputInRow}
+                            />
+                            <View style={formStyles.inputTrailing}>
+                                <CustomText style={formStyles.inputMetric}>
                                     €
                                 </CustomText>
                             </View>
@@ -1125,8 +1095,8 @@ const FormFoodItem = forwardRef(
 
                 {/* Row 4: Image Picker and Submit Button */}
                 <View style={styles.formSingleColumn}>
-                    <View style={styles.fullWidth}>
-                        <CustomText style={styles.label}>
+                    <View style={formStyles.fieldGroup}>
+                        <CustomText style={formStyles.label}>
                             Tuotteen kuva
                         </CustomText>
                         <TouchableOpacity
@@ -1241,32 +1211,28 @@ const styles = StyleSheet.create({
         paddingBottom: 20,
         width: '100%',
     },
-    isFoodRow: {
-        flexDirection: 'row',
-        gap: 10,
-        marginBottom: 16,
-    },
-    isFoodOption: {
-        flex: 1,
-        paddingVertical: 10,
-        paddingHorizontal: 12,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#ccc',
-        backgroundColor: '#fff',
-        alignItems: 'center',
-    },
-    isFoodOptionSelected: {
-        borderColor: '#5844BB',
-        backgroundColor: '#F0EDFF',
-    },
-    isFoodOptionText: {
-        color: '#666',
+    isFoodQuestion: {
+        fontSize: 16,
+        marginBottom: 10,
+        color: '#333',
         fontWeight: '500',
     },
-    isFoodOptionTextSelected: {
-        color: '#5844BB',
-        fontWeight: '700',
+    isFoodRow: {
+        flexDirection: 'row',
+        gap: 16,
+        flexWrap: 'wrap',
+    },
+    isFoodOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        paddingVertical: 4,
+        paddingRight: 8,
+    },
+    isFoodOptionText: {
+        fontSize: 15,
+        color: '#333',
+        fontWeight: '500',
     },
     formSingleColumn: {
         width: '100%',
@@ -1280,11 +1246,6 @@ const styles = StyleSheet.create({
     formScroll: {
         flexGrow: 1,
         width: '100%',
-    },
-    // Shared input style for inline metric fields (quantity, calories, price)
-    flexField: {
-        flex: 1,
-        marginBottom: 0,
     },
     unifiedSearchSection: {
         marginBottom: 15,
@@ -1333,10 +1294,6 @@ const styles = StyleSheet.create({
         color: '#333',
         marginBottom: 5,
     },
-    label: {
-        marginTop: 10,
-        marginBottom: 5,
-    },
     labelTitle: {
         paddingTop: 25,
         marginBottom: 15,
@@ -1347,16 +1304,8 @@ const styles = StyleSheet.create({
     // inputAndIcon: rivi jossa input + yksikköteksti vierekkäin
     inputAndIcon: {
         flexDirection: 'row',
-        alignItems: 'flex-start',
+        alignItems: 'center',
         width: '100%',
-    },
-    inputMetric: {
-        paddingLeft: 10,
-        paddingTop: 10,
-        fontSize: 16,
-        color: '#666',
-        fontWeight: '500',
-        alignSelf: 'flex-start',
     },
     // unitFormInput: pieni numerosyöttö lokaatiorivillä
     unitFormInput: {
@@ -1434,29 +1383,6 @@ const styles = StyleSheet.create({
         marginLeft: 8,
         fontSize: 14,
         alignSelf: 'center',
-    },
-    dateInputContainer: {
-        flex: 0,
-        width: 130,
-    },
-    dateInput: {
-        backgroundColor: 'white',
-        borderColor: '#d1d5db',
-        borderWidth: 1,
-        height: 48,
-        paddingHorizontal: 14,
-        borderRadius: 8,
-        fontSize: 16,
-        color: '#1f2937',
-        width: 130,
-    },
-    dateIcon: {
-        padding: 8,
-        marginLeft: 134,
-        position: 'absolute',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: 48,
     },
     shoppingListSelectorContainer: {
         marginLeft: 30,
@@ -1542,60 +1468,40 @@ const styles = StyleSheet.create({
         color: '#333',
         fontWeight: '500',
     },
-    // Unit Scroll Picker Styles
-    unitScrollPicker: {
-        marginLeft: 8,
-        marginBottom: 5,
-        width: 58,
-        height: 40,
-        backgroundColor: 'white',
-        borderColor: '#bbb',
-        borderWidth: 1,
-        borderRadius: 4,
-        position: 'relative',
+    // Unit chip picker
+    unitChipRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
     },
-    unitScrollIndicatorTop: {
-        position: 'absolute',
-        right: 2,
-        zIndex: 1,
-        padding: 1,
-    },
-    unitScrollIndicatorBottom: {
-        position: 'absolute',
-        bottom: 2,
-        right: 2,
-        zIndex: 1,
-        padding: 1,
-    },
-    unitScrollView: {
-        flex: 1,
-    },
-    unitScrollContent: {
-        paddingVertical: 4,
-    },
-    unitScrollOption: {
-        height: 32,
+    unitChip: {
+        paddingVertical: 8,
+        paddingHorizontal: 14,
+        borderRadius: 20,
+        borderWidth: 1.5,
+        borderColor: '#d1d5db',
+        backgroundColor: '#fff',
+        minWidth: 48,
+        alignItems: 'center',
         justifyContent: 'center',
-        alignItems: 'left',
-        paddingHorizontal: 8,
     },
-    unitScrollOptionSelected: {
-        backgroundColor: '#f0f0f0',
+    unitChipSelected: {
+        borderColor: '#5844BB',
+        backgroundColor: '#9C86FC',
     },
-    unitScrollOptionText: {
+    unitChipText: {
         fontSize: 14,
-        color: '#666',
+        fontWeight: '600',
+        color: '#4b5563',
     },
-    unitScrollOptionTextSelected: {
+    unitChipTextSelected: {
         color: '#000',
-        fontWeight: 'bold',
     },
     imagePicker: {
         borderWidth: 2,
         borderColor: '#5844BB',
         borderStyle: 'dashed',
         borderRadius: 8,
-        marginBottom: 20,
         overflow: 'hidden',
     },
     imagePlaceholder: {
