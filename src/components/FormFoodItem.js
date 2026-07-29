@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { forwardRef, useRef, useState } from 'react'
+import { forwardRef, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import {
     Alert,
@@ -13,19 +13,15 @@ import {
     View,
 } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
-import Fontisto from '@expo/vector-icons/Fontisto'
 import * as ImagePicker from 'expo-image-picker'
-// Cross-platform picker: web uses input[type=date], native uses community picker
-import { format } from 'date-fns'
-import { fi } from 'date-fns/locale'
 import { useShowNutrition } from '../hooks/useShowNutrition'
 import { useResponsiveDimensions } from '../utils/responsive'
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
 import CustomRadioButton from './CustomRadioButton'
-import DateTimePicker from './DateTimePicker'
 import Button from './Button'
 import CustomText from './CustomText'
+import FormDateField from './FormDateField'
 import CustomInput from './CustomInput'
 import InlineCategorySelect from './InlineCategorySelect'
 import UnifiedFoodSearch from './UnifiedFoodSearch'
@@ -87,10 +83,8 @@ const FormFoodItem = forwardRef(
         const [nutritionExpanded, setNutritionExpanded] = useState(
             hasInitialNutrition
         )
+        const [unitMenuOpen, setUnitMenuOpen] = useState(false)
         const [date, setDate] = useState(new Date())
-        const [show, setShow] = useState(false)
-        const webDateInputRef = useRef(null)
-        const [mode, setMode] = useState('date')
         const [selectedLocations, setSelectedLocations] = useState(['meal'])
         const [quantities, setQuantities] = useState({
             meal: '',
@@ -157,18 +151,12 @@ const FormFoodItem = forwardRef(
 
         const unitOptions = ['kpl', 'g', 'kg', 'l', 'dl', 'ml', 'tl', 'rkl']
 
-        const showMode = () => {
-            if (Platform.OS === 'web') {
-                const input = webDateInputRef.current
-                if (input?.showPicker) {
-                    input.showPicker()
-                } else {
-                    input?.click?.()
-                }
-                return
-            }
-            setShow(true)
-            setMode('date')
+        const openUnitMenu = () => {
+            setUnitMenuOpen((open) => !open)
+        }
+
+        const closeUnitMenu = () => {
+            setUnitMenuOpen(false)
         }
 
         const handleQuantityChange = (location, value) => {
@@ -578,15 +566,6 @@ const FormFoodItem = forwardRef(
             }
         }
 
-        const formatDate = (date) => {
-            try {
-                return format(date, 'dd.MM.yyyy', { locale: fi })
-            } catch (error) {
-                console.error('Error formatting date:', error)
-                return date.toLocaleDateString('fi-FI')
-            }
-        }
-
         const ShoppingListSelector = ({
             shoppingLists,
             selectedId,
@@ -881,59 +860,120 @@ const FormFoodItem = forwardRef(
                     )}
                 </View>
 
-                {/* Row 2: Quantity, unit, calories, date */}
-                <View style={styles.formSingleColumn}>
-                    <CustomInput
-                        control={control}
-                        name="quantity"
-                        label="Määrä"
-                        placeholder="Esim. 0,5"
-                        rules={{
-                            required: 'Määrä on pakollinen tieto',
-                            pattern: {
-                                value: /^(0|[1-9]\d*)([.,]\d+)?$/,
-                                message: 'Syötä kelvollinen luku',
-                            },
-                        }}
-                        variant="form"
-                    />
-
-                    <View style={formStyles.fieldGroup}>
-                        <CustomText style={formStyles.label}>Yksikkö</CustomText>
-                        <Controller
-                            control={control}
-                            name="unit"
-                            rules={{ required: true }}
-                            render={({ field: { onChange, value } }) => (
-                                <View style={styles.unitChipRow}>
-                                    {unitOptions.map((unit) => {
-                                        const selected = value === unit
-                                        return (
-                                            <TouchableOpacity
-                                                key={unit}
-                                                style={[
-                                                    styles.unitChip,
-                                                    selected &&
-                                                        styles.unitChipSelected,
-                                                ]}
-                                                onPress={() => onChange(unit)}
-                                                activeOpacity={0.7}
+                {/* Row 2: Quantity + unit, calories/nutrition, date */}
+                <View
+                    style={[
+                        styles.formSingleColumn,
+                        unitMenuOpen && styles.unitColumnElevated,
+                    ]}
+                >
+                    <View
+                        style={[
+                            formStyles.fieldGroup,
+                            unitMenuOpen && styles.unitFieldElevated,
+                        ]}
+                    >
+                        <CustomText style={formStyles.label}>Määrä</CustomText>
+                        <View style={formStyles.inputRow}>
+                            <CustomInput
+                                control={control}
+                                name="quantity"
+                                placeholder="Esim. 0,5"
+                                rules={{
+                                    required: 'Määrä on pakollinen tieto',
+                                    pattern: {
+                                        value: /^(0|[1-9]\d*)([.,]\d+)?$/,
+                                        message: 'Syötä kelvollinen luku',
+                                    },
+                                }}
+                                variant="form"
+                                style={formStyles.inputInRow}
+                                keyboardType="decimal-pad"
+                            />
+                            <Controller
+                                control={control}
+                                name="unit"
+                                rules={{ required: true }}
+                                render={({ field: { onChange, value } }) => (
+                                    <View
+                                        style={[
+                                            formStyles.inputTrailing,
+                                            styles.unitSelectWrap,
+                                            unitMenuOpen &&
+                                                styles.unitSelectWrapOpen,
+                                        ]}
+                                    >
+                                        <TouchableOpacity
+                                            style={styles.unitSelectButton}
+                                            onPress={openUnitMenu}
+                                            activeOpacity={0.7}
+                                        >
+                                            <CustomText
+                                                style={styles.unitSelectText}
+                                                numberOfLines={1}
                                             >
-                                                <CustomText
-                                                    style={[
-                                                        styles.unitChipText,
-                                                        selected &&
-                                                            styles.unitChipTextSelected,
-                                                    ]}
+                                                {value || 'kpl'}
+                                            </CustomText>
+                                            <MaterialIcons
+                                                name={
+                                                    unitMenuOpen
+                                                        ? 'expand-less'
+                                                        : 'expand-more'
+                                                }
+                                                size={14}
+                                                color="#666"
+                                            />
+                                        </TouchableOpacity>
+                                        {unitMenuOpen && (
+                                            <View style={styles.unitDropdown}>
+                                                <ScrollView
+                                                    style={
+                                                        styles.unitDropdownScroll
+                                                    }
+                                                    nestedScrollEnabled
+                                                    keyboardShouldPersistTaps="handled"
+                                                    bounces={false}
                                                 >
-                                                    {unit}
-                                                </CustomText>
-                                            </TouchableOpacity>
-                                        )
-                                    })}
-                                </View>
-                            )}
-                        />
+                                                    {unitOptions.map((unit) => {
+                                                        const selected =
+                                                            value === unit
+                                                        return (
+                                                            <TouchableOpacity
+                                                                key={unit}
+                                                                style={[
+                                                                    styles.unitOption,
+                                                                    selected &&
+                                                                        styles.unitOptionSelected,
+                                                                ]}
+                                                                onPress={() => {
+                                                                    onChange(
+                                                                        unit
+                                                                    )
+                                                                    closeUnitMenu()
+                                                                }}
+                                                                activeOpacity={
+                                                                    0.7
+                                                                }
+                                                            >
+                                                                <CustomText
+                                                                    style={[
+                                                                        styles.unitOptionText,
+                                                                        selected &&
+                                                                            styles.unitOptionTextSelected,
+                                                                    ]}
+                                                                >
+                                                                    {unit}
+                                                                </CustomText>
+                                                            </TouchableOpacity>
+                                                        )
+                                                    })}
+                                                </ScrollView>
+                                            </View>
+                                        )}
+                                    </View>
+                                )}
+                            />
+                        </View>
                         {(errors.quantity || errors.unit) && (
                             <View style={formStyles.errorRow}>
                                 <MaterialIcons
@@ -948,8 +988,28 @@ const FormFoodItem = forwardRef(
                         )}
                     </View>
 
+                    {showFoodFields && (
+                        <FormDateField
+                            label="Viimeinen käyttöpäivä"
+                            value={date}
+                            onChange={setDate}
+                            minimumDate={new Date()}
+                            style={
+                                unitMenuOpen
+                                    ? styles.unitColumnBehind
+                                    : undefined
+                            }
+                            testID="expiryDate"
+                        />
+                    )}
+
                     {showFoodFields && showNutrition && (
-                        <View style={formStyles.fieldGroup}>
+                        <View
+                            style={[
+                                formStyles.fieldGroup, styles.nutritionFieldGroup,
+                                unitMenuOpen && styles.unitColumnBehind,
+                            ]}
+                        >
                             <TouchableOpacity
                                 style={styles.nutritionToggle}
                                 onPress={() =>
@@ -1003,85 +1063,16 @@ const FormFoodItem = forwardRef(
                                 ))}
                         </View>
                     )}
-
-                    {showFoodFields && (
-                        <View style={formStyles.fieldGroup}>
-                            <CustomText style={formStyles.label}>
-                                Viimeinen käyttöpäivä
-                            </CustomText>
-                            <View style={formStyles.inputRow}>
-                                {Platform.OS === 'web' ? (
-                                    <View style={formStyles.inputInRow}>
-                                        <DateTimePicker
-                                            ref={webDateInputRef}
-                                            testID="dateTimePicker"
-                                            value={date}
-                                            mode={mode}
-                                            display="default"
-                                            onChange={(event, selectedDate) => {
-                                                if (selectedDate) {
-                                                    setDate(selectedDate)
-                                                }
-                                            }}
-                                            minimumDate={new Date()}
-                                        />
-                                    </View>
-                                ) : (
-                                    <TouchableOpacity
-                                        style={formStyles.inputInRow}
-                                        onPress={showMode}
-                                        activeOpacity={0.7}
-                                    >
-                                        <TextInput
-                                            style={formStyles.dateInput}
-                                            value={formatDate(date)}
-                                            editable={false}
-                                            placeholder="Valitse päivämäärä"
-                                            placeholderTextColor="#999"
-                                            pointerEvents="none"
-                                        />
-                                    </TouchableOpacity>
-                                )}
-                                <TouchableOpacity
-                                    onPress={showMode}
-                                    style={formStyles.inputTrailing}
-                                    activeOpacity={0.7}
-                                    hitSlop={{
-                                        top: 8,
-                                        bottom: 8,
-                                        left: 8,
-                                        right: 8,
-                                    }}
-                                >
-                                    <Fontisto
-                                        name="date"
-                                        size={22}
-                                        color="#666"
-                                    />
-                                </TouchableOpacity>
-                            </View>
-                            {Platform.OS !== 'web' && show && (
-                                <DateTimePicker
-                                    testID="dateTimePicker"
-                                    value={date}
-                                    mode={mode}
-                                    display="default"
-                                    onChange={(event, selectedDate) => {
-                                        if (selectedDate) {
-                                            setDate(selectedDate)
-                                        }
-                                        setShow(Platform.OS === 'ios')
-                                    }}
-                                    minimumDate={new Date()}
-                                />
-                            )}
-                        </View>
-                    )}
                 </View>
 
                 {/* Row 3: Price (if shopping-list) */}
                 {location === 'shopping-list' && (
-                    <View style={formStyles.fieldGroup}>
+                    <View
+                        style={[
+                            formStyles.fieldGroup,
+                            unitMenuOpen && styles.unitColumnBehind,
+                        ]}
+                    >
                         <CustomText style={formStyles.label}>
                             Arvioitu hinta
                         </CustomText>
@@ -1110,7 +1101,12 @@ const FormFoodItem = forwardRef(
                 )}
 
                 {showLocationSelector && location === 'meal' && (
-                    <View style={styles.locationSelector}>
+                    <View
+                        style={[
+                            styles.locationSelector,
+                            unitMenuOpen && styles.unitColumnBehind,
+                        ]}
+                    >
                         <CustomText style={styles.labelTitle}>
                             Valitse minne haluat samalla lisätä raaka-aineen ja
                             määrät
@@ -1203,7 +1199,12 @@ const FormFoodItem = forwardRef(
                 )}
 
                 {/* Row 4: Image Picker and Submit Button */}
-                <View style={styles.formSingleColumn}>
+                <View
+                    style={[
+                        styles.formSingleColumn,
+                        unitMenuOpen && styles.unitColumnBehind,
+                    ]}
+                >
                     <View style={formStyles.fieldGroup}>
                         <CustomText style={formStyles.label}>
                             Tuotteen kuva
@@ -1253,6 +1254,9 @@ const FormFoodItem = forwardRef(
                 contentContainerStyle={styles.formScroll}
                 showsVerticalScrollIndicator={true}
                 bounces={false}
+                keyboardShouldPersistTaps="handled"
+                onScrollBeginDrag={closeUnitMenu}
+                scrollEventThrottle={16}
             >
                 {showUnifiedSearch && (
                     <View style={styles.unifiedSearchSection}>
@@ -1300,6 +1304,9 @@ const FormFoodItem = forwardRef(
 FormFoodItem.displayName = 'FormFoodItem'
 
 const styles = StyleSheet.create({
+    nutritionFieldGroup: {
+       paddingTop: 10,
+    },
     nutritionToggle: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -1328,6 +1335,7 @@ const styles = StyleSheet.create({
         paddingTop: 5,
         paddingBottom: 20,
         width: '100%',
+        ...(Platform.OS === 'web' && { overflow: 'visible' }),
     },
     isFoodQuestion: {
         fontSize: 16,
@@ -1354,16 +1362,28 @@ const styles = StyleSheet.create({
     },
     formSingleColumn: {
         width: '100%',
+        ...(Platform.OS === 'web' && { overflow: 'visible' }),
+    },
+    unitColumnElevated: {
+        zIndex: 100,
+        elevation: 100,
+        ...(Platform.OS === 'web' && { overflow: 'visible' }),
+    },
+    unitColumnBehind: {
+        zIndex: 0,
+        elevation: 0,
     },
     fullWidth: {
         width: '100%',
     },
     formScrollView: {
         width: '100%',
+        ...(Platform.OS === 'web' && { overflow: 'visible' }),
     },
     formScroll: {
         flexGrow: 1,
         width: '100%',
+        ...(Platform.OS === 'web' && { overflow: 'visible' }),
     },
     unifiedSearchSection: {
         marginBottom: 15,
@@ -1586,34 +1606,80 @@ const styles = StyleSheet.create({
         color: '#333',
         fontWeight: '500',
     },
-    // Unit chip picker
-    unitChipRow: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 8,
+    // Unit select in the same 48px trailing slot as € / kcal / calendar
+    unitSelectWrap: {
+        position: 'relative',
+        zIndex: 1,
     },
-    unitChip: {
-        paddingVertical: 8,
-        paddingHorizontal: 14,
-        borderRadius: 20,
-        borderWidth: 1.5,
-        borderColor: '#d1d5db',
-        backgroundColor: '#fff',
-        minWidth: 48,
+    unitSelectWrapOpen: {
+        zIndex: 200,
+        elevation: 200,
+    },
+    unitFieldElevated: {
+        position: 'relative',
+        zIndex: 100,
+        elevation: 100,
+        ...(Platform.OS === 'web' && { overflow: 'visible' }),
+    },
+    unitSelectButton: {
+        width: '100%',
+        height: 40,
+        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
+        backgroundColor: 'white',
+        borderColor: '#bbb',
+        borderWidth: 1,
+        borderRadius: 4,
+        paddingHorizontal: 2,
     },
-    unitChipSelected: {
-        borderColor: '#5844BB',
-        backgroundColor: '#9C86FC',
-    },
-    unitChipText: {
+    unitSelectText: {
         fontSize: 14,
-        fontWeight: '600',
-        color: '#4b5563',
+        color: '#666',
+        fontWeight: '500',
+        lineHeight: 16,
+        textAlign: 'center',
     },
-    unitChipTextSelected: {
-        color: '#000',
+    unitDropdown: {
+        position: 'absolute',
+        top: 44,
+        right: 0,
+        width: 88,
+        zIndex: 300,
+        elevation: 300,
+        backgroundColor: 'white',
+        borderColor: '#bbb',
+        borderWidth: 1,
+        borderRadius: 4,
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        ...(Platform.OS === 'web' && {
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+        }),
+    },
+    unitDropdownScroll: {
+        maxHeight: 220,
+    },
+    unitOption: {
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f0f0f0',
+    },
+    unitOptionSelected: {
+        backgroundColor: '#f3f0ff',
+    },
+    unitOptionText: {
+        fontSize: 15,
+        color: '#4b5563',
+        textAlign: 'center',
+    },
+    unitOptionTextSelected: {
+        color: '#5844BB',
+        fontWeight: '600',
     },
     imagePicker: {
         borderWidth: 2,

@@ -141,6 +141,7 @@ export const formStyles = StyleSheet.create({
         borderRadius: 4,
         fontSize: 16,
         color: '#333',
+        fontFamily: 'FiraSans-Regular',
     },
     /** Yksittäinen tekstisyöttö – 'form'-variant vastaa CustomInput variant='form' */
     formInput: {

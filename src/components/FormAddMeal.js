@@ -26,8 +26,8 @@ import storage from '../utils/storage'
 import Button from './Button'
 import CustomInput from './CustomInput'
 import CustomText from './CustomText'
-import DateTimePicker from './DateTimePicker'
 import DifficultySelector from './DifficultySelector'
+import FormDateField from './FormDateField'
 import FormFoodItem from './FormFoodItem'
 import GuestWarningBanner from './GuestWarningBanner'
 import MealCategorySelector from './MealCategorySelector'
@@ -52,9 +52,6 @@ const AddMealForm = ({ onSubmit }) => {
     const [mealCategory, setMealCategory] = useState('other')
     const [plannedCookingDate, setPlannedCookingDate] = useState(new Date())
     const [plannedEatingDates, setPlannedEatingDates] = useState([])
-    const [showDatePicker, setShowDatePicker] = useState(false)
-    const [showEatingDatePicker, setShowEatingDatePicker] = useState(false)
-    const [editingEatingDateIndex, setEditingEatingDateIndex] = useState(null)
     const [selectedShoppingListId, setSelectedShoppingListId] = useState(null)
     const [showItemForm, setShowItemForm] = useState(false)
     const [mealImage, setMealImage] = useState(null)
@@ -269,6 +266,43 @@ const AddMealForm = ({ onSubmit }) => {
 
             const token = await storage.getItem('userToken')
 
+            // Guest mode: keep meal in local UI state only
+            if (!token) {
+                const eatingDates =
+                    plannedEatingDates.length > 0
+                        ? plannedEatingDates
+                        : [plannedCookingDate]
+                const guestMeal = {
+                    _id: `guest-meal-${Date.now()}`,
+                    name: data.name,
+                    recipe: data.recipe || '',
+                    difficultyLevel: getDifficultyEnum(difficultyLevel),
+                    cookingTime: parseInt(data.cookingTime) || 0,
+                    foodItems: foodItems.map((item) => ({
+                        ...item,
+                        _id:
+                            item._id ||
+                            `guest-food-${Date.now()}-${Math.random()
+                                .toString(36)
+                                .slice(2, 8)}`,
+                        quantity:
+                            parseFloat(item.quantities?.meal) ||
+                            parseFloat(item.quantity) ||
+                            1,
+                    })),
+                    defaultRoles: [...selectedRoles],
+                    mealCategory,
+                    plannedCookingDate,
+                    plannedEatingDates: eatingDates,
+                    image: mealImage
+                        ? { url: mealImage.uri || mealImage }
+                        : undefined,
+                    user: 'guest',
+                }
+                onSubmit(guestMeal)
+                return
+            }
+
             const createdFoodItemIds = await Promise.all(
                 foodItems.map(async (item) => {
                     try {
@@ -403,7 +437,41 @@ const AddMealForm = ({ onSubmit }) => {
     const handleSelectItem = async (selectedItem) => {
         try {
             const token = await storage.getItem('userToken')
-            
+
+            // Guest: skip availability API
+            if (!token) {
+                const newFoodItem = {
+                    ...selectedItem,
+                    tempId: `${selectedItem._id || selectedItem.name}-${Date.now()}-${Math.random()}`,
+                    shoppingListId: selectedShoppingListId,
+                    locations: selectedItem.locations || ['meal'],
+                    quantities: {
+                        meal:
+                            selectedItem.quantities?.meal ||
+                            selectedItem.quantity ||
+                            1,
+                        'shopping-list':
+                            selectedItem.quantities?.['shopping-list'] || 0,
+                        pantry: selectedItem.quantities?.pantry || 0,
+                    },
+                    availability: {
+                        inPantry: false,
+                        inShoppingList: false,
+                    },
+                }
+                setFoodItems((prevItems) => {
+                    const updated = [...prevItems, newFoodItem]
+                    if (updated.length > 0) {
+                        setFormErrors((e) => ({
+                            ...e,
+                            foodItems: undefined,
+                        }))
+                    }
+                    return updated
+                })
+                return
+            }
+
             // Check is item exists in pantry or shopping list
             const availabilityResponse = await axios.post(
                 getServerUrl('/food-items/check-availability'),
@@ -836,44 +904,20 @@ const AddMealForm = ({ onSubmit }) => {
         }
     }
 
-    const handleDateChange = (event, selectedDate) => {
-        setShowDatePicker(false)
-        if (selectedDate) {
-            setPlannedCookingDate(selectedDate)
-        }
-    }
-
-    const handleEatingDateChange = (event, selectedDate) => {
-        setShowEatingDatePicker(false)
-        if (selectedDate) {
-            if (editingEatingDateIndex !== null) {
-                const updatedDates = [...plannedEatingDates]
-                updatedDates[editingEatingDateIndex] = selectedDate
-                setPlannedEatingDates(updatedDates)
-                setEditingEatingDateIndex(null)
-            } else {
-                setPlannedEatingDates([...plannedEatingDates, selectedDate])
-            }
-        }
-    }
-
     const addEatingDate = () => {
-        setEditingEatingDateIndex(null)
-        setShowEatingDatePicker(true)
+        setPlannedEatingDates((prev) => [...prev, new Date()])
     }
 
-    const editEatingDate = (index) => {
-        setEditingEatingDateIndex(index)
-        setShowEatingDatePicker(true)
+    const updateEatingDate = (index, selectedDate) => {
+        setPlannedEatingDates((prev) => {
+            const updated = [...prev]
+            updated[index] = selectedDate
+            return updated
+        })
     }
 
     const removeEatingDate = (index) => {
-        const updatedDates = plannedEatingDates.filter((_, i) => i !== index)
-        setPlannedEatingDates(updatedDates)
-    }
-
-    const formatDate = (date) => {
-        return date.toLocaleDateString('fi-FI')
+        setPlannedEatingDates((prev) => prev.filter((_, i) => i !== index))
     }
 
     const handleUpdateQuantity = (index, newQuantity) => {
@@ -1152,126 +1196,80 @@ const AddMealForm = ({ onSubmit }) => {
                             value={mealCategory}
                             onSelect={setMealCategory}
                         />
-                        <View style={styles.labelWithInfo}>
-                            <CustomText style={styles.label}>
-                                Suunniteltu valmistuspäivä
-                            </CustomText>
-                            <Info
-                                title="Suunniteltu valmistuspäivä"
-                                content="Tässä voit valita päivän, jolloin aiot valmistaa tämän aterian. Valittuasi suunnitellun valmistuspäivän, ateria ilmestyy lukujärjestykseesi kyseisen päivän kohdalle. Voit muuttaa päivämäärää myöhemmin tarvittaessa. Luotu ateria jää myös talteen Ateriat-listaasi ja voit asettaa aina uudelleen suunnitellun valmistuspäivämää sille kun haluat taas valmistaa kyseisen aterian."
-                            />
-                        </View>
-                        {Platform.OS === 'web' ? (
-                            <DateTimePicker
-                                value={plannedCookingDate}
-                                mode="date"
-                                display="default"
-                                onChange={handleDateChange}
-                                minimumDate={new Date()}
-                            />
-                        ) : (
-                            <>
-                                <Pressable
-                                    style={styles.dateButton}
-                                    onPress={() => setShowDatePicker(true)}
-                                >
-                                    <CustomText>
-                                        {formatDate(plannedCookingDate)}
-                                    </CustomText>
-                                </Pressable>
-
-                                {showDatePicker && (
-                                    <DateTimePicker
-                                        value={plannedCookingDate}
-                                        mode="date"
-                                        display="default"
-                                        onChange={handleDateChange}
-                                        minimumDate={new Date()}
-                                    />
-                                )}
-                            </>
-                        )}
-
-                        <View style={styles.labelWithInfo}>
-                            <CustomText style={styles.label}>
-                                Suunnitellut syöntipäivät (valinnainen)
-                            </CustomText>
-                            <Info
-                                title="Suunnitellut syöntipäivät"
-                                content="Voit lisätä useita päivämääriä, jos aiot syödä saman aterian useampana päivänä. Jos jätät tämän tyhjäksi, syöntipäiväksi asetetaan sama päivä kuin valmistuspäivä."
-                            />
-                        </View>
+                        <FormDateField
+                            label="Suunniteltu valmistuspäivä"
+                            value={plannedCookingDate}
+                            onChange={setPlannedCookingDate}
+                            minimumDate={new Date()}
+                            testID="plannedCookingDate"
+                            labelRight={
+                                <Info
+                                    title="Suunniteltu valmistuspäivä"
+                                    content="Tässä voit valita päivän, jolloin aiot valmistaa tämän aterian. Valittuasi suunnitellun valmistuspäivän, ateria ilmestyy lukujärjestykseesi kyseisen päivän kohdalle. Voit muuttaa päivämäärää myöhemmin tarvittaessa. Luotu ateria jää myös talteen Ateriat-listaasi ja voit asettaa aina uudelleen suunnitellun valmistuspäivämää sille kun haluat taas valmistaa kyseisen aterian."
+                                />
+                            }
+                        />
 
                         <View style={styles.eatingDatesContainer}>
-                            {plannedEatingDates.length > 0 && (
-                                <View style={styles.eatingDatesList}>
-                                    {plannedEatingDates.map((date, index) => (
-                                        <View
-                                            key={index}
-                                            style={styles.eatingDateItem}
-                                        >
-                                            <Pressable
-                                                onPress={() =>
-                                                    editEatingDate(index)
-                                                }
-                                                style={styles.eatingDateButton}
-                                            >
-                                                <MaterialIcons
-                                                    name="event"
-                                                    size={20}
-                                                    color="#333"
-                                                />
-                                                <CustomText
-                                                    style={
-                                                        styles.eatingDateText
-                                                    }
-                                                >
-                                                    {formatDate(date)}
-                                                </CustomText>
-                                            </Pressable>
-                                            <Pressable
-                                                onPress={() =>
-                                                    removeEatingDate(index)
-                                                }
-                                                style={styles.removeDateButton}
-                                            >
-                                                <MaterialIcons
-                                                    name="close"
-                                                    size={20}
-                                                    color="#FF6B6B"
-                                                />
-                                            </Pressable>
-                                        </View>
-                                    ))}
-                                </View>
-                            )}
-
-                            <View style={isDesktop && styles.desktopButtonContainer}>
-                                <Button
-                                    title="+ Lisää syöntipäivä"
-                                    onPress={addEatingDate}
-                                    style={[styles.tertiaryButton, isDesktop && styles.tertiaryButtonDesktop]}
-                                    textStyle={styles.buttonText}
+                            <View style={styles.labelWithInfo}>
+                                <CustomText style={styles.label}>
+                                    Suunnitellut syöntipäivät (valinnainen)
+                                </CustomText>
+                                <Info
+                                    title="Suunnitellut syöntipäivät"
+                                    content="Voit lisätä useita päivämääriä, jos aiot syödä saman aterian useampana päivänä. Jos jätät tämän tyhjäksi, syöntipäiväksi asetetaan sama päivä kuin valmistuspäivä."
                                 />
                             </View>
 
-                            {showEatingDatePicker && (
-                                <View style={styles.datePickerContainer}>
-                                    <DateTimePicker
-                                        value={
-                                            editingEatingDateIndex !== null
-                                                ? plannedEatingDates[
-                                                      editingEatingDateIndex
-                                                  ]
-                                                : new Date()
+                            {plannedEatingDates.map((date, index) => (
+                                <View
+                                    key={`eating-date-${index}`}
+                                    style={styles.eatingDateFieldRow}
+                                >
+                                    <FormDateField
+                                        value={date}
+                                        onChange={(selected) =>
+                                            updateEatingDate(index, selected)
                                         }
-                                        mode="date"
-                                        display="default"
-                                        onChange={handleEatingDateChange}
                                         minimumDate={new Date()}
+                                        style={styles.eatingDateField}
+                                        testID={`plannedEatingDate-${index}`}
                                     />
+                                    <TouchableOpacity
+                                        onPress={() => removeEatingDate(index)}
+                                        style={styles.removeDateButton}
+                                        hitSlop={{
+                                            top: 8,
+                                            bottom: 8,
+                                            left: 8,
+                                            right: 8,
+                                        }}
+                                    >
+                                        <MaterialIcons
+                                            name="close"
+                                            size={22}
+                                            color="#FF6B6B"
+                                        />
+                                    </TouchableOpacity>
                                 </View>
-                            )}
+                            ))}
+
+                            <View
+                                style={
+                                    isDesktop && styles.desktopButtonContainer
+                                }
+                            >
+                                <Button
+                                    title="+ Lisää syöntipäivä"
+                                    onPress={addEatingDate}
+                                    style={[
+                                        styles.tertiaryButton,
+                                        isDesktop &&
+                                            styles.tertiaryButtonDesktop,
+                                    ]}
+                                    textStyle={styles.buttonText}
+                                />
+                            </View>
                         </View>
 
                         <View style={styles.foodItemSelectorContainer}>
@@ -1810,36 +1808,22 @@ const styles = StyleSheet.create({
     },
     eatingDatesContainer: {
         marginBottom: 15,
-        padding: 15,
-        backgroundColor: '#f8f8f8',
-        borderRadius: 8,
     },
-    eatingDatesList: {
+    eatingDateFieldRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    eatingDateField: {
+        flex: 1,
         marginBottom: 10,
     },
-    eatingDateItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        backgroundColor: '#fff',
-        padding: 12,
-        borderRadius: 8,
-        marginBottom: 8,
-        borderWidth: 1,
-        borderColor: '#e9ecef',
-    },
-    eatingDateButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        flex: 1,
-    },
-    eatingDateText: {
-        fontSize: 16,
-        color: '#333',
-    },
     removeDateButton: {
-        padding: 4,
+        width: 40,
+        height: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 10,
     },
     datePickerContainer: {
         marginTop: 10,

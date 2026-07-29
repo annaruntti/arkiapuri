@@ -21,7 +21,10 @@ import openFoodFactsApi from '../services/openFoodFactsApi'
 import { addPantryItem, addShoppingListItems } from '../services/collectionApi'
 import BarcodeScanner from './BarcodeScanner'
 import CustomText from './CustomText'
-import { mapOpenFoodFactsToFoodItemFields } from '../utils/openFoodFactsMapper'
+import {
+    buildGuestFoodItemFromOpenFoodFacts,
+    mapOpenFoodFactsToFoodItemFields,
+} from '../utils/openFoodFactsMapper'
 
 const normalizeItemName = (name) =>
     String(name || '')
@@ -377,6 +380,20 @@ const UnifiedFoodSearch = ({
 
     const addOpenFoodFactsProduct = async (product) => {
         try {
+            const token = await storage.getItem('userToken')
+
+            // Guest / not logged in: keep OFF product in local UI only
+            if (!token) {
+                const foodItem = buildGuestFoodItemFromOpenFoodFacts(
+                    product,
+                    location
+                )
+                onSelectItem(foodItem, { alreadyAdded: false })
+                setSearchQuery('')
+                setIsListVisible(false)
+                return
+            }
+
             // Persist OFF products immediately so meal save gets a real Mongo id
             // (avoids PUT /food-items/openfoodfacts-<barcode> 400 errors).
             if (location === 'meal') {
@@ -408,10 +425,7 @@ const UnifiedFoodSearch = ({
                         1,
                     unit: data.foodItem.unit || mapped.unit || 'kpl',
                     locations: Array.from(
-                        new Set([
-                            ...(data.foodItem.locations || []),
-                            'meal',
-                        ])
+                        new Set([...(data.foodItem.locations || []), 'meal'])
                     ),
                     quantities: {
                         meal:
@@ -479,7 +493,8 @@ const UnifiedFoodSearch = ({
             console.error('Error adding Open Food Facts product:', error)
             Alert.alert(
                 'Virhe',
-                'Tuotteen lisääminen epäonnistui. Yritä uudelleen.'
+                error?.message ||
+                    'Tuotteen lisääminen epäonnistui. Yritä uudelleen.'
             )
         }
     }

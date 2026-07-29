@@ -26,7 +26,7 @@ const ShoppingListsScreen = () => {
             const token = await storage.getItem('userToken')
 
             if (!token) {
-                setShoppingLists([])
+                // Keep guest session lists in memory
                 return []
             }
 
@@ -103,6 +103,11 @@ const ShoppingListsScreen = () => {
     const handleCreateList = async (data) => {
         try {
             setModalVisible(false)
+            const guestList = data?.shoppingList || data
+            if (guestList?._id && String(guestList._id).startsWith('guest-')) {
+                setShoppingLists((prev) => [...prev, guestList])
+                return
+            }
             // Refresh the shopping lists to show the new one
             await fetchShoppingLists()
         } catch (error) {

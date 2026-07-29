@@ -1,13 +1,5 @@
-import { useMemo, useState } from 'react'
-import {
-    Platform,
-    StyleSheet,
-    TouchableOpacity,
-    View,
-} from 'react-native'
-import { Feather } from '@expo/vector-icons'
-import { format } from 'date-fns'
-import { fi } from 'date-fns/locale'
+import { useMemo } from 'react'
+import { StyleSheet, View } from 'react-native'
 import { useShowNutrition } from '../hooks/useShowNutrition'
 import {
     formatNutritionValue,
@@ -20,8 +12,8 @@ import {
 } from '../utils/mealUtils'
 import Button from './Button'
 import CustomText from './CustomText'
-import DateTimePicker from './DateTimePicker'
 import EditableField from './EditableField'
+import FormDateField from './FormDateField'
 import MealImageUploader from './MealImageUploader'
 import MealTabs from './MealTabs'
 import PlannedEatingDates from './PlannedEatingDates'
@@ -45,7 +37,6 @@ const MealDetailsForm = ({
     onImageUpdate,
     onSave,
 }) => {
-    const [showDatePicker, setShowDatePicker] = useState(false)
     const showNutrition = useShowNutrition()
     const cookingDate = new Date(
         editedValues.plannedCookingDate || meal.plannedCookingDate
@@ -142,53 +133,15 @@ const MealDetailsForm = ({
                 onChange={(value) => onChange('mealCategory', value)}
             />
 
-            <View style={styles.detailRow}>
-                <CustomText style={styles.detailLabel}>
-                    Suunniteltu valmistuspäivä
-                </CustomText>
-                {Platform.OS === 'web' ? (
-                    <DateTimePicker
-                        value={cookingDate}
-                        mode="date"
-                        display="default"
-                        onChange={(event, selectedDate) => {
-                            if (selectedDate) {
-                                onChange('plannedCookingDate', selectedDate)
-                            }
-                        }}
-                    />
-                ) : (
-                    <View style={styles.valueContainer}>
-                        <TouchableOpacity onPress={() => setShowDatePicker(true)}>
-                            <CustomText>
-                                {format(cookingDate, 'dd.MM.yyyy', {
-                                    locale: fi,
-                                })}
-                            </CustomText>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.editIcon}
-                            onPress={() => setShowDatePicker(true)}
-                        >
-                            <Feather name="calendar" size={18} color="#666" />
-                        </TouchableOpacity>
-                    </View>
-                )}
-            </View>
-
-            {Platform.OS !== 'web' && showDatePicker && (
-                <DateTimePicker
-                    value={cookingDate}
-                    mode="date"
-                    display="default"
-                    onChange={(event, selectedDate) => {
-                        setShowDatePicker(false)
-                        if (selectedDate) {
-                            onChange('plannedCookingDate', selectedDate)
-                        }
-                    }}
-                />
-            )}
+            <FormDateField
+                label="Suunniteltu valmistuspäivä"
+                value={cookingDate}
+                onChange={(selectedDate) =>
+                    onChange('plannedCookingDate', selectedDate)
+                }
+                testID="plannedCookingDate"
+                style={styles.cookingDateField}
+            />
 
             <PlannedEatingDates
                 dates={editedValues.plannedEatingDates || []}
@@ -273,26 +226,12 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '500',
     },
-    detailRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingVertical: 8,
+    cookingDateField: {
+        paddingTop: 8,
+        paddingBottom: 8,
+        marginBottom: 0,
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
-    },
-    detailLabel: {
-        fontWeight: 'bold',
-        flex: 1,
-    },
-    valueContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        flex: 2,
-        justifyContent: 'flex-end',
-    },
-    editIcon: {
-        padding: 5,
-        marginLeft: 10,
     },
     buttonContainer: {
         marginTop: 20,

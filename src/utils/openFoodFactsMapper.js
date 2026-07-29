@@ -359,3 +359,30 @@ export const getFoodItemImageUrl = (item) =>
     item?.openFoodFactsData?.imageUrl ||
     item?.imageUrl ||
     null
+
+/**
+ * Build a local (non-persisted) food item from an OFF product for guest mode.
+ */
+export const buildGuestFoodItemFromOpenFoodFacts = (product, location = 'pantry') => {
+    const mapped = mapOpenFoodFactsToFoodItemFields(product)
+    const barcode =
+        product.barcode || product.code || mapped.openFoodFactsData?.barcode
+    const quantity = mapped.packageQuantity || 1
+    const unit = mapped.unit || 'kpl'
+    const id = `guest-off-${barcode || Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2, 8)}`
+
+    return {
+        _id: id,
+        ...mapped,
+        quantity,
+        unit,
+        locations: [location],
+        quantities: {
+            meal: location === 'meal' ? quantity : 0,
+            'shopping-list': location === 'shopping-list' ? quantity : 0,
+            pantry: location === 'pantry' ? quantity : 0,
+        },
+    }
+}

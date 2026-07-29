@@ -63,12 +63,6 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
         try {
             const token = await storage.getItem('userToken')
 
-            if (!token) {
-                console.error('No token found')
-                Alert.alert('Virhe', 'Kirjaudu sisään uudelleen')
-                return
-            }
-
             // Process items to ensure quantities and categories are properly formatted
             const processedItems = items.map((item) => {
                 // Handle categories more robustly
@@ -119,6 +113,23 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
                 description: data.description || '',
                 totalEstimatedPrice: data.totalEstimatedPrice || 0,
                 items: processedItems,
+            }
+
+            // Guest mode: keep list in local UI state only
+            if (!token) {
+                const guestList = {
+                    ...shoppingListData,
+                    _id: `guest-list-${Date.now()}`,
+                    items: processedItems.map((item, index) => ({
+                        ...item,
+                        _id: item._id || `guest-item-${Date.now()}-${index}`,
+                        bought: false,
+                    })),
+                }
+                onSubmit({ success: true, shoppingList: guestList })
+                setItems([])
+                onClose()
+                return
             }
 
             const response = await axios.post(

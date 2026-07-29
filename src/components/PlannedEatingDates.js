@@ -1,40 +1,18 @@
-import { useState } from 'react'
-import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native'
+import { StyleSheet, TouchableOpacity, View } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
-import { format } from 'date-fns'
-import { fi } from 'date-fns/locale'
 import Button from './Button'
 import CustomText from './CustomText'
-import DateTimePicker from './DateTimePicker'
+import FormDateField from './FormDateField'
 
 const PlannedEatingDates = ({ dates = [], onChange }) => {
-    const [showDatePicker, setShowDatePicker] = useState(false)
-    const [editingIndex, setEditingIndex] = useState(null)
-
-    const handleDateChange = (event, selectedDate) => {
-        setShowDatePicker(false)
-        if (selectedDate) {
-            if (editingIndex !== null) {
-                // Update existing date
-                const updatedDates = [...dates]
-                updatedDates[editingIndex] = selectedDate
-                onChange(updatedDates)
-                setEditingIndex(null)
-            } else {
-                // Add new date
-                onChange([...dates, selectedDate])
-            }
-        }
-    }
-
     const addEatingDate = () => {
-        setEditingIndex(null)
-        setShowDatePicker(true)
+        onChange([...dates, new Date()])
     }
 
-    const editEatingDate = (index) => {
-        setEditingIndex(index)
-        setShowDatePicker(true)
+    const updateEatingDate = (index, selectedDate) => {
+        const updated = [...dates]
+        updated[index] = selectedDate
+        onChange(updated)
     }
 
     const removeEatingDate = (index) => {
@@ -46,91 +24,42 @@ const PlannedEatingDates = ({ dates = [], onChange }) => {
             <CustomText style={styles.label}>
                 Suunnitellut syöntipäivät
             </CustomText>
-            <View style={styles.eatingDatesSection}>
-                {dates.length > 0 ? (
-                    <View style={styles.eatingDatesList}>
-                        {dates.map((date, index) => (
-                            <View key={index} style={styles.eatingDateItem}>
-                                <TouchableOpacity
-                                    onPress={() => editEatingDate(index)}
-                                    style={styles.eatingDateButton}
-                                >
-                                    <MaterialIcons
-                                        name="event"
-                                        size={18}
-                                        color="#333"
-                                    />
-                                    <CustomText style={styles.eatingDateText}>
-                                        {format(new Date(date), 'dd.MM.yyyy', {
-                                            locale: fi,
-                                        })}
-                                    </CustomText>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    onPress={() => removeEatingDate(index)}
-                                    style={styles.removeDateButton}
-                                >
-                                    <MaterialIcons name="close" size={18} />
-                                </TouchableOpacity>
-                            </View>
-                        ))}
-                    </View>
-                ) : (
-                    <View style={styles.emptyDatesRow}>
-                        <CustomText style={styles.emptyDatesText}>
-                            Ei lisättyjä syöntipäiviä (käytetään
-                            valmistuspäivää)
-                        </CustomText>
-                        <Button
-                            title="+ Lisää syöntipäivä"
-                            onPress={addEatingDate}
-                            type="TERTIARY"
-                            size="small"
-                        />
-                    </View>
-                )}
+            {dates.length === 0 && (
+                <CustomText style={styles.emptyDatesText}>
+                    Ei lisättyjä syöntipäiviä (käytetään valmistuspäivää)
+                </CustomText>
+            )}
 
-                {dates.length > 0 && Platform.OS !== 'web' && (
-                    <Button
-                        title="+ Lisää syöntipäivä"
-                        onPress={addEatingDate}
-                        type="TERTIARY"
-                        size="small"
+            {dates.map((date, index) => (
+                <View
+                    key={`eating-date-${index}`}
+                    style={styles.eatingDateFieldRow}
+                >
+                    <FormDateField
+                        value={date}
+                        onChange={(selected) =>
+                            updateEatingDate(index, selected)
+                        }
+                        minimumDate={new Date()}
+                        style={styles.eatingDateField}
+                        testID={`plannedEatingDate-${index}`}
                     />
-                )}
+                    <TouchableOpacity
+                        onPress={() => removeEatingDate(index)}
+                        style={styles.removeDateButton}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                        <MaterialIcons name="close" size={22} color="#FF6B6B" />
+                    </TouchableOpacity>
+                </View>
+            ))}
 
-                {Platform.OS === 'web' && (
-                    <View style={styles.webDatePickerContainer}>
-                        <DateTimePicker
-                            value={new Date()}
-                            mode="date"
-                            display="default"
-                            onChange={(event, selectedDate) => {
-                                if (selectedDate) {
-                                    onChange([...dates, selectedDate])
-                                }
-                            }}
-                            minimumDate={new Date()}
-                        />
-                    </View>
-                )}
-
-                {Platform.OS !== 'web' && showDatePicker && (
-                    <View style={styles.datePickerContainer}>
-                        <DateTimePicker
-                            value={
-                                editingIndex !== null && dates[editingIndex]
-                                    ? new Date(dates[editingIndex])
-                                    : new Date()
-                            }
-                            mode="date"
-                            display="default"
-                            onChange={handleDateChange}
-                            minimumDate={new Date()}
-                        />
-                    </View>
-                )}
-            </View>
+            <Button
+                title="+ Lisää syöntipäivä"
+                onPress={addEatingDate}
+                type="TERTIARY"
+                size="small"
+            />
         </View>
     )
 }
@@ -147,57 +76,27 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         marginBottom: 8,
     },
-    eatingDatesSection: {
-        flex: 1,
-        marginTop: 8,
+    eatingDateFieldRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
     },
-    eatingDatesList: {
+    eatingDateField: {
+        flex: 1,
         marginBottom: 10,
-    },
-    eatingDateItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        backgroundColor: '#f8f8f8',
-        padding: 10,
-        borderRadius: 8,
-        marginBottom: 8,
-        borderWidth: 1,
-        borderColor: '#e9ecef',
-    },
-    eatingDateButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        flex: 1,
-    },
-    eatingDateText: {
-        fontSize: 14,
-        color: '#333',
     },
     removeDateButton: {
-        padding: 4,
-    },
-    datePickerContainer: {
-        marginTop: 5,
-        marginLeft: -10,
-    },
-    webDatePickerContainer: {
-        marginTop: 10,
-        marginBottom: 10,
-    },
-    emptyDatesRow: {
-        flexDirection: 'row',
+        width: 40,
+        height: 40,
         alignItems: 'center',
-        justifyContent: 'space-between',
+        justifyContent: 'center',
         marginBottom: 10,
     },
     emptyDatesText: {
         fontSize: 14,
         color: '#999',
         fontStyle: 'italic',
-        flex: 1,
-        marginRight: 10,
+        marginBottom: 10,
     },
 })
 

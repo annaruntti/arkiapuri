@@ -11,8 +11,6 @@ import {
     View,
 } from 'react-native'
 import { Feather, MaterialIcons } from '@expo/vector-icons'
-import { format } from 'date-fns'
-import { fi } from 'date-fns/locale'
 import * as ImagePicker from 'expo-image-picker'
 
 import categories from '../data/categories'
@@ -23,7 +21,7 @@ import storage from '../utils/storage'
 import Button from './Button'
 import CategorySelect from './CategorySelect'
 import CustomText from './CustomText'
-import DateTimePicker from './DateTimePicker'
+import FormDateField from './FormDateField'
 import ResponsiveModal from './ResponsiveModal'
 
 const PANTRY_PLACEHOLDER_IMAGE_URL =
@@ -38,7 +36,6 @@ const PantryItemDetails = ({
 }) => {
     const [editableFields, setEditableFields] = useState({})
     const [editedValues, setEditedValues] = useState({})
-    const [showDatePicker, setShowDatePicker] = useState(false)
     const [showCategorySelect, setShowCategorySelect] = useState(false)
     const [isUploadingImage, setIsUploadingImage] = useState(false)
     const showNutrition = useShowNutrition()
@@ -75,14 +72,6 @@ const PantryItemDetails = ({
     }, [item])
 
     if (!item) return null
-
-    const formatDate = (date) => {
-        try {
-            return format(new Date(date), 'dd.MM.yyyy', { locale: fi })
-        } catch (error) {
-            return 'Ei päivämäärää'
-        }
-    }
 
     const toggleEdit = (field) => {
         setEditableFields((prev) => ({
@@ -510,70 +499,19 @@ const PantryItemDetails = ({
                     </View>
                 </View>
 
-                <View style={styles.detailRow}>
-                    <CustomText style={styles.label}>
-                        Viimeinen käyttöpäivä:
-                    </CustomText>
-                    {Platform.OS === 'web' ? (
-                        <DateTimePicker
-                            value={
-                                new Date(
-                                    editedValues.expirationDate ||
-                                        item.expirationDate
-                                )
-                            }
-                            mode="date"
-                            display="default"
-                            onChange={(event, selectedDate) => {
-                                if (selectedDate) {
-                                    handleChange('expirationDate', selectedDate)
-                                }
-                            }}
-                        />
-                    ) : (
-                        <View style={styles.valueContainer}>
-                            <TouchableOpacity
-                                onPress={() => setShowDatePicker(true)}
-                            >
-                                <CustomText>
-                                    {formatDate(
-                                        editedValues.expirationDate ||
-                                            item.expirationDate
-                                    )}
-                                </CustomText>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={styles.editIcon}
-                                onPress={() => setShowDatePicker(true)}
-                            >
-                                <Feather
-                                    name="calendar"
-                                    size={18}
-                                    color="#666"
-                                />
-                            </TouchableOpacity>
-                        </View>
-                    )}
-                </View>
-
-                {Platform.OS !== 'web' && showDatePicker && (
-                    <DateTimePicker
-                        value={
-                            new Date(
-                                editedValues.expirationDate ||
-                                    item.expirationDate
-                            )
-                        }
-                        mode="date"
-                        display="default"
-                        onChange={(event, selectedDate) => {
-                            setShowDatePicker(false)
-                            if (selectedDate) {
-                                handleChange('expirationDate', selectedDate)
-                            }
-                        }}
-                    />
-                )}
+                <FormDateField
+                    label="Viimeinen käyttöpäivä"
+                    value={
+                        new Date(
+                            editedValues.expirationDate || item.expirationDate
+                        )
+                    }
+                    onChange={(selectedDate) =>
+                        handleChange('expirationDate', selectedDate)
+                    }
+                    style={styles.expirationDateField}
+                    testID="pantryExpirationDate"
+                />
 
                 {Object.keys(editedValues).length > 0 && (
                     <View style={styles.buttonContainer}>
@@ -672,6 +610,10 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
+    },
+    expirationDateField: {
+        marginTop: 4,
+        marginBottom: 8,
     },
     label: {
         fontWeight: 'bold',

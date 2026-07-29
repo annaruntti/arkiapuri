@@ -20,6 +20,7 @@ import AddFoodItemPanel from '../components/AddFoodItemPanel'
 import FoodListItemRow from '../components/FoodListItemRow'
 import LoginPromptModal from '../components/LoginPromptModal'
 import useLoginPrompt from '../hooks/useLoginPrompt'
+import { useLogin } from '../context/LoginProvider'
 import PantryItemDetails from '../components/PantryItemDetails'
 import ResponsiveLayout from '../components/ResponsiveLayout'
 import ResponsiveModal from '../components/ResponsiveModal'
@@ -120,6 +121,7 @@ const mergeDuplicatePantryItems = (items = []) => {
 
 const PantryScreen = ({}) => {
     const { isDesktop } = useResponsiveDimensions()
+    const { continueWithoutLogin } = useLogin()
     const { showLoginPrompt, loginPromptProps } = useLoginPrompt()
     const [pantryItems, setPantryItems] = useState([])
     const [loading, setLoading] = useState(true)
@@ -149,13 +151,42 @@ const PantryScreen = ({}) => {
         defaultSortId: SORT_OPTION_IDS.NAME_ASC,
     })
 
+    const addGuestPantryItem = (itemData) => {
+        const quantity =
+            Number(itemData.quantity) ||
+            Number(itemData.quantities?.pantry) ||
+            Number(itemData.packageQuantity) ||
+            1
+        const guestItem = {
+            _id: itemData._id || `guest-pantry-${Date.now()}`,
+            name: (itemData.name || '').trim(),
+            quantity,
+            unit: itemData.unit || 'kpl',
+            expirationDate:
+                itemData.expirationDate ||
+                new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            foodId: itemData.foodId || itemData._id,
+            category: itemData.category || [],
+            calories: Number(itemData.calories) || 0,
+            price: Number(itemData.price) || 0,
+            image: itemData.image,
+            openFoodFactsData: itemData.openFoodFactsData,
+            source: itemData.source,
+            addedFrom: 'pantry',
+        }
+        setPantryItems((prev) =>
+            mergeDuplicatePantryItems([...prev, guestItem])
+        )
+        return guestItem
+    }
+
     const fetchPantryItems = async () => {
         try {
             setLoading(true)
             const token = await storage.getItem('userToken')
 
             if (!token) {
-                setPantryItems([])
+                // Keep guest session items in memory; don't wipe local list
                 return
             }
 
@@ -208,7 +239,23 @@ const PantryScreen = ({}) => {
             const token = await storage.getItem('userToken')
 
             if (!token) {
-                showLoginPrompt('save')
+                if (!continueWithoutLogin) {
+                    showLoginPrompt('save', () => handleAddItem(itemData))
+                    return
+                }
+                if (!itemData.name || !itemData.unit) {
+                    Alert.alert(
+                        'Virhe',
+                        'Nimi ja yksikkö ovat pakollisia tietoja'
+                    )
+                    return
+                }
+                addGuestPantryItem(itemData)
+                setShowAddItemSearch(false)
+                Alert.alert(
+                    'Onnistui',
+                    `Tuote "${itemData.name}" lisätty pentteriin`
+                )
                 return
             }
 
@@ -302,7 +349,28 @@ const PantryScreen = ({}) => {
             const token = await storage.getItem('userToken')
 
             if (!token) {
-                showLoginPrompt('save')
+                if (!continueWithoutLogin) {
+                    showLoginPrompt('save')
+                    return
+                }
+                Alert.alert(
+                    'Poista tuote',
+                    'Haluatko varmasti poistaa tuotteen pentteristä?',
+                    [
+                        { text: 'Peruuta', style: 'cancel' },
+                        {
+                            text: 'Poista',
+                            style: 'destructive',
+                            onPress: () => {
+                                setPantryItems((prevItems) =>
+                                    prevItems.filter(
+                                        (item) => item._id !== itemId
+                                    )
+                                )
+                            },
+                        },
+                    ]
+                )
                 return
             }
 
@@ -371,7 +439,16 @@ const PantryScreen = ({}) => {
             const token = await storage.getItem('userToken')
 
             if (!token) {
-                showLoginPrompt('save')
+                if (!continueWithoutLogin) {
+                    showLoginPrompt('save')
+                    return
+                }
+                setPantryItems((prev) =>
+                    prev.map((item) =>
+                        item._id === itemId ? { ...item, ...updatedData } : item
+                    )
+                )
+                setDetailsVisible(false)
                 return
             }
 
@@ -406,18 +483,29 @@ const PantryScreen = ({}) => {
         }
     }
 
-    const handleSearchItemSelect = async (item) => {
+    const handleSearchItemSelect = async (item, meta = {}) => {
         try {
             const token = await storage.getItem('userToken')
             if (!token) {
-                showLoginPrompt('save')
+                if (!continueWithoutLogin) {
+                    showLoginPrompt('save', () =>
+                        handleSearchItemSelect(item, meta)
+                    )
+                    return
+                }
+                // Guest: UnifiedFoodSearch did not persist; add locally
+                if (!meta.alreadyAdded) {
+                    addGuestPantryItem(item)
+                }
+                setShowAddItemSearch(false)
+                Alert.alert('Onnistui', `${item.name} lisätty pentteriisi`)
                 return
             }
 
-            // The UnifiedFoodSearch component should handle the actual addition
-            // We just need to refresh the list and close the modal
+            // Logged-in: UnifiedFoodSearch may already have added (OFF).
+            // Refresh list and close modal.
             await fetchPantryItems()
-            setShowAddItemSearch(false) // Close the modal
+            setShowAddItemSearch(false)
             Alert.alert('Onnistui', `${item.name} lisätty pentteriisi`)
         } catch (error) {
             console.error('Error adding item to pantry:', error)
@@ -476,7 +564,7 @@ const PantryScreen = ({}) => {
                         <AddFoodItemPanel
                             location="pantry"
                             showGuestWarning={true}
-                            guestWarningMessage="Tietosi eivät tallennu pysyvästi ilman käyttäjätunnusta. Kirjaudu sisään tallentaaksesi ateriat."
+                            guestWarningMessage="Tietosi eivät tallennu pysyvästi ilman käyttäjätunnusta. Kirjaudu sisään tallentaaksesi pentterin sisällön."
                             onSelectItem={handleSearchItemSelect}
                             onSubmitNewItem={handleAddItem}
                             onCloseForm={() => setShowAddItemSearch(false)}

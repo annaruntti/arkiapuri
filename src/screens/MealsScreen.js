@@ -127,7 +127,7 @@ const MealsScreen = ({ route, navigation }) => {
             const token = await storage.getItem('userToken')
 
             if (!token) {
-                setMeals([])
+                // Keep guest session meals in memory
                 return
             }
 
@@ -166,6 +166,28 @@ const MealsScreen = ({ route, navigation }) => {
 
     const handleDeleteMeal = async (mealId) => {
         const token = await storage.getItem('userToken')
+
+        if (!token || String(mealId).startsWith('guest-')) {
+            Alert.alert(
+                'Poista ateria',
+                'Haluatko varmasti poistaa tämän aterian?',
+                [
+                    { text: 'Peruuta', style: 'cancel' },
+                    {
+                        text: 'Poista',
+                        style: 'destructive',
+                        onPress: () => {
+                            setMeals((prevMeals) =>
+                                prevMeals.filter(
+                                    (meal) => meal._id !== mealId
+                                )
+                            )
+                        },
+                    },
+                ]
+            )
+            return
+        }
 
         if (Platform.OS === 'web') {
             // For web, skipping the Alert and directly make the API call

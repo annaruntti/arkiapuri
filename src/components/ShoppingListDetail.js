@@ -423,6 +423,33 @@ const ShoppingListDetail = ({
 
     const handleAddItem = async (itemData) => {
         try {
+            const token = await storage.getItem('userToken')
+
+            // Guest mode: keep items on the local shopping list only
+            if (!token) {
+                const guestItem = {
+                    ...itemData,
+                    _id:
+                        itemData._id ||
+                        `guest-item-${Date.now()}-${Math.random()
+                            .toString(36)
+                            .slice(2, 8)}`,
+                    isFood: itemData.isFood !== false,
+                    foodId: itemData.foodId || itemData._id,
+                    location: 'shopping-list',
+                    quantity: itemData.quantity || 1,
+                    unit: itemData.unit || 'kpl',
+                    bought: false,
+                }
+                const updatedList = {
+                    ...shoppingList,
+                    items: [...(shoppingList.items || []), guestItem],
+                }
+                onUpdate(updatedList)
+                goToListView()
+                return
+            }
+
             // Find or create a FoodItem so we can attach images later and
             // keep quantities in sync, without ever resending the whole
             // shopping list (which could resurrect already-removed items
@@ -491,8 +518,17 @@ const ShoppingListDetail = ({
                 price: selectedItem.price || 0,
                 calories: selectedItem.calories || 0,
                 category: selectedItem.category || [],
-                quantity: 1, // Default quantity
+                quantity:
+                    selectedItem.quantities?.['shopping-list'] ||
+                    selectedItem.quantity ||
+                    selectedItem.packageQuantity ||
+                    1,
                 location: 'shopping-list',
+                foodId: selectedItem._id,
+                image: selectedItem.image,
+                openFoodFactsData: selectedItem.openFoodFactsData,
+                source: selectedItem.source,
+                _id: selectedItem._id,
             }
 
             // Add the item to the shopping list
