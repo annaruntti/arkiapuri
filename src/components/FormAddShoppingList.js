@@ -306,6 +306,7 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
                                         selectedShoppingListId={
                                             selectedShoppingListId
                                         }
+                                        showBackButton
                                     />
                                 </View>
                             )}

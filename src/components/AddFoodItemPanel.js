@@ -19,7 +19,7 @@ const AddFoodItemPanel = ({
     guestWarningMessage,
     searchTitle = 'Etsi tuote tietokannasta',
     formTitle = 'Luo uusi tuote manuaalisesti',
-    showFormBackButton = true,
+    showFormBackButton = false,
 }) => {
     return (
         <ScrollView

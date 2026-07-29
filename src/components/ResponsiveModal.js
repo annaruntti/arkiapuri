@@ -1,7 +1,30 @@
-import { Modal, Platform, Pressable, StyleSheet, View } from 'react-native'
+import { useEffect } from 'react'
+import {
+    Dimensions,
+    Modal,
+    Platform,
+    Pressable,
+    StyleSheet,
+    View,
+} from 'react-native'
 import { AntDesign, MaterialIcons } from '@expo/vector-icons'
+import {
+    Gesture,
+    GestureDetector,
+    GestureHandlerRootView,
+} from 'react-native-gesture-handler'
+import Animated, {
+    runOnJS,
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
+    withTiming,
+} from 'react-native-reanimated'
 import { useResponsiveDimensions } from '../utils/responsive'
 import CustomText from './CustomText'
+
+const DISMISS_DISTANCE = 120
+const DISMISS_VELOCITY = 900
 
 const ResponsiveModal = ({
     visible,
@@ -14,21 +37,81 @@ const ResponsiveModal = ({
     contentStyle,
     headerStyle,
     modalStyle,
-    maxWidth = 600, // Desktop max width
+    maxWidth = 600,
 }) => {
     const { isDesktop, isTablet } = useResponsiveDimensions()
+    const isMobileSheet = !isDesktop && !isTablet
+    const translateY = useSharedValue(0)
+    const dragStartY = useSharedValue(0)
+    const screenHeight = Dimensions.get('window').height
+
+    useEffect(() => {
+        if (visible) {
+            translateY.value = 0
+        }
+    }, [visible, translateY])
+
+    const closeSheet = () => {
+        onClose?.()
+    }
+
+    const panGesture = Gesture.Pan()
+        .onStart(() => {
+            dragStartY.value = translateY.value
+        })
+        .onUpdate((event) => {
+            translateY.value = Math.max(0, dragStartY.value + event.translationY)
+        })
+        .onEnd((event) => {
+            const shouldDismiss =
+                translateY.value > DISMISS_DISTANCE ||
+                event.velocityY > DISMISS_VELOCITY
+
+            if (shouldDismiss) {
+                translateY.value = withTiming(
+                    screenHeight,
+                    { duration: 220 },
+                    (finished) => {
+                        if (finished) {
+                            runOnJS(closeSheet)()
+                        }
+                    }
+                )
+            } else {
+                translateY.value = withSpring(0, {
+                    damping: 20,
+                    stiffness: 200,
+                })
+            }
+        })
+
+    const sheetAnimatedStyle = useAnimatedStyle(() => ({
+        transform: [{ translateY: translateY.value }],
+    }))
+
+    const backdropAnimatedStyle = useAnimatedStyle(() => {
+        const progress = Math.min(translateY.value / (screenHeight * 0.5), 1)
+        return {
+            opacity: 1 - progress * 0.7,
+        }
+    })
 
     const getModalViewStyle = () => {
         if (isDesktop) {
             return [styles.modalView, styles.desktopModalView, modalStyle]
-        } else if (isTablet) {
+        }
+        if (isTablet) {
             return [styles.modalView, styles.tabletModalView, modalStyle]
         }
-        return [styles.modalView, modalStyle]
+        return [styles.modalView, styles.mobileModalView, modalStyle]
     }
 
     const getModalContentStyle = () => {
-        const baseStyle = [styles.modalContent, contentStyle]
+        const baseStyle = [
+            styles.modalContent,
+            isMobileSheet && styles.mobileSheetContent,
+            contentStyle,
+        ]
 
         if (isDesktop) {
             return [
@@ -39,12 +122,120 @@ const ResponsiveModal = ({
                     boxShadow: '0px 10px 40px rgba(0, 0, 0, 0.2)',
                 },
             ]
-        } else if (isTablet) {
+        }
+        if (isTablet) {
             return [...baseStyle, styles.tabletModalContent]
         }
-
         return baseStyle
     }
+
+    const showDesktopClose = showCloseButton && !showBackButton && !isMobileSheet
+
+    const sheetBody = (
+        <>
+            {isMobileSheet ? (
+                <GestureDetector gesture={panGesture}>
+                    <Animated.View style={styles.dragZone}>
+                        <View
+                            style={styles.handleArea}
+                            accessibilityRole="adjustable"
+                            accessibilityLabel="Vedä alas sulkeaksesi"
+                        >
+                            <View style={styles.handle} />
+                        </View>
+                        {title ? (
+                            <View
+                                style={[
+                                    styles.modalHeader,
+                                    styles.mobileModalHeader,
+                                    headerStyle,
+                                    showBackButton && styles.modalHeaderWithBack,
+                                ]}
+                            >
+                                <CustomText style={styles.modalTitle}>
+                                    {title}
+                                </CustomText>
+                            </View>
+                        ) : null}
+                    </Animated.View>
+                </GestureDetector>
+            ) : (
+                title && (
+                    <View
+                        style={[
+                            styles.modalHeader,
+                            headerStyle,
+                            isDesktop && styles.desktopModalHeader,
+                            showBackButton && styles.modalHeaderWithBack,
+                            showBackButton &&
+                                isDesktop &&
+                                styles.desktopModalHeaderWithBack,
+                        ]}
+                    >
+                        <CustomText
+                            style={[
+                                styles.modalTitle,
+                                isDesktop && styles.desktopModalTitle,
+                            ]}
+                        >
+                            {title}
+                        </CustomText>
+                    </View>
+                )
+            )}
+            {showBackButton && (
+                <Pressable
+                    onPress={onClose}
+                    style={[
+                        styles.backButton,
+                        isMobileSheet && styles.mobileBackButton,
+                        isDesktop && styles.desktopBackButton,
+                    ]}
+                    hitSlop={{
+                        top: 10,
+                        bottom: 10,
+                        left: 10,
+                        right: 10,
+                    }}
+                >
+                    <MaterialIcons
+                        name="arrow-back"
+                        size={isDesktop ? 22 : 20}
+                        color="#5844BB"
+                    />
+                    <CustomText style={styles.backButtonText}>
+                        {backButtonLabel}
+                    </CustomText>
+                </Pressable>
+            )}
+            {showDesktopClose && (
+                <Pressable
+                    onPress={onClose}
+                    style={[
+                        styles.closeButton,
+                        isDesktop && styles.desktopCloseButton,
+                    ]}
+                    hitSlop={{
+                        top: 10,
+                        bottom: 10,
+                        left: 10,
+                        right: 10,
+                    }}
+                >
+                    <AntDesign
+                        name="close"
+                        size={isDesktop ? 28 : 24}
+                        color={isDesktop ? '#666' : 'black'}
+                    />
+                </Pressable>
+            )}
+            <View
+                style={[styles.modalBody, isDesktop && styles.desktopModalBody]}
+            >
+                {children}
+            </View>
+        </>
+    )
 
     return (
         <Modal
@@ -53,95 +244,56 @@ const ResponsiveModal = ({
             visible={visible}
             onRequestClose={onClose}
         >
-            <View style={getModalViewStyle()}>
-                <View style={getModalContentStyle()}>
-                    {showBackButton && (
-                        <Pressable
-                            onPress={onClose}
-                            style={[
-                                styles.backButton,
-                                isDesktop && styles.desktopBackButton,
-                            ]}
-                            hitSlop={{
-                                top: 10,
-                                bottom: 10,
-                                left: 10,
-                                right: 10,
-                            }}
-                        >
-                            <MaterialIcons
-                                name="arrow-back"
-                                size={isDesktop ? 22 : 20}
-                                color="#5844BB"
-                            />
-                            <CustomText style={styles.backButtonText}>
-                                {backButtonLabel}
-                            </CustomText>
-                        </Pressable>
-                    )}
-                    {showCloseButton && !showBackButton && (
-                        <Pressable
-                            onPress={onClose}
-                            style={[
-                                styles.closeButton,
-                                isDesktop && styles.desktopCloseButton,
-                            ]}
-                            hitSlop={{
-                                top: 10,
-                                bottom: 10,
-                                left: 10,
-                                right: 10,
-                            }}
-                        >
-                            <AntDesign
-                                name="close"
-                                size={isDesktop ? 28 : 24}
-                                color={isDesktop ? '#666' : 'black'}
-                            />
-                        </Pressable>
-                    )}
-                    {title && (
-                        <View
-                            style={[
-                                styles.modalHeader,
-                                headerStyle,
-                                isDesktop && styles.desktopModalHeader,
-                                showBackButton && styles.modalHeaderWithBack,
-                                showBackButton &&
-                                    isDesktop &&
-                                    styles.desktopModalHeaderWithBack,
-                            ]}
-                        >
-                            <CustomText
+            <GestureHandlerRootView style={styles.gestureRoot}>
+                <View style={getModalViewStyle()}>
+                    {isMobileSheet ? (
+                        <>
+                            <Animated.View
                                 style={[
-                                    styles.modalTitle,
-                                    isDesktop && styles.desktopModalTitle,
+                                    styles.backdropFill,
+                                    backdropAnimatedStyle,
                                 ]}
                             >
-                                {title}
-                            </CustomText>
-                        </View>
+                                <Pressable
+                                    style={StyleSheet.absoluteFillObject}
+                                    onPress={onClose}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Sulje"
+                                />
+                            </Animated.View>
+                            <Animated.View
+                                style={[
+                                    getModalContentStyle(),
+                                    sheetAnimatedStyle,
+                                ]}
+                            >
+                                {sheetBody}
+                            </Animated.View>
+                        </>
+                    ) : (
+                        <View style={getModalContentStyle()}>{sheetBody}</View>
                     )}
-                    <View
-                        style={[
-                            styles.modalBody,
-                            isDesktop && styles.desktopModalBody,
-                        ]}
-                    >
-                        {children}
-                    </View>
                 </View>
-            </View>
+            </GestureHandlerRootView>
         </Modal>
     )
 }
 
 const styles = StyleSheet.create({
-    // Mobile styles (existing)
+    gestureRoot: {
+        flex: 1,
+    },
+    backdropFill: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
     modalView: {
         flex: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
         justifyContent: 'flex-end',
+    },
+    mobileModalView: {
+        backgroundColor: 'transparent',
     },
     modalContent: {
         backgroundColor: 'white',
@@ -150,6 +302,31 @@ const styles = StyleSheet.create({
         height: '90%',
         width: '100%',
         paddingTop: 35,
+    },
+    mobileSheetContent: {
+        paddingTop: 4,
+    },
+    dragZone: {
+        width: '100%',
+    },
+    handleArea: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingTop: 8,
+        paddingBottom: 8,
+        minHeight: 28,
+    },
+    handle: {
+        width: 40,
+        height: 5,
+        borderRadius: 3,
+        backgroundColor: '#D1D5DB',
+    },
+    mobileModalHeader: {
+        paddingTop: 2,
+    },
+    mobileBackButton: {
+        top: 36,
     },
     modalHeader: {
         width: '100%',
@@ -195,7 +372,6 @@ const styles = StyleSheet.create({
         zIndex: 1,
     },
 
-    // Tablet styles
     tabletModalView: {
         justifyContent: 'center',
         paddingHorizontal: 40,
@@ -209,7 +385,6 @@ const styles = StyleSheet.create({
         paddingTop: 25,
     },
 
-    // Desktop styles
     desktopModalView: {
         justifyContent: 'center',
         alignItems: 'center',

@@ -70,7 +70,7 @@ const FormFoodItem = forwardRef(
             onSearchItemSelect,
             shoppingListId,
             allowNonFood = false,
-            showBackButton = true,
+            showBackButton = false,
         },
         ref
     ) => {
