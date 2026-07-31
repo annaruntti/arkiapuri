@@ -474,7 +474,7 @@ const MealsScreen = ({ route, navigation }) => {
                 visible={modalVisible}
                 onClose={() => setModalVisible(false)}
                 title="Lisää uusi ateria"
-                maxWidth={700}
+                maxWidth={640}
             >
                 <AddMealForm
                     onSubmit={handleAddMeal}

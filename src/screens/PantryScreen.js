@@ -558,7 +558,7 @@ const PantryScreen = ({}) => {
                         visible={showAddItemSearch}
                         onClose={() => setShowAddItemSearch(false)}
                         title="Luo uusi tuote"
-                        maxWidth={700}
+                        maxWidth={640}
                     >
                         <AddFoodItemPanel
                             location="pantry"

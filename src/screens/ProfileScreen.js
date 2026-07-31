@@ -18,6 +18,7 @@ import ResponsiveLayout from '../components/ResponsiveLayout'
 import { useLogin } from '../context/LoginProvider'
 import { getServerUrl } from '../utils/getServerUrl'
 import { useResponsiveDimensions } from '../utils/responsive'
+import { openAuthScreen } from '../utils/authNavigation'
 import storage from '../utils/storage'
 
 const ProfileScreen = () => {
@@ -215,25 +216,41 @@ const ProfileScreen = () => {
                                     </View>
                                 </View>
 
-                                <View style={styles.buttonSection}>
+                                <View
+                                    style={[
+                                        styles.buttonSection,
+                                        (isDesktop || isTablet) &&
+                                            styles.buttonSectionRow,
+                                    ]}
+                                >
                                     <Button
                                         title="Kirjaudu sisään"
-                                        style={styles.primaryButton}
+                                        style={[
+                                            styles.primaryButton,
+                                            (isDesktop || isTablet) &&
+                                                styles.sideBySideButton,
+                                        ]}
                                         textStyle={styles.buttonText}
                                         onPress={() =>
-                                            navigation.navigate('Auth', {
-                                                screen: 'Kirjaudu sisään',
-                                            })
+                                            openAuthScreen(
+                                                navigation,
+                                                'Kirjaudu sisään'
+                                            )
                                         }
                                     />
                                     <Button
                                         title="Luo käyttäjätunnus"
-                                        style={styles.tertiaryButton}
+                                        style={[
+                                            styles.tertiaryButton,
+                                            (isDesktop || isTablet) &&
+                                                styles.sideBySideButton,
+                                        ]}
                                         textStyle={styles.buttonText}
                                         onPress={() =>
-                                            navigation.navigate('Auth', {
-                                                screen: 'Luo tunnus',
-                                            })
+                                            openAuthScreen(
+                                                navigation,
+                                                'Luo tunnus'
+                                            )
                                         }
                                     />
                                 </View>
@@ -294,7 +311,11 @@ const ProfileScreen = () => {
                                 </View>
                                 <Button
                                     title="Muokkaa tietoja"
-                                    style={styles.primaryButton}
+                                    style={[
+                                        styles.primaryButton,
+                                        (isDesktop || isTablet) &&
+                                            styles.constrainedButton,
+                                    ]}
                                     textStyle={styles.buttonText}
                                     onPress={() =>
                                         navigation.navigate('Muokkaa tietoja')
@@ -316,7 +337,11 @@ const ProfileScreen = () => {
                                 <View style={styles.buttonSection}>
                                     <Button
                                         title="Kirjaudu ulos"
-                                        style={styles.tertiaryButton}
+                                        style={[
+                                            styles.tertiaryButton,
+                                            (isDesktop || isTablet) &&
+                                                styles.constrainedButton,
+                                        ]}
                                         textStyle={styles.buttonText}
                                         onPress={handleLogout}
                                     />
@@ -367,7 +392,8 @@ const styles = StyleSheet.create({
     desktopContent: {
         backgroundColor: '#ffffff',
         borderRadius: 16,
-        padding: 40,
+        paddingVertical: 60,
+        paddingHorizontal: 40,
         maxWidth: 640,
         width: '100%',
         alignItems: 'center',
@@ -471,6 +497,13 @@ const styles = StyleSheet.create({
         gap: 10,
         alignItems: 'center',
     },
+    buttonSectionRow: {
+        flexDirection: 'row',
+        alignItems: 'stretch',
+        justifyContent: 'center',
+        gap: 12,
+        alignSelf: 'center',
+    },
     primaryButton: {
         borderRadius: 25,
         paddingTop: 7,
@@ -504,6 +537,19 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         borderWidth: 3,
         borderColor: '#5844BB',
+    },
+    sideBySideButton: {
+        flex: 1,
+        width: 'auto',
+        maxWidth: 170,
+        marginBottom: 0,
+    },
+    constrainedButton: {
+        width: 'auto',
+        minWidth: 140,
+        maxWidth: 170,
+        alignSelf: 'center',
+        marginBottom: 0,
     },
     buttonText: {
         color: '#000000',

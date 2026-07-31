@@ -200,6 +200,49 @@ const ConditionalBackButton = () => {
     return canGoBack ? <BackButton /> : null
 }
 
+/** Back control for Auth modal: pop within Auth, else return to origin in Main. */
+const AuthBackButton = ({ route, navigation }) => {
+    const handleBackPress = () => {
+        const state = navigation.getState()
+        const routes = state?.routes ?? []
+        const previousRoute = routes[routes.length - 2]
+
+        // Auth opens over Main as a modal; never send the user back to the
+        // landing screen — dismiss the whole Auth modal instead.
+        const shouldDismissAuth =
+            !navigation.canGoBack() || previousRoute?.name === 'Tervetuloa'
+
+        if (shouldDismissAuth) {
+            const returnTo = route.params?.returnTo
+            if (returnTo) {
+                // Return to the exact Main tab/screen that opened Auth
+                navigation.navigate('Main', returnTo)
+                return
+            }
+
+            const parent = navigation.getParent()
+            if (parent?.canGoBack?.()) {
+                parent.goBack()
+                return
+            }
+
+            navigation.navigate('Main')
+            return
+        }
+
+        navigation.goBack()
+    }
+
+    return (
+        <TouchableOpacity
+            onPress={handleBackPress}
+            style={[styles.iconButton, styles.backButton]}
+        >
+            <Feather name="arrow-left" size={24} color="black" />
+        </TouchableOpacity>
+    )
+}
+
 const UserProfile = ({ isActive = false }) => {
     const navigation = useNavigation()
 
@@ -711,32 +754,9 @@ function AuthStackScreen() {
                     backgroundColor: '#fff',
                 },
                 headerTitle: (props) => <LogoTitle {...props} />,
-                headerLeft: () =>
-                    route.params?.fromPrompt ? (
-                        <TouchableOpacity
-                            onPress={() => {
-                                // Auth is a root modal — dismiss it to return
-                                // to the screen that opened the login prompt.
-                                const parent = navigation.getParent()
-                                if (parent?.canGoBack?.()) {
-                                    parent.goBack()
-                                } else if (navigation.canGoBack()) {
-                                    navigation.goBack()
-                                } else {
-                                    parent?.navigate?.('Main')
-                                }
-                            }}
-                            style={[styles.iconButton, styles.backButton]}
-                        >
-                            <Feather
-                                name="arrow-left"
-                                size={24}
-                                color="black"
-                            />
-                        </TouchableOpacity>
-                    ) : (
-                        <ConditionalBackButton />
-                    ),
+                headerLeft: () => (
+                    <AuthBackButton route={route} navigation={navigation} />
+                ),
             })}
         >
             <HomeStack.Screen

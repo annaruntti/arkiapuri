@@ -305,7 +305,7 @@ const TableMonth = ({ onRequireLogin }) => {
                         : 'Valitse ateria ja päivät'
                 }
                 showBackButton={mealSelectView === 'create'}
-                maxWidth={700}
+                maxWidth={640}
             >
                 {mealSelectView === 'create' ? (
                     <FormAddMeal

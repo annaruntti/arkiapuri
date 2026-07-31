@@ -220,7 +220,7 @@ const ShoppingListsScreen = () => {
                         visible={modalVisible}
                         onClose={() => setModalVisible(false)}
                         title="Luo uusi ostoslista"
-                        maxWidth={800}
+                        maxWidth={640}
                     >
                         <FormAddShoppingList
                             onSubmit={handleCreateList}

@@ -13,7 +13,12 @@ import CustomText from './CustomText'
 // Complete the auth session for better UX
 WebBrowser.maybeCompleteAuthSession()
 
-const SocialSignInButtons = ({ onSocialSignIn, showDivider = true }) => {
+const SocialSignInButtons = ({
+    onSocialSignIn,
+    showDivider = true,
+    layout = 'column',
+    compact = false,
+}) => {
     // OAuth configuration
     const googleAuthUrl = `${getServerUrl('')}/auth/google`
     const appleAuthUrl = `${getServerUrl('')}/auth/apple`
@@ -165,6 +170,8 @@ const SocialSignInButtons = ({ onSocialSignIn, showDivider = true }) => {
         }
     }
 
+    const isRow = layout === 'row'
+
     return (
         <View style={styles.container}>
             {showDivider && (
@@ -177,27 +184,56 @@ const SocialSignInButtons = ({ onSocialSignIn, showDivider = true }) => {
                 </View>
             )}
 
-            <TouchableOpacity
-                style={[styles.socialButton, styles.googleButton]}
-                onPress={handleGoogleSignIn}
-            >
-                <Ionicons name="logo-google" size={20} color="#fff" />
-                <CustomText style={styles.socialButtonText}>
-                    Google-tilillä
-                </CustomText>
-            </TouchableOpacity>
+            <View style={[styles.buttonsWrap, isRow && styles.buttonsRow]}>
+                <TouchableOpacity
+                    style={[
+                        styles.socialButton,
+                        styles.googleButton,
+                        compact && styles.socialButtonCompact,
+                        isRow && styles.socialButtonInRow,
+                    ]}
+                    onPress={handleGoogleSignIn}
+                >
+                    <Ionicons
+                        name="logo-google"
+                        size={compact ? 18 : 20}
+                        color="#fff"
+                    />
+                    <CustomText
+                        style={[
+                            styles.socialButtonText,
+                            compact && styles.socialButtonTextCompact,
+                        ]}
+                    >
+                        {compact ? 'Google' : 'Google-tilillä'}
+                    </CustomText>
+                </TouchableOpacity>
 
-            <TouchableOpacity
-                style={[styles.socialButton, styles.facebookButton]}
-                onPress={handleFacebookSignIn}
-            >
-                <Ionicons name="logo-facebook" size={20} color="#fff" />
-                <CustomText style={styles.socialButtonText}>
-                    Facebook-tilillä
-                </CustomText>
-            </TouchableOpacity>
+                <TouchableOpacity
+                    style={[
+                        styles.socialButton,
+                        styles.facebookButton,
+                        compact && styles.socialButtonCompact,
+                        isRow && styles.socialButtonInRow,
+                    ]}
+                    onPress={handleFacebookSignIn}
+                >
+                    <Ionicons
+                        name="logo-facebook"
+                        size={compact ? 18 : 20}
+                        color="#fff"
+                    />
+                    <CustomText
+                        style={[
+                            styles.socialButtonText,
+                            compact && styles.socialButtonTextCompact,
+                        ]}
+                    >
+                        {compact ? 'Facebook' : 'Facebook-tilillä'}
+                    </CustomText>
+                </TouchableOpacity>
 
-            {/* Apple Sign-In - Hidden until Apple Developer enrollment is complete
+                {/* Apple Sign-In - Hidden until Apple Developer enrollment is complete
             <TouchableOpacity
                 style={[styles.socialButton, styles.appleButton]}
                 onPress={handleAppleSignIn}
@@ -208,6 +244,7 @@ const SocialSignInButtons = ({ onSocialSignIn, showDivider = true }) => {
                 </CustomText>
             </TouchableOpacity>
             */}
+            </View>
         </View>
     )
 }
@@ -215,6 +252,14 @@ const SocialSignInButtons = ({ onSocialSignIn, showDivider = true }) => {
 const styles = StyleSheet.create({
     container: {
         width: '100%',
+    },
+    buttonsWrap: {
+        width: '100%',
+    },
+    buttonsRow: {
+        flexDirection: 'row',
+        gap: 10,
+        justifyContent: 'center',
     },
     dividerContainer: {
         flexDirection: 'row',
@@ -241,6 +286,17 @@ const styles = StyleSheet.create({
         marginVertical: 4,
         minHeight: 40,
     },
+    socialButtonCompact: {
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        minHeight: 34,
+        marginVertical: 0,
+    },
+    socialButtonInRow: {
+        flex: 1,
+        width: 'auto',
+        maxWidth: 190,
+    },
     googleButton: {
         backgroundColor: '#DB4437',
     },
@@ -255,6 +311,10 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '600',
         marginLeft: 10,
+    },
+    socialButtonTextCompact: {
+        fontSize: 13,
+        marginLeft: 8,
     },
 })
 

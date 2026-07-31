@@ -163,7 +163,7 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                       : meal.name
             }
             showBackButton={showFoodItemForm || showShoppingListPicker}
-            maxWidth={700}
+            maxWidth={640}
         >
             {showShoppingListPicker ? (
                 <ShoppingListPickerModal

@@ -107,6 +107,7 @@ const SignInScreen = () => {
     const onSignUpPress = () => {
         navigation.navigate('Luo tunnus', {
             fromPrompt: route.params?.fromPrompt,
+            returnTo: route.params?.returnTo,
         })
     }
 

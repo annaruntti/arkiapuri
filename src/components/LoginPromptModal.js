@@ -9,12 +9,14 @@ import {
     ScrollView,
 } from 'react-native'
 import { useLogin } from '../context/LoginProvider'
+import { useResponsiveDimensions } from '../utils/responsive'
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
 import CustomText from './CustomText'
 import Button from './Button'
 import SocialSignInButtons from './SocialSignInButtons'
 import ResponsiveModal from './ResponsiveModal'
+import { openAuthScreen } from '../utils/authNavigation'
 
 /**
  * LoginPromptModal
@@ -33,6 +35,9 @@ const LoginPromptModal = ({
     const [isSignup, setIsSignup] = useState(false)
     const navigation = useNavigation()
     const { isLoggedIn, login } = useLogin()
+    const { isTablet } = useResponsiveDimensions()
+    // Tablet breakpoint includes desktop widths (>= 690)
+    const useWideLayout = isTablet
 
     useEffect(() => {
         if (visible && isLoggedIn) {
@@ -103,18 +108,6 @@ const LoginPromptModal = ({
         return messages[triggerType] || messages.save
     }
 
-    const getEmailButtonTitle = () => {
-        if (isSignup) {
-            return 'Luo tili ja tallenna'
-        }
-
-        if (triggerType === 'ai_feature') {
-            return 'Tallenna tietoni'
-        }
-
-        return 'Kirjaudu sähköpostiosoitteella'
-    }
-
     const message = getTriggerMessage()
 
     const handleSocialSignIn = async (provider, data) => {
@@ -165,13 +158,13 @@ const LoginPromptModal = ({
         }
     }
 
+    const navigateToAuth = (screen) => {
+        onClose()
+        openAuthScreen(navigation, screen, { fromPrompt: true })
+    }
+
     const handleEmailPress = () => {
-        navigation.navigate('Auth', {
-            screen: isSignup ? 'Luo tunnus' : 'Kirjaudu sisään',
-            params: {
-                fromPrompt: true,
-            },
-        })
+        navigateToAuth(isSignup ? 'Luo tunnus' : 'Kirjaudu sisään')
     }
 
     return (
@@ -179,13 +172,16 @@ const LoginPromptModal = ({
             visible={visible}
             onClose={onClose}
             title={message.title}
-            maxWidth={480}
+            maxWidth={640}
+            showCloseButton
+            headerStyle={styles.titleArea}
+            titleStyle={styles.titleText}
         >
             <ScrollView
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
             >
-                <View style={styles.header}>
+                <View>
                     <CustomText style={styles.subtitle}>
                         {message.subtitle}
                     </CustomText>
@@ -201,6 +197,8 @@ const LoginPromptModal = ({
                     <SocialSignInButtons
                         onSocialSignIn={handleSocialSignIn}
                         showDivider={false}
+                        layout={useWideLayout ? 'row' : 'column'}
+                        compact={useWideLayout}
                     />
                 </View>
 
@@ -210,69 +208,117 @@ const LoginPromptModal = ({
                     <View style={styles.dividerLine} />
                 </View>
 
-                <View style={styles.emailSection}>
-                    <Button
-                        title={getEmailButtonTitle()}
-                        onPress={handleEmailPress}
-                        type="PRIMARY"
-                        style={styles.primaryButton}
-                        textStyle={styles.primaryButtonText}
-                    />
-                </View>
+                {useWideLayout ? (
+                    <View style={styles.authButtonsRow}>
+                        <Button
+                            title="Kirjaudu sisään"
+                            onPress={() => navigateToAuth('Kirjaudu sisään')}
+                            type="PRIMARY"
+                            size="small"
+                            style={styles.authRowButton}
+                            textStyle={styles.primaryButtonText}
+                        />
+                        <Button
+                            title="Jatka ilman kirjautumista"
+                            onPress={() => {
+                                onClose()
+                                if (onContinueWithoutLogin) {
+                                    onContinueWithoutLogin()
+                                }
+                            }}
+                            type="TERTIARY"
+                            size="small"
+                            style={styles.authRowButton}
+                            textStyle={styles.tertiaryButtonText}
+                        />
+                    </View>
+                ) : (
+                    <>
+                        <View style={styles.emailSection}>
+                            <Button
+                                title={
+                                    isSignup
+                                        ? 'Luo tili ja tallenna'
+                                        : triggerType === 'ai_feature'
+                                          ? 'Tallenna tietoni'
+                                          : 'Kirjaudu sähköpostiosoitteella'
+                                }
+                                onPress={handleEmailPress}
+                                type="PRIMARY"
+                                style={styles.primaryButton}
+                                textStyle={styles.primaryButtonText}
+                            />
+                        </View>
 
-                <View style={styles.toggleSection}>
-                    <CustomText style={styles.toggleText}>
-                        {isSignup
-                            ? 'Onko sinulla jo tili? '
-                            : 'Ei vielä tiliä? '}
-                    </CustomText>
-                    <TouchableOpacity onPress={() => setIsSignup(!isSignup)}>
-                        <CustomText style={styles.toggleLink}>
-                            {isSignup ? 'Kirjaudu' : 'Luo tili'}
-                        </CustomText>
-                    </TouchableOpacity>
-                </View>
+                        <View style={styles.toggleSection}>
+                            <CustomText style={styles.toggleText}>
+                                {isSignup
+                                    ? 'Onko sinulla jo tili? '
+                                    : 'Ei vielä tiliä? '}
+                            </CustomText>
+                            <TouchableOpacity
+                                onPress={() => setIsSignup(!isSignup)}
+                            >
+                                <CustomText style={styles.toggleLink}>
+                                    {isSignup ? 'Kirjaudu' : 'Luo tili'}
+                                </CustomText>
+                            </TouchableOpacity>
+                        </View>
 
-                <Button
-                    title="Jatka ilman kirjautumista"
-                    onPress={() => {
-                        onClose()
-                        if (onContinueWithoutLogin) {
-                            onContinueWithoutLogin()
-                        }
-                    }}
-                    type="TERTIARY"
-                    style={styles.tertiaryButton}
-                    textStyle={styles.tertiaryButtonText}
-                />
+                        <View style={styles.continueWithoutLoginSection}>
+                            <Button
+                                title="Jatka ilman kirjautumista"
+                                onPress={() => {
+                                    onClose()
+                                    if (onContinueWithoutLogin) {
+                                        onContinueWithoutLogin()
+                                    }
+                                }}
+                                type="TERTIARY"
+                                style={styles.tertiaryButton}
+                                textStyle={styles.tertiaryButtonText}
+                            />
+                        </View>
+                    </>
+                )}
             </ScrollView>
         </ResponsiveModal>
     )
 }
 
 const styles = StyleSheet.create({
+    titleArea: {
+        padding: 20,
+        marginBottom: 0,
+        paddingRight: 48,
+    },
+    titleText: {
+        marginBottom: 0,
+        paddingTop: 20,
+        paddingHorizontal: 20,
+    },
     scrollContent: {
         paddingBottom: 20,
-    },
-    header: {
-        marginBottom: 20,
     },
     subtitle: {
         fontSize: 15,
         fontWeight: '600',
         color: '#333',
-        marginBottom: 8,
+        marginBottom: 10,
         textAlign: 'center',
         lineHeight: 22,
+        paddingHorizontal: 10,
     },
     description: {
         fontSize: 14,
         color: '#666',
         textAlign: 'center',
         lineHeight: 20,
+        marginBottom: 20,
     },
     socialButtonsSection: {
         marginBottom: 16,
+        paddingHorizontal: 20,
     },
     socialLabel: {
         fontSize: 12,
@@ -300,6 +346,24 @@ const styles = StyleSheet.create({
     },
     emailSection: {
         marginBottom: 12,
+        paddingHorizontal: 20,
+    },
+    authButtonsRow: {
+        flexDirection: 'row',
+        gap: 10,
+        paddingHorizontal: 20,
+        marginBottom: 16,
+        justifyContent: 'center',
+    },
+    authRowButton: {
+        flex: 1,
+        width: 'auto',
+        maxWidth: 190,
+        borderRadius: 25,
+    },
+    continueWithoutLoginSection: {
+        marginBottom: 12,
+        paddingHorizontal: 20,
     },
     primaryButton: {
         width: '100%',

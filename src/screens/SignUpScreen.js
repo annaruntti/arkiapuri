@@ -78,6 +78,7 @@ const SignUpScreen = () => {
     const onSignInPress = () => {
         navigation.navigate('Kirjaudu sisään', {
             fromPrompt: route.params?.fromPrompt,
+            returnTo: route.params?.returnTo,
         })
     }
 

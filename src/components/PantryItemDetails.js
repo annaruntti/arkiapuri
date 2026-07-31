@@ -535,7 +535,7 @@ const PantryItemDetails = ({
             visible={visible}
             onClose={onClose}
             title="Elintarvikkeen tiedot"
-            maxWidth={700}
+            maxWidth={640}
         >
             {content}
         </ResponsiveModal>

@@ -658,7 +658,7 @@ const ShoppingListDetail = ({
             onClose={handleModalClose}
             title={modalTitle}
             showBackButton={modalView !== MODAL_VIEWS.LIST}
-            maxWidth={800}
+            maxWidth={640}
         >
             {!shoppingList ? null : modalView === MODAL_VIEWS.ADD_ITEM ? (
                 <AddFoodItemPanel

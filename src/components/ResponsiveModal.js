@@ -36,8 +36,9 @@ const ResponsiveModal = ({
     backButtonLabel = 'Takaisin',
     contentStyle,
     headerStyle,
+    titleStyle,
     modalStyle,
-    maxWidth = 600,
+    maxWidth = 640,
 }) => {
     const { isDesktop, isTablet } = useResponsiveDimensions()
     const isMobileSheet = !isDesktop && !isTablet
@@ -148,11 +149,13 @@ const ResponsiveModal = ({
                                 style={[
                                     styles.modalHeader,
                                     styles.mobileModalHeader,
-                                    headerStyle,
                                     showBackButton && styles.modalHeaderWithBack,
+                                    headerStyle,
                                 ]}
                             >
-                                <CustomText style={styles.modalTitle}>
+                                <CustomText
+                                    style={[styles.modalTitle, titleStyle]}
+                                >
                                     {title}
                                 </CustomText>
                             </View>
@@ -164,18 +167,19 @@ const ResponsiveModal = ({
                     <View
                         style={[
                             styles.modalHeader,
-                            headerStyle,
                             isDesktop && styles.desktopModalHeader,
                             showBackButton && styles.modalHeaderWithBack,
                             showBackButton &&
                                 isDesktop &&
                                 styles.desktopModalHeaderWithBack,
+                            headerStyle,
                         ]}
                     >
                         <CustomText
                             style={[
                                 styles.modalTitle,
                                 isDesktop && styles.desktopModalTitle,
+                                titleStyle,
                             ]}
                         >
                             {title}
@@ -213,7 +217,7 @@ const ResponsiveModal = ({
                     onPress={onClose}
                     style={[
                         styles.closeButton,
-                        isDesktop && styles.desktopCloseButton,
+                        (isDesktop || isTablet) && styles.desktopCloseButton,
                     ]}
                     hitSlop={{
                         top: 10,
@@ -224,8 +228,8 @@ const ResponsiveModal = ({
                 >
                     <AntDesign
                         name="close"
-                        size={isDesktop ? 28 : 24}
-                        color={isDesktop ? '#666' : 'black'}
+                        size={isDesktop || isTablet ? 28 : 24}
+                        color={isDesktop || isTablet ? '#666' : 'black'}
                     />
                 </Pressable>
             )}
