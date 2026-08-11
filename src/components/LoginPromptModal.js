@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
     },
     toggleLink: {
         fontSize: 14,
-        color: '#9C86FC',
+        color: '#AE9CFC',
         fontWeight: '600',
     },
     tertiaryButton: {

@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native'
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import Fontisto from '@expo/vector-icons/Fontisto'
+import { Feather } from '@expo/vector-icons'
 import { format } from 'date-fns'
 import { fi } from 'date-fns/locale'
 import { formStyles } from '../styles/formStyles'
@@ -16,13 +17,14 @@ const formatDate = (date) => {
 }
 
 /**
- * Date field matching form inputs: bordered text field + calendar icon
- * trailing slot. Calendar expands inline in the form (no nested modal).
+ * Date field matching form inputs: bordered text field (+ optional remove
+ * inside), calendar icon in the trailing slot outside the border.
  */
 const FormDateField = ({
     label,
     value,
     onChange,
+    onRemove,
     minimumDate,
     maximumDate,
     labelRight,
@@ -59,26 +61,38 @@ const FormDateField = ({
                     {labelRight}
                 </View>
             )}
+
             <View style={formStyles.inputRow}>
-                <TouchableOpacity
-                    style={formStyles.inputInRow}
-                    onPress={togglePicker}
-                    activeOpacity={0.7}
-                >
-                    <TextInput
-                        style={formStyles.dateInput}
-                        value={formatDate(dateValue)}
-                        editable={false}
-                        placeholder="Valitse päivämäärä"
-                        placeholderTextColor="#999"
-                        pointerEvents="none"
-                    />
-                </TouchableOpacity>
+                <View style={[formStyles.inputInRow, styles.fieldBox]}>
+                    <TouchableOpacity
+                        style={styles.datePressable}
+                        onPress={togglePicker}
+                        activeOpacity={0.7}
+                    >
+                        <Text style={styles.dateText}>
+                            {formatDate(dateValue)}
+                        </Text>
+                    </TouchableOpacity>
+
+                    {onRemove ? (
+                        <TouchableOpacity
+                            onPress={onRemove}
+                            style={styles.removeButton}
+                            activeOpacity={0.7}
+                            hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+                            accessibilityLabel="Poista päivämäärä"
+                        >
+                            <Feather name="trash-2" size={18} color="#666" />
+                        </TouchableOpacity>
+                    ) : null}
+                </View>
+
                 <TouchableOpacity
                     onPress={togglePicker}
                     style={formStyles.inputTrailing}
                     activeOpacity={0.7}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    accessibilityLabel="Avaa kalenteri"
                 >
                     <Fontisto name="date" size={22} color="#666" />
                 </TouchableOpacity>
@@ -108,6 +122,34 @@ const styles = StyleSheet.create({
     fieldElevated: {
         zIndex: 20,
         elevation: 20,
+    },
+    fieldBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        minHeight: 40,
+        backgroundColor: 'white',
+        borderColor: '#bbb',
+        borderWidth: 1,
+        borderRadius: 4,
+        paddingLeft: 10,
+        paddingRight: 4,
+    },
+    datePressable: {
+        flex: 1,
+        justifyContent: 'center',
+        minHeight: 38,
+        paddingVertical: 8,
+    },
+    dateText: {
+        fontSize: 16,
+        color: '#333',
+        fontFamily: 'FiraSans-Regular',
+    },
+    removeButton: {
+        width: 36,
+        height: 38,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     calendarInline: {
         marginTop: 6,

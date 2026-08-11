@@ -14,11 +14,13 @@ import CustomText from '../components/CustomText'
 import { useLogin } from '../context/LoginProvider'
 import { getServerUrl } from '../utils/getServerUrl'
 import { getShowNutrition } from '../utils/userPreferences'
+import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 
 const PersonalizationScreen = () => {
     const navigation = useNavigation()
     const route = useRoute()
+    const { isDesktop, isTablet } = useResponsiveDimensions()
     const { setProfile, setIsLoggedIn, profile } = useLogin()
     const initialShowNutrition = getShowNutrition(
         route.params?.userData || profile
@@ -101,9 +103,19 @@ const PersonalizationScreen = () => {
     return (
         <ScrollView
             style={styles.scroll}
-            contentContainerStyle={styles.container}
+            contentContainerStyle={[
+                styles.container,
+                (isDesktop || isTablet) && styles.wideContainer,
+            ]}
         >
-            <CustomText style={styles.title}>Personoi Arkiapuri</CustomText>
+            <CustomText
+                style={[
+                    styles.title,
+                    (isDesktop || isTablet) && styles.wideTitle,
+                ]}
+            >
+                Personoi Arkiapuri
+            </CustomText>
             <CustomText style={styles.subtitle}>
                 Voit muuttaa valintoja myöhemmin profiilissa kohdasta Muokkaa
                 tietoja.
@@ -171,15 +183,23 @@ const styles = StyleSheet.create({
     container: {
         padding: 24,
         paddingBottom: 48,
-        maxWidth: 560,
+        maxWidth: 640,
         width: '100%',
         alignSelf: 'center',
     },
+    wideContainer: {
+        paddingHorizontal: 40,
+        paddingVertical: 40,
+        alignSelf: 'center',
+    },
     title: {
-        fontSize: 28,
-        fontFamily: 'FiraSans-Bold',
+        fontSize: 26,
+        fontWeight: '700',
         color: '#1f2937',
         marginBottom: 8,
+    },
+    wideTitle: {
+        fontSize: 28,
     },
     subtitle: {
         fontSize: 15,
@@ -193,7 +213,7 @@ const styles = StyleSheet.create({
     },
     question: {
         fontSize: 17,
-        fontFamily: 'FiraSans-Medium',
+        fontWeight: '600',
         color: '#1f2937',
         marginBottom: 8,
         lineHeight: 24,
@@ -227,6 +247,12 @@ const styles = StyleSheet.create({
     },
     continueButton: {
         marginTop: 8,
+        alignSelf: 'flex-start',
+        borderRadius: 25,
+        paddingVertical: 10,
+        paddingHorizontal: 24,
+        minHeight: 44,
+        backgroundColor: '#AE9CFC',
     },
 })
 

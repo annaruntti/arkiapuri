@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     checkboxChecked: {
-        backgroundColor: '#9C86FC',
+        backgroundColor: '#AE9CFC',
     },
     subcategoryText: {
         fontSize: 16,
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
         paddingLeft: 10,
         paddingRight: 10,
         elevation: 2,
-        backgroundColor: '#9C86FC',
+        backgroundColor: '#AE9CFC',
         color: 'black',
         fontWeight: 'bold',
         textAlign: 'center',

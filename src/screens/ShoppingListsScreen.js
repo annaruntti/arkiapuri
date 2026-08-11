@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
         paddingRight: 10,
         minWidth: 165,
         elevation: 2,
-        backgroundColor: '#9C86FC',
+        backgroundColor: '#AE9CFC',
         width: '100%',
         marginBottom: 10,
     },

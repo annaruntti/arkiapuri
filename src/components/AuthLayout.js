@@ -3,6 +3,9 @@ import { useResponsiveDimensions } from '../utils/responsive'
 import CustomText from './CustomText'
 import FullWidthLayout from './FullWidthLayout'
 
+/** Typical desktop auth form column width (inputs + actions share this). */
+export const AUTH_FORM_MAX_WIDTH = 400
+
 const AuthLayout = ({
     children,
     title,
@@ -13,24 +16,23 @@ const AuthLayout = ({
     centerContent = true,
 }) => {
     const { isDesktop, isTablet } = useResponsiveDimensions()
+    const isWide = isDesktop || isTablet
 
     const getContainerStyle = () => [
         styles.container,
         !centerContent && styles.topAlignedContainer,
-        isDesktop && styles.desktopContainer,
-        isTablet && styles.tabletContainer,
+        isWide && styles.wideContainer,
     ]
 
     const getContentStyle = () => [
         styles.content,
-        isDesktop && styles.desktopContent,
-        isTablet && styles.tabletContent,
+        isWide && styles.wideContent,
         contentStyle,
     ]
 
     const getHeaderStyle = () => [
         styles.header,
-        isDesktop && styles.desktopHeader,
+        isWide && styles.wideHeader,
         headerStyle,
     ]
 
@@ -47,12 +49,22 @@ const AuthLayout = ({
                         {showHeader && (
                             <View style={getHeaderStyle()}>
                                 {title && (
-                                    <CustomText style={styles.title}>
+                                    <CustomText
+                                        style={[
+                                            styles.title,
+                                            isWide && styles.wideTitle,
+                                        ]}
+                                    >
                                         {title}
                                     </CustomText>
                                 )}
                                 {subtitle && (
-                                    <CustomText style={styles.subtitle}>
+                                    <CustomText
+                                        style={[
+                                            styles.subtitle,
+                                            isWide && styles.wideSubtitle,
+                                        ]}
+                                    >
                                         {subtitle}
                                     </CustomText>
                                 )}
@@ -80,53 +92,37 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingVertical: 40,
         minHeight: '100%',
+        backgroundColor: '#ffffff',
     },
     topAlignedContainer: {
         justifyContent: 'flex-start',
     },
-    desktopContainer: {
-        paddingHorizontal: 40,
-        paddingVertical: 60,
+    wideContainer: {
+        paddingHorizontal: 24,
+        paddingVertical: 48,
         alignItems: 'center',
-        backgroundColor: '#fafafa',
-        minHeight: '100vh',
-    },
-    tabletContainer: {
-        paddingHorizontal: 32,
-        paddingVertical: 50,
-        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#ffffff',
+        flexGrow: 1,
+        width: '100%',
     },
     content: {
         width: '100%',
-        maxWidth: 400,
+        maxWidth: AUTH_FORM_MAX_WIDTH,
     },
-    desktopContent: {
-        backgroundColor: '#ffffff',
-        borderRadius: 16,
-        padding: 40,
-        maxWidth: 480,
+    wideContent: {
+        maxWidth: AUTH_FORM_MAX_WIDTH,
         width: '100%',
-        ...(Platform.OS === 'web' && {
-            boxShadow:
-                '0 10px 25px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05)',
-        }),
-    },
-    tabletContent: {
-        backgroundColor: '#ffffff',
-        borderRadius: 12,
-        padding: 32,
-        maxWidth: 440,
-        width: '100%',
-        ...(Platform.OS === 'web' && {
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
-        }),
+        padding: 0,
     },
     header: {
-        marginBottom: 25,
+        marginBottom: 28,
         alignItems: 'center',
+        width: '100%',
     },
-    desktopHeader: {
-        marginBottom: 40,
+    wideHeader: {
+        marginBottom: 28,
+        alignItems: 'flex-start',
     },
     title: {
         fontSize: 26,
@@ -134,12 +130,22 @@ const styles = StyleSheet.create({
         color: '#1f2937',
         textAlign: 'center',
         marginBottom: 8,
+        width: '100%',
+    },
+    wideTitle: {
+        fontSize: 28,
+        textAlign: 'left',
     },
     subtitle: {
-        fontSize: 19,
-        color: '#1f2937',
+        fontSize: 15,
+        color: '#6b7280',
         textAlign: 'center',
-        lineHeight: 24,
+        lineHeight: 22,
+        width: '100%',
+    },
+    wideSubtitle: {
+        textAlign: 'left',
+        fontSize: 15,
     },
 })
 

@@ -20,6 +20,8 @@ import { getServerUrl } from '../utils/getServerUrl'
 import { useResponsiveDimensions } from '../utils/responsive'
 import { openAuthScreen } from '../utils/authNavigation'
 import storage from '../utils/storage'
+import { AUTH_FORM_MAX_WIDTH } from '../components/AuthLayout'
+import { authFormStyles } from '../styles/authFormStyles'
 
 const ProfileScreen = () => {
     const { logout, profile, setProfile, isLoggedIn } = useLogin()
@@ -178,7 +180,6 @@ const ProfileScreen = () => {
                 <View style={getContainerStyle()}>
                     <View style={getContentStyle()}>
                         {!isLoggedIn ? (
-                            // Guest view - show login/signup buttons
                             <>
                                 <View style={styles.header}>
                                     <View
@@ -186,7 +187,8 @@ const ProfileScreen = () => {
                                             styles.profileImageContainer,
                                             isDesktop &&
                                                 styles.desktopProfileImage,
-                                            isTablet && styles.tabletProfileImage,
+                                            isTablet &&
+                                                styles.tabletProfileImage,
                                         ]}
                                     >
                                         <Image
@@ -211,26 +213,18 @@ const ProfileScreen = () => {
                                                 isDesktop && styles.desktopEmail,
                                             ]}
                                         >
-                                            Kirjaudu sisään hallitaksesi profiiliasi
+                                            Kirjaudu sisään hallitaksesi
+                                            profiiliasi
                                         </CustomText>
                                     </View>
                                 </View>
 
-                                <View
-                                    style={[
-                                        styles.buttonSection,
-                                        (isDesktop || isTablet) &&
-                                            styles.buttonSectionRow,
-                                    ]}
-                                >
+                                <View style={authFormStyles.buttonSection}>
                                     <Button
                                         title="Kirjaudu sisään"
-                                        style={[
-                                            styles.primaryButton,
-                                            (isDesktop || isTablet) &&
-                                                styles.sideBySideButton,
-                                        ]}
-                                        textStyle={styles.buttonText}
+                                        fullWidth
+                                        style={authFormStyles.primaryButton}
+                                        textStyle={authFormStyles.buttonText}
                                         onPress={() =>
                                             openAuthScreen(
                                                 navigation,
@@ -240,12 +234,10 @@ const ProfileScreen = () => {
                                     />
                                     <Button
                                         title="Luo käyttäjätunnus"
-                                        style={[
-                                            styles.tertiaryButton,
-                                            (isDesktop || isTablet) &&
-                                                styles.sideBySideButton,
-                                        ]}
-                                        textStyle={styles.buttonText}
+                                        type="TERTIARY"
+                                        fullWidth
+                                        style={authFormStyles.tertiaryButton}
+                                        textStyle={authFormStyles.buttonText}
                                         onPress={() =>
                                             openAuthScreen(
                                                 navigation,
@@ -256,7 +248,6 @@ const ProfileScreen = () => {
                                 </View>
                             </>
                         ) : (
-                            // Logged in view - show profile
                             <>
                                 <View style={styles.header}>
                                     <TouchableOpacity onPress={pickImage}>
@@ -309,40 +300,37 @@ const ProfileScreen = () => {
                                         </CustomText>
                                     </View>
                                 </View>
-                                <Button
-                                    title="Muokkaa tietoja"
-                                    style={[
-                                        styles.primaryButton,
-                                        (isDesktop || isTablet) &&
-                                            styles.constrainedButton,
-                                    ]}
-                                    textStyle={styles.buttonText}
-                                    onPress={() =>
-                                        navigation.navigate('Muokkaa tietoja')
-                                    }
-                                />
 
-                                {/* Family Section */}
-                                {!loadingHousehold && (
-                                    <FamilySection
-                                        household={household}
-                                        onManagePress={() =>
+                                <View style={authFormStyles.buttonSection}>
+                                    <Button
+                                        title="Muokkaa tietoja"
+                                        fullWidth
+                                        style={authFormStyles.primaryButton}
+                                        textStyle={authFormStyles.buttonText}
+                                        onPress={() =>
                                             navigation.navigate(
-                                                'Hallinnoi perhettä'
+                                                'Muokkaa tietoja'
                                             )
                                         }
                                     />
-                                )}
 
-                                <View style={styles.buttonSection}>
+                                    {!loadingHousehold && (
+                                        <FamilySection
+                                            household={household}
+                                            onManagePress={() =>
+                                                navigation.navigate(
+                                                    'Hallinnoi perhettä'
+                                                )
+                                            }
+                                        />
+                                    )}
+
                                     <Button
                                         title="Kirjaudu ulos"
-                                        style={[
-                                            styles.tertiaryButton,
-                                            (isDesktop || isTablet) &&
-                                                styles.constrainedButton,
-                                        ]}
-                                        textStyle={styles.buttonText}
+                                        type="TERTIARY"
+                                        fullWidth
+                                        style={authFormStyles.tertiaryButton}
+                                        textStyle={authFormStyles.buttonText}
                                         onPress={handleLogout}
                                     />
                                 </View>
@@ -367,55 +355,52 @@ const styles = StyleSheet.create({
     },
     container: {
         flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
         paddingHorizontal: 20,
         paddingVertical: 40,
         minHeight: '100%',
+        backgroundColor: '#ffffff',
     },
     desktopContainer: {
-        paddingHorizontal: 40,
-        paddingVertical: 60,
+        paddingHorizontal: 24,
+        paddingVertical: 48,
         alignItems: 'center',
-        backgroundColor: '#fafafa',
+        justifyContent: 'center',
+        backgroundColor: '#ffffff',
+        width: '100%',
+        ...(Platform.OS === 'web' && {
+            minHeight: '100vh',
+        }),
     },
     tabletContainer: {
-        paddingHorizontal: 32,
-        paddingVertical: 50,
+        paddingHorizontal: 24,
+        paddingVertical: 48,
         alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#ffffff',
+        width: '100%',
     },
     content: {
         width: '100%',
-        maxWidth: 400,
+        maxWidth: AUTH_FORM_MAX_WIDTH,
         alignItems: 'center',
-        marginHorizontal: 'auto',
-        marginVertical: 'auto',
     },
     desktopContent: {
-        backgroundColor: '#ffffff',
-        borderRadius: 16,
-        paddingVertical: 60,
-        paddingHorizontal: 40,
-        maxWidth: 640,
+        maxWidth: AUTH_FORM_MAX_WIDTH,
         width: '100%',
         alignItems: 'center',
-        ...(Platform.OS === 'web' && {
-            boxShadow:
-                '0 10px 25px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05)',
-        }),
+        padding: 0,
     },
     tabletContent: {
-        backgroundColor: '#ffffff',
-        borderRadius: 12,
-        padding: 32,
-        maxWidth: 640,
+        maxWidth: AUTH_FORM_MAX_WIDTH,
         width: '100%',
         alignItems: 'center',
-        ...(Platform.OS === 'web' && {
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
-        }),
+        padding: 0,
     },
     header: {
         alignItems: 'center',
-        marginBottom: 40,
+        marginBottom: 28,
         width: '100%',
     },
     profileImageContainer: {
@@ -440,7 +425,7 @@ const styles = StyleSheet.create({
         height: 140,
         borderRadius: 70,
         borderWidth: 4,
-        marginBottom: 32,
+        marginBottom: 28,
     },
     tabletProfileImage: {
         width: 130,
@@ -481,79 +466,16 @@ const styles = StyleSheet.create({
     },
     desktopUsername: {
         fontSize: 28,
-        marginBottom: 12,
+        marginBottom: 8,
     },
     email: {
-        fontSize: 16,
+        fontSize: 15,
         color: '#6b7280',
         textAlign: 'center',
         fontWeight: '400',
+        lineHeight: 22,
     },
     desktopEmail: {
-        fontSize: 18,
-    },
-    buttonSection: {
-        width: '100%',
-        gap: 10,
-        alignItems: 'center',
-    },
-    buttonSectionRow: {
-        flexDirection: 'row',
-        alignItems: 'stretch',
-        justifyContent: 'center',
-        gap: 12,
-        alignSelf: 'center',
-    },
-    primaryButton: {
-        borderRadius: 25,
-        paddingTop: 7,
-        paddingBottom: 7,
-        paddingLeft: 10,
-        paddingRight: 10,
-        elevation: 2,
-        backgroundColor: '#9C86FC',
-        width: '90%',
-        marginBottom: 10,
-    },
-    secondaryButton: {
-        borderRadius: 25,
-        paddingTop: 7,
-        paddingBottom: 7,
-        paddingLeft: 10,
-        paddingRight: 10,
-        elevation: 2,
-        backgroundColor: '#38E4D9',
-        width: '90%',
-    },
-    tertiaryButton: {
-        borderRadius: 25,
-        paddingTop: 7,
-        paddingBottom: 7,
-        paddingLeft: 10,
-        paddingRight: 10,
-        elevation: 2,
-        backgroundColor: '#fff',
-        width: '90%',
-        marginBottom: 10,
-        borderWidth: 3,
-        borderColor: '#5844BB',
-    },
-    sideBySideButton: {
-        flex: 1,
-        width: 'auto',
-        maxWidth: 170,
-        marginBottom: 0,
-    },
-    constrainedButton: {
-        width: 'auto',
-        minWidth: 140,
-        maxWidth: 170,
-        alignSelf: 'center',
-        marginBottom: 0,
-    },
-    buttonText: {
-        color: '#000000',
-        fontWeight: 'bold',
-        textAlign: 'center',
+        fontSize: 15,
     },
 })

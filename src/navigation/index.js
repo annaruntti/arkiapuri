@@ -20,6 +20,7 @@ import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 
 import CustomText from '../components/CustomText'
+import ResponsiveLayout from '../components/ResponsiveLayout'
 import AcceptInviteScreen from '../screens/AcceptInviteScreen'
 import AuthCallbackScreen from '../screens/AuthCallbackScreen'
 import ConfirmEmailScreen from '../screens/ConfirmEmailScreen'
@@ -247,11 +248,16 @@ const UserProfile = ({ isActive = false }) => {
     const navigation = useNavigation()
 
     const handlePress = () => {
-        navigation.navigate('ProfileStack', {
-            screen: 'Omat tiedot',
+        navigation.navigate('Main', {
+            screen: 'ProfileStack',
             params: {
-                from: navigation.getState().routes[navigation.getState().index]
-                    .name,
+                screen: 'Omat tiedot',
+                params: {
+                    from:
+                        navigation.getState().routes[
+                            navigation.getState().index
+                        ]?.name || 'HomeStack',
+                },
             },
         })
     }
@@ -729,7 +735,10 @@ export default function Navigation() {
                         name="Auth"
                         component={AuthStackScreen}
                         options={{
-                            presentation: 'modal',
+                            // Full screen so Auth shares the same chrome as Main
+                            // (sidebar / bottom tabs), not a floating card modal.
+                            presentation: 'card',
+                            animation: 'slide_from_right',
                         }}
                     />
                     <RootStack.Screen
@@ -746,23 +755,48 @@ export default function Navigation() {
     )
 }
 
-function AuthStackScreen() {
+function AuthStackScreen({ route }) {
+    const initialRoute =
+        route?.state?.routes?.[route.state?.index ?? 0]?.name ?? 'Tervetuloa'
+    const [currentRoute, setCurrentRoute] = React.useState(initialRoute)
+    const showAppNav = currentRoute !== 'Tervetuloa'
+
+    React.useEffect(() => {
+        const name =
+            route?.state?.routes?.[route.state?.index ?? 0]?.name
+        if (name) {
+            setCurrentRoute(name)
+        }
+    }, [route?.state])
+
     return (
-        <HomeStack.Navigator
-            screenOptions={({ route, navigation }) => ({
-                headerStyle: {
-                    backgroundColor: '#fff',
-                },
-                headerTitle: (props) => <LogoTitle {...props} />,
-                headerLeft: () => (
-                    <AuthBackButton route={route} navigation={navigation} />
-                ),
-            })}
+        <ResponsiveLayout
+            showMobileTabs={showAppNav}
+            showDesktopNav={showAppNav}
         >
+            <HomeStack.Navigator
+                screenListeners={({ route: screenRoute }) => ({
+                    focus: () => setCurrentRoute(screenRoute.name),
+                })}
+                screenOptions={({ route: screenRoute, navigation }) => ({
+                    headerStyle: {
+                        backgroundColor: '#fff',
+                    },
+                    headerTitle: (props) => <LogoTitle {...props} />,
+                    headerLeft: () => (
+                        <AuthBackButton
+                            route={screenRoute}
+                            navigation={navigation}
+                        />
+                    ),
+                    headerRight: () => <UserProfile />,
+                })}
+            >
             <HomeStack.Screen
                 name="Tervetuloa"
                 options={{
-                    headerLeft: () => null, // Remove back button for landing screen
+                    headerLeft: () => null,
+                    headerRight: () => null,
                 }}
             >
                 {(props) => (
@@ -858,5 +892,6 @@ function AuthStackScreen() {
                 )}
             </HomeStack.Screen>
         </HomeStack.Navigator>
+        </ResponsiveLayout>
     )
 }

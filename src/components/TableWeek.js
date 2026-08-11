@@ -1174,7 +1174,7 @@ const styles = StyleSheet.create({
         paddingLeft: 10,
         paddingRight: 10,
         elevation: 0,
-        backgroundColor: '#9C86FC',
+        backgroundColor: '#AE9CFC',
         marginLeft: 10,
         alignItems: 'center',
     },
@@ -1323,7 +1323,7 @@ const styles = StyleSheet.create({
         borderStyle: 'dashed',
     },
     dropIndicator: {
-        backgroundColor: '#9C86FC',
+        backgroundColor: '#AE9CFC',
         padding: 10,
         borderRadius: 8,
         marginTop: 10,
@@ -1340,7 +1340,7 @@ const styles = StyleSheet.create({
         marginLeft: 8,
     },
     dragModeHeader: {
-        backgroundColor: '#9C86FC',
+        backgroundColor: '#AE9CFC',
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
@@ -1397,7 +1397,7 @@ const styles = StyleSheet.create({
         gap: 10,
     },
     dayButton: {
-        backgroundColor: '#9C86FC',
+        backgroundColor: '#AE9CFC',
         padding: 16,
         borderRadius: 10,
         alignItems: 'center',

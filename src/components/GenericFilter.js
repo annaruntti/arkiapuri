@@ -54,7 +54,7 @@ const styles = {
         color: '#000',
     },
     filterBadge: {
-        backgroundColor: '#9C86FC',
+        backgroundColor: '#AE9CFC',
         borderRadius: 10,
         minWidth: 20,
         height: 20,

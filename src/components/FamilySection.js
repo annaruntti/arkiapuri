@@ -67,9 +67,9 @@ const FamilySection = ({ household, onManagePress }) => {
 const styles = StyleSheet.create({
     familySection: {
         width: '100%',
-        marginTop: 24,
-        marginBottom: 24,
-        padding: 20,
+        marginTop: 8,
+        marginBottom: 8,
+        padding: 16,
         backgroundColor: '#f9fafb',
         borderRadius: 12,
         borderWidth: 1,

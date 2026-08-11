@@ -25,7 +25,7 @@ export const buttonStyles = StyleSheet.create({
         paddingVertical: 7,
         paddingHorizontal: 10,
         elevation: 2,
-        backgroundColor: '#9C86FC',
+        backgroundColor: '#AE9CFC',
         width: '100%',
         marginBottom: 10,
     },

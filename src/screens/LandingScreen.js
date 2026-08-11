@@ -195,12 +195,11 @@ const styles = StyleSheet.create({
         paddingLeft: 20,
         paddingRight: 20,
         elevation: 2,
-        backgroundColor: '#9C86FC',
+        backgroundColor: '#AE9CFC',
         marginBottom: 20,
         marginHorizontal: 'auto',
         minWidth: 200,
         maxWidth: 400,
-        width: '60%',
         alignSelf: 'center',
     },
     secondaryButton: {
@@ -286,7 +285,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 40,
         paddingVertical: 16,
         borderRadius: 30,
-        backgroundColor: '#9C86FC',
+        backgroundColor: '#AE9CFC',
         shadowColor: '#5844BB',
         shadowOffset: {
             width: 0,
@@ -350,7 +349,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 40,
         paddingVertical: 16,
         borderRadius: 30,
-        backgroundColor: '#9C86FC',
+        backgroundColor: '#AE9CFC',
         shadowColor: '#5844BB',
         shadowOffset: {
             width: 0,

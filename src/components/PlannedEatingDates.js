@@ -1,5 +1,4 @@
-import { StyleSheet, TouchableOpacity, View } from 'react-native'
-import { MaterialIcons } from '@expo/vector-icons'
+import { StyleSheet, View } from 'react-native'
 import Button from './Button'
 import CustomText from './CustomText'
 import FormDateField from './FormDateField'
@@ -31,35 +30,26 @@ const PlannedEatingDates = ({ dates = [], onChange }) => {
             )}
 
             {dates.map((date, index) => (
-                <View
+                <FormDateField
                     key={`eating-date-${index}`}
-                    style={styles.eatingDateFieldRow}
-                >
-                    <FormDateField
-                        value={date}
-                        onChange={(selected) =>
-                            updateEatingDate(index, selected)
-                        }
-                        minimumDate={new Date()}
-                        style={styles.eatingDateField}
-                        testID={`plannedEatingDate-${index}`}
-                    />
-                    <TouchableOpacity
-                        onPress={() => removeEatingDate(index)}
-                        style={styles.removeDateButton}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    >
-                        <MaterialIcons name="close" size={22} color="#FF6B6B" />
-                    </TouchableOpacity>
-                </View>
+                    value={date}
+                    onChange={(selected) => updateEatingDate(index, selected)}
+                    onRemove={() => removeEatingDate(index)}
+                    minimumDate={new Date()}
+                    style={styles.eatingDateField}
+                    testID={`plannedEatingDate-${index}`}
+                />
             ))}
 
-            <Button
-                title="+ Lisää syöntipäivä"
-                onPress={addEatingDate}
-                type="TERTIARY"
-                size="small"
-            />
+            <View style={styles.addButtonWrap}>
+                <Button
+                    title="+ Lisää syöntipäivä"
+                    onPress={addEatingDate}
+                    type="TERTIARY"
+                    size="small"
+                    style={styles.addButton}
+                />
+            </View>
         </View>
     )
 }
@@ -76,20 +66,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         marginBottom: 8,
     },
-    eatingDateFieldRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-    },
     eatingDateField: {
-        flex: 1,
-        marginBottom: 10,
-    },
-    removeDateButton: {
-        width: 40,
-        height: 40,
-        alignItems: 'center',
-        justifyContent: 'center',
         marginBottom: 10,
     },
     emptyDatesText: {
@@ -97,6 +74,13 @@ const styles = StyleSheet.create({
         color: '#999',
         fontStyle: 'italic',
         marginBottom: 10,
+    },
+    addButtonWrap: {
+        alignItems: 'flex-start',
+    },
+    addButton: {
+        alignSelf: 'flex-start',
+        width: 'auto',
     },
 })
 

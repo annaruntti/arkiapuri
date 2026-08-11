@@ -1,52 +1,18 @@
 import { StyleSheet, TouchableOpacity, View } from 'react-native'
-import { AntDesign, Feather, FontAwesome6 } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
 import CustomText from './CustomText'
+import {
+    MAIN_NAV_ITEMS,
+    navigateToMainTab,
+} from '../utils/mainNavigation'
 
 const DesktopNavigation = ({ activeRoute }) => {
     const navigation = useNavigation()
 
-    const navigationItems = [
-        {
-            name: 'HomeStack',
-            label: 'Arkiapuri',
-            icon: 'home',
-            IconComponent: Feather,
-        },
-        {
-            name: 'MealsStack',
-            label: 'Ateriat',
-            icon: 'bowl-food',
-            IconComponent: FontAwesome6,
-        },
-        {
-            name: 'PantryStack',
-            label: 'Pentteri',
-            icon: 'database',
-            IconComponent: AntDesign,
-        },
-        {
-            name: 'ShoppingListStack',
-            label: 'Ostoslista',
-            icon: 'shopping-cart',
-            IconComponent: Feather,
-        },
-        {
-            name: 'ReadingOrderStack',
-            label: 'Lukujärjestys',
-            icon: 'calendar',
-            IconComponent: AntDesign,
-        },
-    ]
-
-    const handleNavigation = (routeName) => {
-        navigation.navigate(routeName)
-    }
-
     return (
         <View style={styles.container}>
             <View style={styles.navigationList}>
-                {navigationItems.map((item) => {
+                {MAIN_NAV_ITEMS.map((item) => {
                     const isActive = activeRoute === item.name
                     const { IconComponent } = item
 
@@ -57,7 +23,9 @@ const DesktopNavigation = ({ activeRoute }) => {
                                 styles.navigationItem,
                                 isActive && styles.activeNavigationItem,
                             ]}
-                            onPress={() => handleNavigation(item.name)}
+                            onPress={() =>
+                                navigateToMainTab(navigation, item.name)
+                            }
                         >
                             <IconComponent
                                 name={item.icon}

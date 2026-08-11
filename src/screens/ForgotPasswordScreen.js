@@ -1,9 +1,10 @@
 import axios from 'axios'
 import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Alert, StyleSheet, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import { getServerUrl } from '../utils/getServerUrl'
-import { useResponsiveDimensions } from '../utils/responsive'
+import { showAlert } from '../utils/showAlert'
+import { authFormStyles } from '../styles/authFormStyles'
 
 import AuthLayout from '../components/AuthLayout'
 import Button from '../components/Button'
@@ -13,19 +14,16 @@ import CustomText from '../components/CustomText'
 const ForgotPasswordScreen = ({ navigation }) => {
     const [isLoading, setIsLoading] = useState(false)
     const [emailSent, setEmailSent] = useState(false)
-    const { isDesktop } = useResponsiveDimensions()
+    const [feedback, setFeedback] = useState(null)
 
-    const {
-        control,
-        handleSubmit,
-        formState: { errors },
-        getValues,
-    } = useForm()
+    const { control, handleSubmit } = useForm()
 
     const onSendResetEmail = async (data) => {
         if (isLoading) return
 
         setIsLoading(true)
+        setFeedback(null)
+
         try {
             const response = await axios.post(
                 getServerUrl('/auth/forgot-password'),
@@ -34,26 +32,50 @@ const ForgotPasswordScreen = ({ navigation }) => {
                 }
             )
 
-            if (response.data.success) {
+            const message =
+                response.data.message ||
+                'Ohjeet salasanan vaihtamiseen on lähetetty sähköpostiisi.'
+
+            if (response.data.success && response.data.emailSent !== false) {
                 setEmailSent(true)
-                Alert.alert(
-                    'Sähköposti lähetetty',
-                    'Ohjeet salasanan vaihtamiseen on lähetetty sähköpostiisi.'
-                )
+                setFeedback({ type: 'success', message })
+                showAlert('Sähköposti lähetetty', message)
             } else {
-                Alert.alert(
+                setFeedback({
+                    type: 'error',
+                    message:
+                        message || 'Sähköpostin lähettäminen epäonnistui',
+                })
+                showAlert(
                     'Virhe',
-                    response.data.message ||
-                        'Sähköpostin lähettäminen epäonnistui'
+                    message || 'Sähköpostin lähettäminen epäonnistui'
                 )
+                if (
+                    typeof __DEV__ !== 'undefined' &&
+                    __DEV__ &&
+                    response.data.previewUrl
+                ) {
+                    console.log(
+                        'Password reset preview URL:',
+                        response.data.previewUrl
+                    )
+                }
             }
         } catch (error) {
             console.error('Forgot password error:', error)
-            Alert.alert(
-                'Virhe',
-                error.response?.data?.message ||
-                    'Verkkovirhe. Tarkista internetyhteys ja yritä uudelleen.'
-            )
+            const data = error.response?.data
+            const message =
+                data?.message ||
+                'Verkkovirhe. Tarkista internetyhteys ja yritä uudelleen.'
+            setFeedback({ type: 'error', message })
+            showAlert('Virhe', message)
+            if (
+                typeof __DEV__ !== 'undefined' &&
+                __DEV__ &&
+                data?.previewUrl
+            ) {
+                console.log('Password reset preview URL:', data.previewUrl)
+            }
         } finally {
             setIsLoading(false)
         }
@@ -65,15 +87,21 @@ const ForgotPasswordScreen = ({ navigation }) => {
 
     return (
         <AuthLayout
-            title="Unohditko salasanasi?"
-            subtitle="Syötä sähköpostiosoitteesi alle, niin lähetämme sinulle ohjeet salasanan vaihtamiseen."
-            centerContent={false}
+            title={
+                emailSent ? 'Sähköposti lähetetty' : 'Unohditko salasanasi?'
+            }
+            subtitle={
+                emailSent
+                    ? 'Tarkista sähköpostisi ja seuraa ohjeita.'
+                    : 'Syötä sähköpostiosoitteesi alle, niin lähetämme sinulle ohjeet salasanan vaihtamiseen.'
+            }
         >
-            <View style={styles.form}>
+            <View style={authFormStyles.form}>
                 {!emailSent ? (
                     <>
                         <CustomInput
                             name="email"
+                            label="Sähköpostiosoite"
                             placeholder="Sähköpostiosoite"
                             control={control}
                             rules={{
@@ -87,7 +115,15 @@ const ForgotPasswordScreen = ({ navigation }) => {
                             autoCapitalize="none"
                         />
 
-                        <View style={styles.buttonSection}>
+                        {feedback?.type === 'error' && (
+                            <View style={styles.errorBanner}>
+                                <CustomText style={styles.errorBannerText}>
+                                    {feedback.message}
+                                </CustomText>
+                            </View>
+                        )}
+
+                        <View style={authFormStyles.buttonSection}>
                             <Button
                                 title={
                                     isLoading
@@ -95,37 +131,41 @@ const ForgotPasswordScreen = ({ navigation }) => {
                                         : 'Lähetä ohjeet'
                                 }
                                 onPress={handleSubmit(onSendResetEmail)}
-                                style={styles.primaryButton}
-                                textStyle={styles.buttonText}
+                                fullWidth
+                                style={authFormStyles.primaryButton}
+                                textStyle={authFormStyles.buttonText}
                                 disabled={isLoading}
                             />
 
                             <Button
                                 title="Takaisin kirjautumiseen"
                                 onPress={onBackToSignIn}
-                                style={styles.tertiaryButton}
-                                textStyle={styles.tertiaryButtonText}
+                                type="TERTIARY"
+                                fullWidth
+                                style={authFormStyles.tertiaryButton}
+                                textStyle={authFormStyles.tertiaryButtonText}
                             />
                         </View>
                     </>
                 ) : (
                     <>
-                        <CustomText style={styles.successMessage}>
-                            Sähköposti lähetetty!
-                        </CustomText>
+                        <View style={styles.successBanner}>
+                            <CustomText style={styles.successMessage}>
+                                Sähköposti lähetetty!
+                            </CustomText>
+                            <CustomText style={styles.description}>
+                                {feedback?.message ||
+                                    'Tarkista sähköpostisi ja seuraa ohjeita salasanan vaihtamiseen. Jos et näe viestiä, tarkista roskaposti-kansio.'}
+                            </CustomText>
+                        </View>
 
-                        <CustomText style={styles.description}>
-                            Tarkista sähköpostisi ja seuraa ohjeita salasanan
-                            vaihtamiseen. Jos et näe viestiä, tarkista
-                            roskaposti-kansio.
-                        </CustomText>
-
-                        <View style={styles.buttonSection}>
+                        <View style={authFormStyles.buttonSection}>
                             <Button
                                 title="Takaisin kirjautumiseen"
                                 onPress={onBackToSignIn}
-                                style={styles.primaryButton}
-                                textStyle={styles.buttonText}
+                                fullWidth
+                                style={authFormStyles.primaryButton}
+                                textStyle={authFormStyles.buttonText}
                             />
                         </View>
                     </>
@@ -136,68 +176,41 @@ const ForgotPasswordScreen = ({ navigation }) => {
 }
 
 const styles = StyleSheet.create({
-    form: {
+    successBanner: {
         width: '100%',
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 20,
-        textAlign: 'center',
-        color: '#333',
+        backgroundColor: '#f0fdf4',
+        borderWidth: 1,
+        borderColor: '#86efac',
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 8,
     },
     description: {
-        fontSize: 16,
-        textAlign: 'center',
-        marginBottom: 30,
-        color: '#666',
+        fontSize: 15,
+        textAlign: 'left',
+        color: '#166534',
         lineHeight: 22,
     },
     successMessage: {
         fontSize: 18,
-        fontWeight: 'bold',
-        color: '#4CAF50',
-        marginBottom: 20,
-        textAlign: 'center',
+        fontWeight: '700',
+        color: '#15803d',
+        marginBottom: 8,
+        textAlign: 'left',
     },
-    buttonSection: {
-        gap: 10,
-    },
-    primaryButton: {
-        borderRadius: 25,
-        paddingTop: 7,
-        paddingBottom: 7,
-        paddingLeft: 10,
-        paddingRight: 10,
-        elevation: 2,
-        backgroundColor: '#9C86FC',
+    errorBanner: {
         width: '100%',
-        marginBottom: 10,
+        backgroundColor: '#fef2f2',
+        borderWidth: 1,
+        borderColor: '#fecaca',
+        borderRadius: 12,
+        padding: 12,
+        marginBottom: 8,
     },
-    tertiaryButton: {
-        borderRadius: 25,
-        paddingTop: 7,
-        paddingBottom: 7,
-        paddingLeft: 10,
-        paddingRight: 10,
-        elevation: 2,
-        backgroundColor: '#fff',
-        width: '100%',
-        marginBottom: 10,
-        borderWidth: 3,
-        borderColor: '#5844BB',
-    },
-    buttonText: {
-        color: 'black',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        fontSize: 16,
-    },
-    tertiaryButtonText: {
-        color: '#5844BB',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        fontSize: 16,
+    errorBannerText: {
+        fontSize: 14,
+        color: '#b91c1c',
+        lineHeight: 20,
     },
 })
 

@@ -12,6 +12,7 @@ export default function Button(props) {
         disabled = false,
         variant = 'filled',
         size = 'medium',
+        fullWidth = false,
     } = props
     const { isDesktop, isTablet } = useResponsiveDimensions()
 
@@ -20,9 +21,12 @@ export default function Button(props) {
         styles[`${type.toLowerCase()}Button`],
         styles[`${variant}Button`],
         styles[`${size}Button`],
-        isDesktop && type !== 'TERTIARY' && styles.desktopButton,
+        isDesktop &&
+            type !== 'TERTIARY' &&
+            (fullWidth ? styles.fullWidthDesktopButton : styles.desktopButton),
         isTablet && styles[`tablet${type}Button`],
         isTablet && type !== 'TERTIARY' && styles.tabletButton,
+        fullWidth && styles.fullWidthButton,
         disabled && styles.disabledButton,
         pressed && !disabled && styles.pressed,
         isDesktop && styles[`desktop${type}Button`],
@@ -87,19 +91,19 @@ const styles = StyleSheet.create({
 
     // Type variants - PRIMARY
     primaryButton: {
-        backgroundColor: '#9C86FC',
+        backgroundColor: '#AE9CFC',
         borderWidth: 0,
         borderRadius: 25,
     },
     desktopPrimaryButton: {
-        backgroundColor: '#9C86FC',
+        backgroundColor: '#AE9CFC',
         borderRadius: 25,
         ...(Platform.OS === 'web' && {
-            boxShadow: '0 2px 8px rgba(156, 134, 252, 0.3)',
+            boxShadow: '0 2px 8px rgba(174, 156, 252, 0.3)',
             '&:hover': {
                 backgroundColor: '#8B75FA',
                 transform: 'translateY(-1px)',
-                boxShadow: '0 4px 12px rgba(156, 134, 252, 0.4)',
+                boxShadow: '0 4px 12px rgba(174, 156, 252, 0.4)',
             },
             '&:active': {
                 transform: 'translateY(0px)',
@@ -153,7 +157,7 @@ const styles = StyleSheet.create({
         // Force override of any inherited desktop styles
         ...(Platform.OS === 'web' && {
             '&:hover': {
-                backgroundColor: 'rgba(156, 134, 252, 0.05)',
+                backgroundColor: 'rgba(174, 156, 252, 0.05)',
                 borderColor: '#8B75FA',
             },
         }),
@@ -183,6 +187,22 @@ const styles = StyleSheet.create({
         ...(Platform.OS === 'web' && {
             boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
         }),
+    },
+    /** Full-width form actions (auth etc.) – skip oversized desktop sizing */
+    fullWidthDesktopButton: {
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+        minHeight: 44,
+        minWidth: 0,
+        width: '100%',
+        ...(Platform.OS === 'web' && {
+            boxShadow: 'none',
+        }),
+    },
+    fullWidthButton: {
+        width: '100%',
+        alignSelf: 'stretch',
+        minWidth: 0,
     },
     tabletButton: {
         paddingVertical: 8,

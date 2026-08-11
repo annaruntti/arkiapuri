@@ -2,9 +2,10 @@ import { useRoute } from '@react-navigation/native'
 import axios from 'axios'
 import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Alert, StyleSheet, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import { getServerUrl } from '../utils/getServerUrl'
-import { useResponsiveDimensions } from '../utils/responsive'
+import { showAlert } from '../utils/showAlert'
+import { authFormStyles } from '../styles/authFormStyles'
 
 import AuthLayout from '../components/AuthLayout'
 import Button from '../components/Button'
@@ -14,15 +15,10 @@ import CustomText from '../components/CustomText'
 const ResetPasswordScreen = ({ navigation }) => {
     const [isLoading, setIsLoading] = useState(false)
     const [passwordReset, setPasswordReset] = useState(false)
-    const { isDesktop } = useResponsiveDimensions()
+    const [feedback, setFeedback] = useState(null)
     const route = useRoute()
 
-    const {
-        control,
-        handleSubmit,
-        formState: { errors },
-        watch,
-    } = useForm()
+    const { control, handleSubmit, watch } = useForm()
 
     const password = watch('password')
 
@@ -31,17 +27,20 @@ const ResetPasswordScreen = ({ navigation }) => {
 
         const token =
             route.params?.token ||
-            new URLSearchParams(window.location.search).get('token')
+            (typeof window !== 'undefined'
+                ? new URLSearchParams(window.location.search).get('token')
+                : null)
 
         if (!token) {
-            Alert.alert(
-                'Virhe',
+            const message =
                 'Virheellinen linkki. Pyydä uusi salasanan vaihto.'
-            )
+            setFeedback({ type: 'error', message })
+            showAlert('Virhe', message)
             return
         }
 
         setIsLoading(true)
+        setFeedback(null)
         try {
             const response = await axios.post(
                 getServerUrl('/auth/reset-password'),
@@ -51,25 +50,28 @@ const ResetPasswordScreen = ({ navigation }) => {
                 }
             )
 
+            const message =
+                response.data.message ||
+                'Salasanasi on vaihdettu onnistuneesti. Voit nyt kirjautua sisään uudella salasanalla.'
+
             if (response.data.success) {
                 setPasswordReset(true)
-                Alert.alert(
-                    'Onnistui!',
-                    'Salasanasi on vaihdettu onnistuneesti. Voit nyt kirjautua sisään uudella salasanalla.'
-                )
+                setFeedback({ type: 'success', message })
+                showAlert('Onnistui!', message)
             } else {
-                Alert.alert(
-                    'Virhe',
-                    response.data.message || 'Salasanan vaihto epäonnistui'
-                )
+                setFeedback({
+                    type: 'error',
+                    message: message || 'Salasanan vaihto epäonnistui',
+                })
+                showAlert('Virhe', message || 'Salasanan vaihto epäonnistui')
             }
         } catch (error) {
             console.error('Reset password error:', error)
-            Alert.alert(
-                'Virhe',
+            const message =
                 error.response?.data?.message ||
-                    'Verkkovirhe. Tarkista internetyhteys ja yritä uudelleen.'
-            )
+                'Verkkovirhe. Tarkista internetyhteys ja yritä uudelleen.'
+            setFeedback({ type: 'error', message })
+            showAlert('Virhe', message)
         } finally {
             setIsLoading(false)
         }
@@ -80,16 +82,20 @@ const ResetPasswordScreen = ({ navigation }) => {
     }
 
     return (
-        <AuthLayout title="Vaihda salasana" centerContent={false}>
-            <View style={styles.container}>
+        <AuthLayout
+            title={passwordReset ? 'Salasana vaihdettu' : 'Vaihda salasana'}
+            subtitle={
+                passwordReset
+                    ? 'Voit nyt kirjautua sisään uudella salasanalla.'
+                    : 'Syötä uusi salasanasi alle.'
+            }
+        >
+            <View style={authFormStyles.form}>
                 {!passwordReset ? (
                     <>
-                        <CustomText style={styles.description}>
-                            Syötä uusi salasanasi alle.
-                        </CustomText>
-
                         <CustomInput
                             name="password"
+                            label="Uusi salasana"
                             placeholder="Uusi salasana"
                             control={control}
                             rules={{
@@ -105,6 +111,7 @@ const ResetPasswordScreen = ({ navigation }) => {
 
                         <CustomInput
                             name="confirmPassword"
+                            label="Vahvista uusi salasana"
                             placeholder="Vahvista uusi salasana"
                             control={control}
                             rules={{
@@ -116,7 +123,15 @@ const ResetPasswordScreen = ({ navigation }) => {
                             secureTextEntry
                         />
 
-                        <View style={styles.buttonSection}>
+                        {feedback?.type === 'error' && (
+                            <View style={styles.errorBanner}>
+                                <CustomText style={styles.errorBannerText}>
+                                    {feedback.message}
+                                </CustomText>
+                            </View>
+                        )}
+
+                        <View style={authFormStyles.buttonSection}>
                             <Button
                                 title={
                                     isLoading
@@ -124,36 +139,41 @@ const ResetPasswordScreen = ({ navigation }) => {
                                         : 'Vaihda salasana'
                                 }
                                 onPress={handleSubmit(onResetPassword)}
-                                style={styles.primaryButton}
-                                textStyle={styles.buttonText}
+                                fullWidth
+                                style={authFormStyles.primaryButton}
+                                textStyle={authFormStyles.buttonText}
                                 disabled={isLoading}
                             />
 
                             <Button
                                 title="Takaisin kirjautumiseen"
                                 onPress={onBackToSignIn}
-                                style={styles.tertiaryButton}
-                                textStyle={styles.tertiaryButtonText}
+                                type="TERTIARY"
+                                fullWidth
+                                style={authFormStyles.tertiaryButton}
+                                textStyle={authFormStyles.tertiaryButtonText}
                             />
                         </View>
                     </>
                 ) : (
                     <>
-                        <CustomText style={styles.successMessage}>
-                            Salasana vaihdettu!
-                        </CustomText>
+                        <View style={styles.successBanner}>
+                            <CustomText style={styles.successMessage}>
+                                Salasana vaihdettu!
+                            </CustomText>
+                            <CustomText style={styles.description}>
+                                {feedback?.message ||
+                                    'Salasanasi on vaihdettu onnistuneesti. Voit nyt kirjautua sisään uudella salasanallasi.'}
+                            </CustomText>
+                        </View>
 
-                        <CustomText style={styles.description}>
-                            Salasanasi on vaihdettu onnistuneesti. Voit nyt
-                            kirjautua sisään uudella salasanallasi.
-                        </CustomText>
-
-                        <View style={styles.buttonSection}>
+                        <View style={authFormStyles.buttonSection}>
                             <Button
                                 title="Kirjaudu sisään"
                                 onPress={onBackToSignIn}
-                                style={styles.primaryButton}
-                                textStyle={styles.buttonText}
+                                fullWidth
+                                style={authFormStyles.primaryButton}
+                                textStyle={authFormStyles.buttonText}
                             />
                         </View>
                     </>
@@ -164,62 +184,41 @@ const ResetPasswordScreen = ({ navigation }) => {
 }
 
 const styles = StyleSheet.create({
-    container: {
+    successBanner: {
         width: '100%',
+        backgroundColor: '#f0fdf4',
+        borderWidth: 1,
+        borderColor: '#86efac',
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 8,
     },
     description: {
-        fontSize: 16,
-        textAlign: 'center',
-        marginBottom: 30,
-        color: '#666',
+        fontSize: 15,
+        textAlign: 'left',
+        color: '#166534',
         lineHeight: 22,
-        maxWidth: 400,
     },
     successMessage: {
         fontSize: 18,
-        fontWeight: 'bold',
-        color: '#4CAF50',
-        marginBottom: 20,
-        textAlign: 'center',
+        fontWeight: '700',
+        color: '#15803d',
+        marginBottom: 8,
+        textAlign: 'left',
     },
-    buttonSection: {
-        gap: 10,
-    },
-    primaryButton: {
-        borderRadius: 25,
-        paddingTop: 7,
-        paddingBottom: 7,
-        paddingLeft: 10,
-        paddingRight: 10,
-        elevation: 2,
-        backgroundColor: '#9C86FC',
+    errorBanner: {
         width: '100%',
-        marginBottom: 10,
+        backgroundColor: '#fef2f2',
+        borderWidth: 1,
+        borderColor: '#fecaca',
+        borderRadius: 12,
+        padding: 12,
+        marginBottom: 8,
     },
-    tertiaryButton: {
-        borderRadius: 25,
-        paddingTop: 7,
-        paddingBottom: 7,
-        paddingLeft: 10,
-        paddingRight: 10,
-        elevation: 2,
-        backgroundColor: '#fff',
-        width: '100%',
-        marginBottom: 10,
-        borderWidth: 3,
-        borderColor: '#5844BB',
-    },
-    buttonText: {
-        color: '#000',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        fontSize: 16,
-    },
-    tertiaryButtonText: {
-        color: '#000',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        fontSize: 16,
+    errorBannerText: {
+        fontSize: 14,
+        color: '#b91c1c',
+        lineHeight: 20,
     },
 })
 

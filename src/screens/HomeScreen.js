@@ -167,14 +167,14 @@ const HomeScreen = () => {
                                 right: 0,
                             }}
                         >
-                            <Path d={desktopWavePathData} fill="#9C86FC" />
+                            <Path d={desktopWavePathData} fill="#AE9CFC" />
                         </Svg>
                     </View>
 
                     {/* Desktop Navigation Grid */}
                     <View style={styles.desktopNavigationWrapper}>
                         <LinearGradient
-                            colors={['#9C86FC', '#7B61F8']}
+                            colors={['#AE9CFC', '#7B61F8']}
                             style={[
                                 styles.desktopNavigationGradient,
                                 styles.desktopNavigationWithWave,
@@ -296,7 +296,7 @@ const HomeScreen = () => {
                             right: 0,
                         }}
                     >
-                        <Path d={staticWavePathData} fill="#9C86FC" />
+                        <Path d={staticWavePathData} fill="#AE9CFC" />
                     </Svg>
                 </View>
             ) : (
@@ -308,14 +308,14 @@ const HomeScreen = () => {
                         viewBox="0 0 1440 320"
                         preserveAspectRatio="none"
                     >
-                        <Path d={staticWavePathData} fill="#9C86FC" />
+                        <Path d={staticWavePathData} fill="#AE9CFC" />
                     </Svg>
                 </View>
             )}
 
             {/* Gradient Area Below Static Wave */}
             <LinearGradient
-                colors={['#9C86FC', '#7B61F8']}
+                colors={['#AE9CFC', '#7B61F8']}
                 style={[
                     styles.linkAreaGradient,
                     isTablet && styles.tabletLinkAreaGradient,

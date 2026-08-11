@@ -459,7 +459,7 @@ const styles = StyleSheet.create({
         borderRadius: 25,
         paddingVertical: 8,
         paddingHorizontal: 16,
-        backgroundColor: '#9C86FC',
+        backgroundColor: '#AE9CFC',
         elevation: 2,
     },
     errorTitle: {

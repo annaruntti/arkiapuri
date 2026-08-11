@@ -3,8 +3,9 @@ import { useNavigation, useRoute } from '@react-navigation/core'
 import axios from 'axios'
 import React from 'react'
 import { useForm } from 'react-hook-form'
-import { Alert, StyleSheet, View } from 'react-native'
+import { Alert, View } from 'react-native'
 import { getServerUrl } from '../utils/getServerUrl'
+import { authFormStyles } from '../styles/authFormStyles'
 
 import AuthLayout from '../components/AuthLayout'
 import Button from '../components/Button'
@@ -47,7 +48,6 @@ const SignUpScreen = () => {
                 if (signInRes.success) {
                     await AsyncStorage.setItem('userToken', signInRes.token)
 
-                    // Always finish onboarding (image → personalization) after signup
                     navigation.navigate('Lataa profiilikuva', {
                         token: signInRes.token,
                         fromPrompt: route.params?.fromPrompt,
@@ -99,7 +99,7 @@ const SignUpScreen = () => {
                     : 'Aloita matka Arkiapurin kanssa luomalla käyttäjätunnus.'
             }
         >
-            <View style={styles.form}>
+            <View style={authFormStyles.form}>
                 <CustomInput
                     label="Käyttäjänimi"
                     name="username"
@@ -166,113 +166,49 @@ const SignUpScreen = () => {
                     }}
                 />
 
-                <View style={styles.buttonSection}>
+                <View style={authFormStyles.buttonSection}>
                     <Button
                         title="Luo käyttäjätunnus"
                         onPress={handleSubmit(onRegisterPressed)}
-                        style={styles.primaryButton}
-                        textStyle={styles.buttonText}
+                        fullWidth
+                        style={authFormStyles.primaryButton}
+                        textStyle={authFormStyles.buttonText}
                     />
 
-                    <View style={styles.signInSection}>
-                        <CustomText style={styles.signInText}>
+                    <View style={authFormStyles.secondarySection}>
+                        <CustomText style={authFormStyles.secondaryText}>
                             Onko sinulla jo käyttäjätunnus?
                         </CustomText>
                         <Button
                             title="Kirjaudu sisään"
                             onPress={onSignInPress}
-                            style={styles.tertiaryButton}
-                            textStyle={styles.buttonText}
+                            type="TERTIARY"
+                            fullWidth
+                            style={authFormStyles.tertiaryButton}
+                            textStyle={authFormStyles.buttonText}
                         />
                     </View>
 
-                    <View style={styles.termsSection}>
-                        <CustomText style={styles.termsText}>
-                            Rekisteröitymällä hyväksyt{' '}
-                            <CustomText
-                                style={styles.link}
-                                onPress={onTermsOfUsePressed}
-                            >
-                                käyttöehdot
-                            </CustomText>{' '}
-                            ja{' '}
-                            <CustomText
-                                style={styles.link}
-                                onPress={onPrivacyPressed}
-                            >
-                                tietosuojaselosteen
-                            </CustomText>
+                    <CustomText style={authFormStyles.termsText}>
+                        Rekisteröitymällä hyväksyt{' '}
+                        <CustomText
+                            style={authFormStyles.termsLink}
+                            onPress={onTermsOfUsePressed}
+                        >
+                            käyttöehdot
+                        </CustomText>{' '}
+                        ja{' '}
+                        <CustomText
+                            style={authFormStyles.termsLink}
+                            onPress={onPrivacyPressed}
+                        >
+                            tietosuojaselosteen
                         </CustomText>
-                    </View>
+                    </CustomText>
                 </View>
             </View>
         </AuthLayout>
     )
 }
-
-const styles = StyleSheet.create({
-    form: {
-        width: '100%',
-    },
-    buttonSection: {
-        marginTop: 8,
-        gap: 20,
-    },
-    signInSection: {
-        alignItems: 'center',
-        gap: 12,
-    },
-    signInText: {
-        color: '#6b7280',
-        fontSize: 14,
-        textAlign: 'center',
-        lineHeight: 20,
-    },
-    termsSection: {
-        marginTop: 8,
-    },
-    termsText: {
-        color: '#6b7280',
-        fontSize: 12,
-        textAlign: 'center',
-        lineHeight: 18,
-    },
-    link: {
-        color: '#5844BB',
-        fontWeight: '600',
-        textDecorationLine: 'underline',
-    },
-    primaryButton: {
-        borderRadius: 25,
-        paddingTop: 7,
-        paddingBottom: 7,
-        paddingLeft: 10,
-        paddingRight: 10,
-        elevation: 2,
-        backgroundColor: '#9C86FC',
-        width: '100%',
-        alignSelf: 'center',
-        marginBottom: 10,
-    },
-    tertiaryButton: {
-        borderRadius: 25,
-        paddingTop: 7,
-        paddingBottom: 7,
-        paddingLeft: 10,
-        paddingRight: 10,
-        elevation: 2,
-        backgroundColor: '#fff',
-        width: '100%',
-        alignSelf: 'center',
-        marginBottom: 10,
-        borderWidth: 3,
-        borderColor: '#5844BB',
-    },
-    buttonText: {
-        color: '#000000',
-        fontWeight: 'bold',
-        textAlign: 'center',
-    },
-})
 
 export default SignUpScreen

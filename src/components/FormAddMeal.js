@@ -15,7 +15,7 @@ import {
 import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import * as ImagePicker from 'expo-image-picker'
-import { MaterialIcons } from '@expo/vector-icons'
+import { MaterialIcons, Feather } from '@expo/vector-icons'
 
 import { useLogin } from '../context/LoginProvider'
 import { getServerUrl } from '../utils/getServerUrl'
@@ -959,7 +959,7 @@ const AddMealForm = ({ onSubmit }) => {
                     style={styles.removeButton}
                     onPress={() => handleRemoveFoodItem(index)}
                 >
-                    <MaterialIcons name="delete" size={20} color="#666" />
+                    <Feather name="trash-2" size={18} color="#666" />
                 </TouchableOpacity>
                 
                 <View style={styles.itemInfo}>
@@ -1222,51 +1222,26 @@ const AddMealForm = ({ onSubmit }) => {
                             </View>
 
                             {plannedEatingDates.map((date, index) => (
-                                <View
+                                <FormDateField
                                     key={`eating-date-${index}`}
-                                    style={styles.eatingDateFieldRow}
-                                >
-                                    <FormDateField
-                                        value={date}
-                                        onChange={(selected) =>
-                                            updateEatingDate(index, selected)
-                                        }
-                                        minimumDate={new Date()}
-                                        style={styles.eatingDateField}
-                                        testID={`plannedEatingDate-${index}`}
-                                    />
-                                    <TouchableOpacity
-                                        onPress={() => removeEatingDate(index)}
-                                        style={styles.removeDateButton}
-                                        hitSlop={{
-                                            top: 8,
-                                            bottom: 8,
-                                            left: 8,
-                                            right: 8,
-                                        }}
-                                    >
-                                        <MaterialIcons
-                                            name="close"
-                                            size={22}
-                                            color="#FF6B6B"
-                                        />
-                                    </TouchableOpacity>
-                                </View>
+                                    value={date}
+                                    onChange={(selected) =>
+                                        updateEatingDate(index, selected)
+                                    }
+                                    onRemove={() => removeEatingDate(index)}
+                                    minimumDate={new Date()}
+                                    style={styles.eatingDateField}
+                                    testID={`plannedEatingDate-${index}`}
+                                />
                             ))}
 
-                            <View
-                                style={
-                                    isDesktop && styles.desktopButtonContainer
-                                }
-                            >
+                            <View style={styles.addEatingDateButtonWrap}>
                                 <Button
                                     title="+ Lisää syöntipäivä"
                                     onPress={addEatingDate}
-                                    style={[
-                                        styles.tertiaryButton,
-                                        isDesktop &&
-                                            styles.tertiaryButtonDesktop,
-                                    ]}
+                                    type="TERTIARY"
+                                    size="small"
+                                    style={styles.addEatingDateButton}
                                     textStyle={styles.buttonText}
                                 />
                             </View>
@@ -1502,7 +1477,7 @@ const styles = StyleSheet.create({
         paddingLeft: 10,
         paddingRight: 10,
         elevation: 2,
-        backgroundColor: '#9C86FC',
+        backgroundColor: '#AE9CFC',
         color: 'black',
         fontWeight: 'bold',
         textAlign: 'center',
@@ -1607,7 +1582,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     checkboxChecked: {
-        backgroundColor: '#9C86FC',
+        backgroundColor: '#AE9CFC',
     },
     checkboxLabel: {
         fontSize: 16,
@@ -1809,21 +1784,16 @@ const styles = StyleSheet.create({
     eatingDatesContainer: {
         marginBottom: 15,
     },
-    eatingDateFieldRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-    },
     eatingDateField: {
-        flex: 1,
         marginBottom: 10,
     },
-    removeDateButton: {
-        width: 40,
-        height: 40,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 10,
+    addEatingDateButtonWrap: {
+        alignItems: 'flex-start',
+        marginTop: 4,
+    },
+    addEatingDateButton: {
+        alignSelf: 'flex-start',
+        width: 'auto',
     },
     datePickerContainer: {
         marginTop: 10,

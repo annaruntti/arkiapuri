@@ -2,11 +2,12 @@ import { useNavigation, useRoute } from '@react-navigation/native'
 import axios from 'axios'
 import React from 'react'
 import { useForm } from 'react-hook-form'
-import { Alert, StyleSheet, TouchableOpacity, View } from 'react-native'
+import { Alert, TouchableOpacity, View } from 'react-native'
 import { useLogin } from '../context/LoginProvider'
 import { getServerUrl } from '../utils/getServerUrl'
 import { hasCompletedPersonalization } from '../utils/userPreferences'
 import storage from '../utils/storage'
+import { authFormStyles } from '../styles/authFormStyles'
 
 import AuthLayout from '../components/AuthLayout'
 import Button from '../components/Button'
@@ -59,7 +60,6 @@ const SignInScreen = () => {
                 const message =
                     response.data.message || 'Kirjautuminen epäonnistui'
 
-                // Show error in password field if it's a credential error
                 if (
                     message.toLowerCase().includes('password') ||
                     message.toLowerCase().includes('salasana') ||
@@ -113,24 +113,18 @@ const SignInScreen = () => {
 
     const onSocialSignIn = async (provider, data) => {
         try {
-            // If provider is 'google', 'apple', or 'facebook' and we have user data, we already have a JWT token from OAuth
-            // No need to call /auth/social again
             if (
                 (provider === 'google' ||
                     provider === 'apple' ||
                     provider === 'facebook') &&
                 data.user
             ) {
-                console.log(
-                    `Using existing JWT token from ${provider} OAuth flow`
-                )
                 await storage.setItem('userToken', data.token)
                 await login(data.user)
                 navigateAfterAuth(data.user, data.token)
                 return
             }
 
-            // For demo mode, send to backend
             const response = await axios.post(getServerUrl('/auth/social'), {
                 provider,
                 token: data.token,
@@ -158,7 +152,7 @@ const SignInScreen = () => {
             title="Kirjaudu sisään"
             subtitle="Tervetuloa takaisin! Kirjaudu sisään jatkaaksesi."
         >
-            <View style={styles.form}>
+            <View style={authFormStyles.form}>
                 <CustomInput
                     label="Sähköpostiosoite"
                     name="email"
@@ -191,30 +185,33 @@ const SignInScreen = () => {
 
                 <TouchableOpacity
                     onPress={() => navigation.navigate('Unohtunut salasana')}
-                    style={styles.forgotPasswordContainer}
+                    style={authFormStyles.linkRow}
                 >
-                    <CustomText style={styles.forgotPassword}>
+                    <CustomText style={authFormStyles.link}>
                         Unohditko salasanasi?
                     </CustomText>
                 </TouchableOpacity>
 
-                <View style={styles.buttonSection}>
+                <View style={authFormStyles.buttonSection}>
                     <Button
                         title="Kirjaudu sisään"
                         onPress={handleSubmit(onSignInPressed)}
-                        style={styles.primaryButton}
-                        textStyle={styles.buttonText}
+                        fullWidth
+                        style={authFormStyles.primaryButton}
+                        textStyle={authFormStyles.buttonText}
                     />
 
-                    <View style={styles.signUpSection}>
-                        <CustomText style={styles.signUpText}>
+                    <View style={authFormStyles.secondarySection}>
+                        <CustomText style={authFormStyles.secondaryText}>
                             Eikö sinulla ole vielä käyttäjätunnusta?
                         </CustomText>
                         <Button
                             title="Luo käyttäjätunnus"
                             onPress={onSignUpPress}
-                            style={styles.tertiaryButton}
-                            textStyle={styles.buttonText}
+                            type="TERTIARY"
+                            fullWidth
+                            style={authFormStyles.tertiaryButton}
+                            textStyle={authFormStyles.buttonText}
                         />
                     </View>
 
@@ -224,66 +221,5 @@ const SignInScreen = () => {
         </AuthLayout>
     )
 }
-
-const styles = StyleSheet.create({
-    form: {
-        width: '100%',
-    },
-    forgotPasswordContainer: {
-        alignSelf: 'flex-start',
-        marginBottom: 24,
-    },
-    forgotPassword: {
-        color: '#5844BB',
-        fontSize: 14,
-        fontWeight: '500',
-        textAlign: 'right',
-        textDecorationLine: 'underline',
-    },
-    buttonSection: {
-        gap: 10,
-    },
-    signUpSection: {
-        alignItems: 'center',
-        gap: 12,
-    },
-    signUpText: {
-        color: '#6b7280',
-        fontSize: 14,
-        textAlign: 'center',
-        lineHeight: 20,
-    },
-    primaryButton: {
-        borderRadius: 25,
-        paddingTop: 7,
-        paddingBottom: 7,
-        paddingLeft: 10,
-        paddingRight: 10,
-        elevation: 2,
-        backgroundColor: '#9C86FC',
-        width: '100%',
-        alignSelf: 'center',
-        marginBottom: 10,
-    },
-    tertiaryButton: {
-        borderRadius: 25,
-        paddingTop: 7,
-        paddingBottom: 7,
-        paddingLeft: 10,
-        paddingRight: 10,
-        elevation: 2,
-        backgroundColor: '#fff',
-        width: '100%',
-        alignSelf: 'center',
-        marginBottom: 10,
-        borderWidth: 3,
-        borderColor: '#5844BB',
-    },
-    buttonText: {
-        color: '#000000',
-        fontWeight: 'bold',
-        textAlign: 'center',
-    },
-})
 
 export default SignInScreen

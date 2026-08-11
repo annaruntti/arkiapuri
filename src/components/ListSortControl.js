@@ -168,7 +168,7 @@ const styles = {
         width: '100%',
     },
     selectedOptionButton: {
-        backgroundColor: '#9C86FC',
+        backgroundColor: '#AE9CFC',
         alignSelf: 'stretch',
         width: '100%',
     },

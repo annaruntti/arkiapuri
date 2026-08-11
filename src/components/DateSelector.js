@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
     },
     selectedDateButton: {
-        backgroundColor: '#9C86FC',
+        backgroundColor: '#AE9CFC',
         borderColor: '#5844BB',
     },
     dateButtonText: {
