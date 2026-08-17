@@ -450,10 +450,10 @@ const ShoppingListDetail = ({
                 return
             }
 
-            // Find or create a FoodItem so we can attach images later and
-            // keep quantities in sync, without ever resending the whole
-            // shopping list (which could resurrect already-removed items
-            // if this component's local state happened to be stale).
+            // Keep quantities in sync on the list row only, without ever
+            // resending the whole shopping list (which could resurrect
+            // already-removed items if this component's local state happened
+            // to be stale).
             let foodItemId = itemData.foodId
 
             if (!foodItemId) {
@@ -465,12 +465,6 @@ const ShoppingListDetail = ({
                         unit: itemData.unit || 'kpl',
                         price: itemData.price || 0,
                         calories: itemData.calories || 0,
-                        location: 'shopping-list',
-                        quantities: {
-                            meal: 0,
-                            'shopping-list': itemData.quantity || 1,
-                            pantry: 0,
-                        },
                     })
                     foodItemId = foodItemResult.foodItem?._id
                 } catch (foodItemError) {
@@ -519,7 +513,6 @@ const ShoppingListDetail = ({
                 calories: selectedItem.calories || 0,
                 category: selectedItem.category || [],
                 quantity:
-                    selectedItem.quantities?.['shopping-list'] ||
                     selectedItem.quantity ||
                     selectedItem.packageQuantity ||
                     1,
@@ -580,15 +573,6 @@ const ShoppingListDetail = ({
                         price: updatedData.price || currentItem.price || 0,
                         calories:
                             updatedData.calories || currentItem.calories || 0,
-                        location: 'shopping-list',
-                        quantities: {
-                            meal: 0,
-                            'shopping-list':
-                                updatedData.quantity ||
-                                currentItem.quantity ||
-                                1,
-                            pantry: 0,
-                        },
                     })
                     foodItemId = foodItemResult.foodItem?._id
                     if (foodItemId) {

@@ -33,6 +33,10 @@ import { getServerUrl } from '../utils/getServerUrl'
 import { getFoodItemImageUrl } from '../utils/openFoodFactsMapper'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
+import { findOrCreateFoodItem } from '../services/foodItemApi'
+
+const isPersistedFoodItemId = (id) =>
+    typeof id === 'string' && /^[a-fA-F0-9]{24}$/.test(id)
 
 const normalizePantryName = (name) =>
     String(name || '')
@@ -265,27 +269,44 @@ const PantryScreen = ({}) => {
                 return
             }
 
-            // First create the FoodItem
-            const foodItemData = {
+            const quantity =
+                Number(itemData.quantity) ||
+                Number(itemData.packageQuantity) ||
+                1
+            const catalogId = String(itemData.foodId || itemData._id || '')
+            let foodId = isPersistedFoodItemId(catalogId) ? catalogId : null
+
+            if (!foodId) {
+                const foodItemResult = await findOrCreateFoodItem({
+                    name: itemData.name.trim(),
+                    category: itemData.category || [],
+                    unit: itemData.unit,
+                    price: Number(itemData.price) || 0,
+                    calories: Number(itemData.calories) || 0,
+                })
+                if (!foodItemResult.success || !foodItemResult.foodItem?._id) {
+                    throw new Error('Failed to create food item')
+                }
+                foodId = foodItemResult.foodItem._id
+            }
+
+            const pantryItemData = {
                 name: itemData.name.trim(),
-                category: itemData.category || [],
+                quantity,
                 unit: itemData.unit,
-                price: Number(itemData.price) || 0,
-                calories: Number(itemData.calories) || 0,
-                locations: ['pantry'],
-                quantities: {
-                    meal: 0,
-                    'shopping-list': 0,
-                    pantry: Number(itemData.quantity) || 1,
-                },
                 expirationDate:
                     itemData.expirationDate ||
                     new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                foodId,
+                category: itemData.category || [],
+                calories: Number(itemData.calories) || 0,
+                price: Number(itemData.price) || 0,
+                addedFrom: 'pantry',
             }
 
-            const foodItemResponse = await axios.post(
-                getServerUrl('/food-items'),
-                foodItemData,
+            const pantryResponse = await axios.post(
+                getServerUrl('/pantry/items'),
+                pantryItemData,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -294,45 +315,15 @@ const PantryScreen = ({}) => {
                 }
             )
 
-            if (foodItemResponse.data.success) {
-                // Then create the pantry item
-                const pantryItemData = {
-                    name: itemData.name.trim(),
-                    quantity: Number(itemData.quantity) || 1,
-                    unit: itemData.unit,
-                    expirationDate:
-                        itemData.expirationDate ||
-                        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-                    foodId: foodItemResponse.data.foodItem._id,
-                    category: itemData.category || [],
-                    calories: Number(itemData.calories) || 0,
-                    price: Number(itemData.price) || 0,
-                    addedFrom: 'pantry',
-                }
-
-                const pantryResponse = await axios.post(
-                    getServerUrl('/pantry/items'),
-                    pantryItemData,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                            'Content-Type': 'application/json',
-                        },
-                    }
+            if (pantryResponse.data.success) {
+                setShowAddItemSearch(false)
+                await fetchPantryItems()
+                Alert.alert(
+                    'Onnistui',
+                    `Tuote "${itemData.name}" lisätty pentteriin`
                 )
-
-                if (pantryResponse.data.success) {
-                    setShowAddItemSearch(false)
-                    await fetchPantryItems()
-                    Alert.alert(
-                        'Onnistui',
-                        `Tuote "${itemData.name}" lisätty pentteriin`
-                    )
-                } else {
-                    throw new Error('Failed to add item to pantry')
-                }
             } else {
-                throw new Error('Failed to create food item')
+                throw new Error('Failed to add item to pantry')
             }
         } catch (error) {
             console.error('Error adding item:', error?.response?.data || error)
@@ -502,11 +493,23 @@ const PantryScreen = ({}) => {
                 return
             }
 
-            // Logged-in: UnifiedFoodSearch may already have added (OFF).
-            // Refresh list and close modal.
-            await fetchPantryItems()
-            setShowAddItemSearch(false)
-            Alert.alert('Onnistui', `${item.name} lisätty pentteriisi`)
+            // Logged-in: Open Food Facts products are already on the pantry.
+            // Catalog search still needs a pantry row with its own quantity.
+            if (meta.alreadyAdded) {
+                await fetchPantryItems()
+                setShowAddItemSearch(false)
+                Alert.alert('Onnistui', `${item.name} lisätty pentteriisi`)
+                return
+            }
+
+            await handleAddItem({
+                ...item,
+                quantity:
+                    item.quantity ||
+                    item.packageQuantity ||
+                    1,
+                unit: item.unit || 'kpl',
+            })
         } catch (error) {
             console.error('Error adding item to pantry:', error)
             Alert.alert('Virhe', 'Tuotteen lisääminen epäonnistui')

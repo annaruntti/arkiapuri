@@ -38,6 +38,10 @@ import FormFoodItem from './FormFoodItem'
 import GuestWarningBanner from './GuestWarningBanner'
 import MealCategorySelector from './MealCategorySelector'
 import UnifiedFoodSearch from './UnifiedFoodSearch'
+import {
+    applyIngredientQuantity,
+    getIngredientQuantity,
+} from '../utils/mealFoodItem'
 
 import Info from './Info'
 
@@ -294,10 +298,7 @@ const AddMealForm = ({ onSubmit }) => {
                             `guest-food-${Date.now()}-${Math.random()
                                 .toString(36)
                                 .slice(2, 8)}`,
-                        quantity:
-                            parseFloat(item.quantities?.meal) ||
-                            parseFloat(item.quantity) ||
-                            1,
+                        quantity: getIngredientQuantity(item),
                     })),
                     defaultRoles: [...selectedRoles],
                     mealCategory,
@@ -336,12 +337,8 @@ const AddMealForm = ({ onSubmit }) => {
                                 .filter((cat) => cat && cat.trim() !== '')
                         })()
 
-                        const mealQuantity =
-                            parseFloat(item.quantities?.meal) ||
-                            parseFloat(item.quantity) ||
-                            0
+                        const mealQuantity = getIngredientQuantity(item)
 
-                        // Use findOrCreateFoodItem to sync with existing items
                         const findOrCreateResponse = await axios.post(
                             getServerUrl('/food-items/find-or-create'),
                             {
@@ -350,12 +347,6 @@ const AddMealForm = ({ onSubmit }) => {
                                 category: categoryArray,
                                 calories: parseInt(item.calories) || 0,
                                 price: parseFloat(item.price) || 0,
-                                location: 'meal',
-                                quantities: {
-                                    meal: mealQuantity,
-                                    'shopping-list': 0,
-                                    pantry: 0,
-                                },
                             },
                             {
                                 headers: {
@@ -367,7 +358,11 @@ const AddMealForm = ({ onSubmit }) => {
                         const foodItem =
                             findOrCreateResponse.data.foodItem
 
-                        return foodItem._id
+                        return {
+                            foodId: foodItem._id,
+                            quantity: mealQuantity || 1,
+                            unit: item.unit || foodItem.unit || 'kpl',
+                        }
                     } catch (error) {
                         throw new Error(
                             `Failed to process food item ${item.name}: ${error.message}`
@@ -443,26 +438,20 @@ const AddMealForm = ({ onSubmit }) => {
         }
     }
 
-    const handleSelectItem = async (selectedItem) => {
+    const addSelectedItemToMeal = async (selectedItem) => {
         try {
             const token = await storage.getItem('userToken')
+            const itemWithQty = applyIngredientQuantity(
+                selectedItem,
+                getIngredientQuantity(selectedItem),
+                selectedItem.unit
+            )
 
-            // Guest: skip availability API
             if (!token) {
                 const newFoodItem = {
-                    ...selectedItem,
+                    ...itemWithQty,
                     tempId: `${selectedItem._id || selectedItem.name}-${Date.now()}-${Math.random()}`,
                     shoppingListId: selectedShoppingListId,
-                    locations: selectedItem.locations || ['meal'],
-                    quantities: {
-                        meal:
-                            selectedItem.quantities?.meal ||
-                            selectedItem.quantity ||
-                            1,
-                        'shopping-list':
-                            selectedItem.quantities?.['shopping-list'] || 0,
-                        pantry: selectedItem.quantities?.pantry || 0,
-                    },
                     availability: {
                         inPantry: false,
                         inShoppingList: false,
@@ -481,7 +470,6 @@ const AddMealForm = ({ onSubmit }) => {
                 return
             }
 
-            // Check is item exists in pantry or shopping list
             const availabilityResponse = await axios.post(
                 getServerUrl('/food-items/check-availability'),
                 { name: selectedItem.name },
@@ -493,30 +481,19 @@ const AddMealForm = ({ onSubmit }) => {
             )
 
             const availability = availabilityResponse.data
-
-            // Convert the selected item to the format expected by the meal form
             const newFoodItem = {
-                ...selectedItem,
-                // Add a unique temporary ID for tracking
+                ...itemWithQty,
                 tempId: `${selectedItem._id || selectedItem.name}-${Date.now()}-${Math.random()}`,
                 shoppingListId: selectedShoppingListId,
-                locations: selectedItem.locations || ['meal'],
-                quantities: {
-                    meal:
-                        selectedItem.quantities?.meal || selectedItem.quantity || 1,
-                    'shopping-list':
-                        selectedItem.quantities?.['shopping-list'] || 0,
-                    pantry: selectedItem.quantities?.pantry || 0,
-                },
                 availability: {
                     inPantry: availability?.inPantry === true,
                     inShoppingList: availability?.inShoppingList === true,
                     pantryQuantity: availability?.pantryQuantity || 0,
-                    shoppingListQuantity: availability?.shoppingListQuantity || 0,
-                }, // Store availability info explicitly
+                    shoppingListQuantity:
+                        availability?.shoppingListQuantity || 0,
+                },
             }
 
-            // Add item to list - inline UI will show suggestion if needed
             setFoodItems((prevItems) => {
                 const updated = [...prevItems, newFoodItem]
                 if (updated.length > 0) {
@@ -526,23 +503,19 @@ const AddMealForm = ({ onSubmit }) => {
             })
         } catch (error) {
             console.error('Error checking availability:', error)
-            // If check fails, assume item is not in pantry/shopping list
+            const itemWithQty = applyIngredientQuantity(
+                selectedItem,
+                getIngredientQuantity(selectedItem),
+                selectedItem.unit
+            )
             const newFoodItem = {
-                ...selectedItem,
+                ...itemWithQty,
                 tempId: `${selectedItem._id || selectedItem.name}-${Date.now()}-${Math.random()}`,
                 shoppingListId: selectedShoppingListId,
-                locations: selectedItem.locations || ['meal'],
-                quantities: {
-                    meal:
-                        selectedItem.quantities?.meal || selectedItem.quantity || 1,
-                    'shopping-list':
-                        selectedItem.quantities?.['shopping-list'] || 0,
-                    pantry: selectedItem.quantities?.pantry || 0,
-                },
                 availability: {
                     inPantry: false,
                     inShoppingList: false,
-                }, // Default to not available if check fails
+                },
             }
             setFoodItems((prevItems) => {
                 const updated = [...prevItems, newFoodItem]
@@ -583,7 +556,7 @@ const AddMealForm = ({ onSubmit }) => {
                 return
             }
 
-            const quantity = foodItemInList.quantities?.meal || foodItemInList.quantity || 1
+            const quantity = getIngredientQuantity(foodItemInList)
             console.log('Adding to shopping list with quantity:', quantity)
 
             // Prepare category array
@@ -616,12 +589,6 @@ const AddMealForm = ({ onSubmit }) => {
                     category: categoryArray,
                     calories: parseInt(selectedItem.calories || foodItemInList.calories) || 0,
                     price: parseFloat(selectedItem.price || foodItemInList.price) || 0,
-                    location: 'shopping-list',
-                    quantities: {
-                        meal: 0,
-                        'shopping-list': quantity,
-                        pantry: 0,
-                    },
                 },
                 {
                     headers: {
@@ -705,7 +672,7 @@ const AddMealForm = ({ onSubmit }) => {
     const addItemToPantry = async (selectedItem, foodItemInList) => {
         try {
             const token = await storage.getItem('userToken')
-            const quantity = foodItemInList.quantities?.meal || foodItemInList.quantity || 1
+            const quantity = getIngredientQuantity(foodItemInList)
 
             // Prepare category array
             const categoryArray = (() => {
@@ -737,12 +704,6 @@ const AddMealForm = ({ onSubmit }) => {
                     category: categoryArray,
                     calories: parseInt(selectedItem.calories || foodItemInList.calories) || 0,
                     price: parseFloat(selectedItem.price || foodItemInList.price) || 0,
-                    location: 'pantry',
-                    quantities: {
-                        meal: 0,
-                        'shopping-list': 0,
-                        pantry: quantity,
-                    },
                 },
                 {
                     headers: {
@@ -865,12 +826,6 @@ const AddMealForm = ({ onSubmit }) => {
                     unit: itemData.unit,
                     price: Number(itemData.price) || 0,
                     calories: Number(itemData.calories) || 0,
-                    location: 'meal',
-                    quantities: {
-                        meal: Number(itemData.quantity) || 1,
-                        'shopping-list': 0,
-                        pantry: 0,
-                    },
                 },
                 {
                     headers: {
@@ -880,8 +835,16 @@ const AddMealForm = ({ onSubmit }) => {
             )
 
             if (findOrCreateResponse.data.success) {
+                const quantity = Number(itemData.quantity) || 1
                 const newFoodItem = {
                     ...findOrCreateResponse.data.foodItem,
+                    ...applyIngredientQuantity(
+                        itemData,
+                        quantity,
+                        itemData.unit
+                    ),
+                    _id: findOrCreateResponse.data.foodItem._id,
+                    foodId: findOrCreateResponse.data.foodItem._id,
                     tempId: `new-${findOrCreateResponse.data.foodItem._id || itemData.name}-${Date.now()}-${Math.random()}`,
                     shoppingListId: selectedShoppingListId,
                     availability: {
@@ -943,11 +906,12 @@ const AddMealForm = ({ onSubmit }) => {
             if (updatedItems[index]) {
                 updatedItems[index] = {
                     ...updatedItems[index],
+                    quantity: newQuantity,
                     quantities: {
-                        ...updatedItems[index].quantities,
                         meal: newQuantity,
+                        'shopping-list': 0,
+                        pantry: 0,
                     },
-                    quantity: newQuantity, // Backward compatibility
                     // Preserve availability data
                     availability: updatedItems[index].availability || {
                         inPantry: false,
@@ -982,15 +946,13 @@ const AddMealForm = ({ onSubmit }) => {
                 <View style={styles.itemInfo}>
                     <CustomText style={styles.itemName}>{item.name}</CustomText>
                     <CustomText style={styles.itemDetails}>
-                        {`${item.quantities?.meal || item.quantity || 1} ${item.unit || 'kpl'}`}
+                        {`${getIngredientQuantity(item)} ${item.unit || 'kpl'}`}
                     </CustomText>
                     <View style={styles.quantityRow}>
                         <CustomText style={styles.quantityLabel}>Määrä:</CustomText>
                         <TextInput
                             style={styles.quantityInput}
-                            value={String(
-                                item.quantities?.meal || item.quantity || 1
-                            )}
+                            value={String(getIngredientQuantity(item))}
                             onChangeText={(text) =>
                                 handleUpdateQuantity(index, parseFloat(text) || 0)
                             }
@@ -1275,7 +1237,7 @@ const AddMealForm = ({ onSubmit }) => {
                                 Raaka-aineet
                             </CustomText>
                             <UnifiedFoodSearch
-                                onSelectItem={handleSelectItem}
+                                onSelectItem={addSelectedItemToMeal}
                                 location="meal"
                                 allowDuplicates={true}
                             />
@@ -1394,6 +1356,7 @@ const AddMealForm = ({ onSubmit }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        position: 'relative',
         backgroundColor: '#fff',
     },
     scrollView: {

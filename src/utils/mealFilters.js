@@ -17,6 +17,21 @@ export const getCategoryMappings = () => {
     return { categoryNameToId }
 }
 
+export const getMealRoles = (meal, fallback = ['other']) => {
+    const raw = meal?.defaultRoles
+    if (Array.isArray(raw)) return raw.length > 0 ? raw : fallback
+    if (typeof raw === 'string') {
+        try {
+            const parsed = JSON.parse(raw)
+            if (Array.isArray(parsed) && parsed.length > 0) return parsed
+        } catch (_error) {
+            // Stored as a single role string
+        }
+        return raw ? [raw] : fallback
+    }
+    return fallback
+}
+
 // Determine which dietary categories a meal qualifies for
 // A meal qualifies if all its food items have that category
 export const getMealDietaryCategories = (meal) => {
@@ -116,7 +131,7 @@ export const filterMealsByType = (meals, filterMealType) => {
     }
 
     return meals.filter((meal) => {
-        const roles = meal.defaultRoles || []
+        const roles = getMealRoles(meal, [])
         return roles.includes(filterMealType)
     })
 }

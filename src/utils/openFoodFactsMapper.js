@@ -378,11 +378,5 @@ export const buildGuestFoodItemFromOpenFoodFacts = (product, location = 'pantry'
         ...mapped,
         quantity,
         unit,
-        locations: [location],
-        quantities: {
-            meal: location === 'meal' ? quantity : 0,
-            'shopping-list': location === 'shopping-list' ? quantity : 0,
-            pantry: location === 'pantry' ? quantity : 0,
-        },
     }
 }

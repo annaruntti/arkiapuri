@@ -234,18 +234,10 @@ const PantryItemDetails = ({
                         unit: item.unit,
                         calories: item.calories || 0,
                         price: item.price || 0,
-                        location: 'pantry',
-                        locations: ['pantry'],
-                        quantity: item.quantity || 1,
-                        quantities: {
-                            meal: 0,
-                            'shopping-list': 0,
-                            pantry: item.quantity || 1,
-                        },
                     }
 
                     const createResponse = await axios.post(
-                        getServerUrl('/food-items'),
+                        getServerUrl('/food-items/find-or-create'),
                         newFoodItemData,
                         {
                             headers: {

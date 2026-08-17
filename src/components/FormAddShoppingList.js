@@ -16,6 +16,7 @@ import Button from './Button'
 import CustomInput from './CustomInput'
 import CustomText from './CustomText'
 import FormFoodItem from './FormFoodItem'
+import { findOrCreateFoodItem } from '../services/foodItemApi'
 
 const FormAddShoppingList = ({ onSubmit, onClose }) => {
     const { isDesktop } = useResponsiveDimensions()
@@ -108,28 +109,56 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
                 return processedItem
             })
 
-            const shoppingListData = {
-                name: data.name,
-                description: data.description || '',
-                totalEstimatedPrice: data.totalEstimatedPrice || 0,
-                items: processedItems,
-            }
-
             // Guest mode: keep list in local UI state only
             if (!token) {
                 const guestList = {
-                    ...shoppingListData,
-                    _id: `guest-list-${Date.now()}`,
+                    name: data.name,
+                    description: data.description || '',
+                    totalEstimatedPrice: data.totalEstimatedPrice || 0,
                     items: processedItems.map((item, index) => ({
                         ...item,
                         _id: item._id || `guest-item-${Date.now()}-${index}`,
                         bought: false,
                     })),
+                    _id: `guest-list-${Date.now()}`,
                 }
                 onSubmit({ success: true, shoppingList: guestList })
                 setItems([])
                 onClose()
                 return
+            }
+
+            const itemsWithCatalog = await Promise.all(
+                processedItems.map(async (item) => {
+                    if (item.foodId) return item
+                    try {
+                        const result = await findOrCreateFoodItem({
+                            name: item.name,
+                            isFood: item.isFood !== false,
+                            category: item.categories || item.category || [],
+                            unit: item.unit || 'kpl',
+                            price: item.price || 0,
+                            calories: item.calories || 0,
+                        })
+                        return {
+                            ...item,
+                            foodId: result.foodItem?._id,
+                        }
+                    } catch (error) {
+                        console.error(
+                            'Error linking shopping list item to catalog:',
+                            error
+                        )
+                        return item
+                    }
+                })
+            )
+
+            const shoppingListData = {
+                name: data.name,
+                description: data.description || '',
+                totalEstimatedPrice: data.totalEstimatedPrice || 0,
+                items: itemsWithCatalog,
             }
 
             const response = await axios.post(

@@ -8,6 +8,7 @@ import {
 import Button from './Button'
 import CustomText from './CustomText'
 import GuestWarningBanner from './GuestWarningBanner'
+import { getMealRoles } from '../utils/mealFilters'
 
 const PLACEHOLDER_IMAGE_URL =
     'https://images.ctfassets.net/2pij69ehhf4n/3b9imD6TDC4i68V4uHVgL1/1ac1194dccb086bb52ebd674c59983e3/undraw_breakfast_rgx5.png'
@@ -27,7 +28,7 @@ const groupMealsByCategory = (meals) => {
     const grouped = {}
 
     meals.forEach((meal) => {
-        const roles = meal.defaultRoles || ['other']
+        const roles = getMealRoles(meal)
         roles.forEach((role) => {
             if (!grouped[role]) {
                 grouped[role] = []
@@ -93,45 +94,52 @@ const MealSelectionList = ({
         <SectionList
             sections={sections}
             stickySectionHeadersEnabled={false}
-            renderItem={({ item }) => (
-                <TouchableOpacity
-                    style={[
-                        styles.mealItem,
-                        selectedDates.length === 0 && styles.disabledMealItem,
-                    ]}
-                    onPress={() =>
-                        selectedDates.length > 0 ? onMealSelect(item) : null
-                    }
-                    disabled={selectedDates.length === 0}
-                >
-                    <Image
-                        source={{
-                            uri: item.image?.url || PLACEHOLDER_IMAGE_URL,
-                        }}
-                        style={styles.mealImage}
-                        resizeMode="cover"
-                    />
-                    <View style={styles.mealTextContainer}>
-                        <CustomText style={styles.mealName}>
-                            {item.name}
-                        </CustomText>
-                        <CustomText style={styles.mealType}>
-                            {showAllRoles
-                                ? item.defaultRoles
-                                      ?.map(
-                                          (role) =>
-                                              mealTypeTranslations[role] || role
-                                      )
-                                      .join(', ')
-                                : item.defaultRoles?.[0]
-                                  ? mealTypeTranslations[
-                                        item.defaultRoles[0]
-                                    ] || item.defaultRoles[0]
-                                  : 'Ateria'}
-                        </CustomText>
-                    </View>
-                </TouchableOpacity>
-            )}
+            renderItem={({ item }) => {
+                const roles = getMealRoles(item, [])
+                const roleLabel =
+                    roles.length === 0
+                        ? 'Ateria'
+                        : showAllRoles
+                          ? roles
+                                .map(
+                                    (role) =>
+                                        mealTypeTranslations[role] || role
+                                )
+                                .join(', ')
+                          : mealTypeTranslations[roles[0]] || roles[0]
+
+                return (
+                    <TouchableOpacity
+                        style={[
+                            styles.mealItem,
+                            selectedDates.length === 0 &&
+                                styles.disabledMealItem,
+                        ]}
+                        onPress={() =>
+                            selectedDates.length > 0
+                                ? onMealSelect(item)
+                                : null
+                        }
+                        disabled={selectedDates.length === 0}
+                    >
+                        <Image
+                            source={{
+                                uri: item.image?.url || PLACEHOLDER_IMAGE_URL,
+                            }}
+                            style={styles.mealImage}
+                            resizeMode="cover"
+                        />
+                        <View style={styles.mealTextContainer}>
+                            <CustomText style={styles.mealName}>
+                                {item.name}
+                            </CustomText>
+                            <CustomText style={styles.mealType}>
+                                {roleLabel}
+                            </CustomText>
+                        </View>
+                    </TouchableOpacity>
+                )
+            }}
             renderSectionHeader={({ section: { title } }) => (
                 <View style={styles.sectionHeader}>
                     <CustomText style={styles.sectionTitle}>{title}</CustomText>

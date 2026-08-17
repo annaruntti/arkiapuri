@@ -1,6 +1,7 @@
 import { View, StyleSheet, TouchableOpacity, TextInput } from 'react-native'
 import { Feather } from '@expo/vector-icons'
 import CustomText from './CustomText'
+import { getIngredientQuantity } from '../utils/mealFoodItem'
 
 const FoodItemRow = ({
     item,
@@ -24,12 +25,9 @@ const FoodItemRow = ({
                     />
                     <TextInput
                         style={[styles.input, styles.foodItemInput]}
-                        value={String(item.quantities?.meal || 0)}
+                        value={String(getIngredientQuantity(item))}
                         onChangeText={(text) =>
-                            onItemChange(index, 'quantities', {
-                                ...item.quantities,
-                                meal: parseFloat(text) || 0,
-                            })
+                            onItemChange(index, 'quantity', parseFloat(text) || 0)
                         }
                         placeholder="Määrä"
                         keyboardType="numeric"
@@ -45,7 +43,8 @@ const FoodItemRow = ({
                 </>
             ) : (
                 <CustomText>
-                    {item.name} - {item.quantities?.meal || 0} {item.unit}
+                    {item.name} - {getIngredientQuantity(item)}{' '}
+                    {item.unit}
                 </CustomText>
             )}
         </View>

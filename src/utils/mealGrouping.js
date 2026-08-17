@@ -1,11 +1,15 @@
-import { getDietCategories, getMealDietaryCategories } from './mealFilters'
+import {
+    getDietCategories,
+    getMealDietaryCategories,
+    getMealRoles,
+} from './mealFilters'
 
 // Group meals by their default roles
 export const groupMealsByCategory = (meals) => {
     const grouped = {}
 
     meals.forEach((meal) => {
-        const roles = meal.defaultRoles || ['other']
+        const roles = getMealRoles(meal)
         roles.forEach((role) => {
             if (!grouped[role]) {
                 grouped[role] = []

@@ -27,6 +27,7 @@ import InlineCategorySelect from './InlineCategorySelect'
 import UnifiedFoodSearch from './UnifiedFoodSearch'
 import categories from '../data/categories'
 import { formStyles } from '../styles/formStyles'
+import { APP_UNITS } from '../utils/units'
 
 const NUTRITION_FIELDS = [
     { name: 'calories', label: 'Kalorit', unit: 'kcal' },
@@ -149,7 +150,7 @@ const FormFoodItem = forwardRef(
         const isFood = watch('isFood') !== false
         const showFoodFields = isFood
 
-        const unitOptions = ['kpl', 'g', 'kg', 'l', 'dl', 'ml', 'tl', 'rkl']
+        const unitOptions = APP_UNITS
 
         const openUnitMenu = () => {
             setUnitMenuOpen((open) => !open)
@@ -479,11 +480,26 @@ const FormFoodItem = forwardRef(
                     onSubmit(formData)
                     // Form reset and closing handled by parent component
                 } else {
-                    // Normal food item creation flow
+                    const catalogPayload = {
+                        name: formData.name,
+                        isFood: formData.isFood,
+                        category: formData.category,
+                        unit: formData.unit,
+                        price: formData.price,
+                        calories: formData.calories,
+                        nutrition: formData.nutrition,
+                        expirationDate: formData.expirationDate,
+                    }
+
                     const token = await storage.getItem('userToken')
+                    if (!token) {
+                        onSubmit(formData)
+                        return
+                    }
+
                     const response = await axios.post(
-                        getServerUrl('/food-items'),
-                        formData,
+                        getServerUrl('/food-items/find-or-create'),
+                        catalogPayload,
                         {
                             headers: {
                                 Authorization: `Bearer ${token}`,
@@ -543,7 +559,12 @@ const FormFoodItem = forwardRef(
                             console.log('No image selected for food item')
                         }
 
-                        onSubmit(finalFoodItem)
+                        onSubmit({
+                            ...finalFoodItem,
+                            quantity: formData.quantity,
+                            unit: formData.unit,
+                            expirationDate: formData.expirationDate,
+                        })
                         reset()
                         // Reset quantities and locations except 'meal'
                         setQuantities({

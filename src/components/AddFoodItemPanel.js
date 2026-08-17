@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Platform, ScrollView, StyleSheet, View } from 'react-native'
 import CustomText from './CustomText'
 import FormFoodItem from './FormFoodItem'
@@ -21,6 +22,8 @@ const AddFoodItemPanel = ({
     formTitle = 'Luo uusi tuote manuaalisesti',
     showFormBackButton = false,
 }) => {
+    const [askingMealQuantity, setAskingMealQuantity] = useState(false)
+
     return (
         <ScrollView
             style={styles.modalScrollView}
@@ -39,32 +42,39 @@ const AddFoodItemPanel = ({
             )}
 
             <View style={styles.searchSection}>
-                <CustomText style={styles.sectionTitle}>{searchTitle}</CustomText>
+                {!askingMealQuantity && (
+                    <CustomText style={styles.sectionTitle}>{searchTitle}</CustomText>
+                )}
                 <UnifiedFoodSearch
                     onSelectItem={onSelectItem}
                     location={location}
                     mealId={mealId}
                     shoppingListId={shoppingListId}
                     allowDuplicates={allowDuplicates}
+                    onMealQuantityPromptChange={setAskingMealQuantity}
                 />
             </View>
 
-            <View style={styles.divider}>
-                <View style={styles.dividerLine} />
-                <CustomText style={styles.dividerText}>TAI</CustomText>
-                <View style={styles.dividerLine} />
-            </View>
+            {location === 'meal' && askingMealQuantity ? null : (
+                <>
+                    <View style={styles.divider}>
+                        <View style={styles.dividerLine} />
+                        <CustomText style={styles.dividerText}>TAI</CustomText>
+                        <View style={styles.dividerLine} />
+                    </View>
 
-            <View style={styles.formSection}>
-                <CustomText style={styles.sectionTitle}>{formTitle}</CustomText>
-                <FormFoodItem
-                    onSubmit={onSubmitNewItem}
-                    onClose={onCloseForm}
-                    location={location}
-                    allowNonFood={location === 'shopping-list'}
-                    showBackButton={showFormBackButton}
-                />
-            </View>
+                    <View style={styles.formSection}>
+                        <CustomText style={styles.sectionTitle}>{formTitle}</CustomText>
+                        <FormFoodItem
+                            onSubmit={onSubmitNewItem}
+                            onClose={onCloseForm}
+                            location={location}
+                            allowNonFood={location === 'shopping-list'}
+                            showBackButton={showFormBackButton}
+                        />
+                    </View>
+                </>
+            )}
         </ScrollView>
     )
 }

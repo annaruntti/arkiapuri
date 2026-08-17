@@ -102,10 +102,18 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
     const handleFoodItemChange = (index, field, value) => {
         setEditedValues((prev) => {
             const updatedFoodItems = [...prev.foodItems]
-            updatedFoodItems[index] = {
-                ...updatedFoodItems[index],
+            const current = updatedFoodItems[index]
+            const nextItem = {
+                ...current,
                 [field]: value,
             }
+            if (field === 'quantity') {
+                nextItem.quantities = {
+                    ...(current.quantities || {}),
+                    meal: value,
+                }
+            }
+            updatedFoodItems[index] = nextItem
             return {
                 ...prev,
                 foodItems: updatedFoodItems,

@@ -21,6 +21,11 @@ import openFoodFactsApi from '../services/openFoodFactsApi'
 import { addPantryItem, addShoppingListItems } from '../services/collectionApi'
 import BarcodeScanner from './BarcodeScanner'
 import CustomText from './CustomText'
+import MealIngredientQuantityModal from './MealIngredientQuantityModal'
+import {
+    applyIngredientQuantity,
+    stripCatalogLocationQuantity,
+} from '../utils/mealFoodItem'
 import {
     buildGuestFoodItemFromOpenFoodFacts,
     mapOpenFoodFactsToFoodItemFields,
@@ -37,19 +42,12 @@ const getItemIdentity = (item) => {
     return null
 }
 
-/** Prefer richer / more recently used food item when collapsing duplicates. */
+/** Prefer richer / more recently used catalog item when collapsing duplicates. */
 const scoreFoodItem = (item) => {
-    const locationCount = Array.isArray(item.locations) ? item.locations.length : 0
-    const quantityTotal = item.quantities
-        ? Object.values(item.quantities).reduce(
-              (sum, value) => sum + (Number(value) || 0),
-              0
-          )
-        : 0
     const hasImage = item.image?.url || item.imageUrl ? 1 : 0
     const hasOff = item.openFoodFactsData ? 1 : 0
     const updatedAt = item.updatedAt ? new Date(item.updatedAt).getTime() : 0
-    return locationCount * 1000 + quantityTotal * 10 + hasImage * 5 + hasOff * 3 + updatedAt / 1e12
+    return hasImage * 5 + hasOff * 3 + updatedAt / 1e12
 }
 
 const dedupeFoodItems = (items = []) => {
@@ -86,6 +84,7 @@ const UnifiedFoodSearch = ({
     shoppingListId = null,
     mealId = null,
     allowDuplicates = false,
+    onMealQuantityPromptChange,
 }) => {
     const { isDesktop } = useResponsiveDimensions()
     const showNutrition = useShowNutrition()
@@ -98,9 +97,15 @@ const UnifiedFoodSearch = ({
     const [showScanner, setShowScanner] = useState(false)
     const [addedItems, setAddedItems] = useState(new Set())
     const [activeTab, setActiveTab] = useState('all') // 'all', 'local', 'openfoodfacts'
+    const [pendingMealPick, setPendingMealPick] = useState(null)
     const searchContainerRef = useRef(null)
     const searchTimeoutRef = useRef(null)
     const renderTimestampRef = useRef(Date.now())
+
+    useEffect(() => {
+        onMealQuantityPromptChange?.(Boolean(pendingMealPick))
+        return () => onMealQuantityPromptChange?.(false)
+    }, [pendingMealPick, onMealQuantityPromptChange])
 
     // Fetch local food items when component mounts
     useEffect(() => {
@@ -274,6 +279,19 @@ const UnifiedFoodSearch = ({
         }
     }
 
+    const emitSelectedItem = (item, meta = { alreadyAdded: false }) => {
+        if (location === 'meal') {
+            setPendingMealPick({
+                item: stripCatalogLocationQuantity(item),
+                meta,
+            })
+            setSearchQuery('')
+            setIsListVisible(false)
+            return
+        }
+        onSelectItem(item, meta)
+    }
+
     const handleBarcodeScanned = async (barcode) => {
         setShowScanner(false)
         setLoading(true)
@@ -310,7 +328,7 @@ const UnifiedFoodSearch = ({
                         {
                             text: 'Lisää manuaalisesti',
                             onPress: () => {
-                                onSelectItem({
+                                emitSelectedItem({
                                     name: `Tuote ${barcode}`,
                                     barcode: barcode,
                                     source: 'manual',
@@ -388,7 +406,7 @@ const UnifiedFoodSearch = ({
                     product,
                     location
                 )
-                onSelectItem(foodItem, { alreadyAdded: false })
+                emitSelectedItem(foodItem, { alreadyAdded: false })
                 setSearchQuery('')
                 setIsListVisible(false)
                 return
@@ -419,26 +437,10 @@ const UnifiedFoodSearch = ({
 
                 const foodItem = {
                     ...data.foodItem,
-                    quantity:
-                        data.foodItem.quantities?.meal ||
-                        mapped.packageQuantity ||
-                        1,
                     unit: data.foodItem.unit || mapped.unit || 'kpl',
-                    locations: Array.from(
-                        new Set([...(data.foodItem.locations || []), 'meal'])
-                    ),
-                    quantities: {
-                        meal:
-                            data.foodItem.quantities?.meal ||
-                            mapped.packageQuantity ||
-                            1,
-                        'shopping-list':
-                            data.foodItem.quantities?.['shopping-list'] || 0,
-                        pantry: data.foodItem.quantities?.pantry || 0,
-                    },
                 }
 
-                onSelectItem(foodItem, { alreadyAdded: false })
+                emitSelectedItem(foodItem, { alreadyAdded: false })
                 setSearchQuery('')
                 setIsListVisible(false)
                 return
@@ -480,7 +482,7 @@ const UnifiedFoodSearch = ({
                 // collection (pantry/shopping list) above — the caller must
                 // NOT add it again (that would create a duplicate entry with
                 // the wrong default quantity of 1).
-                onSelectItem(data.foodItem, { alreadyAdded: true })
+                emitSelectedItem(data.foodItem, { alreadyAdded: true })
                 setSearchQuery('')
                 setIsListVisible(false)
             } else {
@@ -508,7 +510,7 @@ const UnifiedFoodSearch = ({
         setAddedItems((prev) => new Set(prev).add(item._id))
         // A local item hasn't been added to any collection yet — the caller
         // still needs to do that (find-or-create + add).
-        onSelectItem(item, { alreadyAdded: false })
+        emitSelectedItem(item, { alreadyAdded: false })
 
         // Auto-hide after selection
         setTimeout(() => {
@@ -775,6 +777,25 @@ const UnifiedFoodSearch = ({
             style={[styles.container, isDesktop && styles.desktopContainer]}
             ref={searchContainerRef}
         >
+            {pendingMealPick ? (
+                <MealIngredientQuantityModal
+                    visible
+                    item={pendingMealPick.item}
+                    onCancel={() => setPendingMealPick(null)}
+                    onConfirm={({ quantity, unit }) => {
+                        const item = applyIngredientQuantity(
+                            pendingMealPick.item,
+                            quantity,
+                            unit
+                        )
+                        const meta = pendingMealPick.meta
+                        setPendingMealPick(null)
+                        onSelectItem(item, meta)
+                    }}
+                />
+            ) : null}
+            {!pendingMealPick && (
+            <>
             <View style={styles.searchRow}>
                 <View style={styles.searchInputContainer}>
                     <TextInput
@@ -904,6 +925,8 @@ const UnifiedFoodSearch = ({
                     isVisible={showScanner}
                 />
             </Modal>
+            </>
+            )}
         </View>
     )
 }

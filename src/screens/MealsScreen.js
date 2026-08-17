@@ -22,6 +22,7 @@ import useLoginPrompt from '../hooks/useLoginPrompt'
 import ResponsiveModal from '../components/ResponsiveModal'
 import SearchSection from '../components/SearchSection'
 import { getServerUrl } from '../utils/getServerUrl'
+import { getIngredientQuantity } from '../utils/mealFoodItem'
 import {
     MEAL_SORT_OPTIONS,
     SORT_OPTION_IDS,
@@ -30,6 +31,7 @@ import {
 import {
     getDifficultyText,
     getMealRoleText,
+    getDifficultyEnum,
 } from '../utils/mealUtils'
 import {
     filterMealsBySearch,
@@ -291,7 +293,6 @@ const MealsScreen = ({ route, navigation }) => {
             // First, handle each food item
             const processedFoodItems = await Promise.all(
                 updatedMeal.foodItems.map(async (item) => {
-                    // Process category data properly
                     let categoryArray = item.category
                     if (typeof item.category === 'string') {
                         try {
@@ -301,7 +302,6 @@ const MealsScreen = ({ route, navigation }) => {
                         }
                     }
 
-                    // Ensure we have an array and extract category names
                     const categoryIds = Array.isArray(categoryArray)
                         ? categoryArray
                               .map((cat) => {
@@ -313,91 +313,73 @@ const MealsScreen = ({ route, navigation }) => {
                               .filter((cat) => cat && cat.trim() !== '')
                         : []
 
-                    // Clean the food item data
-                    const cleanedItem = {
+                    const quantity = getIngredientQuantity(item)
+                    const unit = item.unit || 'kpl'
+                    const catalogPayload = {
                         name: item.name,
                         isFood: item.isFood !== false,
-                        quantity: parseFloat(item.quantity) || 0,
-                        unit: item.unit || 'kpl',
-                        calories: parseInt(item.calories) || 0,
-                        nutrition: item.nutrition,
-                        price: parseFloat(item.price) || 0,
-                        expirationDate: item.expirationDate,
+                        unit,
                         category: categoryIds,
-                        locations: Array.isArray(item.locations)
-                            ? item.locations
-                            : ['meal'],
-                        quantities: {
-                            meal:
-                                parseFloat(item.quantities?.meal) ||
-                                parseFloat(item.quantity) ||
-                                0,
-                            'shopping-list':
-                                parseFloat(
-                                    item.quantities?.['shopping-list']
-                                ) || 0,
-                            pantry: parseFloat(item.quantities?.pantry) || 0,
-                        },
+                        calories: parseInt(item.calories) || 0,
+                        price: parseFloat(item.price) || 0,
                     }
-
-                    // Only PUT real Mongo ids. Temporary OFF ids like
-                    // "openfoodfacts-590..." must be created / find-or-created.
-                    // If PUT 404s (deleted item or another household member's
-                    // catalog entry), fall back to find-or-create so meal save
-                    // can still succeed.
-                    const findOrCreatePayload = {
-                        name: cleanedItem.name,
-                        isFood: cleanedItem.isFood,
-                        unit: cleanedItem.unit,
-                        category: cleanedItem.category,
-                        calories: cleanedItem.calories,
-                        price: cleanedItem.price,
-                        location: 'meal',
-                        quantities: cleanedItem.quantities,
+                    const resolveId = (value) => {
+                        if (!value) return ''
+                        if (typeof value === 'object') {
+                            return String(value._id || value.id || '')
+                        }
+                        return String(value)
                     }
+                    const catalogId =
+                        resolveId(item.foodId) || resolveId(item._id)
 
-                    if (isPersistedFoodItemId(String(item._id || ''))) {
+                    if (isPersistedFoodItemId(catalogId)) {
                         try {
-                            const response = await axios.put(
-                                getServerUrl(`/food-items/${item._id}`),
-                                cleanedItem,
+                            await axios.put(
+                                getServerUrl(`/food-items/${catalogId}`),
+                                catalogPayload,
                                 {
                                     headers: {
                                         Authorization: `Bearer ${token}`,
                                     },
                                 }
                             )
-                            return response.data.foodItem
+                            return { foodId: catalogId, quantity, unit }
                         } catch (error) {
                             if (error.response?.status !== 404) {
                                 throw error
                             }
-                            console.warn(
-                                'Food item update 404, falling back to find-or-create:',
-                                item._id
-                            )
                         }
                     }
 
                     const response = await axios.post(
                         getServerUrl('/food-items/find-or-create'),
-                        findOrCreatePayload,
+                        catalogPayload,
                         {
                             headers: {
                                 Authorization: `Bearer ${token}`,
                             },
                         }
                     )
-                    return response.data.foodItem
+                    return {
+                        foodId: response.data.foodItem._id,
+                        quantity,
+                        unit,
+                    }
                 })
             )
 
-            // Update the meal with only the necessary fields
+            const validDifficulties = ['easy', 'medium', 'hard']
+            const difficultyLevel = validDifficulties.includes(
+                updatedMeal.difficultyLevel
+            )
+                ? updatedMeal.difficultyLevel
+                : getDifficultyEnum(updatedMeal.difficultyLevel)
+
             const cleanedMeal = {
                 name: updatedMeal.name,
                 cookingTime: parseInt(updatedMeal.cookingTime) || 0,
-                difficultyLevel:
-                    updatedMeal.difficultyLevel?.toString() || 'easy',
+                difficultyLevel,
                 defaultRoles: Array.isArray(updatedMeal.defaultRoles)
                     ? updatedMeal.defaultRoles
                     : [updatedMeal.defaultRoles?.toString() || 'dinner'],
@@ -405,7 +387,7 @@ const MealsScreen = ({ route, navigation }) => {
                 plannedCookingDate: updatedMeal.plannedCookingDate,
                 plannedEatingDates: updatedMeal.plannedEatingDates || [],
                 recipe: updatedMeal.recipe || '',
-                foodItems: processedFoodItems.map((item) => item._id), // Only send the IDs
+                foodItems: processedFoodItems,
             }
 
             const response = await axios.put(

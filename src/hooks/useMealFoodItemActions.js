@@ -3,7 +3,10 @@ import { useCallback, useState } from 'react'
 import { Alert } from 'react-native'
 import { checkFoodItemsAvailability } from '../utils/foodItemAvailability'
 import { getServerUrl } from '../utils/getServerUrl'
-import { mergeUpdatedFoodItem } from '../utils/mealFoodItem'
+import {
+    getIngredientQuantity,
+    mergeUpdatedFoodItem,
+} from '../utils/mealFoodItem'
 import storage from '../utils/storage'
 
 const getAuthHeaders = async () => {
@@ -11,8 +14,7 @@ const getAuthHeaders = async () => {
     return { Authorization: `Bearer ${token}` }
 }
 
-const getItemQuantity = (item) =>
-    parseFloat(item.quantities?.meal) || parseFloat(item.quantity) || 1
+const getItemQuantity = (item) => getIngredientQuantity(item)
 
 const getItemCategory = (item) =>
     Array.isArray(item.category) ? item.category : []
@@ -87,29 +89,12 @@ const useMealFoodItemActions = ({
         }
     }, [selectedShoppingListId])
 
-    const ensureFoodItemForShoppingList = async (item, quantity, headers) => {
+    const ensureFoodItemForShoppingList = async (item, headers) => {
         const foodItemId = getFoodItemId(item)
         const categoryArray = getItemCategory(item)
 
         if (foodItemId) {
-            const quantityResponse = await axios.put(
-                getServerUrl(`/food-items/${foodItemId}/quantity`),
-                {
-                    location: 'shopping-list',
-                    quantity,
-                    action: 'add',
-                },
-                { headers }
-            )
-
-            if (!quantityResponse.data?.success) {
-                throw new Error(
-                    quantityResponse.data?.message ||
-                        'Food item quantity update failed'
-                )
-            }
-
-            return quantityResponse.data.foodItem
+            return { _id: foodItemId, name: item.name, unit: item.unit }
         }
 
         const findOrCreateResponse = await axios.post(
@@ -120,10 +105,6 @@ const useMealFoodItemActions = ({
                 category: categoryArray,
                 calories: parseInt(item.calories, 10) || 0,
                 price: parseFloat(item.price) || 0,
-                location: 'shopping-list',
-                quantities: {
-                    'shopping-list': quantity,
-                },
             },
             { headers }
         )
@@ -150,11 +131,7 @@ const useMealFoodItemActions = ({
                 const headers = await getAuthHeaders()
                 const quantity = getItemQuantity(item)
                 const categoryArray = getItemCategory(item)
-                const foodItem = await ensureFoodItemForShoppingList(
-                    item,
-                    quantity,
-                    headers
-                )
+        const foodItem = await ensureFoodItemForShoppingList(item, headers)
 
                 const shoppingListResponse = await axios.post(
                     getServerUrl(`/shopping-lists/${listIdToUse}/items`),

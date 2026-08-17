@@ -12,6 +12,7 @@ import { useResponsiveDimensions } from '../utils/responsive'
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
 import CustomText from './CustomText'
+import { getMealRoles } from '../utils/mealFilters'
 
 const PLACEHOLDER_IMAGE_URL =
     'https://images.ctfassets.net/2pij69ehhf4n/3b9imD6TDC4i68V4uHVgL1/1ac1194dccb086bb52ebd674c59983e3/undraw_breakfast_rgx5.png'
@@ -96,7 +97,7 @@ const RandomMealCard = ({ onMealPress, iconImage, filterByPantry = false }) => {
 
                 // Filter meals that have 'lunch' or 'dinner' in their defaultRoles
                 meals = meals.filter((meal) => {
-                    const roles = meal.defaultRoles || []
+                    const roles = getMealRoles(meal, [])
                     return roles.includes('lunch') || roles.includes('dinner')
                 })
 
@@ -147,8 +148,10 @@ const RandomMealCard = ({ onMealPress, iconImage, filterByPantry = false }) => {
 
                     // Filter meals that have 'lunch' or 'dinner' in their defaultRoles
                     meals = meals.filter((meal) => {
-                        const roles = meal.defaultRoles || []
-                        return roles.includes('lunch') || roles.includes('dinner')
+                        const roles = getMealRoles(meal, [])
+                        return (
+                            roles.includes('lunch') || roles.includes('dinner')
+                        )
                     })
 
                     // Filter by pantry if enabled
