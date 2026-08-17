@@ -22,6 +22,7 @@ import useLoginPrompt from '../hooks/useLoginPrompt'
 import ResponsiveModal from '../components/ResponsiveModal'
 import SearchSection from '../components/SearchSection'
 import { getServerUrl } from '../utils/getServerUrl'
+import { DEFAULT_SERVINGS } from '../utils/mealServings'
 import { getIngredientQuantity } from '../utils/mealFoodItem'
 import {
     MEAL_SORT_OPTIONS,
@@ -388,6 +389,7 @@ const MealsScreen = ({ route, navigation }) => {
                 mealCategory: updatedMeal.mealCategory || 'other',
                 plannedCookingDate: updatedMeal.plannedCookingDate,
                 plannedEatingDates: updatedMeal.plannedEatingDates || [],
+                servings: parseInt(updatedMeal.servings, 10) || DEFAULT_SERVINGS,
                 recipe: updatedMeal.recipe || '',
                 foodItems: processedFoodItems,
             }

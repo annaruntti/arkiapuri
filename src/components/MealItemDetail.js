@@ -6,6 +6,10 @@ import {
     normalizeMealFoodItem,
     prepareMealFoodItemsForSave,
 } from '../utils/mealFoodItem'
+import {
+    normalizeServings,
+    scaleMealFoodItems,
+} from '../utils/mealServings'
 import { parseMealRoles } from '../utils/mealUtils'
 import AddFoodItemPanel from './AddFoodItemPanel'
 import MealDetailsForm from './MealDetailsForm'
@@ -52,6 +56,7 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
         const foodItems = [...(meal.foodItems || [])]
         setEditedValues({
             ...meal,
+            servings: normalizeServings(meal.servings),
             foodItems,
         })
         refreshAvailability(foodItems)
@@ -96,6 +101,18 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
             return {
                 ...prev,
                 [field]: value,
+            }
+        })
+    }
+
+    const handleServingsChange = (nextServings) => {
+        setEditedValues((prev) => {
+            const from = normalizeServings(prev.servings)
+            const to = normalizeServings(nextServings)
+            return {
+                ...prev,
+                servings: to,
+                foodItems: scaleMealFoodItems(prev.foodItems || [], from, to),
             }
         })
     }
@@ -149,6 +166,7 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                     editedValues.defaultRoles || meal.defaultRoles,
                     ['dinner']
                 ),
+                servings: normalizeServings(editedValues.servings),
                 plannedEatingDates: editedValues.plannedCookingDate
                     ? clampDatesToMin(
                           editedValues.plannedEatingDates || [],
@@ -213,6 +231,7 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                     onSubmitNewItem={addFoodItemToMeal}
                     onCloseForm={() => setShowFoodItemForm(false)}
                     showFormBackButton={false}
+                    servings={normalizeServings(editedValues.servings)}
                 />
             ) : (
                 <ScrollView style={styles.detailScroll}>
@@ -237,6 +256,7 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                         onImageUpdate={(updatedMeal) =>
                             onUpdate(meal._id, updatedMeal)
                         }
+                        onServingsChange={handleServingsChange}
                         onSave={handleSave}
                     />
                 </ScrollView>

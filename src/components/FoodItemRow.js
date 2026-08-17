@@ -2,6 +2,7 @@ import { View, StyleSheet, TouchableOpacity, TextInput } from 'react-native'
 import { Feather } from '@expo/vector-icons'
 import CustomText from './CustomText'
 import { getIngredientQuantity } from '../utils/mealFoodItem'
+import { formatScaledQuantity } from '../utils/mealServings'
 
 const FoodItemRow = ({
     item,
@@ -43,7 +44,7 @@ const FoodItemRow = ({
                 </>
             ) : (
                 <CustomText>
-                    {item.name} - {getIngredientQuantity(item)}{' '}
+                    {item.name} - {formatScaledQuantity(getIngredientQuantity(item))}{' '}
                     {item.unit}
                 </CustomText>
             )}

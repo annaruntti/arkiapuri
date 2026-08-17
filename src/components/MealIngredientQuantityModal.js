@@ -10,6 +10,7 @@ import { MaterialIcons } from '@expo/vector-icons'
 import Button from './Button'
 import CustomText from './CustomText'
 import { APP_UNITS, resolveAppUnit } from '../utils/units'
+import { DEFAULT_SERVINGS, servingsAllativeLabel } from '../utils/mealServings'
 
 /**
  * In-flow quantity step for adding a meal ingredient.
@@ -20,6 +21,7 @@ const MealIngredientQuantityModal = ({
     item,
     onCancel,
     onConfirm,
+    servings = DEFAULT_SERVINGS,
 }) => {
     const [quantity, setQuantity] = useState('')
     const [unit, setUnit] = useState('kpl')
@@ -54,7 +56,7 @@ const MealIngredientQuantityModal = ({
         <View style={styles.page}>
             <CustomText style={styles.hint}>
                 {item?.name
-                    ? `Paljonko ateriaan: ${item.name}?`
+                    ? `Paljonko ateriaan (${servingsAllativeLabel(servings)}): ${item.name}?`
                     : 'Valitse määrä'}
             </CustomText>
             <CustomText style={styles.label}>Määrä</CustomText>

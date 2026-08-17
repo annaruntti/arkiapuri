@@ -42,8 +42,14 @@ import {
     applyIngredientQuantity,
     getIngredientQuantity,
 } from '../utils/mealFoodItem'
+import {
+    DEFAULT_SERVINGS,
+    formatScaledQuantity,
+    scaleMealFoodItems,
+} from '../utils/mealServings'
 
 import Info from './Info'
+import MealServingsStepper from './MealServingsStepper'
 
 const AddMealForm = ({ onSubmit }) => {
     const { profile } = useLogin()
@@ -62,6 +68,7 @@ const AddMealForm = ({ onSubmit }) => {
     const [mealCategory, setMealCategory] = useState('other')
     const [plannedCookingDate, setPlannedCookingDate] = useState(new Date())
     const [plannedEatingDates, setPlannedEatingDates] = useState([])
+    const [servings, setServings] = useState(DEFAULT_SERVINGS)
     const [selectedShoppingListId, setSelectedShoppingListId] = useState(null)
     const [showItemForm, setShowItemForm] = useState(false)
     const [mealImage, setMealImage] = useState(null)
@@ -304,6 +311,7 @@ const AddMealForm = ({ onSubmit }) => {
                     mealCategory,
                     plannedCookingDate,
                     plannedEatingDates: eatingDates,
+                    servings,
                     image: mealImage
                         ? { url: mealImage.uri || mealImage }
                         : undefined,
@@ -387,6 +395,7 @@ const AddMealForm = ({ onSubmit }) => {
                 mealCategory,
                 plannedCookingDate,
                 plannedEatingDates: eatingDates,
+                servings,
                 user: profile._id,
             }
 
@@ -876,6 +885,11 @@ const AddMealForm = ({ onSubmit }) => {
         }
     }
 
+    const handleServingsChange = (nextServings) => {
+        setFoodItems((prev) => scaleMealFoodItems(prev, servings, nextServings))
+        setServings(nextServings)
+    }
+
     const handleCookingDateChange = (selectedDate) => {
         setPlannedCookingDate(selectedDate)
         setPlannedEatingDates((prev) => clampDatesToMin(prev, selectedDate))
@@ -946,7 +960,7 @@ const AddMealForm = ({ onSubmit }) => {
                 <View style={styles.itemInfo}>
                     <CustomText style={styles.itemName}>{item.name}</CustomText>
                     <CustomText style={styles.itemDetails}>
-                        {`${getIngredientQuantity(item)} ${item.unit || 'kpl'}`}
+                        {`${formatScaledQuantity(getIngredientQuantity(item))} ${item.unit || 'kpl'}`}
                     </CustomText>
                     <View style={styles.quantityRow}>
                         <CustomText style={styles.quantityLabel}>Määrä:</CustomText>
@@ -1113,6 +1127,11 @@ const AddMealForm = ({ onSubmit }) => {
                             keyboardType="numeric"
                         />
 
+                        <MealServingsStepper
+                            value={servings}
+                            onChange={handleServingsChange}
+                        />
+
                         <CustomText style={styles.label}>
                             Aterian tyyppi
                         </CustomText>
@@ -1240,6 +1259,7 @@ const AddMealForm = ({ onSubmit }) => {
                                 onSelectItem={addSelectedItemToMeal}
                                 location="meal"
                                 allowDuplicates={true}
+                                servings={servings}
                             />
                             {formErrors.foodItems && (
                                 <View ref={foodItemsErrorRef} style={[styles.errorRow, { marginTop: 8 }]}>

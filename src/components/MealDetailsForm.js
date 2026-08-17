@@ -3,9 +3,10 @@ import { StyleSheet, View } from 'react-native'
 import { useShowNutrition } from '../hooks/useShowNutrition'
 import {
     formatNutritionValue,
-    summarizeMealNutrition,
+    summarizeMealNutritionPerServing,
 } from '../utils/mealNutrition'
 import { OVERDUE_COOKING_MESSAGE } from '../utils/mealDates'
+import { normalizeServings } from '../utils/mealServings'
 import {
     getDifficultyText,
     getMealCategoryText,
@@ -16,6 +17,7 @@ import CustomText from './CustomText'
 import EditableField from './EditableField'
 import FormDateField from './FormDateField'
 import MealImageUploader from './MealImageUploader'
+import MealServingsStepper from './MealServingsStepper'
 import MealTabs from './MealTabs'
 import PlannedEatingDates from './PlannedEatingDates'
 
@@ -37,14 +39,22 @@ const MealDetailsForm = ({
     onAddToPantry,
     onImageUpdate,
     onSave,
+    onServingsChange,
 }) => {
     const showNutrition = useShowNutrition()
+    const servings = normalizeServings(
+        editedValues.servings ?? meal.servings
+    )
     const cookingDate = new Date(
         editedValues.plannedCookingDate || meal.plannedCookingDate
     )
     const nutritionTotals = useMemo(
-        () => summarizeMealNutrition(editedValues.foodItems || []),
-        [editedValues.foodItems]
+        () =>
+            summarizeMealNutritionPerServing(
+                editedValues.foodItems || [],
+                servings
+            ),
+        [editedValues.foodItems, servings]
     )
     const nutritionRows = [
         {
@@ -71,6 +81,13 @@ const MealDetailsForm = ({
 
     return (
         <View style={styles.mealDetails}>
+            <MealServingsStepper
+                value={servings}
+                onChange={onServingsChange}
+                compact
+                style={styles.servingsStepper}
+            />
+
             <MealImageUploader meal={meal} onImageUpdate={onImageUpdate} />
 
             <EditableField
@@ -155,7 +172,7 @@ const MealDetailsForm = ({
             {showNutrition && nutritionRows.length > 0 && (
                 <View style={styles.nutritionSummary}>
                     <CustomText style={styles.nutritionTitle}>
-                        Ravintoarvot (arvio)
+                        Ravintoarvot (arvio, 1 annos)
                     </CustomText>
                     {nutritionRows.map((row) => (
                         <View key={row.label} style={styles.nutritionRow}>
@@ -198,8 +215,9 @@ const MealDetailsForm = ({
 }
 
 const styles = StyleSheet.create({
-    mealDetails: {
-        paddingTop: 10,
+    mealDetails: {},
+    servingsStepper: {
+        marginBottom: 12,
     },
     nutritionSummary: {
         marginTop: 12,

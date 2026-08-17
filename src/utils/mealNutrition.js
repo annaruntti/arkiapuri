@@ -65,6 +65,14 @@ export const summarizeMealNutrition = (foodItems = []) => {
     return totals
 }
 
+export const summarizeMealNutritionPerServing = (foodItems = [], servings) => {
+    const totals = summarizeMealNutrition(foodItems)
+    const count = Math.max(1, parseInt(servings, 10) || 1)
+    return Object.fromEntries(
+        Object.entries(totals).map(([key, value]) => [key, value / count])
+    )
+}
+
 export const formatNutritionValue = (value, digits = 0) => {
     const num = toNumber(value)
     if (num <= 0) return null

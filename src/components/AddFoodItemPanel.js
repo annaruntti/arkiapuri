@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Platform, ScrollView, StyleSheet, View } from 'react-native'
+import { DEFAULT_SERVINGS } from '../utils/mealServings'
 import CustomText from './CustomText'
 import FormFoodItem from './FormFoodItem'
 import GuestWarningBanner from './GuestWarningBanner'
@@ -21,6 +22,7 @@ const AddFoodItemPanel = ({
     searchTitle = 'Etsi tuote tietokannasta',
     formTitle = 'Luo uusi tuote manuaalisesti',
     showFormBackButton = false,
+    servings = DEFAULT_SERVINGS,
 }) => {
     const [askingMealQuantity, setAskingMealQuantity] = useState(false)
 
@@ -52,6 +54,7 @@ const AddFoodItemPanel = ({
                     shoppingListId={shoppingListId}
                     allowDuplicates={allowDuplicates}
                     onMealQuantityPromptChange={setAskingMealQuantity}
+                    servings={servings}
                 />
             </View>
 

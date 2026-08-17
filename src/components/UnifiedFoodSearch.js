@@ -26,6 +26,7 @@ import {
     applyIngredientQuantity,
     stripCatalogLocationQuantity,
 } from '../utils/mealFoodItem'
+import { DEFAULT_SERVINGS } from '../utils/mealServings'
 import {
     buildGuestFoodItemFromOpenFoodFacts,
     mapOpenFoodFactsToFoodItemFields,
@@ -85,6 +86,7 @@ const UnifiedFoodSearch = ({
     mealId = null,
     allowDuplicates = false,
     onMealQuantityPromptChange,
+    servings = DEFAULT_SERVINGS,
 }) => {
     const { isDesktop } = useResponsiveDimensions()
     const showNutrition = useShowNutrition()
@@ -781,6 +783,7 @@ const UnifiedFoodSearch = ({
                 <MealIngredientQuantityModal
                     visible
                     item={pendingMealPick.item}
+                    servings={servings}
                     onCancel={() => setPendingMealPick(null)}
                     onConfirm={({ quantity, unit }) => {
                         const item = applyIngredientQuantity(

@@ -237,9 +237,16 @@ export const useMealCalendar = ({ onRequireLogin }) => {
                 mealCategory: updatedMeal.mealCategory,
                 plannedCookingDate: updatedMeal.plannedCookingDate,
                 plannedEatingDates: updatedMeal.plannedEatingDates,
+                servings: updatedMeal.servings,
                 foodItems: Array.isArray(updatedMeal.foodItems)
                     ? updatedMeal.foodItems.map((item) =>
-                          typeof item === 'object' ? item._id : item
+                          typeof item === 'object'
+                              ? {
+                                    foodId: item.foodId || item._id,
+                                    quantity: item.quantity,
+                                    unit: item.unit,
+                                }
+                              : item
                       )
                     : [],
             }
