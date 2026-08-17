@@ -342,31 +342,46 @@ const MealsScreen = ({ route, navigation }) => {
 
                     // Only PUT real Mongo ids. Temporary OFF ids like
                     // "openfoodfacts-590..." must be created / find-or-created.
+                    // If PUT 404s (deleted item or another household member's
+                    // catalog entry), fall back to find-or-create so meal save
+                    // can still succeed.
+                    const findOrCreatePayload = {
+                        name: cleanedItem.name,
+                        isFood: cleanedItem.isFood,
+                        unit: cleanedItem.unit,
+                        category: cleanedItem.category,
+                        calories: cleanedItem.calories,
+                        price: cleanedItem.price,
+                        location: 'meal',
+                        quantities: cleanedItem.quantities,
+                    }
+
                     if (isPersistedFoodItemId(String(item._id || ''))) {
-                        const response = await axios.put(
-                            getServerUrl(`/food-items/${item._id}`),
-                            cleanedItem,
-                            {
-                                headers: {
-                                    Authorization: `Bearer ${token}`,
-                                },
+                        try {
+                            const response = await axios.put(
+                                getServerUrl(`/food-items/${item._id}`),
+                                cleanedItem,
+                                {
+                                    headers: {
+                                        Authorization: `Bearer ${token}`,
+                                    },
+                                }
+                            )
+                            return response.data.foodItem
+                        } catch (error) {
+                            if (error.response?.status !== 404) {
+                                throw error
                             }
-                        )
-                        return response.data.foodItem
+                            console.warn(
+                                'Food item update 404, falling back to find-or-create:',
+                                item._id
+                            )
+                        }
                     }
 
                     const response = await axios.post(
                         getServerUrl('/food-items/find-or-create'),
-                        {
-                            name: cleanedItem.name,
-                            isFood: cleanedItem.isFood,
-                            unit: cleanedItem.unit,
-                            category: cleanedItem.category,
-                            calories: cleanedItem.calories,
-                            price: cleanedItem.price,
-                            location: 'meal',
-                            quantities: cleanedItem.quantities,
-                        },
+                        findOrCreatePayload,
                         {
                             headers: {
                                 Authorization: `Bearer ${token}`,
@@ -413,15 +428,19 @@ const MealsScreen = ({ route, navigation }) => {
                 setDetailModalVisible(false)
             } else {
                 console.error('Failed to update meal:', response.data.message)
+                Alert.alert(
+                    'Virhe',
+                    response.data.message || 'Aterian tallennus epäonnistui'
+                )
             }
         } catch (error) {
             console.error('Error updating meal:', error)
-            if (error.response?.status === 404) {
-                console.error(
-                    'Meal not found or unauthorized. Meal ID:',
-                    mealId
-                )
-            }
+            Alert.alert(
+                'Virhe',
+                error.response?.data?.message ||
+                    error.response?.data?.error ||
+                    'Aterian tallennus epäonnistui'
+            )
         }
     }
 
