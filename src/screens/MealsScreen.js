@@ -32,6 +32,7 @@ import {
     getDifficultyText,
     getMealRoleText,
     getDifficultyEnum,
+    parseMealRoles,
 } from '../utils/mealUtils'
 import {
     filterMealsBySearch,
@@ -380,9 +381,10 @@ const MealsScreen = ({ route, navigation }) => {
                 name: updatedMeal.name,
                 cookingTime: parseInt(updatedMeal.cookingTime) || 0,
                 difficultyLevel,
-                defaultRoles: Array.isArray(updatedMeal.defaultRoles)
-                    ? updatedMeal.defaultRoles
-                    : [updatedMeal.defaultRoles?.toString() || 'dinner'],
+                defaultRoles: parseMealRoles(
+                    updatedMeal.defaultRoles,
+                    ['dinner']
+                ),
                 mealCategory: updatedMeal.mealCategory || 'other',
                 plannedCookingDate: updatedMeal.plannedCookingDate,
                 plannedEatingDates: updatedMeal.plannedEatingDates || [],

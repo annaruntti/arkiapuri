@@ -39,6 +39,7 @@ import {
     clearDateSelection as clearDateUtil,
 } from '../utils/mealCalendarUtils'
 
+import { getMealTypeText } from '../utils/mealUtils'
 import Button from './Button'
 import CustomText from './CustomText'
 import DateSelector from './DateSelector'
@@ -46,7 +47,6 @@ import FormAddMeal from './FormAddMeal'
 import MealItemDetail from './MealItemDetail'
 import MealSelectionList, {
     PLACEHOLDER_IMAGE_URL,
-    mealTypeTranslations,
 } from './MealSelectionList'
 import ResponsiveModal from './ResponsiveModal'
 
@@ -646,10 +646,7 @@ const Table = ({ onRequireLogin }) => {
             <View style={styles.mealTextContainer}>
                 <CustomText style={styles.mealName}>{item.name}</CustomText>
                 <CustomText style={styles.mealType}>
-                    {item.defaultRoles?.[0]
-                        ? mealTypeTranslations[item.defaultRoles[0]] ||
-                          item.defaultRoles[0]
-                        : 'Ateria'}
+                    {getMealTypeText(item.defaultRoles)}
                 </CustomText>
             </View>
         </TouchableOpacity>
@@ -686,11 +683,7 @@ const Table = ({ onRequireLogin }) => {
                                     {meal.name}
                                 </CustomText>
                                 <CustomText style={styles.mealType}>
-                                    {meal.defaultRoles?.[0]
-                                        ? mealTypeTranslations[
-                                              meal.defaultRoles[0]
-                                          ] || meal.defaultRoles[0]
-                                        : 'Ateria'}
+                                    {getMealTypeText(meal.defaultRoles)}
                                 </CustomText>
                             </View>
                         </TouchableOpacity>
@@ -1052,11 +1045,7 @@ const Table = ({ onRequireLogin }) => {
                                     {draggingMeal.name}
                                 </CustomText>
                                 <CustomText style={styles.mealType}>
-                                    {draggingMeal.defaultRoles?.[0]
-                                        ? mealTypeTranslations[
-                                              draggingMeal.defaultRoles[0]
-                                          ] || draggingMeal.defaultRoles[0]
-                                        : 'Ateria'}
+                                    {getMealTypeText(draggingMeal.defaultRoles)}
                                 </CustomText>
                             </View>
                         </View>

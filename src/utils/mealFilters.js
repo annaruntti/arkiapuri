@@ -1,4 +1,5 @@
 import categoriesData from '../data/categories.json'
+import { parseMealRoles } from './mealUtils'
 
 // Get diet categories from categories.json
 export const getDietCategories = () => {
@@ -17,20 +18,8 @@ export const getCategoryMappings = () => {
     return { categoryNameToId }
 }
 
-export const getMealRoles = (meal, fallback = ['other']) => {
-    const raw = meal?.defaultRoles
-    if (Array.isArray(raw)) return raw.length > 0 ? raw : fallback
-    if (typeof raw === 'string') {
-        try {
-            const parsed = JSON.parse(raw)
-            if (Array.isArray(parsed) && parsed.length > 0) return parsed
-        } catch (_error) {
-            // Stored as a single role string
-        }
-        return raw ? [raw] : fallback
-    }
-    return fallback
-}
+export const getMealRoles = (meal, fallback = ['other']) =>
+    parseMealRoles(meal?.defaultRoles, fallback)
 
 // Determine which dietary categories a meal qualifies for
 // A meal qualifies if all its food items have that category

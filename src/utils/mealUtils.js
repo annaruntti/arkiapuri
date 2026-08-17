@@ -36,18 +36,46 @@ export const mealRoles = {
     other: 'Muu',
 }
 
+export const parseMealRoles = (raw, fallback = ['other']) => {
+    const roles = []
+
+    const visit = (value) => {
+        if (value == null || value === '') return
+        if (Array.isArray(value)) {
+            value.forEach(visit)
+            return
+        }
+        if (typeof value !== 'string') return
+
+        const trimmed = value.trim()
+        if (
+            (trimmed.startsWith('[') && trimmed.endsWith(']')) ||
+            (trimmed.startsWith('"') && trimmed.endsWith('"'))
+        ) {
+            try {
+                visit(JSON.parse(trimmed))
+                return
+            } catch (_error) {
+                // Treat as a plain role string
+            }
+        }
+
+        roles.push(trimmed)
+    }
+
+    visit(raw)
+    return roles.length > 0 ? roles : fallback
+}
+
 export const getMealRoleText = (role) => {
-    if (!role) return 'Ei määritelty'
-    return mealRoles[role.toLowerCase()] || role
+    const [first] = parseMealRoles(role, [])
+    if (!first) return 'Ei määritelty'
+    return mealRoles[first.toLowerCase()] || first
 }
 
 export const getMealTypeText = (roles) => {
-    if (!roles) return 'Ei määritelty'
-
-    // Handle both single value and array
-    const roleArray = Array.isArray(roles) ? roles : [roles]
+    const roleArray = parseMealRoles(roles, [])
     if (roleArray.length === 0) return 'Ei määritelty'
-
     return roleArray.map((role) => getMealRoleText(role)).join(', ')
 }
 

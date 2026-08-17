@@ -7,6 +7,7 @@ import {
     View,
 } from 'react-native'
 import CustomText from './CustomText'
+import { getMealTypeText, parseMealRoles } from '../utils/mealUtils'
 
 const difficultyLevels = [
     { value: 'easy', label: 'Helppo' },
@@ -149,9 +150,10 @@ const EditableField = ({
     // Meal type field with scroll picker
     if (field === 'defaultRoles') {
         if (isEditing) {
-            const currentValue = Array.isArray(editedValue)
-                ? editedValue[0]
-                : editedValue || (Array.isArray(value) ? value[0] : value)
+            const currentValue = parseMealRoles(
+                editedValue || value,
+                []
+            )[0]
 
             return (
                 <View style={styles.detailRow}>
@@ -231,7 +233,9 @@ const EditableField = ({
                     <CustomText style={styles.detailLabel}>{label}:</CustomText>
                     <View style={styles.valueContainer}>
                         <TouchableOpacity onPress={onToggleEdit}>
-                            <CustomText>{value}</CustomText>
+                            <CustomText>
+                                {getMealTypeText(editedValue || value)}
+                            </CustomText>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.editIcon}

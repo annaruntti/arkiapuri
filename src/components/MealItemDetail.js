@@ -6,6 +6,7 @@ import {
     normalizeMealFoodItem,
     prepareMealFoodItemsForSave,
 } from '../utils/mealFoodItem'
+import { parseMealRoles } from '../utils/mealUtils'
 import AddFoodItemPanel from './AddFoodItemPanel'
 import MealDetailsForm from './MealDetailsForm'
 import ResponsiveModal from './ResponsiveModal'
@@ -144,11 +145,10 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                 cookingTime: parseInt(editedValues.cookingTime, 10) || 0,
                 difficultyLevel:
                     editedValues.difficultyLevel || meal.difficultyLevel,
-                defaultRoles: editedValues.defaultRoles
-                    ? Array.isArray(editedValues.defaultRoles)
-                        ? editedValues.defaultRoles
-                        : [editedValues.defaultRoles]
-                    : meal.defaultRoles,
+                defaultRoles: parseMealRoles(
+                    editedValues.defaultRoles || meal.defaultRoles,
+                    ['dinner']
+                ),
                 plannedEatingDates: editedValues.plannedCookingDate
                     ? clampDatesToMin(
                           editedValues.plannedEatingDates || [],
