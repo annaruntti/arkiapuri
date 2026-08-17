@@ -19,6 +19,12 @@ import { MaterialIcons, Feather } from '@expo/vector-icons'
 
 import { useLogin } from '../context/LoginProvider'
 import { getServerUrl } from '../utils/getServerUrl'
+import {
+    clampDatesToMin,
+    eatingDateMinimum,
+    OVERDUE_COOKING_MESSAGE,
+    OVERDUE_EATING_MESSAGE,
+} from '../utils/mealDates'
 import { getDifficultyEnum, mealRoles } from '../utils/mealUtils'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
@@ -270,7 +276,10 @@ const AddMealForm = ({ onSubmit }) => {
             if (!token) {
                 const eatingDates =
                     plannedEatingDates.length > 0
-                        ? plannedEatingDates
+                        ? clampDatesToMin(
+                              plannedEatingDates,
+                              plannedCookingDate
+                          )
                         : [plannedCookingDate]
                 const guestMeal = {
                     _id: `guest-meal-${Date.now()}`,
@@ -370,7 +379,7 @@ const AddMealForm = ({ onSubmit }) => {
             // If no eating dates specified, default to cooking date
             const eatingDates =
                 plannedEatingDates.length > 0
-                    ? plannedEatingDates
+                    ? clampDatesToMin(plannedEatingDates, plannedCookingDate)
                     : [plannedCookingDate]
 
             const mealData = {
@@ -904,8 +913,16 @@ const AddMealForm = ({ onSubmit }) => {
         }
     }
 
+    const handleCookingDateChange = (selectedDate) => {
+        setPlannedCookingDate(selectedDate)
+        setPlannedEatingDates((prev) => clampDatesToMin(prev, selectedDate))
+    }
+
     const addEatingDate = () => {
-        setPlannedEatingDates((prev) => [...prev, new Date()])
+        setPlannedEatingDates((prev) => [
+            ...prev,
+            plannedCookingDate || new Date(),
+        ])
     }
 
     const updateEatingDate = (index, selectedDate) => {
@@ -1199,8 +1216,10 @@ const AddMealForm = ({ onSubmit }) => {
                         <FormDateField
                             label="Suunniteltu valmistuspäivä"
                             value={plannedCookingDate}
-                            onChange={setPlannedCookingDate}
+                            onChange={handleCookingDateChange}
                             minimumDate={new Date()}
+                            warnIfPast
+                            overdueMessage={OVERDUE_COOKING_MESSAGE}
                             testID="plannedCookingDate"
                             labelRight={
                                 <Info
@@ -1229,7 +1248,11 @@ const AddMealForm = ({ onSubmit }) => {
                                         updateEatingDate(index, selected)
                                     }
                                     onRemove={() => removeEatingDate(index)}
-                                    minimumDate={new Date()}
+                                    minimumDate={eatingDateMinimum(
+                                        plannedCookingDate
+                                    )}
+                                    warnIfPast
+                                    overdueMessage={OVERDUE_EATING_MESSAGE}
                                     style={styles.eatingDateField}
                                     testID={`plannedEatingDate-${index}`}
                                 />

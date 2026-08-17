@@ -27,6 +27,10 @@ import Animated, {
 import { getServerUrl } from '../utils/getServerUrl'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
+import {
+    EATING_BEFORE_COOKING_MESSAGE,
+    isAnyDateBeforeCooking,
+} from '../utils/mealDates'
 import { useMealCalendar } from '../hooks/useMealCalendar'
 import { useLogin } from '../context/LoginProvider'
 import { 
@@ -281,6 +285,11 @@ const Table = ({ onRequireLogin }) => {
     }
 
     const handleSelectMeal = async (meal) => {
+        if (isAnyDateBeforeCooking(selectedDates, meal.plannedCookingDate)) {
+            Alert.alert('Virhe', EATING_BEFORE_COOKING_MESSAGE)
+            return
+        }
+
         try {
             const token = await getAuthTokenOrPrompt('sync')
             if (!token) return
@@ -358,6 +367,16 @@ const Table = ({ onRequireLogin }) => {
             return
         }
 
+        if (
+            isAnyDateBeforeCooking([targetDate], mealToMove.plannedCookingDate)
+        ) {
+            Alert.alert('Virhe', EATING_BEFORE_COOKING_MESSAGE)
+            setMoveMealModalVisible(false)
+            setMealToMove(null)
+            setMoveFromDate(null)
+            return
+        }
+
         try {
             // Get current planned eating dates
             const currentDates = mealToMove.plannedEatingDates || []
@@ -413,6 +432,11 @@ const Table = ({ onRequireLogin }) => {
 
         // Don't do anything if dropped on the same date
         if (fromDateStr === toDateStr) {
+            return
+        }
+
+        if (isAnyDateBeforeCooking([toDate], meal.plannedCookingDate)) {
+            Alert.alert('Virhe', EATING_BEFORE_COOKING_MESSAGE)
             return
         }
 

@@ -5,6 +5,7 @@ import {
     formatNutritionValue,
     summarizeMealNutrition,
 } from '../utils/mealNutrition'
+import { OVERDUE_COOKING_MESSAGE } from '../utils/mealDates'
 import {
     getDifficultyText,
     getMealCategoryText,
@@ -139,6 +140,8 @@ const MealDetailsForm = ({
                 onChange={(selectedDate) =>
                     onChange('plannedCookingDate', selectedDate)
                 }
+                warnIfPast
+                overdueMessage={OVERDUE_COOKING_MESSAGE}
                 testID="plannedCookingDate"
                 style={styles.cookingDateField}
             />
@@ -146,6 +149,7 @@ const MealDetailsForm = ({
             <PlannedEatingDates
                 dates={editedValues.plannedEatingDates || []}
                 onChange={onPlannedEatingDatesChange}
+                cookingDate={cookingDate}
             />
 
             {showNutrition && nutritionRows.length > 0 && (

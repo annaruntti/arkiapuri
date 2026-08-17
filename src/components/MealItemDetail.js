@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ScrollView, StyleSheet } from 'react-native'
 import useMealFoodItemActions from '../hooks/useMealFoodItemActions'
+import { clampDatesToMin } from '../utils/mealDates'
 import {
     normalizeMealFoodItem,
     prepareMealFoodItemsForSave,
@@ -80,10 +81,22 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
     }
 
     const handleChange = (field, value) => {
-        setEditedValues((prev) => ({
-            ...prev,
-            [field]: value,
-        }))
+        setEditedValues((prev) => {
+            if (field === 'plannedCookingDate') {
+                return {
+                    ...prev,
+                    plannedCookingDate: value,
+                    plannedEatingDates: clampDatesToMin(
+                        prev.plannedEatingDates || [],
+                        value
+                    ),
+                }
+            }
+            return {
+                ...prev,
+                [field]: value,
+            }
+        })
     }
 
     const handleFoodItemChange = (index, field, value) => {
@@ -128,6 +141,12 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                         ? editedValues.defaultRoles
                         : [editedValues.defaultRoles]
                     : meal.defaultRoles,
+                plannedEatingDates: editedValues.plannedCookingDate
+                    ? clampDatesToMin(
+                          editedValues.plannedEatingDates || [],
+                          editedValues.plannedCookingDate
+                      )
+                    : editedValues.plannedEatingDates || [],
                 _id: undefined,
                 id: undefined,
                 __v: undefined,

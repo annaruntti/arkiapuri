@@ -1,11 +1,17 @@
 import { StyleSheet, View } from 'react-native'
+import {
+    eatingDateMinimum,
+    OVERDUE_EATING_MESSAGE,
+} from '../utils/mealDates'
 import Button from './Button'
 import CustomText from './CustomText'
 import FormDateField from './FormDateField'
 
-const PlannedEatingDates = ({ dates = [], onChange }) => {
+const PlannedEatingDates = ({ dates = [], onChange, cookingDate }) => {
+    const minimumDate = eatingDateMinimum(cookingDate)
+
     const addEatingDate = () => {
-        onChange([...dates, new Date()])
+        onChange([...dates, cookingDate || new Date()])
     }
 
     const updateEatingDate = (index, selectedDate) => {
@@ -35,7 +41,9 @@ const PlannedEatingDates = ({ dates = [], onChange }) => {
                     value={date}
                     onChange={(selected) => updateEatingDate(index, selected)}
                     onRemove={() => removeEatingDate(index)}
-                    minimumDate={new Date()}
+                    minimumDate={minimumDate}
+                    warnIfPast
+                    overdueMessage={OVERDUE_EATING_MESSAGE}
                     style={styles.eatingDateField}
                     testID={`plannedEatingDate-${index}`}
                 />

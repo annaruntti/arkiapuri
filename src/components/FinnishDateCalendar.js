@@ -32,6 +32,16 @@ const isDisabled = (day, minimumDate, maximumDate) => {
     return false
 }
 
+const initialViewMonth = (value) => {
+    const today = startOfDay(new Date())
+    if (!value) return startOfMonth(today)
+    const selectedDay = startOfDay(new Date(value))
+    if (Number.isNaN(selectedDay.getTime()) || isBefore(selectedDay, today)) {
+        return startOfMonth(today)
+    }
+    return startOfMonth(selectedDay)
+}
+
 /**
  * Finnish calendar grid (month names + weekday letters via date-fns `fi`).
  */
@@ -43,7 +53,8 @@ const FinnishDateCalendar = ({
     maximumDate,
 }) => {
     const selected = value ? new Date(value) : new Date()
-    const [viewMonth, setViewMonth] = useState(startOfMonth(selected))
+    const today = startOfDay(new Date())
+    const [viewMonth, setViewMonth] = useState(() => initialViewMonth(value))
 
     const weekDayLabels = useMemo(() => {
         const weekStart = startOfWeek(new Date(), WEEK_OPTIONS)
@@ -100,12 +111,14 @@ const FinnishDateCalendar = ({
                 {days.map((day) => {
                     const outside = !isSameMonth(day, viewMonth)
                     const selectedDay = isSameDay(day, selected)
+                    const isToday = isSameDay(day, today)
                     const disabled = isDisabled(day, minimumDate, maximumDate)
                     return (
                         <TouchableOpacity
                             key={day.toISOString()}
                             style={[
                                 styles.dayCell,
+                                isToday && !selectedDay && styles.dayCellToday,
                                 selectedDay && styles.dayCellSelected,
                             ]}
                             disabled={disabled}
@@ -117,6 +130,7 @@ const FinnishDateCalendar = ({
                                     styles.dayText,
                                     outside && styles.dayTextOutside,
                                     disabled && styles.dayTextDisabled,
+                                    isToday && !selectedDay && styles.dayTextToday,
                                     selectedDay && styles.dayTextSelected,
                                 ]}
                             >
@@ -191,6 +205,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: 22,
+        borderWidth: 2,
+        borderColor: 'transparent',
+    },
+    dayCellToday: {
+        borderColor: '#5844BB',
     },
     dayCellSelected: {
         backgroundColor: '#5844BB',
@@ -204,6 +223,10 @@ const styles = StyleSheet.create({
     },
     dayTextDisabled: {
         color: '#ddd',
+    },
+    dayTextToday: {
+        color: '#5844BB',
+        fontWeight: '600',
     },
     dayTextSelected: {
         color: '#fff',

@@ -5,6 +5,10 @@ import { format } from 'date-fns'
 import { getServerUrl } from '../utils/getServerUrl'
 import { useLogin } from '../context/LoginProvider'
 import storage from '../utils/storage'
+import {
+    EATING_BEFORE_COOKING_MESSAGE,
+    isAnyDateBeforeCooking,
+} from '../utils/mealDates'
 
 /**
  * Custom hook for managing meal calendar operations
@@ -124,6 +128,11 @@ export const useMealCalendar = ({ onRequireLogin }) => {
 
     const handleMealSelection = async (meal, refreshCallback) => {
         if (selectedDates.length === 0) return
+
+        if (isAnyDateBeforeCooking(selectedDates, meal.plannedCookingDate)) {
+            Alert.alert('Virhe', EATING_BEFORE_COOKING_MESSAGE)
+            return
+        }
 
         try {
             const token = await getAuthTokenOrPrompt('sync')
