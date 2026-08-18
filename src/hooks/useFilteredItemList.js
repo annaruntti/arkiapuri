@@ -33,7 +33,9 @@ export const useFilteredItemList = ({
 
             const query = searchQuery.toLowerCase().trim()
             return list.filter((item) =>
-                item.name.toLowerCase().includes(query)
+                String(item.name || '')
+                    .toLowerCase()
+                    .includes(query)
             )
         },
         [searchQuery]

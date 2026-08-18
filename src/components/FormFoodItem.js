@@ -24,6 +24,8 @@ import CustomText from './CustomText'
 import FormDateField from './FormDateField'
 import CustomInput from './CustomInput'
 import InlineCategorySelect from './InlineCategorySelect'
+import CollapsibleFormSection from './CollapsibleFormSection'
+import ToggleButton from './ToggleButton'
 import UnifiedFoodSearch from './UnifiedFoodSearch'
 import categories from '../data/categories'
 import { formStyles } from '../styles/formStyles'
@@ -455,25 +457,14 @@ const FormFoodItem = forwardRef(
                     },
                 }
 
-                // Set quantities based on whether multi-location is enabled
+                // Location quantity belongs on the pantry/list row, not the catalog.
                 if (showLocationSelector) {
-                    // Multi-location mode: use the quantities from the state
                     selectedLocations.forEach((loc) => {
                         const locQuantity = parseFloat(quantities[loc]) || 0
                         formData.quantities[loc] = locQuantity
                     })
-                    // Set primary quantity to the main location quantity
                     formData.quantity =
                         parseFloat(quantities[location]) || quantity
-                } else {
-                    // Single location mode: use the main quantity field
-                    if (location === 'pantry') {
-                        formData.quantities.pantry = quantity
-                    } else if (location === 'shopping-list') {
-                        formData.quantities['shopping-list'] = quantity
-                    } else if (location === 'meal') {
-                        formData.quantities.meal = quantity
-                    }
                 }
 
                 if (location === 'meal' || location === 'shopping-list') {
@@ -638,33 +629,12 @@ const FormFoodItem = forwardRef(
                     <CustomText style={formStyles.label}>
                         Valitse ostoslista
                     </CustomText>
-                    {/* Selection Button */}
-                    <TouchableOpacity
-                        style={[
-                            styles.shoppingListButton,
-                            isExpanded && styles.shoppingListButtonActive,
-                        ]}
+                    <ToggleButton
+                        label={displayText}
+                        expanded={isExpanded}
                         onPress={toggleExpansion}
-                    >
-                        <CustomText
-                            style={[
-                                styles.shoppingListButtonText,
-                                selectedList &&
-                                    styles.shoppingListButtonTextSelected,
-                            ]}
-                        >
-                            {displayText}
-                        </CustomText>
-                        <MaterialIcons
-                            name={
-                                isExpanded
-                                    ? 'keyboard-arrow-up'
-                                    : 'keyboard-arrow-down'
-                            }
-                            size={24}
-                            color="#666"
-                        />
-                    </TouchableOpacity>
+                        muted={!selectedList}
+                    />
 
                     {/* Expandable Shopping List Selection */}
                     {isExpanded && (
@@ -1025,64 +995,46 @@ const FormFoodItem = forwardRef(
                     )}
 
                     {showFoodFields && showNutrition && (
-                        <View
+                        <CollapsibleFormSection
+                            label="Ravintoarvot (per 100g/100ml)"
+                            placeholder="Valinnainen"
+                            expanded={nutritionExpanded}
+                            onExpandedChange={setNutritionExpanded}
                             style={[
-                                formStyles.fieldGroup, styles.nutritionFieldGroup,
+                                formStyles.fieldGroup,
+                                styles.nutritionFieldGroup,
                                 unitMenuOpen && styles.unitColumnBehind,
                             ]}
                         >
-                            <TouchableOpacity
-                                style={styles.nutritionToggle}
-                                onPress={() =>
-                                    setNutritionExpanded((prev) => !prev)
-                                }
-                                activeOpacity={0.7}
-                            >
-                                <CustomText style={formStyles.label}>
-                                    Ravintoarvot (per 100g/100ml)
-                                </CustomText>
-                                <MaterialIcons
-                                    name={
-                                        nutritionExpanded
-                                            ? 'expand-less'
-                                            : 'expand-more'
-                                    }
-                                    size={24}
-                                    color="#666"
-                                />
-                            </TouchableOpacity>
-                            {nutritionExpanded &&
-                                NUTRITION_FIELDS.map((field) => (
-                                    <View
-                                        key={field.name}
-                                        style={styles.nutritionField}
-                                    >
-                                        <CustomText style={formStyles.label}>
-                                            {field.label}
-                                        </CustomText>
-                                        <View style={formStyles.inputRow}>
-                                            <CustomInput
-                                                control={control}
-                                                name={field.name}
-                                                placeholder="Valinnainen"
-                                                variant="form"
-                                                style={formStyles.inputInRow}
-                                            />
-                                            <View
-                                                style={formStyles.inputTrailing}
+                            {NUTRITION_FIELDS.map((field) => (
+                                <View
+                                    key={field.name}
+                                    style={styles.nutritionField}
+                                >
+                                    <CustomText style={formStyles.label}>
+                                        {field.label}
+                                    </CustomText>
+                                    <View style={formStyles.inputRow}>
+                                        <CustomInput
+                                            control={control}
+                                            name={field.name}
+                                            placeholder="Valinnainen"
+                                            variant="form"
+                                            style={formStyles.inputInRow}
+                                        />
+                                        <View
+                                            style={formStyles.inputTrailing}
+                                        >
+                                            <CustomText
+                                                style={formStyles.inputMetric}
                                             >
-                                                <CustomText
-                                                    style={
-                                                        formStyles.inputMetric
-                                                    }
-                                                >
-                                                    {field.unit}
-                                                </CustomText>
-                                            </View>
+                                                {field.unit}
+                                            </CustomText>
                                         </View>
                                     </View>
-                                ))}
-                        </View>
+                                </View>
+                            ))}
+                        </CollapsibleFormSection>
                     )}
                 </View>
 
@@ -1328,12 +1280,6 @@ const styles = StyleSheet.create({
     nutritionFieldGroup: {
        paddingTop: 10,
     },
-    nutritionToggle: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 4,
-    },
     nutritionField: {
         marginTop: 12,
     },
@@ -1550,29 +1496,6 @@ const styles = StyleSheet.create({
     // Shopping List Inline Selector Styles
     shoppingListContainer: {
         marginBottom: 10,
-    },
-    shoppingListButton: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        backgroundColor: 'white',
-        borderColor: '#bbb',
-        borderWidth: 1,
-        borderRadius: 4,
-        padding: 10,
-        minHeight: 40,
-    },
-    shoppingListButtonActive: {
-        borderColor: '#5844BB',
-        borderWidth: 2,
-    },
-    shoppingListButtonText: {
-        flex: 1,
-        color: '#999',
-        fontSize: 16,
-    },
-    shoppingListButtonTextSelected: {
-        color: '#333',
     },
     shoppingListExpandableSection: {
         backgroundColor: '#f8f9fa',

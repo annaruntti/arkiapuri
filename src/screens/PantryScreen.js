@@ -208,7 +208,6 @@ const PantryScreen = ({}) => {
             } else {
                 console.error('Failed to fetch pantry items:', response.data)
                 Alert.alert('Virhe', 'Pentterin sisältöä ei voitu hakea')
-                setPantryItems([])
             }
         } catch (error) {
             console.error('Error fetching pantry items:', error)
@@ -221,7 +220,6 @@ const PantryScreen = ({}) => {
                             : error.message || 'Tuntematon virhe')
                 )
             }
-            setPantryItems([])
         } finally {
             setLoading(false)
         }
@@ -724,7 +722,14 @@ const PantryScreen = ({}) => {
                                         count={data.length}
                                     />
                                 )}
-                                keyExtractor={(item) => item._id}
+                                keyExtractor={(item, index) =>
+                                    String(
+                                        item._id ||
+                                            item.foodId?._id ||
+                                            item.foodId ||
+                                            `${item.name}-${index}`
+                                    )
+                                }
                                 extraData={[
                                     pantryItems,
                                     searchQuery,
