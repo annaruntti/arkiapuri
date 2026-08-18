@@ -4,6 +4,7 @@ import { MaterialIcons } from '@expo/vector-icons'
 import Button from './Button'
 import CustomText from './CustomText'
 import ResponsiveModal from './ResponsiveModal'
+import ToggleButton from './ToggleButton'
 
 const CategorySelect = ({
     value,
@@ -60,45 +61,27 @@ const CategorySelect = ({
         })
     }
 
-    const handleClearAll = () => {
-        setSelectedCategories([])
-        onChange([])
-    }
-
     const handleSave = () => {
         // Return just the IDs of selected categories
         onChange(selectedCategories)
         setIsModalVisible(false)
     }
 
+    const displayText =
+        selectedCategories.length === 0
+            ? 'Valitse kategoriat'
+            : selectedCategories.length === 1
+              ? getCategoryName(selectedCategories[0])
+              : `${selectedCategories.length} kategoriaa valittu`
+
     return (
         <View style={styles.multiSelectBox}>
-            <TouchableOpacity
+            <ToggleButton
+                label={displayText}
+                expanded={isModalVisible}
                 onPress={toggleModal}
-                style={styles.multiSelectButton}
-            >
-                <View style={styles.selectedCategoriesContainer}>
-                    {selectedCategories.length > 0 ? (
-                        selectedCategories.map((id) => (
-                            <View key={id} style={styles.categoryChip}>
-                                <CustomText style={styles.categoryChipText}>
-                                    {getCategoryName(id)}
-                                </CustomText>
-                            </View>
-                        ))
-                    ) : (
-                        <CustomText>Valitse kategoriat</CustomText>
-                    )}
-                </View>
-                {selectedCategories.length > 0 && (
-                    <TouchableOpacity
-                        style={styles.clearButton}
-                        onPress={handleClearAll}
-                    >
-                        <MaterialIcons name="clear" size={20} color="#666" />
-                    </TouchableOpacity>
-                )}
-            </TouchableOpacity>
+                muted={selectedCategories.length === 0}
+            />
 
             <ResponsiveModal
                 visible={isModalVisible}
@@ -175,56 +158,6 @@ const styles = StyleSheet.create({
     multiSelectBox: {
         marginBottom: 8,
         flex: 1,
-    },
-    multiSelectButton: {
-        padding: 10,
-        borderWidth: 1,
-        borderColor: '#bbb',
-        borderStyle: 'solid',
-        borderRadius: 4,
-        backgroundColor: 'white',
-        minHeight: 40,
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-    },
-    selectedCategoriesContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 5,
-        alignItems: 'center',
-        flex: 1,
-        marginRight: 40,
-    },
-    categoryChip: {
-        backgroundColor: 'rgb(224, 224, 224)',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 12,
-        marginRight: 4,
-        marginBottom: 4,
-    },
-    categoryChipText: {
-        color: '#000',
-        fontSize: 14,
-    },
-    clearButton: {
-        backgroundColor: '#e0e0e0',
-        width: 30,
-        height: 30,
-        borderRadius: 15,
-        justifyContent: 'center',
-        alignItems: 'center',
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 1,
-        },
-        shadowOpacity: 0.2,
-        shadowRadius: 1.41,
-        position: 'absolute',
-        right: 8,
-        top: 8,
     },
     modalBody: {
         flex: 1,

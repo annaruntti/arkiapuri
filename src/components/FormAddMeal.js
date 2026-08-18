@@ -4,7 +4,6 @@ import {
     FlatList,
     Image,
     Platform,
-    Pressable,
     ScrollView,
     StyleSheet,
     TextInput,
@@ -25,7 +24,12 @@ import {
     OVERDUE_COOKING_MESSAGE,
     OVERDUE_EATING_MESSAGE,
 } from '../utils/mealDates'
-import { getDifficultyEnum, mealRoles } from '../utils/mealUtils'
+import {
+    getDifficultyEnum,
+    getMealCategoryText,
+    getMealTypeText,
+    parseMealCategories,
+} from '../utils/mealUtils'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 
@@ -36,7 +40,9 @@ import DifficultySelector from './DifficultySelector'
 import FormDateField from './FormDateField'
 import FormFoodItem from './FormFoodItem'
 import GuestWarningBanner from './GuestWarningBanner'
+import CollapsibleFormSection from './CollapsibleFormSection'
 import MealCategorySelector from './MealCategorySelector'
+import MealRoleSelector from './MealRoleSelector'
 import UnifiedFoodSearch from './UnifiedFoodSearch'
 import {
     applyIngredientQuantity,
@@ -65,7 +71,8 @@ const AddMealForm = ({ onSubmit }) => {
     })
     const [difficultyLevel, setDifficultyLevel] = useState('')
     const [selectedRoles, setSelectedRoles] = useState([])
-    const [mealCategory, setMealCategory] = useState('other')
+    const [rolesExpanded, setRolesExpanded] = useState(false)
+    const [mealCategory, setMealCategory] = useState([])
     const [plannedCookingDate, setPlannedCookingDate] = useState(new Date())
     const [plannedEatingDates, setPlannedEatingDates] = useState([])
     const [servings, setServings] = useState(DEFAULT_SERVINGS)
@@ -245,6 +252,7 @@ const AddMealForm = ({ onSubmit }) => {
         const errors = {}
         if (!selectedRoles || selectedRoles.length === 0) {
             errors.roles = 'Valitse vähintään yksi ateriatyyppi'
+            setRolesExpanded(true)
         }
         if (!foodItems || foodItems.length === 0) {
             errors.foodItems = 'Lisää vähintään yksi raaka-aine'
@@ -308,7 +316,7 @@ const AddMealForm = ({ onSubmit }) => {
                         quantity: getIngredientQuantity(item),
                     })),
                     defaultRoles: [...selectedRoles],
-                    mealCategory,
+                    mealCategory: parseMealCategories(mealCategory, []),
                     plannedCookingDate,
                     plannedEatingDates: eatingDates,
                     servings,
@@ -392,7 +400,7 @@ const AddMealForm = ({ onSubmit }) => {
                 cookingTime: parseInt(data.cookingTime) || 0,
                 foodItems: createdFoodItemIds,
                 defaultRoles: [...selectedRoles],
-                mealCategory,
+                mealCategory: parseMealCategories(mealCategory, []),
                 plannedCookingDate,
                 plannedEatingDates: eatingDates,
                 servings,
@@ -1132,68 +1140,58 @@ const AddMealForm = ({ onSubmit }) => {
                             onChange={handleServingsChange}
                         />
 
-                        <CustomText style={styles.label}>
-                            Aterian tyyppi
-                        </CustomText>
-                        <View style={styles.checkboxGroup}>
-                            <View style={styles.checkboxGrid}>
-                                {Object.entries(mealRoles).map(
-                                    ([value, label]) => (
-                                        <Pressable
-                                            key={value}
-                                            style={styles.checkboxGridItem}
-                                            onPress={() => {
-                                                setSelectedRoles((prev) => {
-                                                    const next = prev.includes(value)
-                                                        ? prev.filter((r) => r !== value)
-                                                        : [...prev, value]
-                                                    if (next.length > 0) {
-                                                        setFormErrors((e) => ({ ...e, roles: undefined }))
-                                                    }
-                                                    return next
-                                                })
-                                            }}
-                                        >
-                                            <View
-                                                style={[
-                                                    styles.checkbox,
-                                                    selectedRoles.includes(
-                                                        value
-                                                    ) && styles.checkboxChecked,
-                                                ]}
-                                            >
-                                                {selectedRoles.includes(
-                                                    value
-                                                ) && (
-                                                    <MaterialIcons
-                                                        name="check"
-                                                        size={16}
-                                                        color="white"
-                                                    />
-                                                )}
-                                            </View>
-                                            <CustomText
-                                                style={styles.checkboxLabel}
-                                            >
-                                                {label}
-                                            </CustomText>
-                                        </Pressable>
-                                    )
-                                )}
-                            </View>
+                        <View ref={rolesErrorRef} style={styles.collapsibleFormSection}>
+                            <CollapsibleFormSection
+                                label="Aterian tyyppi"
+                                summary={
+                                    selectedRoles.length > 0
+                                        ? getMealTypeText(selectedRoles)
+                                        : ''
+                                }
+                                expanded={rolesExpanded}
+                                onExpandedChange={setRolesExpanded}
+                            >
+                                <MealRoleSelector
+                                    value={selectedRoles}
+                                    onSelect={(next) => {
+                                        setSelectedRoles(next)
+                                        if (next.length > 0) {
+                                            setFormErrors((e) => ({
+                                                ...e,
+                                                roles: undefined,
+                                            }))
+                                        }
+                                    }}
+                                />
+                            </CollapsibleFormSection>
+                            {formErrors.roles && (
+                                <View style={styles.errorRow}>
+                                    <MaterialIcons
+                                        name="error"
+                                        color="#e53e3e"
+                                        size={14}
+                                    />
+                                    <CustomText style={styles.errorMsg}>
+                                        {formErrors.roles}
+                                    </CustomText>
+                                </View>
+                            )}
                         </View>
-                        {formErrors.roles && (
-                            <View ref={rolesErrorRef} style={styles.errorRow}>
-                                <MaterialIcons name="error" color="#e53e3e" size={14} />
-                                <CustomText style={styles.errorMsg}>{formErrors.roles}</CustomText>
-                            </View>
-                        )}
 
-                        <CustomText style={styles.label}>Ruokalaji</CustomText>
-                        <MealCategorySelector
-                            value={mealCategory}
-                            onSelect={setMealCategory}
-                        />
+                        <CollapsibleFormSection
+                            label="Ruokalaji"
+                            style={styles.collapsibleFormSection}
+                            summary={
+                                mealCategory.length > 0
+                                    ? getMealCategoryText(mealCategory)
+                                    : ''
+                            }
+                        >
+                            <MealCategorySelector
+                                value={mealCategory}
+                                onSelect={setMealCategory}
+                            />
+                        </CollapsibleFormSection>
                         <FormDateField
                             label="Suunniteltu valmistuspäivä"
                             value={plannedCookingDate}
@@ -1342,6 +1340,7 @@ const AddMealForm = ({ onSubmit }) => {
                                     const customErrors = {}
                                     if (!selectedRoles || selectedRoles.length === 0) {
                                         customErrors.roles = 'Valitse vähintään yksi ateriatyyppi'
+                                        setRolesExpanded(true)
                                     }
                                     if (!foodItems || foodItems.length === 0) {
                                         customErrors.foodItems = 'Lisää vähintään yksi raaka-aine'
@@ -1556,44 +1555,6 @@ const styles = StyleSheet.create({
         color: '#666',
         fontSize: 14,
     },
-    checkboxGroup: {
-        backgroundColor: 'white',
-        padding: 5,
-        marginBottom: 10,
-    },
-    checkboxGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        justifyContent: 'space-between',
-    },
-    checkboxGridItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 8,
-        width: '48%',
-    },
-    checkboxRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 8,
-    },
-    checkbox: {
-        width: 24,
-        height: 24,
-        borderRadius: 4,
-        borderWidth: 2,
-        borderColor: '#5844BB',
-        marginRight: 10,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    checkboxChecked: {
-        backgroundColor: '#AE9CFC',
-    },
-    checkboxLabel: {
-        fontSize: 16,
-        color: '#000000',
-    },
     dateButton: {
         backgroundColor: 'white',
         borderColor: '#bbb',
@@ -1605,6 +1566,9 @@ const styles = StyleSheet.create({
         marginBottom: 20,
         justifyContent: 'center',
         width: '100%',
+    },
+    collapsibleFormSection: {
+        marginBottom: 10,
     },
     modalScrollContainer: {
         padding: 20,

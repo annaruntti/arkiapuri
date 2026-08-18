@@ -90,21 +90,82 @@ export const formatDate = (dateString) => {
 }
 
 export const mealCategories = {
+    porridge: 'Puuro',
+    pie: 'Piirakka',
+    sandwich: 'Voileipä',
     salad: 'Salaatti',
-    pasta: 'Pasta',
     soup: 'Keitto',
-    casserole: 'Uuniruoka',
-    stew: 'Pataruoka',
+    pasta: 'Pasta',
     pizza: 'Pizza',
-    texmex: 'TexMex',
     burger: 'Burgeri',
+    wrap: 'Wrap',
+    stew: 'Pataruoka',
+    casserole: 'Uuniruoka',
+    asian: 'Itämainen ruoka',
+    texmex: 'TexMex',
+    wok: 'Wokki',
+    curry: 'Curry',
     steak: 'Pihvi',
-    fish: 'Kalaruoka',
+    mincedMeat: 'Jauheliharuoka',
     vegetarian: 'Kasvisruoka',
+    egg: 'Munaruoka',
+    grill: 'Grilliruoka',
+    fish: 'Kalaruoka',
+    chicken: 'Kana, kalkkuna',
+    lamb: 'Lammas',
+    pork: 'Porsas',
+    game: 'Riista',
+    dessert: 'Jälkiruoka',
     other: 'Muu',
 }
 
+export const MEAL_CATEGORY_VALUES = Object.keys(mealCategories)
+
+const mealCategoryByLower = Object.fromEntries(
+    MEAL_CATEGORY_VALUES.map((key) => [key.toLowerCase(), key])
+)
+
+export const parseMealCategories = (raw, fallback = []) => {
+    const categories = []
+
+    const visit = (value) => {
+        if (value == null || value === '') return
+        if (Array.isArray(value)) {
+            value.forEach(visit)
+            return
+        }
+        if (typeof value !== 'string') return
+
+        const trimmed = value.trim()
+        if (
+            (trimmed.startsWith('[') && trimmed.endsWith(']')) ||
+            (trimmed.startsWith('"') && trimmed.endsWith('"'))
+        ) {
+            try {
+                visit(JSON.parse(trimmed))
+                return
+            } catch (_error) {
+                // Treat as a plain category string
+            }
+        }
+
+        categories.push(trimmed)
+    }
+
+    visit(raw)
+    const unique = []
+    const seen = new Set()
+    for (const item of categories) {
+        const canonical = mealCategoryByLower[String(item).toLowerCase()]
+        if (!canonical || seen.has(canonical)) continue
+        seen.add(canonical)
+        unique.push(canonical)
+    }
+    return unique.length > 0 ? unique : fallback
+}
+
 export const getMealCategoryText = (category) => {
-    if (!category) return 'Ei määritelty'
-    return mealCategories[category.toLowerCase()] || 'Ei määritelty'
+    const categories = parseMealCategories(category, [])
+    if (categories.length === 0) return 'Ei määritelty'
+    return categories.map((item) => mealCategories[item] || item).join(', ')
 }

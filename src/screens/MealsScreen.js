@@ -33,6 +33,7 @@ import {
     getDifficultyText,
     getMealRoleText,
     getDifficultyEnum,
+    parseMealCategories,
     parseMealRoles,
 } from '../utils/mealUtils'
 import {
@@ -42,7 +43,6 @@ import {
     filterMealsByCookingTime,
     filterMealsByType,
     getDietCategories,
-    getCategoryMappings,
     getMealCountByDifficulty,
     getMealCountByCookingTime,
 } from '../utils/mealFilters'
@@ -103,9 +103,6 @@ const MealsScreen = ({ route, navigation }) => {
 
     // Get diet categories from categories.json
     const dietCategories = getDietCategories()
-    const { categoryNameToId } = getCategoryMappings()
-
-    // Note: Filter functions are now imported from utils/mealFilters.js
 
     const toggleDietFilter = (categoryId) => {
         setSelectedDietFilters((prev) => {
@@ -386,7 +383,7 @@ const MealsScreen = ({ route, navigation }) => {
                     updatedMeal.defaultRoles,
                     ['dinner']
                 ),
-                mealCategory: updatedMeal.mealCategory || 'other',
+                mealCategory: parseMealCategories(updatedMeal.mealCategory, []),
                 plannedCookingDate: updatedMeal.plannedCookingDate,
                 plannedEatingDates: updatedMeal.plannedEatingDates || [],
                 servings: parseInt(updatedMeal.servings, 10) || DEFAULT_SERVINGS,

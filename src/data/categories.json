@@ -10,7 +10,6 @@
             { "name": "Maitotuotteet", "id": 5 },
             { "name": "Kuiva-aineet", "id": 6 },
             { "name": "Valmisateriat", "id": 7 },
-            { "name": "Pakasteet", "id": 8 },
             { "name": "Säilykkeet", "id": 23 },
             { "name": "Juomat", "id": 25 },
             { "name": "Mausteet", "id": 26 },
@@ -39,7 +38,8 @@
         "id": "storage",
         "children": [
             { "name": "Kuivatuotteet", "id": 22 },
-            { "name": "Jääkaappituotteet", "id": 24 }
+            { "name": "Jääkaappituotteet", "id": 24 },
+            { "name": "Pakasteet", "id": 8 }
         ]
     },
     {

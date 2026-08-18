@@ -207,10 +207,12 @@ const PantryScreen = ({}) => {
                 setPantryItems(mergeDuplicatePantryItems(items))
             } else {
                 console.error('Failed to fetch pantry items:', response.data)
+                setPantryItems([])
                 Alert.alert('Virhe', 'Pentterin sisältöä ei voitu hakea')
             }
         } catch (error) {
             console.error('Error fetching pantry items:', error)
+            setPantryItems([])
             if (error?.response?.status !== 401) {
                 Alert.alert(
                     'Virhe',

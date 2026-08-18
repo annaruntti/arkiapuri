@@ -9,6 +9,7 @@ import {
     EATING_BEFORE_COOKING_MESSAGE,
     isAnyDateBeforeCooking,
 } from '../utils/mealDates'
+import { parseMealCategories } from '../utils/mealUtils'
 
 /**
  * Custom hook for managing meal calendar operations
@@ -234,7 +235,7 @@ export const useMealCalendar = ({ onRequireLogin }) => {
                 difficultyLevel: updatedMeal.difficultyLevel,
                 cookingTime: updatedMeal.cookingTime,
                 defaultRoles: updatedMeal.defaultRoles,
-                mealCategory: updatedMeal.mealCategory,
+                mealCategory: parseMealCategories(updatedMeal.mealCategory, []),
                 plannedCookingDate: updatedMeal.plannedCookingDate,
                 plannedEatingDates: updatedMeal.plannedEatingDates,
                 servings: updatedMeal.servings,

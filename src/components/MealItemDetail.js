@@ -10,7 +10,7 @@ import {
     normalizeServings,
     scaleMealFoodItems,
 } from '../utils/mealServings'
-import { parseMealRoles } from '../utils/mealUtils'
+import { parseMealCategories, parseMealRoles } from '../utils/mealUtils'
 import AddFoodItemPanel from './AddFoodItemPanel'
 import MealDetailsForm from './MealDetailsForm'
 import ResponsiveModal from './ResponsiveModal'
@@ -165,6 +165,10 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                 defaultRoles: parseMealRoles(
                     editedValues.defaultRoles || meal.defaultRoles,
                     ['dinner']
+                ),
+                mealCategory: parseMealCategories(
+                    editedValues.mealCategory ?? meal.mealCategory,
+                    []
                 ),
                 servings: normalizeServings(editedValues.servings),
                 plannedEatingDates: editedValues.plannedCookingDate

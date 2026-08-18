@@ -11,11 +11,15 @@ import {
     getDifficultyText,
     getMealCategoryText,
     getMealTypeText,
+    parseMealCategories,
 } from '../utils/mealUtils'
 import Button from './Button'
+import CollapsibleFormSection from './CollapsibleFormSection'
 import CustomText from './CustomText'
 import EditableField from './EditableField'
 import FormDateField from './FormDateField'
+import MealCategorySelector from './MealCategorySelector'
+import MealRoleSelector from './MealRoleSelector'
 import MealImageUploader from './MealImageUploader'
 import MealServingsStepper from './MealServingsStepper'
 import MealTabs from './MealTabs'
@@ -79,6 +83,13 @@ const MealDetailsForm = ({
         },
     ].filter((row) => row.value)
 
+    const roleSummary = getMealTypeText(
+        editedValues.defaultRoles || meal.defaultRoles
+    )
+    const categorySummary = getMealCategoryText(
+        editedValues.mealCategory ?? meal.mealCategory
+    )
+
     return (
         <View style={styles.mealDetails}>
             <MealServingsStepper
@@ -125,31 +136,32 @@ const MealDetailsForm = ({
                 type="number"
             />
 
-            <EditableField
-                field="defaultRoles"
+            <CollapsibleFormSection
                 label="Aterian tyyppi"
-                value={getMealTypeText(
-                    editedValues.defaultRoles || meal.defaultRoles
-                )}
-                isEditing={editableFields.defaultRoles}
-                editedValue={editedValues.defaultRoles || meal.defaultRoles}
-                onToggleEdit={() => onToggleEdit('defaultRoles')}
-                onChange={(value) => onChange('defaultRoles', value)}
-            />
+                summary={roleSummary === 'Ei määritelty' ? '' : roleSummary}
+                style={styles.categorySection}
+            >
+                <MealRoleSelector
+                    value={editedValues.defaultRoles || meal.defaultRoles}
+                    onSelect={(next) => onChange('defaultRoles', next)}
+                />
+            </CollapsibleFormSection>
 
-            <EditableField
-                field="mealCategory"
+            <CollapsibleFormSection
                 label="Ruokalaji"
-                value={getMealCategoryText(
-                    editedValues.mealCategory || meal.mealCategory
-                )}
-                isEditing={editableFields.mealCategory}
-                editedValue={
-                    editedValues.mealCategory || meal.mealCategory || 'other'
+                summary={
+                    categorySummary === 'Ei määritelty' ? '' : categorySummary
                 }
-                onToggleEdit={() => onToggleEdit('mealCategory')}
-                onChange={(value) => onChange('mealCategory', value)}
-            />
+                style={styles.categorySection}
+            >
+                <MealCategorySelector
+                    value={parseMealCategories(
+                        editedValues.mealCategory ?? meal.mealCategory,
+                        []
+                    )}
+                    onSelect={(next) => onChange('mealCategory', next)}
+                />
+            </CollapsibleFormSection>
 
             <FormDateField
                 label="Suunniteltu valmistuspäivä"
@@ -254,6 +266,10 @@ const styles = StyleSheet.create({
         marginBottom: 0,
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
+    },
+    categorySection: {
+        paddingTop: 8,
+        paddingBottom: 8,
     },
     buttonContainer: {
         marginTop: 20,

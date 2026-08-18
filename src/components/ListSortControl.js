@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react'
-import { Pressable, View } from 'react-native'
-import { MaterialIcons } from '@expo/vector-icons'
+import { View } from 'react-native'
 import Button from './Button'
-import CustomText from './CustomText'
+import ToggleButton from './ToggleButton'
 import { getSortOptionById, getSortOptionLabel } from '../utils/listSort'
 
 /**
@@ -46,24 +45,14 @@ const ListSortControl = ({
 
     return (
         <View style={styles.container}>
-            <Pressable
+            <ToggleButton
+                variant="pill"
+                label={title}
+                icon="sort"
+                expanded={showOptions}
                 onPress={isDisabled ? undefined : toggleShowOptions}
                 disabled={isDisabled}
-                style={({ pressed }) => [
-                    styles.triggerButton,
-                    showOptions && styles.activeButton,
-                    isDisabled && styles.disabledButton,
-                    pressed && !isDisabled && styles.pressed,
-                ]}
-            >
-                <MaterialIcons name="sort" size={16} color="#5844BB" />
-                <CustomText style={styles.triggerText}>{title}</CustomText>
-                <MaterialIcons
-                    name={showOptions ? 'expand-less' : 'expand-more'}
-                    size={16}
-                    color="#5844BB"
-                />
-            </Pressable>
+            />
 
             {showOptions ? (
                 <View style={styles.optionsPanel}>
@@ -110,32 +99,6 @@ const styles = {
         alignItems: 'flex-end',
         position: 'relative',
         zIndex: 20,
-    },
-    triggerButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        backgroundColor: 'transparent',
-        borderWidth: 2,
-        borderColor: '#5844BB',
-        borderRadius: 25,
-        paddingVertical: 8,
-        paddingHorizontal: 16,
-        minHeight: 36,
-    },
-    triggerText: {
-        fontSize: 14,
-        fontWeight: '500',
-        color: '#000',
-    },
-    activeButton: {
-        backgroundColor: '#F0EBFF',
-    },
-    pressed: {
-        opacity: 0.8,
-    },
-    disabledButton: {
-        opacity: 0.5,
     },
     optionsPanel: {
         position: 'absolute',

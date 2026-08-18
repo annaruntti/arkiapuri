@@ -1,9 +1,9 @@
-import { MaterialIcons } from '@expo/vector-icons'
 import { format } from 'date-fns'
 import { useState } from 'react'
 import { StyleSheet, TouchableOpacity, View } from 'react-native'
 import ClearFiltersButton from './ClearFiltersButton'
 import CustomText from './CustomText'
+import ToggleButton from './ToggleButton'
 
 const DateSelector = ({
     dates,
@@ -15,23 +15,18 @@ const DateSelector = ({
 
     return (
         <View style={styles.dateSelectionContainer}>
-            <TouchableOpacity
-                style={[
-                    styles.headerRow,
-                    isExpanded && styles.headerRowExpanded,
-                ]}
-                onPress={() => setIsExpanded(!isExpanded)}
-                activeOpacity={0.7}
-            >
-                <CustomText style={styles.dateSelectionTitle}>
-                    Valitse päivät ({selectedDates.length} valittu)
-                </CustomText>
-                <MaterialIcons
-                    name={isExpanded ? 'expand-less' : 'expand-more'}
-                    size={24}
-                    color="#333"
+            <View style={isExpanded ? styles.headerRowExpanded : undefined}>
+                <ToggleButton
+                    label={
+                        selectedDates.length > 0
+                            ? `${selectedDates.length} päivää valittu`
+                            : 'Valitse päivät'
+                    }
+                    expanded={isExpanded}
+                    onPress={() => setIsExpanded(!isExpanded)}
+                    muted={selectedDates.length === 0}
                 />
-            </TouchableOpacity>
+            </View>
 
             {isExpanded && (
                 <>
@@ -80,19 +75,8 @@ const styles = StyleSheet.create({
         backgroundColor: '#f8f9fa',
         borderRadius: 8,
     },
-    headerRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
     headerRowExpanded: {
         marginBottom: 10,
-    },
-    dateSelectionTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#333',
-        flex: 1,
     },
     dateGrid: {
         flexDirection: 'row',
