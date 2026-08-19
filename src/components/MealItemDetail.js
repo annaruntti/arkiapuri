@@ -63,10 +63,6 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
         fetchShoppingLists()
     }, [meal])
 
-    if (!meal || !visible) {
-        return null
-    }
-
     const toggleEdit = (field) => {
         setEditableFields((prev) => {
             const isEditing = !prev[field]
@@ -182,9 +178,12 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                 __v: undefined,
             }
 
-            await onUpdate(meal._id, updatedMeal)
+            const didSave = await onUpdate?.(meal._id, updatedMeal)
+            if (didSave === false) return
+
             setEditableFields({})
             setEditingFoodItem(null)
+            onClose()
         } catch (error) {
             console.error('Error saving updates:', error)
         }
@@ -192,7 +191,7 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
 
     return (
         <ResponsiveModal
-            visible={visible}
+            visible={Boolean(visible && meal)}
             onClose={() => {
                 if (showShoppingListPicker) {
                     closeShoppingListPicker()
@@ -209,12 +208,12 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                     ? 'Valitse ostoslista'
                     : showFoodItemForm
                       ? 'Lisää raaka-aine'
-                      : meal.name
+                      : meal?.name
             }
             showBackButton={showFoodItemForm || showShoppingListPicker}
             maxWidth={640}
         >
-            {showShoppingListPicker ? (
+            {!meal ? null : showShoppingListPicker ? (
                 <ShoppingListPickerModal
                     embedded
                     shoppingLists={shoppingLists}

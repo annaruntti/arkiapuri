@@ -49,6 +49,7 @@ const TableMonth = ({ onRequireLogin }) => {
         setDetailModalVisible,
         fetchMealData: fetchMealsBase,
         handleDatePress: handleDatePressBase,
+        handleMealPress,
         handleMealSelection: handleMealSelectionBase,
         updateMealDates: updateMealDatesBase,
         handleMealUpdate: handleMealUpdateBase,
@@ -94,7 +95,7 @@ const TableMonth = ({ onRequireLogin }) => {
     }
 
     const handleMealUpdate = (mealId, updatedMeal) => {
-        handleMealUpdateBase(mealId, updatedMeal, () => generateMonthDates(currentMonth))
+        return handleMealUpdateBase(mealId, updatedMeal, () => generateMonthDates(currentMonth))
     }
 
     const removeMealFromDate = (meal, date) => {
@@ -159,20 +160,23 @@ const TableMonth = ({ onRequireLogin }) => {
         const isToday = format(new Date(), 'yyyy-MM-dd') === dateStr
 
         return (
-            <TouchableOpacity
+            <View
                 key={dateStr}
                 style={[styles.dayContainer, isToday && styles.todayContainer]}
-                onPress={() => handleDatePress(date)}
             >
-                <View style={styles.dayHeader}>
+                <TouchableOpacity
+                    style={styles.dayHeader}
+                    onPress={() => handleDatePress(date)}
+                    activeOpacity={0.7}
+                >
                     <CustomText
                         style={[styles.dayNumber, isToday && styles.todayText]}
                     >
                         {dayNumber}
                     </CustomText>
-                </View>
+                </TouchableOpacity>
                 <View style={styles.mealsContainer}>
-                    {meals.slice(0, 2).map((meal, index) => (
+                    {meals.slice(0, 2).map((meal) => (
                         <View key={meal._id}>
                             {renderMealItemWithRemove(meal, date)}
                         </View>
@@ -188,7 +192,7 @@ const TableMonth = ({ onRequireLogin }) => {
                         </TouchableOpacity>
                     )}
                 </View>
-            </TouchableOpacity>
+            </View>
         )
     }
 

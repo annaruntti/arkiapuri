@@ -200,7 +200,7 @@ const Table = ({ onRequireLogin }) => {
     }
 
     const handleMealUpdate = (mealId, updatedMeal) => {
-        handleMealUpdateBase(mealId, updatedMeal, () => fetchMealData(dates))
+        return handleMealUpdateBase(mealId, updatedMeal, () => fetchMealData(dates))
     }
 
     const removeMealFromDate = (meal, date) => {

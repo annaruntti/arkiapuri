@@ -223,11 +223,11 @@ export const useMealCalendar = ({ onRequireLogin }) => {
         try {
             if (!mealId || !updatedMeal) {
                 console.error('Missing mealId or updatedMeal')
-                return
+                return false
             }
 
             const token = await getAuthTokenOrPrompt('sync')
-            if (!token) return
+            if (!token) return false
 
             const cleanedMeal = {
                 name: updatedMeal.name,
@@ -269,11 +269,13 @@ export const useMealCalendar = ({ onRequireLogin }) => {
 
             if (response.data.success) {
                 refreshCallback()
-                Alert.alert('Ateria päivitetty')
+                return true
             }
+            return false
         } catch (error) {
             console.error('Error updating meal:', error)
             Alert.alert('Virhe', 'Aterian päivittäminen epäonnistui')
+            return false
         }
     }
 

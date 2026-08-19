@@ -408,14 +408,15 @@ const MealsScreen = ({ route, navigation }) => {
                         meal._id === mealId ? response.data.meal : meal
                     )
                 )
-                setDetailModalVisible(false)
-            } else {
-                console.error('Failed to update meal:', response.data.message)
-                Alert.alert(
-                    'Virhe',
-                    response.data.message || 'Aterian tallennus epäonnistui'
-                )
+                return true
             }
+
+            console.error('Failed to update meal:', response.data.message)
+            Alert.alert(
+                'Virhe',
+                response.data.message || 'Aterian tallennus epäonnistui'
+            )
+            return false
         } catch (error) {
             console.error('Error updating meal:', error)
             Alert.alert(
@@ -424,6 +425,7 @@ const MealsScreen = ({ route, navigation }) => {
                     error.response?.data?.error ||
                     'Aterian tallennus epäonnistui'
             )
+            return false
         }
     }
 
