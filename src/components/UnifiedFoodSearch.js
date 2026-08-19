@@ -241,7 +241,7 @@ const UnifiedFoodSearch = ({
                     const data = await openFoodFactsApi.searchByText(
                         query,
                         1,
-                        8
+                        50
                     )
 
                     if (data.success) {
@@ -911,9 +911,9 @@ const UnifiedFoodSearch = ({
                             style={styles.resultsList}
                             keyboardShouldPersistTaps="handled"
                             removeClippedSubviews={false} // Disable for better compatibility
-                            maxToRenderPerBatch={10}
-                            initialNumToRender={10}
-                            windowSize={5}
+                            maxToRenderPerBatch={20}
+                            initialNumToRender={20}
+                            windowSize={8}
                             getItemLayout={null} // Let FlatList calculate dynamically
                         />
                     )}
@@ -986,7 +986,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         borderWidth: 1,
         borderColor: '#ddd',
-        maxHeight: 300,
+        maxHeight: 380,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
@@ -1017,7 +1017,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     resultsList: {
-        maxHeight: 200,
+        maxHeight: 280,
     },
     item: {
         paddingHorizontal: 12,

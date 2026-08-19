@@ -55,7 +55,7 @@ class OpenFoodFactsApi {
      * @param {number} limit - Items per page
      * @returns {Promise<Object>} Search results
      */
-    async searchByText(query, page = 1, limit = 20) {
+    async searchByText(query, page = 1, limit = 50) {
         try {
             const response = await fetch(
                 `${this.baseUrl}/api/openfoodfacts/search?q=${encodeURIComponent(query)}&page=${page}&limit=${limit}`,
