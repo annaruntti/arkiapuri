@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { useEffect, useState } from 'react'
-import { Alert, FlatList, StyleSheet, View } from 'react-native'
+import { Alert, StyleSheet, View } from 'react-native'
 import Button from '../components/Button'
 import CustomText from '../components/CustomText'
 import FormAddShoppingList from '../components/FormAddShoppingList'
@@ -12,6 +12,7 @@ import storage from '../utils/storage'
 
 import ResponsiveLayout from '../components/ResponsiveLayout'
 import ResponsiveModal from '../components/ResponsiveModal'
+import StickyListLayout from '../components/StickyListLayout'
 import { useResponsiveDimensions } from '../utils/responsive'
 
 const ShoppingListsScreen = () => {
@@ -139,8 +140,8 @@ const ShoppingListsScreen = () => {
         setSelectedList(updatedList)
     }
 
-    const renderShoppingList = ({ item }) => (
-        <View style={styles.listItem}>
+    const renderShoppingList = (item) => (
+        <View key={item._id} style={styles.listItem}>
             <View style={styles.listItemHeader}>
                 <View style={styles.listHeader}>
                     <CustomText style={styles.listTitle}>
@@ -180,34 +181,6 @@ const ShoppingListsScreen = () => {
         </View>
     )
 
-    const renderHeader = () => (
-        <View style={styles.headerContainer}>
-            <CustomText
-                style={[styles.introText, isDesktop && styles.desktopIntroText]}
-            >
-                Täällä voit luoda uusia ostoslistoja ja jakaa ne perheenjäsenten
-                kanssa. Voitte käyttää ja päivittää ostoslistoja reaaliajassa.
-            </CustomText>
-
-            <View
-                style={[
-                    styles.buttonContainer,
-                    isDesktop && styles.desktopButtonContainer,
-                ]}
-            >
-                <Button
-                    title="Luo uusi ostoslista"
-                    onPress={handleOpenCreateList}
-                    style={[
-                        styles.primaryButton,
-                        isDesktop && styles.desktopPrimaryButton,
-                    ]}
-                    textStyle={styles.buttonText}
-                />
-            </View>
-        </View>
-    )
-
     return (
         <ResponsiveLayout>
             <View
@@ -243,25 +216,51 @@ const ShoppingListsScreen = () => {
                     />
 
                     <View style={styles.content}>
-                        {shoppingLists.length > 0 ? (
-                            <FlatList
-                                style={styles.listContainer}
-                                contentContainerStyle={{ paddingBottom: 20 }}
-                                data={shoppingLists}
-                                renderItem={renderShoppingList}
-                                keyExtractor={(item) => item._id}
-                                showsVerticalScrollIndicator={false}
-                                ListHeaderComponent={renderHeader}
-                            />
-                        ) : (
-                            <>
-                                {renderHeader()}
+                        <StickyListLayout
+                            header={
+                                <CustomText
+                                    style={[
+                                        styles.introText,
+                                        isDesktop && styles.desktopIntroText,
+                                    ]}
+                                >
+                                    Täällä voit luoda uusia ostoslistoja ja
+                                    jakaa ne perheenjäsenten kanssa. Voitte
+                                    käyttää ja päivittää ostoslistoja
+                                    reaaliajassa.
+                                </CustomText>
+                            }
+                            sticky={
+                                <View
+                                    style={[
+                                        styles.buttonContainer,
+                                        isDesktop &&
+                                            styles.desktopButtonContainer,
+                                    ]}
+                                >
+                                    <Button
+                                        title="Luo uusi ostoslista"
+                                        onPress={handleOpenCreateList}
+                                        style={[
+                                            styles.primaryButton,
+                                            isDesktop &&
+                                                styles.desktopPrimaryButton,
+                                        ]}
+                                        textStyle={styles.buttonText}
+                                    />
+                                </View>
+                            }
+                            contentContainerStyle={{ paddingBottom: 20 }}
+                        >
+                            {shoppingLists.length > 0 ? (
+                                shoppingLists.map(renderShoppingList)
+                            ) : (
                                 <CustomText style={styles.emptyText}>
                                     Ei vielä ostoslistoja. Luo ensimmäinen lista
                                     painamalla "Luo uusi ostoslista" -nappia.
                                 </CustomText>
-                            </>
-                        )}
+                            )}
+                        </StickyListLayout>
                     </View>
                 </View>
             </View>
@@ -276,12 +275,6 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#fff',
         padding: 10,
-    },
-    headerContainer: {
-        alignItems: 'flex-start',
-        paddingTop: 15,
-        paddingBottom: 10,
-        paddingHorizontal: 5,
     },
     introText: {
         fontSize: 17,
@@ -323,10 +316,6 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         marginBottom: 20,
-    },
-    listContainer: {
-        flex: 1,
-        width: '100%',
     },
     listItem: {
         backgroundColor: '#f8f8f8',

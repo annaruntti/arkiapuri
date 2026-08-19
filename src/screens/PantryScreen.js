@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
     Alert,
-    ScrollView,
     SectionList,
     StyleSheet,
     TouchableOpacity,
@@ -25,6 +24,7 @@ import PantryItemDetails from '../components/PantryItemDetails'
 import ResponsiveLayout from '../components/ResponsiveLayout'
 import ResponsiveModal from '../components/ResponsiveModal'
 import SearchSection from '../components/SearchSection'
+import StickyListLayout from '../components/StickyListLayout'
 
 import { useFilteredItemList } from '../hooks/useFilteredItemList'
 import { PANTRY_SORT_OPTIONS, SORT_OPTION_IDS } from '../utils/listSort'
@@ -574,117 +574,118 @@ const PantryScreen = ({}) => {
                         />
                     </ResponsiveModal>
 
-                    <ScrollView
-                        style={styles.mainScrollView}
-                        stickyHeaderIndices={[1]}
-                        showsVerticalScrollIndicator={false}
-                    >
-                        {/* Header section that scrolls away */}
-                        <View style={styles.headerSection}>
-                            <CustomText
-                                style={[
-                                    styles.introText,
-                                    isDesktop && styles.desktopIntroText,
-                                ]}
-                            >
-                                Etsi ja lisää pentterisi tuotteita
-                            </CustomText>
-                            <View style={styles.instructionsContainer}>
-                                {showFullInstructions ? (
-                                    <>
-                                        <CustomText
-                                            style={[
-                                                styles.infoText,
-                                                isDesktop &&
-                                                    styles.desktopInfoText,
-                                            ]}
-                                        >
-                                            Täällä voit selata pentterisi eli
-                                            ruokakomerosi sisältöä, sekä lisätä
-                                            sinne uusia tuotteita. Pentterillä
-                                            tarkoitetaan mitä tahansa kotisi
-                                            elintarvikkeiden säilyttämiseen
-                                            tarkoitettuja paikkoja. Esim.
-                                            jääkaappi, pakastin ja
-                                            kuiva-ainekaappi. Lisää ja ylläpidä
-                                            pentterisi sisältöä täällä, jotta
-                                            voit hyödyntää sen siältämiä
-                                            elintarvikkeita
-                                            ateriasuunnittelussa.
-                                        </CustomText>
-                                        <CustomText
-                                            style={[
-                                                styles.infoText,
-                                                isDesktop &&
-                                                    styles.desktopInfoText,
-                                            ]}
-                                        >
-                                            Etsi tuotteita nimellä tai valitse
-                                            "Luo uusi tuote". Voit etsiä
-                                            lisättäviä tuotteita, tai luoda itse
-                                            uusia tuotteita.
-                                        </CustomText>
-                                    </>
-                                ) : (
-                                    <CustomText
-                                        style={[
-                                            styles.infoText,
-                                            isDesktop && styles.desktopInfoText,
-                                        ]}
-                                    >
-                                        Selaa ja hallitse pentterisi sisältöä.
-                                        Etsi tuotteita haulla tai luo uusi
-                                        tuote.
-                                    </CustomText>
-                                )}
-                                <TouchableOpacity
-                                    style={styles.toggleInstructionsButton}
-                                    onPress={() =>
-                                        setShowFullInstructions(
-                                            !showFullInstructions
-                                        )
-                                    }
+                    <StickyListLayout
+                        header={
+                            <>
+                                <CustomText
+                                    style={[
+                                        styles.introText,
+                                        isDesktop && styles.desktopIntroText,
+                                    ]}
                                 >
-                                    <CustomText
-                                        style={[
-                                            styles.toggleInstructionsText,
-                                            isDesktop &&
-                                                styles.desktopToggleInstructionsText,
-                                        ]}
+                                    Etsi ja lisää pentterisi tuotteita
+                                </CustomText>
+                                <View style={styles.instructionsContainer}>
+                                    {showFullInstructions ? (
+                                        <>
+                                            <CustomText
+                                                style={[
+                                                    styles.infoText,
+                                                    isDesktop &&
+                                                        styles.desktopInfoText,
+                                                ]}
+                                            >
+                                                Täällä voit selata pentterisi
+                                                eli ruokakomerosi sisältöä, sekä
+                                                lisätä sinne uusia tuotteita.
+                                                Pentterillä tarkoitetaan mitä
+                                                tahansa kotisi elintarvikkeiden
+                                                säilyttämiseen tarkoitettuja
+                                                paikkoja. Esim. jääkaappi,
+                                                pakastin ja kuiva-ainekaappi.
+                                                Lisää ja ylläpidä pentterisi
+                                                sisältöä täällä, jotta voit
+                                                hyödyntää sen siältämiä
+                                                elintarvikkeita
+                                                ateriasuunnittelussa.
+                                            </CustomText>
+                                            <CustomText
+                                                style={[
+                                                    styles.infoText,
+                                                    isDesktop &&
+                                                        styles.desktopInfoText,
+                                                ]}
+                                            >
+                                                Etsi tuotteita nimellä tai
+                                                valitse "Luo uusi tuote". Voit
+                                                etsiä lisättäviä tuotteita, tai
+                                                luoda itse uusia tuotteita.
+                                            </CustomText>
+                                        </>
+                                    ) : (
+                                        <CustomText
+                                            style={[
+                                                styles.infoText,
+                                                isDesktop &&
+                                                    styles.desktopInfoText,
+                                            ]}
+                                        >
+                                            Selaa ja hallitse pentterisi
+                                            sisältöä. Etsi tuotteita haulla tai
+                                            luo uusi tuote.
+                                        </CustomText>
+                                    )}
+                                    <TouchableOpacity
+                                        style={styles.toggleInstructionsButton}
+                                        onPress={() =>
+                                            setShowFullInstructions(
+                                                !showFullInstructions
+                                            )
+                                        }
                                     >
-                                        {showFullInstructions
-                                            ? 'Näytä vähemmän'
-                                            : 'Lue lisää'}
-                                    </CustomText>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-
-                        {/* Search section with buttons */}
-                        <SearchSection
-                            searchQuery={searchQuery}
-                            onSearchChange={setSearchQuery}
-                            onClearSearch={() => setSearchQuery('')}
-                            placeholder="Etsi pentteristä..."
-                            resultsCount={filteredPantryItems.length}
-                            resultsText="Löytyi {count} tuotetta"
-                            noResultsText="Tuotteita ei löytynyt"
-                            showButtonSection={true}
-                            buttonTitle="+ Luo uusi tuote"
-                            onButtonPress={handleOpenAddItemSearch}
-                            buttonStyle={styles.primaryButton}
-                            buttonTextStyle={styles.buttonText}
-                            filterComponent={
-                                <GenericFilter
-                                    selectedFilters={selectedCategoryFilters}
-                                    showFilters={showFilters}
-                                    onToggleShowFilters={() =>
-                                        setShowFilters(!showFilters)
-                                    }
-                                />
-                            }
-                        />
-
+                                        <CustomText
+                                            style={[
+                                                styles.toggleInstructionsText,
+                                                isDesktop &&
+                                                    styles.desktopToggleInstructionsText,
+                                            ]}
+                                        >
+                                            {showFullInstructions
+                                                ? 'Näytä vähemmän'
+                                                : 'Lue lisää'}
+                                        </CustomText>
+                                    </TouchableOpacity>
+                                </View>
+                            </>
+                        }
+                        sticky={
+                            <SearchSection
+                                searchQuery={searchQuery}
+                                onSearchChange={setSearchQuery}
+                                onClearSearch={() => setSearchQuery('')}
+                                placeholder="Etsi pentteristä..."
+                                resultsCount={filteredPantryItems.length}
+                                resultsText="Löytyi {count} tuotetta"
+                                noResultsText="Tuotteita ei löytynyt"
+                                showButtonSection={true}
+                                buttonTitle="+ Luo uusi tuote"
+                                onButtonPress={handleOpenAddItemSearch}
+                                buttonStyle={styles.primaryButton}
+                                buttonTextStyle={styles.buttonText}
+                                filterComponent={
+                                    <GenericFilter
+                                        selectedFilters={
+                                            selectedCategoryFilters
+                                        }
+                                        showFilters={showFilters}
+                                        onToggleShowFilters={() =>
+                                            setShowFilters(!showFilters)
+                                        }
+                                    />
+                                }
+                            />
+                        }
+                    >
                         <GenericFilterSection
                             selectedFilters={selectedCategoryFilters}
                             showFilters={showFilters}
@@ -697,7 +698,6 @@ const PantryScreen = ({}) => {
                             getItemCounts={getCategoryItemCounts}
                         />
 
-                        {/* Product list container */}
                         <View style={styles.productListContainer}>
                             <View style={styles.stats}>
                                 <CustomText>
@@ -752,7 +752,7 @@ const PantryScreen = ({}) => {
                                 }
                             />
                         </View>
-                    </ScrollView>
+                    </StickyListLayout>
                     <PantryItemDetails
                         item={selectedItem}
                         visible={detailsVisible}
@@ -784,26 +784,6 @@ const styles = StyleSheet.create({
         maxWidth: 960,
         alignSelf: 'left',
         paddingHorizontal: 40,
-    },
-    mainScrollView: {
-        flex: 1,
-        zIndex: 1,
-    },
-    headerSection: {
-        backgroundColor: '#fff',
-        paddingHorizontal: 5,
-        paddingTop: 10,
-        paddingBottom: 10,
-    },
-    stickySearchSection: {
-        backgroundColor: '#fff',
-        paddingBottom: 5,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-        elevation: 2,
-        marginBottom: 5,
-        zIndex: 10000,
-        position: 'relative',
     },
     productListContainer: {
         flex: 1,

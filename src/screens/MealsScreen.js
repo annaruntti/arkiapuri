@@ -4,7 +4,6 @@ import {
     Alert,
     Platform,
     RefreshControl,
-    ScrollView,
     StyleSheet,
     View,
 } from 'react-native'
@@ -21,6 +20,7 @@ import ResponsiveLayout from '../components/ResponsiveLayout'
 import useLoginPrompt from '../hooks/useLoginPrompt'
 import ResponsiveModal from '../components/ResponsiveModal'
 import SearchSection from '../components/SearchSection'
+import StickyListLayout from '../components/StickyListLayout'
 import { getServerUrl } from '../utils/getServerUrl'
 import { DEFAULT_SERVINGS } from '../utils/mealServings'
 import { getIngredientQuantity } from '../utils/mealFoodItem'
@@ -459,16 +459,33 @@ const MealsScreen = ({ route, navigation }) => {
         setModalVisible(true)
     }
 
-    const renderHeader = () => (
-        <View style={styles.headerContainer}>
-            <CustomText
-                style={[styles.introText, isDesktop && styles.desktopIntroText]}
-            >
-                Selaa ja hallinnoi aterioitasi. Voit lisätä uusia aterioita ja
-                muokata olemassa olevia.
-            </CustomText>
-        </View>
+    const searchedMeals = filterMealsBySearch(meals, searchQuery)
+    const dietFiltered = filterMealsByDiet(searchedMeals, selectedDietFilters)
+    const typeFiltered = filterMealsByType(dietFiltered, filterMealType)
+    const difficultyFiltered = filterMealsByDifficulty(
+        typeFiltered,
+        selectedDifficultyFilter || filterDifficulty
     )
+    const filteredMeals = filterMealsByCookingTime(
+        difficultyFiltered,
+        selectedCookingTimeFilter || filterMaxCookingTime
+    )
+    const sortedMeals = sortListItems(filteredMeals, sortId)
+    const groupedMeals = groupMealsByCategory(sortedMeals)
+
+    const emptyListMessage = (() => {
+        if (Object.keys(groupedMeals).length > 0) return null
+        if (searchQuery.trim() && selectedDietFilters.length > 0) {
+            return `Ei aterioita hakusanalla "${searchQuery}" ja valituilla suodattimilla. Kokeile eri hakusanaa tai suodatinyhdistelmää.`
+        }
+        if (searchQuery.trim()) {
+            return `Ei aterioita hakusanalla "${searchQuery}". Kokeile eri hakusanaa.`
+        }
+        if (selectedDietFilters.length > 0) {
+            return 'Ei aterioita valituilla suodattimilla. Kokeile eri suodatinyhdistelmää.'
+        }
+        return null
+    })()
 
     const content = (
         <View style={styles.container}>
@@ -486,225 +503,149 @@ const MealsScreen = ({ route, navigation }) => {
 
             <LoginPromptModal {...loginPromptProps} />
 
-            {renderHeader()}
-
-            <SearchSection
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                onClearSearch={() => setSearchQuery('')}
-                placeholder="Hae aterioita nimellä..."
-                resultsCount={
-                    filterMealsByCookingTime(
-                        filterMealsByDifficulty(
-                            filterMealsByType(
-                                filterMealsByDiet(
-                                    filterMealsBySearch(meals, searchQuery),
-                                    selectedDietFilters
-                                ),
-                                filterMealType
-                            ),
-                            selectedDifficultyFilter || filterDifficulty
-                        ),
-                        selectedCookingTimeFilter || filterMaxCookingTime
-                    ).length
+            <StickyListLayout
+                header={
+                    <CustomText
+                        style={[
+                            styles.introText,
+                            isDesktop && styles.desktopIntroText,
+                        ]}
+                    >
+                        Selaa ja hallinnoi aterioitasi. Voit lisätä uusia
+                        aterioita ja muokata olemassa olevia.
+                    </CustomText>
                 }
-                resultsText="Löytyi {count} ateriaa"
-                noResultsText="Aterioita ei löytynyt"
-                showButtonSection={true}
-                buttonTitle="+ Lisää ateria"
-                onButtonPress={handleOpenAddMeal}
-                buttonStyle={styles.primaryButton}
-                buttonTextStyle={styles.buttonText}
-                showFilters={showFilters}
-                filterComponent={
-                    <GenericFilter
-                        selectedFilters={selectedDietFilters}
+                sticky={
+                    <SearchSection
+                        searchQuery={searchQuery}
+                        onSearchChange={setSearchQuery}
+                        onClearSearch={() => setSearchQuery('')}
+                        placeholder="Hae aterioita nimellä..."
+                        resultsCount={filteredMeals.length}
+                        resultsText="Löytyi {count} ateriaa"
+                        noResultsText="Aterioita ei löytynyt"
+                        showButtonSection={true}
+                        buttonTitle="+ Lisää ateria"
+                        onButtonPress={handleOpenAddMeal}
+                        buttonStyle={styles.primaryButton}
+                        buttonTextStyle={styles.buttonText}
                         showFilters={showFilters}
-                        onToggleShowFilters={() => setShowFilters(!showFilters)}
-                        buttonText="Suodata"
+                        filterComponent={
+                            <GenericFilter
+                                selectedFilters={selectedDietFilters}
+                                showFilters={showFilters}
+                                onToggleShowFilters={() =>
+                                    setShowFilters(!showFilters)
+                                }
+                                buttonText="Suodata"
+                            />
+                        }
+                        filterSectionProps={{
+                            selectedFilters: selectedDietFilters,
+                            filterTitle: 'Suodata ruokavalioin mukaan',
+                            categories: dietCategories,
+                            onToggleFilter: toggleDietFilter,
+                            onClearFilters: () => setSelectedDietFilters([]),
+                            getItemCounts: () =>
+                                getMealCountsForCategories(searchedMeals),
+                            additionalFilterGroups: [
+                                {
+                                    title: 'Vaikeustaso',
+                                    selectedValue: selectedDifficultyFilter,
+                                    onSelect: setSelectedDifficultyFilter,
+                                    getItemCount: (difficulty) =>
+                                        getMealCountByDifficulty(
+                                            searchedMeals,
+                                            difficulty
+                                        ),
+                                    options: [
+                                        {
+                                            value: 'easy',
+                                            label: getDifficultyText('easy'),
+                                        },
+                                        {
+                                            value: 'medium',
+                                            label: getDifficultyText('medium'),
+                                        },
+                                        {
+                                            value: 'hard',
+                                            label: getDifficultyText('hard'),
+                                        },
+                                    ],
+                                },
+                                {
+                                    title: 'Valmistusaika',
+                                    selectedValue: selectedCookingTimeFilter,
+                                    onSelect: setSelectedCookingTimeFilter,
+                                    getItemCount: (maxTime) =>
+                                        getMealCountByCookingTime(
+                                            searchedMeals,
+                                            maxTime
+                                        ),
+                                    options: [
+                                        { value: 15, label: '≤ 15 min' },
+                                        { value: 30, label: '≤ 30 min' },
+                                        { value: 45, label: '≤ 45 min' },
+                                        { value: 60, label: '≤ 60 min' },
+                                    ],
+                                },
+                            ],
+                        }}
                     />
                 }
-                filterSectionProps={{
-                    selectedFilters: selectedDietFilters,
-                    filterTitle: "Suodata ruokavalioin mukaan",
-                    categories: dietCategories,
-                    onToggleFilter: toggleDietFilter,
-                    onClearFilters: () => setSelectedDietFilters([]),
-                    getItemCounts: () =>
-                        getMealCountsForCategories(
-                            filterMealsBySearch(meals, searchQuery)
-                        ),
-                    additionalFilterGroups: [
-                        {
-                            title: 'Vaikeustaso',
-                            selectedValue: selectedDifficultyFilter,
-                            onSelect: setSelectedDifficultyFilter,
-                            getItemCount: (difficulty) =>
-                                getMealCountByDifficulty(
-                                    filterMealsBySearch(meals, searchQuery),
-                                    difficulty
-                                ),
-                            options: [
-                                { value: 'easy', label: getDifficultyText('easy') },
-                                {
-                                    value: 'medium',
-                                    label: getDifficultyText('medium'),
-                                },
-                                { value: 'hard', label: getDifficultyText('hard') },
-                            ],
-                        },
-                        {
-                            title: 'Valmistusaika',
-                            selectedValue: selectedCookingTimeFilter,
-                            onSelect: setSelectedCookingTimeFilter,
-                            getItemCount: (maxTime) =>
-                                getMealCountByCookingTime(
-                                    filterMealsBySearch(meals, searchQuery),
-                                    maxTime
-                                ),
-                            options: [
-                                { value: 15, label: '≤ 15 min' },
-                                { value: 30, label: '≤ 30 min' },
-                                { value: 45, label: '≤ 45 min' },
-                                { value: 60, label: '≤ 60 min' },
-                            ],
-                        },
-                    ],
-                }}
-            />
-            {meals.length > 0 ? (
-                <ScrollView
-                    style={styles.list}
-                    contentContainerStyle={styles.listContent}
-                    refreshControl={
-                        <RefreshControl
-                            refreshing={loading}
-                            onRefresh={fetchMeals}
-                        />
-                    }
-                >
-                    {/* Active filter indicator */}
-                    <ActiveFilterBanner
-                        filterDifficulty={filterDifficulty}
-                        selectedDifficultyFilter={selectedDifficultyFilter}
-                        filterMaxCookingTime={filterMaxCookingTime}
-                        selectedCookingTimeFilter={selectedCookingTimeFilter}
-                        filterMealType={filterMealType}
-                        onClear={clearNavigationFilters}
+                contentContainerStyle={styles.listContent}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={loading}
+                        onRefresh={fetchMeals}
                     />
-
-                    {(() => {
-                        const searchedMeals = filterMealsBySearch(
-                            meals,
-                            searchQuery
-                        )
-                        const dietFiltered = filterMealsByDiet(
-                            searchedMeals,
-                            selectedDietFilters
-                        )
-                        const typeFiltered = filterMealsByType(
-                            dietFiltered,
-                            filterMealType
-                        )
-                        const difficultyFiltered = filterMealsByDifficulty(
-                            typeFiltered,
-                            selectedDifficultyFilter || filterDifficulty
-                        )
-                        const filteredMeals = filterMealsByCookingTime(
-                            difficultyFiltered,
-                            selectedCookingTimeFilter || filterMaxCookingTime
-                        )
-                        const sortedMeals = sortListItems(filteredMeals, sortId)
-                        const groupedMeals = groupMealsByCategory(sortedMeals)
-
-                        return (
-                            <>
-                                <View style={styles.listSortRow}>
-                                    <CustomText style={styles.listSortCount}>
-                                        Aterioita: {filteredMeals.length} kpl
-                                    </CustomText>
-                                    <ListSortControl
-                                        options={MEAL_SORT_OPTIONS}
-                                        value={sortId}
-                                        onChange={setSortId}
-                                    />
-                                </View>
-                                {(() => {
-                                    if (
-                                        Object.keys(groupedMeals).length === 0
-                                    ) {
-                                        if (
-                                            searchQuery.trim() &&
-                                            selectedDietFilters.length > 0
-                                        ) {
-                                            return (
-                                                <CustomText
-                                                    style={styles.emptyText}
-                                                >
-                                                    Ei aterioita hakusanalla "
-                                                    {searchQuery}" ja valituilla
-                                                    suodattimilla. Kokeile eri
-                                                    hakusanaa tai
-                                                    suodatinyhdistelmää.
-                                                </CustomText>
-                                            )
-                                        } else if (searchQuery.trim()) {
-                                            return (
-                                                <CustomText
-                                                    style={styles.emptyText}
-                                                >
-                                                    Ei aterioita hakusanalla "
-                                                    {searchQuery}". Kokeile eri
-                                                    hakusanaa.
-                                                </CustomText>
-                                            )
-                                        } else if (
-                                            selectedDietFilters.length > 0
-                                        ) {
-                                            return (
-                                                <CustomText
-                                                    style={styles.emptyText}
-                                                >
-                                                    Ei aterioita valituilla
-                                                    suodattimilla. Kokeile eri
-                                                    suodatinyhdistelmää.
-                                                </CustomText>
-                                            )
-                                        }
-                                    }
-
-                                    return Object.entries(groupedMeals).map(
-                                        ([category, mealsInCategory]) =>
-                                            renderCategorySection(
-                                                category,
-                                                mealsInCategory
-                                            )
-                                    )
-                                })()}
-                            </>
-                        )
-                    })()}
-                </ScrollView>
-            ) : (
-                <ScrollView
-                    style={styles.list}
-                    contentContainerStyle={styles.listContent}
-                    refreshControl={
-                        <RefreshControl
-                            refreshing={loading}
-                            onRefresh={fetchMeals}
-                        />
-                    }
-                >
-                    {renderHeader()}
-                    {!loading && (
+                }
+            >
+                {meals.length === 0 ? (
+                    !loading && (
                         <CustomText style={styles.emptyText}>
                             Ei vielä aterioita. Lisää ensimmäinen ateria
                             painamalla "Lisää ateria" -nappia.
                         </CustomText>
-                    )}
-                </ScrollView>
-            )}
+                    )
+                ) : (
+                    <>
+                        <ActiveFilterBanner
+                            filterDifficulty={filterDifficulty}
+                            selectedDifficultyFilter={selectedDifficultyFilter}
+                            filterMaxCookingTime={filterMaxCookingTime}
+                            selectedCookingTimeFilter={
+                                selectedCookingTimeFilter
+                            }
+                            filterMealType={filterMealType}
+                            onClear={clearNavigationFilters}
+                        />
+                        <View style={styles.listSortRow}>
+                            <CustomText style={styles.listSortCount}>
+                                Aterioita: {filteredMeals.length} kpl
+                            </CustomText>
+                            <ListSortControl
+                                options={MEAL_SORT_OPTIONS}
+                                value={sortId}
+                                onChange={setSortId}
+                            />
+                        </View>
+                        {emptyListMessage ? (
+                            <CustomText style={styles.emptyText}>
+                                {emptyListMessage}
+                            </CustomText>
+                        ) : (
+                            Object.entries(groupedMeals).map(
+                                ([category, mealsInCategory]) =>
+                                    renderCategorySection(
+                                        category,
+                                        mealsInCategory
+                                    )
+                            )
+                        )}
+                    </>
+                )}
+            </StickyListLayout>
 
             <MealItemDetail
                 meal={selectedMeal}
@@ -732,12 +673,6 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         padding: 15,
     },
-    headerContainer: {
-        alignItems: 'flex-start',
-        paddingTop: 15,
-        paddingBottom: 10,
-        paddingHorizontal: 5,
-    },
     introText: {
         fontSize: 17,
         textAlign: 'left',
@@ -747,9 +682,6 @@ const styles = StyleSheet.create({
     desktopIntroText: {
         fontSize: 21,
         paddingVertical: 16,
-    },
-    list: {
-        width: '100%',
     },
     listContent: {
         paddingBottom: 20,

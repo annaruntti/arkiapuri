@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import {
     Alert,
     Platform,
-    ScrollView,
     SectionList,
     StyleSheet,
     TouchableOpacity,
@@ -22,6 +21,7 @@ import ListSortControl from './ListSortControl'
 import PantryItemDetails from './PantryItemDetails'
 import ResponsiveModal from './ResponsiveModal'
 import SearchSection from './SearchSection'
+import StickyListLayout from './StickyListLayout'
 import ShoppingListItemQuantityControl from './ShoppingListItemQuantityControl'
 import { useFilteredItemList } from '../hooks/useFilteredItemList'
 import {
@@ -668,63 +668,65 @@ const ShoppingListDetail = ({
                         </View>
                     )}
 
-                    <ScrollView
-                        style={styles.mainScrollView}
-                        stickyHeaderIndices={[1]}
-                        showsVerticalScrollIndicator={false}
+                    <StickyListLayout
                         contentContainerStyle={
                             checkedItems.length > 0 || boughtItemCount > 0
                                 ? styles.scrollContentWithFloatingBar
                                 : undefined
                         }
+                        header={
+                            <>
+                                <View style={styles.header}>
+                                    <CustomText style={styles.title}>
+                                        {shoppingList.name}
+                                    </CustomText>
+                                    <CustomText style={styles.description}>
+                                        {shoppingList.description}
+                                    </CustomText>
+                                </View>
+
+                                <CustomText style={styles.infoTitle}>
+                                    Hae ja lisää tuotteita
+                                </CustomText>
+                                <CustomText style={styles.infoText}>
+                                    Hae tuotteita nimellä tai skannaa
+                                    viivakoodi. Tulokset sisältävät sekä omat
+                                    tuotteesi että Open Food Facts
+                                    -tietokannan.
+                                </CustomText>
+                            </>
+                        }
+                        sticky={
+                            <SearchSection
+                                searchQuery={searchQuery}
+                                onSearchChange={setSearchQuery}
+                                onClearSearch={() => setSearchQuery('')}
+                                placeholder="Hae ostoslistasta..."
+                                resultsCount={filteredItems.length}
+                                resultsText="Löytyi {count} tuotetta"
+                                noResultsText="Tuotteita ei löytynyt"
+                                showButtonSection={true}
+                                buttonTitle="+ Luo uusi tuote"
+                                onButtonPress={() =>
+                                    setModalView(MODAL_VIEWS.ADD_ITEM)
+                                }
+                                buttonStyle={styles.smallPrimaryButton}
+                                buttonTextStyle={styles.buttonText}
+                                filterComponent={
+                                    <GenericFilter
+                                        selectedFilters={
+                                            selectedCategoryFilters
+                                        }
+                                        showFilters={showFilters}
+                                        onToggleShowFilters={() =>
+                                            setShowFilters(!showFilters)
+                                        }
+                                        buttonText="Suodata"
+                                    />
+                                }
+                            />
+                        }
                     >
-                        <View style={styles.headerSection}>
-                            <View style={styles.header}>
-                                <CustomText style={styles.title}>
-                                    {shoppingList.name}
-                                </CustomText>
-                                <CustomText style={styles.description}>
-                                    {shoppingList.description}
-                                </CustomText>
-                            </View>
-
-                            <CustomText style={styles.infoTitle}>
-                                Hae ja lisää tuotteita
-                            </CustomText>
-                            <CustomText style={styles.infoText}>
-                                Hae tuotteita nimellä tai skannaa viivakoodi.
-                                Tulokset sisältävät sekä omat tuotteesi että
-                                Open Food Facts -tietokannan.
-                            </CustomText>
-                        </View>
-
-                        <SearchSection
-                            searchQuery={searchQuery}
-                            onSearchChange={setSearchQuery}
-                            onClearSearch={() => setSearchQuery('')}
-                            placeholder="Hae ostoslistasta..."
-                            resultsCount={filteredItems.length}
-                            resultsText="Löytyi {count} tuotetta"
-                            noResultsText="Tuotteita ei löytynyt"
-                            showButtonSection={true}
-                            buttonTitle="+ Luo uusi tuote"
-                            onButtonPress={() =>
-                                setModalView(MODAL_VIEWS.ADD_ITEM)
-                            }
-                            buttonStyle={styles.smallPrimaryButton}
-                            buttonTextStyle={styles.buttonText}
-                            filterComponent={
-                                <GenericFilter
-                                    selectedFilters={selectedCategoryFilters}
-                                    showFilters={showFilters}
-                                    onToggleShowFilters={() =>
-                                        setShowFilters(!showFilters)
-                                    }
-                                    buttonText="Suodata"
-                                />
-                            }
-                        />
-
                         <GenericFilterSection
                             selectedFilters={selectedCategoryFilters}
                             showFilters={showFilters}
@@ -792,7 +794,7 @@ const ShoppingListDetail = ({
                                 stickySectionHeadersEnabled={false}
                             />
                         </View>
-                    </ScrollView>
+                    </StickyListLayout>
 
                     {(checkedItems.length > 0 || boughtItemCount > 0) && (
                         <View
@@ -909,26 +911,6 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: 'bold',
         color: '#333',
-    },
-    mainScrollView: {
-        flex: 1,
-        zIndex: 1,
-    },
-    headerSection: {
-        backgroundColor: '#fff',
-        paddingHorizontal: 5,
-        paddingTop: 10,
-        paddingBottom: 10,
-    },
-    stickySearchSection: {
-        backgroundColor: '#fff',
-        paddingVertical: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-        elevation: 2,
-        marginBottom: 5,
-        zIndex: 10000,
-        position: 'relative',
     },
     itemsListContainer: {
         flex: 1,
