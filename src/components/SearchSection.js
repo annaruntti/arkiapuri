@@ -18,6 +18,10 @@ const SearchSection = ({
     onButtonPress,
     buttonStyle,
     buttonTextStyle,
+    extraButtonTitle,
+    onExtraButtonPress,
+    extraButtonStyle,
+    extraButtonTextStyle,
     filterComponent,
     showFilters,
     filterSectionProps,
@@ -69,6 +73,14 @@ const SearchSection = ({
                                 onPress={onButtonPress}
                                 style={buttonStyle}
                                 textStyle={buttonTextStyle}
+                            />
+                        )}
+                        {extraButtonTitle && onExtraButtonPress && (
+                            <Button
+                                title={extraButtonTitle}
+                                onPress={onExtraButtonPress}
+                                style={extraButtonStyle}
+                                textStyle={extraButtonTextStyle}
                             />
                         )}
                         {filterComponent}
@@ -134,6 +146,7 @@ const styles = {
         alignItems: 'flex-start',
         gap: 10,
         justifyContent: 'space-between',
+        flexWrap: 'wrap',
     },
 }
 export default SearchSection

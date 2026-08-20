@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
+    ActivityIndicator,
     Alert,
+    Platform,
     SectionList,
     StyleSheet,
     TouchableOpacity,
@@ -9,6 +11,7 @@ import {
 import axios from 'axios'
 import { MaterialIcons } from '@expo/vector-icons'
 import { useFocusEffect } from '@react-navigation/native'
+import * as ImagePicker from 'expo-image-picker'
 
 import GenericFilter from '../components/GenericFilter'
 import GenericFilterSection from '../components/GenericFilterSection'
@@ -21,6 +24,8 @@ import LoginPromptModal from '../components/LoginPromptModal'
 import useLoginPrompt from '../hooks/useLoginPrompt'
 import { useLogin } from '../context/LoginProvider'
 import PantryItemDetails from '../components/PantryItemDetails'
+import PantryScanReview from '../components/PantryScanReview'
+import PantryScanLockedModal from '../components/PantryScanLockedModal'
 import ResponsiveLayout from '../components/ResponsiveLayout'
 import ResponsiveModal from '../components/ResponsiveModal'
 import SearchSection from '../components/SearchSection'
@@ -34,6 +39,12 @@ import { getFoodItemImageUrl } from '../utils/openFoodFactsMapper'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 import { findOrCreateFoodItem } from '../services/foodItemApi'
+import { addPantryItem } from '../services/collectionApi'
+import {
+    compressPantryScanImage,
+    getAiEntitlement,
+    scanPantryImage,
+} from '../services/aiApi'
 
 const isPersistedFoodItemId = (id) =>
     typeof id === 'string' && /^[a-fA-F0-9]{24}$/.test(id)
@@ -133,6 +144,14 @@ const PantryScreen = ({}) => {
     const [detailsVisible, setDetailsVisible] = useState(false)
     const [showFullInstructions, setShowFullInstructions] = useState(false)
     const [showAddItemSearch, setShowAddItemSearch] = useState(false)
+    const [aiEntitlement, setAiEntitlement] = useState(null)
+    const [scanLockVisible, setScanLockVisible] = useState(false)
+    const [scanLockReason, setScanLockReason] = useState('upgrade_required')
+    const [scanReviewVisible, setScanReviewVisible] = useState(false)
+    const [scanCandidates, setScanCandidates] = useState([])
+    const [scanUsage, setScanUsage] = useState(null)
+    const [scanSubmitting, setScanSubmitting] = useState(false)
+    const [scanLoading, setScanLoading] = useState(false)
 
     const {
         searchQuery,
@@ -227,14 +246,30 @@ const PantryScreen = ({}) => {
         }
     }
 
+    const fetchAiEntitlement = async () => {
+        try {
+            const token = await storage.getItem('userToken')
+            if (!token) {
+                setAiEntitlement(null)
+                return
+            }
+            const data = await getAiEntitlement()
+            setAiEntitlement(data.entitlement)
+        } catch (error) {
+            console.error('Error fetching AI entitlement:', error)
+        }
+    }
+
     useEffect(() => {
         fetchPantryItems()
+        fetchAiEntitlement()
     }, [])
 
     // Refresh pantry items when user navigates to the screen
     useFocusEffect(
         useCallback(() => {
             fetchPantryItems()
+            fetchAiEntitlement()
         }, [])
     )
 
@@ -547,6 +582,187 @@ const PantryScreen = ({}) => {
         setShowAddItemSearch(true)
     }
 
+    const showScanDenied = (reason) => {
+        setScanLockReason(reason || 'upgrade_required')
+        setScanLockVisible(true)
+    }
+
+    const runPantryScan = async (asset) => {
+        setScanLoading(true)
+        try {
+            const image = await compressPantryScanImage(asset)
+            const result = await scanPantryImage(image)
+            setScanCandidates(result.items || [])
+            setScanUsage(result.usage || null)
+            setScanReviewVisible(true)
+            if (result.usage) {
+                setAiEntitlement((prev) =>
+                    prev
+                        ? {
+                              ...prev,
+                              remainingCredits: result.usage.remainingCredits,
+                              creditsUsed:
+                                  (prev.creditLimit || 0) -
+                                  result.usage.remainingCredits,
+                          }
+                        : prev
+                )
+            }
+        } catch (error) {
+            const code = error.code || error.response?.data?.code
+            const message =
+                error.response?.data?.message ||
+                error.message ||
+                'Skannaus epäonnistui'
+            if (
+                code === 'upgrade_required' ||
+                code === 'quota_exceeded' ||
+                code === 'household_too_large' ||
+                code === 'not_configured' ||
+                code === 'budget_exceeded'
+            ) {
+                showScanDenied(code)
+                return
+            }
+            Alert.alert('Virhe', message)
+        } finally {
+            setScanLoading(false)
+        }
+    }
+
+    const pickPantryScanImage = async (fromCamera) => {
+        try {
+            if (fromCamera) {
+                const { status } =
+                    await ImagePicker.requestCameraPermissionsAsync()
+                if (status !== 'granted') {
+                    Alert.alert(
+                        'Lupa tarvitaan',
+                        'Tämä toiminto vaatii kameran käyttöoikeuden.'
+                    )
+                    return
+                }
+                const result = await ImagePicker.launchCameraAsync({
+                    mediaTypes: ['images'],
+                    quality: 0.8,
+                })
+                if (!result.canceled && result.assets?.[0]) {
+                    await runPantryScan(result.assets[0])
+                }
+                return
+            }
+
+            const { status } =
+                await ImagePicker.requestMediaLibraryPermissionsAsync()
+            if (status !== 'granted') {
+                Alert.alert(
+                    'Lupa tarvitaan',
+                    'Tämä toiminto vaatii kuvakirjaston käyttöoikeuden.'
+                )
+                return
+            }
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],
+                quality: 0.8,
+            })
+            if (!result.canceled && result.assets?.[0]) {
+                await runPantryScan(result.assets[0])
+            }
+        } catch (error) {
+            Alert.alert(
+                'Virhe',
+                'Kuvan valitseminen epäonnistui: ' +
+                    (error.message || 'Tuntematon virhe')
+            )
+        }
+    }
+
+    const handleOpenPantryScan = async () => {
+        try {
+            const token = await storage.getItem('userToken')
+            if (!token) {
+                showLoginPrompt('save', () => handleOpenPantryScan())
+                return
+            }
+
+            const entitlement =
+                aiEntitlement || (await getAiEntitlement()).entitlement
+            setAiEntitlement(entitlement)
+            if (!entitlement?.hasAccess) {
+                showScanDenied(entitlement?.denyCode)
+                return
+            }
+
+            const openLibrary = () => pickPantryScanImage(false)
+            const openCamera = () => pickPantryScanImage(true)
+
+            if (Platform.OS === 'web') {
+                await openLibrary()
+                return
+            }
+
+            Alert.alert(
+                'Skannaa pentteri',
+                'Ota kuva jääkaapista tai ruokakaapista, tai valitse kuva galleriasta.',
+                [
+                    { text: 'Kamera', onPress: openCamera },
+                    { text: 'Galleria', onPress: openLibrary },
+                    { text: 'Peruuta', style: 'cancel' },
+                ]
+            )
+        } catch (error) {
+            const code = error.response?.data?.code
+            if (
+                code === 'upgrade_required' ||
+                code === 'quota_exceeded' ||
+                code === 'household_too_large' ||
+                code === 'not_configured' ||
+                code === 'budget_exceeded'
+            ) {
+                showScanDenied(code)
+                return
+            }
+            Alert.alert(
+                'Virhe',
+                error.response?.data?.message ||
+                    error.message ||
+                    'AI-skannausta ei voitu avata'
+            )
+        }
+    }
+
+    const handleCommitScanItems = async (selectedItems) => {
+        if (!selectedItems?.length) return
+        setScanSubmitting(true)
+        try {
+            for (const item of selectedItems) {
+                await addPantryItem({
+                    name: item.name,
+                    quantity: item.quantity,
+                    unit: item.unit,
+                    category: item.category || [],
+                    foodId: item.foodId || undefined,
+                    addedFrom: 'pantry',
+                })
+            }
+            setScanReviewVisible(false)
+            setScanCandidates([])
+            await fetchPantryItems()
+            Alert.alert(
+                'Onnistui',
+                `${selectedItems.length} tuotetta lisätty pentteriin`
+            )
+        } catch (error) {
+            console.error('Error committing scan items:', error)
+            Alert.alert(
+                'Virhe',
+                'Tuotteiden lisääminen epäonnistui. Voit lisätä ne manuaalisesti.'
+            )
+        } finally {
+            setScanSubmitting(false)
+        }
+    }
+
     return (
         <ResponsiveLayout>
             <View
@@ -672,6 +888,10 @@ const PantryScreen = ({}) => {
                                 onButtonPress={handleOpenAddItemSearch}
                                 buttonStyle={styles.primaryButton}
                                 buttonTextStyle={styles.buttonText}
+                                extraButtonTitle="Skannaa pentteri"
+                                onExtraButtonPress={handleOpenPantryScan}
+                                extraButtonStyle={styles.scanButton}
+                                extraButtonTextStyle={styles.buttonText}
                                 filterComponent={
                                     <GenericFilter
                                         selectedFilters={
@@ -753,6 +973,37 @@ const PantryScreen = ({}) => {
                             />
                         </View>
                     </StickyListLayout>
+                    <PantryScanLockedModal
+                        visible={scanLockVisible}
+                        onClose={() => setScanLockVisible(false)}
+                        onAddManually={() => {
+                            setScanLockVisible(false)
+                            setShowAddItemSearch(true)
+                        }}
+                        reason={scanLockReason}
+                    />
+                    <PantryScanReview
+                        visible={scanReviewVisible}
+                        onClose={() => setScanReviewVisible(false)}
+                        items={scanCandidates}
+                        usage={scanUsage}
+                        submitting={scanSubmitting}
+                        onSubmit={handleCommitScanItems}
+                    />
+                    <ResponsiveModal
+                        visible={scanLoading}
+                        onClose={() => {}}
+                        title="Tunnistetaan tuotteita"
+                        maxWidth={400}
+                        showCloseButton={false}
+                    >
+                        <View style={styles.scanLoadingBox}>
+                            <ActivityIndicator size="large" color="#5844BB" />
+                            <CustomText style={styles.scanLoadingText}>
+                                Analysoidaan kuvaa. Tämä voi kestää hetken.
+                            </CustomText>
+                        </View>
+                    </ResponsiveModal>
                     <PantryItemDetails
                         item={selectedItem}
                         visible={detailsVisible}
@@ -858,6 +1109,25 @@ const styles = StyleSheet.create({
         elevation: 2,
         backgroundColor: '#AE9CFC',
         minWidth: 150,
+    },
+    scanButton: {
+        borderRadius: 25,
+        paddingTop: 7,
+        paddingBottom: 7,
+        paddingLeft: 10,
+        paddingRight: 10,
+        elevation: 2,
+        backgroundColor: '#38E4D9',
+        minWidth: 150,
+    },
+    scanLoadingBox: {
+        alignItems: 'center',
+        paddingVertical: 20,
+    },
+    scanLoadingText: {
+        marginTop: 12,
+        textAlign: 'center',
+        color: '#555',
     },
     secondaryButton: {
         borderRadius: 25,
