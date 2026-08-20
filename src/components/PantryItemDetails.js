@@ -36,7 +36,6 @@ const PantryItemDetails = ({
 }) => {
     const [editableFields, setEditableFields] = useState({})
     const [editedValues, setEditedValues] = useState({})
-    const [showCategorySelect, setShowCategorySelect] = useState(false)
     const [isUploadingImage, setIsUploadingImage] = useState(false)
     const showNutrition = useShowNutrition()
 
@@ -116,7 +115,6 @@ const PantryItemDetails = ({
 
             await onUpdate(item._id, updatedValues)
             setEditableFields({})
-            setShowCategorySelect(false)
         } catch (error) {
             console.error('Error saving updates:', error)
         }
@@ -469,26 +467,13 @@ const PantryItemDetails = ({
                         'number'
                     )}
 
-                <View style={styles.detailRow}>
+                <View style={styles.categoryRow}>
                     <CustomText style={styles.label}>Kategoriat:</CustomText>
-                    <View style={styles.valueContainer}>
-                        <CategorySelect
-                            value={editedValues.category || []}
-                            onChange={handleCategoryChange}
-                            isModalVisible={showCategorySelect}
-                            setIsModalVisible={setShowCategorySelect}
-                            toggleModal={() =>
-                                setShowCategorySelect(!showCategorySelect)
-                            }
-                            categories={categories}
-                        />
-                        <TouchableOpacity
-                            style={styles.editIcon}
-                            onPress={() => setShowCategorySelect(true)}
-                        >
-                            <Feather name="edit-2" size={18} color="#666" />
-                        </TouchableOpacity>
-                    </View>
+                    <CategorySelect
+                        value={editedValues.category || []}
+                        onChange={handleCategoryChange}
+                        categories={categories}
+                    />
                 </View>
 
                 <FormDateField
@@ -603,6 +588,12 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
     },
+    categoryRow: {
+        paddingVertical: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+        gap: 8,
+    },
     expirationDateField: {
         marginTop: 4,
         marginBottom: 8,
@@ -640,15 +631,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         minWidth: 200,
         width: '100%',
-    },
-    categoryButton: {
-        flex: 1,
-        padding: 10,
-        borderWidth: 1,
-        borderColor: '#bbb',
-        borderStyle: 'solid',
-        borderRadius: 4,
-        backgroundColor: 'white',
     },
 })
 
