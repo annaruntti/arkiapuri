@@ -95,6 +95,7 @@ To run the application locally, follow these steps:
 
 - **Mobile Development**: Ensure that your mobile device is connected to the same network as your development machine.
 - **API Endpoints**: Make sure that the API endpoints in your application match the ones provided by your backend server.
+- **Pantry AI scan**: The pentteri screen can add products from a photo. The app sends the image to the API (`POST /ai/pantry-scan`), which uses Google Gemini to detect foods. You review names, quantities and suggested categories/macros, then save. This requires a running API with `GEMINI_API_KEY`. For local testing the API also needs `AI_GRANT_PREMIUM=true` unless the household already has a premium plan. See the API README for credit costs and endpoints.
 - **Troubleshooting**: If you encounter issues, check the console logs for errors and ensure that the backend server is running and accessible from your development machine.
 
 By following these steps, you should be able to set up and run the application locally for both web and mobile development.

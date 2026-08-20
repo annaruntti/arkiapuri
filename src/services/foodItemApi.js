@@ -29,3 +29,18 @@ export const findOrCreateFoodItem = async (foodItemData) => {
     )
     return response.data
 }
+
+export const lookupFoodItemsByName = async (names) => {
+    const headers = await getAuthHeaders()
+    const list = Array.isArray(names) ? names : [names]
+    const response = await axios.post(
+        getServerUrl('/food-items/lookup-by-name'),
+        { names: list },
+        { headers, timeout: 90000 }
+    )
+    const data = response.data
+    if (!data.success) {
+        throw new Error(data.message || 'Tuotetietojen haku epäonnistui')
+    }
+    return data.results || []
+}

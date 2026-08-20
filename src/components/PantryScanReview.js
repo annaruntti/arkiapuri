@@ -14,6 +14,73 @@ import CustomText from './CustomText'
 import ResponsiveModal from './ResponsiveModal'
 import Button from './Button'
 import { APP_UNITS } from '../utils/units'
+import { lookupFoodItemsByName } from '../services/foodItemApi'
+
+const NAME_LOOKUP_DELAY_MS = 450
+
+const SOURCE_LABELS = {
+    catalog: 'Omasta tietokannasta',
+    openfoodfacts: 'Open Food Facts',
+    inferred: null,
+}
+
+const formatNumber = (value) => {
+    const parsed = Number(value)
+    if (!Number.isFinite(parsed)) return ''
+    return String(Math.round(parsed * 10) / 10).replace('.', ',')
+}
+
+const formatNutritionLine = (nutrition, calories) => {
+    const kcal = nutrition?.calories ?? calories
+    if (!kcal) return null
+    const parts = [`${Math.round(kcal)} kcal / 100 g`]
+    if (nutrition?.proteins) {
+        parts.push(`P ${formatNumber(nutrition.proteins)} g`)
+    }
+    if (nutrition?.carbohydrates) {
+        parts.push(`H ${formatNumber(nutrition.carbohydrates)} g`)
+    }
+    if (nutrition?.fat) {
+        parts.push(`R ${formatNumber(nutrition.fat)} g`)
+    }
+    return parts.join(' · ')
+}
+
+const mapScanItemToRow = (item, index) => ({
+    key: `${item.foodId || item.name}-${index}`,
+    selected: item.confidence >= 0.35,
+    name: item.name || '',
+    quantity: String(item.quantity || 1),
+    unit: item.unit || 'kpl',
+    category: item.category || [],
+    foodId: item.foodId,
+    confidence: item.confidence,
+    alreadyInPantry: Boolean(item.alreadyInPantry),
+    notes: item.notes,
+    calories: item.calories,
+    nutrition: item.nutrition,
+    matchSource: item.matchSource,
+    matchName: item.matchName,
+    barcode: item.barcode,
+    lookingUp:
+        String(item.name || '').trim().length >= 2 &&
+        !(item.calories || item.nutrition?.calories),
+})
+
+const applyLookupResult = (row, result) => {
+    if (!result) return { ...row, lookingUp: false }
+    return {
+        ...row,
+        lookingUp: false,
+        category: result.category?.length ? result.category : row.category,
+        calories: result.calories ?? row.calories,
+        nutrition: result.nutrition ?? row.nutrition,
+        foodId: result.source === 'catalog' ? result.foodId : null,
+        matchSource: result.source,
+        matchName: result.matchName,
+        barcode: result.barcode,
+    }
+}
 
 const PantryScanReview = ({
     visible,
@@ -28,6 +95,9 @@ const PantryScanReview = ({
     const scrollRef = useRef(null)
     const rowOffsets = useRef({})
     const focusedRowKey = useRef(null)
+    const nameLookupTimers = useRef({})
+    const nameLookupToken = useRef({})
+    const batchLookupToken = useRef(0)
 
     const scrollFocusedRowIntoView = useCallback(() => {
         const key = focusedRowKey.current
@@ -77,26 +147,95 @@ const PantryScanReview = ({
         }
     }
 
+    const clearNameLookupTimers = () => {
+        Object.values(nameLookupTimers.current).forEach((timer) =>
+            clearTimeout(timer)
+        )
+        nameLookupTimers.current = {}
+    }
+
+    const scheduleNameLookup = (key, name) => {
+        clearTimeout(nameLookupTimers.current[key])
+        const trimmed = String(name || '').trim()
+        if (trimmed.length < 2) {
+            updateRow(key, { lookingUp: false })
+            return
+        }
+        const token = Date.now()
+        nameLookupToken.current[key] = token
+        nameLookupTimers.current[key] = setTimeout(async () => {
+            try {
+                const results = await lookupFoodItemsByName([trimmed])
+                if (nameLookupToken.current[key] !== token) return
+                const result = results[0]
+                setRows((prev) =>
+                    prev.map((row) =>
+                        row.key === key && row.name.trim() === trimmed
+                            ? applyLookupResult(row, result)
+                            : row
+                    )
+                )
+            } catch (error) {
+                if (nameLookupToken.current[key] !== token) return
+                updateRow(key, { lookingUp: false })
+            }
+        }, NAME_LOOKUP_DELAY_MS)
+    }
+
+    const handleNameChange = (key, name) => {
+        updateRow(key, {
+            name,
+            foodId: undefined,
+            matchSource: undefined,
+            barcode: undefined,
+            lookingUp: String(name || '').trim().length >= 2,
+        })
+        scheduleNameLookup(key, name)
+    }
+
     useEffect(() => {
         if (!visible) {
             setKeyboardHeight(0)
             focusedRowKey.current = null
-            return
+            clearNameLookupTimers()
+            return undefined
         }
-        setRows(
-            (items || []).map((item, index) => ({
-                key: `${item.foodId || item.name}-${index}`,
-                selected: item.confidence >= 0.35,
-                name: item.name || '',
-                quantity: String(item.quantity || 1),
-                unit: item.unit || 'kpl',
-                category: item.category || [],
-                foodId: item.foodId,
-                confidence: item.confidence,
-                alreadyInPantry: Boolean(item.alreadyInPantry),
-                notes: item.notes,
-            }))
-        )
+        const nextRows = (items || []).map(mapScanItemToRow)
+        setRows(nextRows)
+        const names = nextRows
+            .map((row) => row.name.trim())
+            .filter((name) => name.length >= 2)
+        if (!names.length) return undefined
+
+        const token = ++batchLookupToken.current
+        lookupFoodItemsByName(names)
+            .then((results) => {
+                if (batchLookupToken.current !== token) return
+                const byQuery = new Map(
+                    (results || []).map((result) => [
+                        String(result.query || '')
+                            .trim()
+                            .toLowerCase(),
+                        result,
+                    ])
+                )
+                setRows((prev) =>
+                    prev.map((row) => {
+                        const result = byQuery.get(row.name.trim().toLowerCase())
+                        return result
+                            ? applyLookupResult(row, result)
+                            : { ...row, lookingUp: false }
+                    })
+                )
+            })
+            .catch(() => {
+                if (batchLookupToken.current !== token) return
+                setRows((prev) =>
+                    prev.map((row) => ({ ...row, lookingUp: false }))
+                )
+            })
+
+        return () => clearNameLookupTimers()
     }, [visible, items])
 
     const selectedCount = useMemo(
@@ -123,6 +262,8 @@ const PantryScanReview = ({
                 unit: row.unit || 'kpl',
                 category: row.category,
                 foodId: row.foodId,
+                calories: row.calories,
+                nutrition: row.nutrition,
             }))
         onSubmit?.(selected)
     }
@@ -226,7 +367,7 @@ const PantryScanReview = ({
                                             style={styles.nameInput}
                                             value={row.name}
                                             onChangeText={(name) =>
-                                                updateRow(row.key, { name })
+                                                handleNameChange(row.key, name)
                                             }
                                             placeholder="Tuotteen nimi"
                                             onFocus={() =>
@@ -290,6 +431,64 @@ const PantryScanReview = ({
                                                 : ''}
                                             {row.notes ? ` · ${row.notes}` : ''}
                                         </CustomText>
+                                        {row.lookingUp ? (
+                                            <View style={styles.lookupRow}>
+                                                <ActivityIndicator
+                                                    size="small"
+                                                    color="#5844BB"
+                                                />
+                                                <CustomText
+                                                    style={styles.metaText}
+                                                >
+                                                    Haetaan tuotetietoja…
+                                                </CustomText>
+                                            </View>
+                                        ) : (
+                                            <>
+                                                {row.category?.length ? (
+                                                    <CustomText
+                                                        style={styles.metaText}
+                                                    >
+                                                        {row.category.join(
+                                                            ', '
+                                                        )}
+                                                    </CustomText>
+                                                ) : null}
+                                                {formatNutritionLine(
+                                                    row.nutrition,
+                                                    row.calories
+                                                ) ? (
+                                                    <CustomText
+                                                        style={styles.metaText}
+                                                    >
+                                                        {formatNutritionLine(
+                                                            row.nutrition,
+                                                            row.calories
+                                                        )}
+                                                    </CustomText>
+                                                ) : null}
+                                                {SOURCE_LABELS[
+                                                    row.matchSource
+                                                ] ? (
+                                                    <CustomText
+                                                        style={
+                                                            styles.sourceText
+                                                        }
+                                                    >
+                                                        {
+                                                            SOURCE_LABELS[
+                                                                row.matchSource
+                                                            ]
+                                                        }
+                                                        {row.matchName &&
+                                                        row.matchName !==
+                                                            row.name
+                                                            ? ` · ${row.matchName}`
+                                                            : ''}
+                                                    </CustomText>
+                                                ) : null}
+                                            </>
+                                        )}
                                     </View>
                                 </View>
                             ))}
@@ -422,6 +621,23 @@ const styles = StyleSheet.create({
         marginTop: 6,
         fontSize: 12,
         color: '#666',
+    },
+    lookupRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginTop: 6,
+    },
+    metaText: {
+        marginTop: 4,
+        fontSize: 12,
+        color: '#444',
+    },
+    sourceText: {
+        marginTop: 2,
+        fontSize: 11,
+        color: '#5844BB',
+        fontWeight: '600',
     },
     submitButton: {
         backgroundColor: '#AE9CFC',

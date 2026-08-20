@@ -742,6 +742,8 @@ const PantryScreen = ({}) => {
                     unit: item.unit,
                     category: item.category || [],
                     foodId: item.foodId || undefined,
+                    calories: item.calories,
+                    nutrition: item.nutrition,
                     addedFrom: 'pantry',
                 })
             }
