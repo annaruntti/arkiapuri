@@ -3,6 +3,7 @@ import { MaterialIcons } from '@expo/vector-icons'
 import Button from './Button'
 import CustomText from './CustomText'
 import GenericFilterSection from './GenericFilterSection'
+import { useResponsiveDimensions } from '../utils/responsive'
 
 const SearchSection = ({
     searchQuery,
@@ -22,37 +23,50 @@ const SearchSection = ({
     onExtraButtonPress,
     extraButtonStyle,
     extraButtonTextStyle,
+    actionsLabel,
     filterComponent,
+    filterPlacement = 'withActions',
     showFilters,
     filterSectionProps,
 }) => {
+    const { isDesktop } = useResponsiveDimensions()
+    const filterWithSearch = filterPlacement === 'withSearch' && filterComponent
+    const fillButtonsOnMobile = filterWithSearch && !isDesktop
+
     return (
         <View style={styles.searchSection}>
-            <View style={styles.searchInputContainer}>
-                <MaterialIcons
-                    name="search"
-                    size={20}
-                    color="#666"
-                    style={styles.searchIcon}
-                />
-                <TextInput
-                    style={styles.searchInput}
-                    placeholder={placeholder}
-                    value={searchQuery}
-                    onChangeText={onSearchChange}
-                    placeholderTextColor="#999"
-                />
-                {searchQuery.length > 0 && (
-                    <TouchableOpacity
-                        onPress={onClearSearch}
-                        style={styles.clearButton}
-                    >
-                        <MaterialIcons name="clear" size={20} color="#666" />
-                    </TouchableOpacity>
-                )}
+            <View style={styles.searchRow}>
+                <View
+                    style={[
+                        styles.searchInputContainer,
+                        filterWithSearch && styles.searchInputWithFilter,
+                    ]}
+                >
+                    <MaterialIcons
+                        name="search"
+                        size={20}
+                        color="#666"
+                        style={styles.searchIcon}
+                    />
+                    <TextInput
+                        style={styles.searchInput}
+                        placeholder={placeholder}
+                        value={searchQuery}
+                        onChangeText={onSearchChange}
+                        placeholderTextColor="#999"
+                    />
+                    {searchQuery.length > 0 && (
+                        <TouchableOpacity
+                            onPress={onClearSearch}
+                            style={styles.clearButton}
+                        >
+                            <MaterialIcons name="clear" size={20} color="#666" />
+                        </TouchableOpacity>
+                    )}
+                </View>
+                {filterWithSearch}
             </View>
 
-            {/* Search results info */}
             {showResultsInfo && searchQuery.length > 0 && (
                 <View style={styles.searchResultsInfo}>
                     <CustomText style={styles.searchResultsText}>
@@ -63,15 +77,33 @@ const SearchSection = ({
                 </View>
             )}
 
-            {/* Button section */}
             {showButtonSection && (
-                <View style={styles.buttonSection}>
-                    <View style={styles.buttonContainer}>
+                <View
+                    style={[
+                        styles.buttonSection,
+                        filterWithSearch && styles.buttonSectionSeparated,
+                    ]}
+                >
+                    {actionsLabel ? (
+                        <CustomText style={styles.actionsLabel}>
+                            {actionsLabel}
+                        </CustomText>
+                    ) : null}
+                    <View
+                        style={[
+                            styles.buttonContainer,
+                            filterWithSearch && styles.buttonContainerStart,
+                            fillButtonsOnMobile && styles.buttonContainerFill,
+                        ]}
+                    >
                         {buttonTitle && onButtonPress && (
                             <Button
                                 title={buttonTitle}
                                 onPress={onButtonPress}
-                                style={buttonStyle}
+                                style={[
+                                    buttonStyle,
+                                    fillButtonsOnMobile && styles.fillButton,
+                                ]}
                                 textStyle={buttonTextStyle}
                             />
                         )}
@@ -79,11 +111,14 @@ const SearchSection = ({
                             <Button
                                 title={extraButtonTitle}
                                 onPress={onExtraButtonPress}
-                                style={extraButtonStyle}
+                                style={[
+                                    extraButtonStyle,
+                                    fillButtonsOnMobile && styles.fillButton,
+                                ]}
                                 textStyle={extraButtonTextStyle}
                             />
                         )}
-                        {filterComponent}
+                        {filterPlacement !== 'withSearch' && filterComponent}
                     </View>
                     {filterSectionProps && (
                         <GenericFilterSection
@@ -107,6 +142,12 @@ const styles = {
         boxShadow: 'rgba(0, 0, 0, 0.1) 0px 1px 2px',
         width: '100%',
     },
+    searchRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        flexWrap: 'wrap',
+    },
     searchInputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -116,6 +157,13 @@ const styles = {
         borderColor: '#ddd',
         paddingHorizontal: 12,
         paddingVertical: 8,
+        flex: 1,
+        minWidth: 180,
+    },
+    searchInputWithFilter: {
+        flexGrow: 1,
+        flexShrink: 1,
+        flexBasis: 180,
     },
     searchIcon: {
         marginRight: 8,
@@ -141,12 +189,35 @@ const styles = {
     buttonSection: {
         marginTop: 15,
     },
+    buttonSectionSeparated: {
+        marginTop: 16,
+        paddingTop: 14,
+        borderTopWidth: 1,
+        borderTopColor: '#e4e4e4',
+    },
+    actionsLabel: {
+        fontSize: 13,
+        color: '#555',
+        fontWeight: '600',
+        marginBottom: 8,
+    },
     buttonContainer: {
         flexDirection: 'row',
         alignItems: 'flex-start',
         gap: 10,
         justifyContent: 'space-between',
         flexWrap: 'wrap',
+    },
+    buttonContainerStart: {
+        justifyContent: 'flex-start',
+    },
+    buttonContainerFill: {
+        alignItems: 'stretch',
+    },
+    fillButton: {
+        flexGrow: 1,
+        flexBasis: 0,
+        minWidth: 0,
     },
 }
 export default SearchSection

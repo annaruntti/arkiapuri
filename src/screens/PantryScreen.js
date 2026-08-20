@@ -821,7 +821,7 @@ const PantryScreen = ({}) => {
                                                 pakastin ja kuiva-ainekaappi.
                                                 Lisää ja ylläpidä pentterisi
                                                 sisältöä täällä, jotta voit
-                                                hyödyntää sen siältämiä
+                                                hyödyntää sen sisältämiä
                                                 elintarvikkeita
                                                 ateriasuunnittelussa.
                                             </CustomText>
@@ -832,10 +832,15 @@ const PantryScreen = ({}) => {
                                                         styles.desktopInfoText,
                                                 ]}
                                             >
-                                                Etsi tuotteita nimellä tai
-                                                valitse "Luo uusi tuote". Voit
-                                                etsiä lisättäviä tuotteita, tai
-                                                luoda itse uusia tuotteita.
+                                                Jo pentterissä olevia tuotteita
+                                                voit etsiä nimellä tai
+                                                suodattaa kategorioittain.
+                                                Uusia tuotteita voit lisätä
+                                                skannaamalla pentterin
+                                                kameralla, jolloin tekoäly
+                                                ehdottaa näkemiään tuotteita,
+                                                tai lisäämällä tuotteita yksi
+                                                kerrallaan.
                                             </CustomText>
                                         </>
                                     ) : (
@@ -846,9 +851,10 @@ const PantryScreen = ({}) => {
                                                     styles.desktopInfoText,
                                             ]}
                                         >
-                                            Selaa ja hallitse pentterisi
-                                            sisältöä. Etsi tuotteita haulla tai
-                                            luo uusi tuote.
+                                            Selaa pentterin sisältöä haulla ja
+                                            suodattimella. Lisää uusia tuotteita
+                                            skannaamalla pentteri tai yksi
+                                            kerrallaan.
                                         </CustomText>
                                     )}
                                     <TouchableOpacity
@@ -883,13 +889,15 @@ const PantryScreen = ({}) => {
                                 resultsCount={filteredPantryItems.length}
                                 resultsText="Löytyi {count} tuotetta"
                                 noResultsText="Tuotteita ei löytynyt"
+                                filterPlacement="withSearch"
                                 showButtonSection={true}
-                                buttonTitle="+ Luo uusi tuote"
-                                onButtonPress={handleOpenAddItemSearch}
+                                actionsLabel="Lisää tuotteita"
+                                buttonTitle="Skannaa pentteri"
+                                onButtonPress={handleOpenPantryScan}
                                 buttonStyle={styles.primaryButton}
                                 buttonTextStyle={styles.buttonText}
-                                extraButtonTitle="Skannaa pentteri"
-                                onExtraButtonPress={handleOpenPantryScan}
+                                extraButtonTitle="Lisää yksi kerrallaan"
+                                onExtraButtonPress={handleOpenAddItemSearch}
                                 extraButtonStyle={styles.scanButton}
                                 extraButtonTextStyle={styles.buttonText}
                                 filterComponent={

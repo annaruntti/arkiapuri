@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
     ActivityIndicator,
+    Keyboard,
+    Platform,
     ScrollView,
     StyleSheet,
     TextInput,
@@ -22,9 +24,65 @@ const PantryScanReview = ({
     onSubmit,
 }) => {
     const [rows, setRows] = useState([])
+    const [keyboardHeight, setKeyboardHeight] = useState(0)
+    const scrollRef = useRef(null)
+    const rowOffsets = useRef({})
+    const focusedRowKey = useRef(null)
+
+    const scrollFocusedRowIntoView = useCallback(() => {
+        const key = focusedRowKey.current
+        const offset = key != null ? rowOffsets.current[key] : null
+        if (typeof offset !== 'number' || !scrollRef.current) return
+        scrollRef.current.scrollTo({
+            y: Math.max(0, offset - 8),
+            animated: true,
+        })
+    }, [])
 
     useEffect(() => {
-        if (!visible) return
+        if (Platform.OS === 'web') return undefined
+
+        const onShow = (event) => {
+            setKeyboardHeight(event.endCoordinates?.height ?? 0)
+        }
+        const onShown = (event) => {
+            setKeyboardHeight(event.endCoordinates?.height ?? 0)
+            requestAnimationFrame(() => {
+                setTimeout(scrollFocusedRowIntoView, 50)
+            })
+        }
+        const onHide = () => setKeyboardHeight(0)
+
+        const shown = Keyboard.addListener('keyboardDidShow', onShown)
+        const willShow =
+            Platform.OS === 'ios'
+                ? Keyboard.addListener('keyboardWillShow', onShow)
+                : null
+        const hidden = Keyboard.addListener(
+            Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+            onHide
+        )
+
+        return () => {
+            shown.remove()
+            willShow?.remove()
+            hidden.remove()
+        }
+    }, [scrollFocusedRowIntoView])
+
+    const handleRowFocus = (key) => {
+        focusedRowKey.current = key
+        if (keyboardHeight > 0) {
+            requestAnimationFrame(scrollFocusedRowIntoView)
+        }
+    }
+
+    useEffect(() => {
+        if (!visible) {
+            setKeyboardHeight(0)
+            focusedRowKey.current = null
+            return
+        }
         setRows(
             (items || []).map((item, index) => ({
                 key: `${item.foodId || item.name}-${index}`,
@@ -76,7 +134,14 @@ const PantryScanReview = ({
             title="Tunnistetut tuotteet"
             maxWidth={640}
         >
-            <View style={styles.container}>
+            <View
+                style={[
+                    styles.container,
+                    keyboardHeight > 0 && {
+                        paddingBottom: keyboardHeight,
+                    },
+                ]}
+            >
                 {usage ? (
                     <CustomText style={styles.usageText}>
                         Skannaus käytti {usage.creditsCharged ?? 2} krediittiä.
@@ -113,12 +178,27 @@ const PantryScanReview = ({
                             </View>
                         </View>
                         <ScrollView
+                            ref={scrollRef}
                             style={styles.list}
-                            contentContainerStyle={styles.listContent}
+                            contentContainerStyle={[
+                                styles.listContent,
+                                keyboardHeight > 0 && {
+                                    paddingBottom: 24,
+                                },
+                            ]}
                             nestedScrollEnabled
+                            keyboardShouldPersistTaps="handled"
+                            keyboardDismissMode="interactive"
                         >
                             {rows.map((row) => (
-                                <View key={row.key} style={styles.row}>
+                                <View
+                                    key={row.key}
+                                    style={styles.row}
+                                    onLayout={(event) => {
+                                        rowOffsets.current[row.key] =
+                                            event.nativeEvent.layout.y
+                                    }}
+                                >
                                     <TouchableOpacity
                                         onPress={() =>
                                             updateRow(row.key, {
@@ -149,6 +229,9 @@ const PantryScanReview = ({
                                                 updateRow(row.key, { name })
                                             }
                                             placeholder="Tuotteen nimi"
+                                            onFocus={() =>
+                                                handleRowFocus(row.key)
+                                            }
                                         />
                                         <View style={styles.metaRow}>
                                             <TextInput
@@ -159,6 +242,9 @@ const PantryScanReview = ({
                                                     updateRow(row.key, {
                                                         quantity,
                                                     })
+                                                }
+                                                onFocus={() =>
+                                                    handleRowFocus(row.key)
                                                 }
                                             />
                                             <ScrollView
