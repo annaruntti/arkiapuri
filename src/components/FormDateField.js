@@ -110,10 +110,10 @@ const FormDateField = ({
                             accessibilityLabel="Päivämäärä on mennyt"
                             testID={`${testID}-overdue`}
                         >
-                            <MaterialIcons
-                                name="error"
+                            <Feather
+                                name="alert-circle"
                                 size={22}
-                                color="#e53e3e"
+                                color="#1f2937"
                             />
                         </TouchableOpacity>
                     ) : null}
