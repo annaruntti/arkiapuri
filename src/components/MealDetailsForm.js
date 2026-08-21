@@ -21,6 +21,7 @@ import FormDateField from './FormDateField'
 import MealCategorySelector from './MealCategorySelector'
 import MealRoleSelector from './MealRoleSelector'
 import MealImageUploader from './MealImageUploader'
+import MealIngredientQuantityEditor from './MealIngredientQuantityEditor'
 import MealServingsStepper from './MealServingsStepper'
 import MealTabs from './MealTabs'
 import PlannedEatingDates from './PlannedEatingDates'
@@ -29,14 +30,13 @@ const MealDetailsForm = ({
     meal,
     editedValues,
     editableFields,
-    editingFoodItem,
     foodItemsWithAvailability,
     onToggleEdit,
     onChange,
     onFoodItemChange,
     onPlannedEatingDatesChange,
     onAddFoodItem,
-    onEditFoodItem,
+    onOpenFoodItem,
     onRemoveFoodItem,
     onToggleRecipeEdit,
     onAddToShoppingList,
@@ -90,6 +90,17 @@ const MealDetailsForm = ({
         editedValues.mealCategory ?? meal.mealCategory
     )
 
+    const cookingTime = editedValues.cookingTime || meal.cookingTime
+    const difficultyText = getDifficultyText(
+        editedValues.difficultyLevel || meal.difficultyLevel
+    )
+    const metaParts = [
+        cookingTime ? `${cookingTime} min` : null,
+        difficultyText && difficultyText !== 'Ei määritelty'
+            ? difficultyText
+            : null,
+    ].filter(Boolean)
+
     return (
         <View style={styles.mealDetails}>
             <MealServingsStepper
@@ -99,120 +110,151 @@ const MealDetailsForm = ({
                 style={styles.servingsStepper}
             />
 
-            <MealImageUploader meal={meal} onImageUpdate={onImageUpdate} />
-
-            <EditableField
-                field="name"
-                label="Nimi"
-                value={meal.name}
-                isEditing={editableFields.name}
-                editedValue={editedValues.name}
-                onToggleEdit={() => onToggleEdit('name')}
-                onChange={(text) => onChange('name', text)}
-            />
-
-            <EditableField
-                field="difficultyLevel"
-                label="Vaikeustaso"
-                value={getDifficultyText(
-                    editedValues.difficultyLevel || meal.difficultyLevel
-                )}
-                isEditing={editableFields.difficultyLevel}
-                editedValue={
-                    editedValues.difficultyLevel || meal.difficultyLevel
-                }
-                onToggleEdit={() => onToggleEdit('difficultyLevel')}
-                onChange={(value) => onChange('difficultyLevel', value)}
-            />
-
-            <EditableField
-                field="cookingTime"
-                label="Valmistusaika"
-                value={`${editedValues.cookingTime || meal.cookingTime} min`}
-                isEditing={editableFields.cookingTime}
-                editedValue={editedValues.cookingTime || meal.cookingTime}
-                onToggleEdit={() => onToggleEdit('cookingTime')}
-                onChange={(text) => onChange('cookingTime', text)}
-                type="number"
-            />
-
-            <CollapsibleFormSection
-                label="Aterian tyyppi"
-                summary={roleSummary === 'Ei määritelty' ? '' : roleSummary}
-                style={styles.categorySection}
-            >
-                <MealRoleSelector
-                    value={editedValues.defaultRoles || meal.defaultRoles}
-                    onSelect={(next) => onChange('defaultRoles', next)}
-                />
-            </CollapsibleFormSection>
-
-            <CollapsibleFormSection
-                label="Ruokalaji"
-                summary={
-                    categorySummary === 'Ei määritelty' ? '' : categorySummary
-                }
-                style={styles.categorySection}
-            >
-                <MealCategorySelector
-                    value={parseMealCategories(
-                        editedValues.mealCategory ?? meal.mealCategory,
-                        []
-                    )}
-                    onSelect={(next) => onChange('mealCategory', next)}
-                />
-            </CollapsibleFormSection>
-
-            <FormDateField
-                label="Suunniteltu valmistuspäivä"
-                value={cookingDate}
-                onChange={(selectedDate) =>
-                    onChange('plannedCookingDate', selectedDate)
-                }
-                warnIfPast
-                overdueMessage={OVERDUE_COOKING_MESSAGE}
-                testID="plannedCookingDate"
-                style={styles.cookingDateField}
-            />
-
-            <PlannedEatingDates
-                dates={editedValues.plannedEatingDates || []}
-                onChange={onPlannedEatingDatesChange}
-                cookingDate={cookingDate}
-            />
-
-            {showNutrition && nutritionRows.length > 0 && (
-                <View style={styles.nutritionSummary}>
-                    <CustomText style={styles.nutritionTitle}>
-                        Ravintoarvot (arvio, 1 annos)
-                    </CustomText>
-                    {nutritionRows.map((row) => (
-                        <View key={row.label} style={styles.nutritionRow}>
-                            <CustomText style={styles.nutritionLabel}>
-                                {row.label}
-                            </CustomText>
-                            <CustomText style={styles.nutritionValue}>
-                                {row.value} {row.unit}
-                            </CustomText>
-                        </View>
-                    ))}
-                </View>
-            )}
+            {metaParts.length > 0 ? (
+                <CustomText style={styles.recipeMeta}>
+                    {metaParts.join(' · ')}
+                </CustomText>
+            ) : null}
 
             <MealTabs
                 foodItems={editedValues.foodItems}
                 foodItemsWithAvailability={foodItemsWithAvailability}
                 recipe={editedValues.recipe}
                 isRecipeEditing={editableFields.recipe}
-                editingFoodItem={editingFoodItem}
                 onAddFoodItem={onAddFoodItem}
-                onEditFoodItem={onEditFoodItem}
+                onOpenFoodItem={onOpenFoodItem}
                 onRemoveFoodItem={onRemoveFoodItem}
-                onItemChange={onFoodItemChange}
                 onRecipeChange={(text) => onChange('recipe', text)}
                 onToggleRecipeEdit={onToggleRecipeEdit}
                 onAddToShoppingList={onAddToShoppingList}
                 onAddToPantry={onAddToPantry}
+                nutritionContent={
+                    showNutrition && nutritionRows.length > 0 ? (
+                        <View style={styles.nutritionSummary}>
+                            <CustomText style={styles.nutritionTitle}>
+                                Ravintoarvot (arvio, 1 annos)
+                            </CustomText>
+                            {nutritionRows.map((row) => (
+                                <View key={row.label} style={styles.nutritionRow}>
+                                    <CustomText style={styles.nutritionLabel}>
+                                        {row.label}
+                                    </CustomText>
+                                    <CustomText style={styles.nutritionValue}>
+                                        {row.value} {row.unit}
+                                    </CustomText>
+                                </View>
+                            ))}
+                        </View>
+                    ) : null
+                }
+                detailsContent={
+                    <View>
+                        <MealImageUploader
+                            meal={meal}
+                            onImageUpdate={onImageUpdate}
+                        />
+
+                        <EditableField
+                            field="name"
+                            label="Nimi"
+                            value={meal.name}
+                            isEditing={editableFields.name}
+                            editedValue={editedValues.name}
+                            onToggleEdit={() => onToggleEdit('name')}
+                            onChange={(text) => onChange('name', text)}
+                        />
+
+                        <EditableField
+                            field="difficultyLevel"
+                            label="Vaikeustaso"
+                            value={difficultyText}
+                            isEditing={editableFields.difficultyLevel}
+                            editedValue={
+                                editedValues.difficultyLevel ||
+                                meal.difficultyLevel
+                            }
+                            onToggleEdit={() => onToggleEdit('difficultyLevel')}
+                            onChange={(value) =>
+                                onChange('difficultyLevel', value)
+                            }
+                        />
+
+                        <EditableField
+                            field="cookingTime"
+                            label="Valmistusaika"
+                            value={`${cookingTime} min`}
+                            isEditing={editableFields.cookingTime}
+                            editedValue={cookingTime}
+                            onToggleEdit={() => onToggleEdit('cookingTime')}
+                            onChange={(text) => onChange('cookingTime', text)}
+                            type="number"
+                        />
+
+                        <CollapsibleFormSection
+                            label="Aterian tyyppi"
+                            summary={
+                                roleSummary === 'Ei määritelty'
+                                    ? ''
+                                    : roleSummary
+                            }
+                            style={styles.categorySection}
+                        >
+                            <MealRoleSelector
+                                value={
+                                    editedValues.defaultRoles ||
+                                    meal.defaultRoles
+                                }
+                                onSelect={(next) =>
+                                    onChange('defaultRoles', next)
+                                }
+                            />
+                        </CollapsibleFormSection>
+
+                        <CollapsibleFormSection
+                            label="Ruokalaji"
+                            summary={
+                                categorySummary === 'Ei määritelty'
+                                    ? ''
+                                    : categorySummary
+                            }
+                            style={styles.categorySection}
+                        >
+                            <MealCategorySelector
+                                value={parseMealCategories(
+                                    editedValues.mealCategory ??
+                                        meal.mealCategory,
+                                    []
+                                )}
+                                onSelect={(next) =>
+                                    onChange('mealCategory', next)
+                                }
+                            />
+                        </CollapsibleFormSection>
+
+                        <FormDateField
+                            label="Suunniteltu valmistuspäivä"
+                            value={cookingDate}
+                            onChange={(selectedDate) =>
+                                onChange('plannedCookingDate', selectedDate)
+                            }
+                            warnIfPast
+                            overdueMessage={OVERDUE_COOKING_MESSAGE}
+                            testID="plannedCookingDate"
+                            style={styles.cookingDateField}
+                        />
+
+                        <PlannedEatingDates
+                            dates={editedValues.plannedEatingDates || []}
+                            onChange={onPlannedEatingDatesChange}
+                            cookingDate={cookingDate}
+                        />
+
+                        <MealIngredientQuantityEditor
+                            foodItems={editedValues.foodItems}
+                            onItemChange={onFoodItemChange}
+                        />
+                    </View>
+                }
             />
 
             <View style={styles.buttonContainer}>
@@ -229,7 +271,13 @@ const MealDetailsForm = ({
 const styles = StyleSheet.create({
     mealDetails: {},
     servingsStepper: {
-        marginBottom: 12,
+        marginBottom: 4,
+    },
+    recipeMeta: {
+        textAlign: 'center',
+        color: '#6b7280',
+        fontSize: 14,
+        marginBottom: 8,
     },
     nutritionSummary: {
         marginTop: 12,

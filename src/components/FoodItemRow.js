@@ -1,108 +1,89 @@
-import { View, StyleSheet, TouchableOpacity, TextInput } from 'react-native'
-import { Feather } from '@expo/vector-icons'
+import { StyleSheet, TouchableOpacity, View } from 'react-native'
+import { MaterialIcons } from '@expo/vector-icons'
 import CustomText from './CustomText'
+import ListItem from './ListItem'
+import { FOOD_PLACEHOLDER_IMAGE_URL } from '../constants/images'
 import { getIngredientQuantity } from '../utils/mealFoodItem'
+import { getFoodItemImageUrl } from '../utils/openFoodFactsMapper'
 import { formatScaledQuantity } from '../utils/mealServings'
 
 const FoodItemRow = ({
     item,
     index,
-    onEdit,
+    onOpenDetails,
     onRemove,
-    isEditing,
-    onItemChange,
-}) => (
-    <View style={styles.foodItemRow}>
-        <View style={styles.foodItemContent}>
-            {isEditing ? (
-                <>
-                    <TextInput
-                        style={[styles.input, styles.foodItemInput]}
-                        value={item.name}
-                        onChangeText={(text) =>
-                            onItemChange(index, 'name', text)
+    details,
+    footer,
+}) => {
+    const amount = `${formatScaledQuantity(getIngredientQuantity(item))}${
+        item.unit ? ` ${item.unit}` : ''
+    }`
+
+    return (
+        <ListItem
+            image={{
+                uri: getFoodItemImageUrl(item) || FOOD_PLACEHOLDER_IMAGE_URL,
+            }}
+            onImagePress={onOpenDetails ? () => onOpenDetails(item) : undefined}
+            title={
+                <View style={styles.titleRow}>
+                    <TouchableOpacity
+                        style={styles.namePress}
+                        onPress={
+                            onOpenDetails
+                                ? () => onOpenDetails(item)
+                                : undefined
                         }
-                        placeholder="Raaka-aineen nimi"
-                    />
-                    <TextInput
-                        style={[styles.input, styles.foodItemInput]}
-                        value={String(getIngredientQuantity(item))}
-                        onChangeText={(text) =>
-                            onItemChange(index, 'quantity', parseFloat(text) || 0)
-                        }
-                        placeholder="Määrä"
-                        keyboardType="numeric"
-                    />
-                    <TextInput
-                        style={[styles.input, styles.foodItemInput]}
-                        value={item.unit}
-                        onChangeText={(text) =>
-                            onItemChange(index, 'unit', text)
-                        }
-                        placeholder="Yksikkö"
-                    />
-                </>
-            ) : (
-                <CustomText>
-                    {item.name} - {formatScaledQuantity(getIngredientQuantity(item))}{' '}
-                    {item.unit}
-                </CustomText>
-            )}
-        </View>
-        <View style={styles.foodItemActions}>
-            <TouchableOpacity
-                style={styles.editIcon}
-                onPress={() => onEdit(index)}
-            >
-                <Feather
-                    name={isEditing ? 'check' : 'edit-2'}
-                    size={18}
-                    color="#666"
-                />
-            </TouchableOpacity>
-            <TouchableOpacity
-                style={styles.editIcon}
-                onPress={() => onRemove(index)}
-            >
-                <Feather name="trash-2" size={18} color="#666" />
-            </TouchableOpacity>
-        </View>
-    </View>
-)
+                        disabled={!onOpenDetails}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Näytä ${item.name || 'raaka-aineen'} tiedot`}
+                    >
+                        <CustomText style={styles.name} numberOfLines={2}>
+                            {item.name}
+                        </CustomText>
+                        {onOpenDetails ? (
+                            <MaterialIcons
+                                name="chevron-right"
+                                size={18}
+                                color="#5844BB"
+                            />
+                        ) : null}
+                    </TouchableOpacity>
+                    <CustomText style={styles.amount}>{amount}</CustomText>
+                </View>
+            }
+            details={details}
+            onDelete={onRemove ? () => onRemove(index) : undefined}
+            deleteAccessibilityLabel={`Poista ${item.name || 'raaka-aine'}`}
+            footer={footer}
+        />
+    )
+}
 
 const styles = StyleSheet.create({
-    foodItemRow: {
+    titleRow: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingVertical: 8,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
+        flexWrap: 'wrap',
+        alignItems: 'baseline',
+        gap: 8,
+        paddingRight: 4,
     },
-    foodItemContent: {
-        flex: 1,
+    namePress: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 10,
+        flexShrink: 1,
+        maxWidth: '100%',
     },
-    foodItemInput: {
-        flex: 1,
-        textAlign: 'left',
+    name: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#5844BB',
+        textDecorationLine: 'underline',
     },
-    foodItemActions: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    editIcon: {
-        padding: 5,
-        marginLeft: 10,
-    },
-    input: {
-        borderBottomWidth: 1,
-        borderBottomColor: '#5844BB',
-        padding: 2,
-        minWidth: 50,
-        textAlign: 'right',
+    amount: {
+        fontSize: 16,
+        fontWeight: '400',
+        color: '#6b7280',
     },
 })
 

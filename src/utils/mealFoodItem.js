@@ -71,7 +71,10 @@ export const mergeUpdatedFoodItem = (foodItems, sourceItem, updatedFoodItem) =>
                 category: updatedFoodItem.category || entry.category,
                 calories: updatedFoodItem.calories ?? entry.calories,
                 price: updatedFoodItem.price ?? entry.price,
-                image: updatedFoodItem.image || entry.image,
+                image:
+                    updatedFoodItem.image !== undefined
+                        ? updatedFoodItem.image
+                        : entry.image,
                 nutrition: updatedFoodItem.nutrition || entry.nutrition,
                 quantity,
                 unit,

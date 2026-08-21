@@ -16,6 +16,7 @@ import * as ImagePicker from 'expo-image-picker'
 import categories from '../data/categories'
 import { useShowNutrition } from '../hooks/useShowNutrition'
 import { getServerUrl } from '../utils/getServerUrl'
+import { getFoodItemImageUrl } from '../utils/openFoodFactsMapper'
 import storage from '../utils/storage'
 
 import Button from './Button'
@@ -24,8 +25,33 @@ import CustomText from './CustomText'
 import FormDateField from './FormDateField'
 import ResponsiveModal from './ResponsiveModal'
 
-const PANTRY_PLACEHOLDER_IMAGE_URL =
-    'https://images.ctfassets.net/2pij69ehhf4n/1YIQLI04JJpf76ARo3k0b9/87322f1b9ccec07d2f2af66f7d61d53d/undraw_online-groceries_n03y.png'
+const NUTRITION_ROWS = [
+    { key: 'calories', label: 'Kalorit', unit: 'kcal' },
+    { key: 'proteins', label: 'Proteiini', unit: 'g' },
+    { key: 'carbohydrates', label: 'Hiilihydraatit', unit: 'g' },
+    { key: 'sugars', label: 'Sokerit', unit: 'g' },
+    { key: 'fat', label: 'Rasva', unit: 'g' },
+    { key: 'saturatedFat', label: 'Tyydyttynyt rasva', unit: 'g' },
+    { key: 'fiber', label: 'Kuitu', unit: 'g' },
+    { key: 'salt', label: 'Suola', unit: 'g' },
+]
+
+const formatTagList = (value) => {
+    if (!value) return ''
+    const list = Array.isArray(value) ? value : String(value).split(',')
+    return list
+        .map((entry) =>
+            String(entry)
+                .replace(/^[a-z]{2}:/, '')
+                .replace(/-/g, ' ')
+                .trim()
+        )
+        .filter(Boolean)
+        .join(', ')
+}
+
+const getItemNutrition = (item) =>
+    item?.nutrition || item?.openFoodFactsData?.nutrition || {}
 
 const PantryItemDetails = ({
     item,
@@ -33,6 +59,7 @@ const PantryItemDetails = ({
     onClose,
     onUpdate,
     embedded = false,
+    showInventoryFields = true,
 }) => {
     const [editableFields, setEditableFields] = useState({})
     const [editedValues, setEditedValues] = useState({})
@@ -62,7 +89,9 @@ const PantryItemDetails = ({
     useEffect(() => {
         if (item) {
             // Convert category IDs to names when loading
-            const categoryNames = item.category.map((id) => getCategoryName(id))
+            const categoryNames = (item.category || []).map((id) =>
+                getCategoryName(id)
+            )
             setEditedValues({
                 ...item,
                 category: categoryNames,
@@ -71,6 +100,23 @@ const PantryItemDetails = ({
     }, [item])
 
     if (!item) return null
+
+    const imageUrl = getFoodItemImageUrl(item)
+    const off = item.openFoodFactsData || {}
+    const nutrition = getItemNutrition(item)
+    const caloriesValue =
+        item.calories || nutrition.calories || off.nutrition?.calories || '0'
+    const nutritionRows = NUTRITION_ROWS.map((row) => {
+        const value =
+            row.key === 'calories'
+                ? caloriesValue
+                : nutrition[row.key] ?? off.nutrition?.[row.key]
+        const numeric = parseFloat(value)
+        return {
+            ...row,
+            value: Number.isFinite(numeric) && numeric !== 0 ? numeric : null,
+        }
+    }).filter((row) => row.value != null)
 
     const toggleEdit = (field) => {
         setEditableFields((prev) => ({
@@ -104,7 +150,7 @@ const PantryItemDetails = ({
     const handleSave = async () => {
         try {
             // Convert category names back to IDs before saving
-            const categoryIds = editedValues.category.map((name) =>
+            const categoryIds = (editedValues.category || []).map((name) =>
                 getCategoryId(name)
             )
 
@@ -394,10 +440,10 @@ const PantryItemDetails = ({
     const content = (
         <ScrollView style={styles.detailScroll}>
             <View style={styles.itemDetails}>
-                {item.image && item.image.url && (
+                {imageUrl ? (
                     <View style={styles.imageContainer}>
                         <Image
-                            source={{ uri: item.image.url }}
+                            source={{ uri: imageUrl }}
                             style={styles.itemImage}
                             resizeMode="cover"
                         />
@@ -432,8 +478,7 @@ const PantryItemDetails = ({
                             </TouchableOpacity>
                         </View>
                     </View>
-                )}
-                {(!item.image || !item.image.url) && (
+                ) : (
                     <View style={styles.noImageContainer}>
                         <TouchableOpacity
                             style={styles.addImageButton}
@@ -452,20 +497,117 @@ const PantryItemDetails = ({
                     </View>
                 )}
                 {renderEditableField('name', 'Nimi', item.name)}
-                {renderEditableField(
-                    'quantity',
-                    'Määrä',
-                    item.quantity,
-                    'number'
-                )}
-                {renderEditableField('unit', 'Yksikkö', item.unit)}
+                {showInventoryFields
+                    ? renderEditableField(
+                          'quantity',
+                          'Määrä',
+                          item.quantity,
+                          'number'
+                      )
+                    : null}
+                {showInventoryFields
+                    ? renderEditableField('unit', 'Yksikkö', item.unit)
+                    : null}
                 {showNutrition &&
                     renderEditableField(
                         'calories',
                         'Kalorit',
-                        item.calories || '0',
+                        caloriesValue,
                         'number'
                     )}
+
+                {showNutrition && nutritionRows.length > 0 ? (
+                    <View style={styles.nutritionBlock}>
+                        <CustomText style={styles.sectionLabel}>
+                            Ravintoarvot (per 100 g / 100 ml)
+                        </CustomText>
+                        {nutritionRows
+                            .filter((row) => row.key !== 'calories')
+                            .map((row) => (
+                                <View key={row.key} style={styles.nutritionRow}>
+                                    <CustomText style={styles.nutritionLabel}>
+                                        {row.label}
+                                    </CustomText>
+                                    <CustomText style={styles.nutritionValue}>
+                                        {row.value} {row.unit}
+                                    </CustomText>
+                                </View>
+                            ))}
+                    </View>
+                ) : null}
+
+                {off.brands ||
+                off.barcode ||
+                off.nutritionGrade ||
+                off.quantityLabel ||
+                off.allergens ||
+                off.labels ? (
+                    <View style={styles.offBlock}>
+                        <CustomText style={styles.sectionLabel}>
+                            Open Food Facts
+                        </CustomText>
+                        {off.brands ? (
+                            <View style={styles.nutritionRow}>
+                                <CustomText style={styles.nutritionLabel}>
+                                    Merkki
+                                </CustomText>
+                                <CustomText style={styles.nutritionValue}>
+                                    {off.brands}
+                                </CustomText>
+                            </View>
+                        ) : null}
+                        {off.barcode ? (
+                            <View style={styles.nutritionRow}>
+                                <CustomText style={styles.nutritionLabel}>
+                                    Viivakoodi
+                                </CustomText>
+                                <CustomText style={styles.nutritionValue}>
+                                    {off.barcode}
+                                </CustomText>
+                            </View>
+                        ) : null}
+                        {off.nutritionGrade ? (
+                            <View style={styles.nutritionRow}>
+                                <CustomText style={styles.nutritionLabel}>
+                                    Nutri-Score
+                                </CustomText>
+                                <CustomText style={styles.nutritionValue}>
+                                    {String(off.nutritionGrade).toUpperCase()}
+                                </CustomText>
+                            </View>
+                        ) : null}
+                        {off.quantityLabel ? (
+                            <View style={styles.nutritionRow}>
+                                <CustomText style={styles.nutritionLabel}>
+                                    Pakkauskoko
+                                </CustomText>
+                                <CustomText style={styles.nutritionValue}>
+                                    {off.quantityLabel}
+                                </CustomText>
+                            </View>
+                        ) : null}
+                        {formatTagList(off.allergens) ? (
+                            <View style={styles.offTextRow}>
+                                <CustomText style={styles.nutritionLabel}>
+                                    Allergeenit
+                                </CustomText>
+                                <CustomText style={styles.offTextValue}>
+                                    {formatTagList(off.allergens)}
+                                </CustomText>
+                            </View>
+                        ) : null}
+                        {formatTagList(off.labels) ? (
+                            <View style={styles.offTextRow}>
+                                <CustomText style={styles.nutritionLabel}>
+                                    Merkinnät
+                                </CustomText>
+                                <CustomText style={styles.offTextValue}>
+                                    {formatTagList(off.labels)}
+                                </CustomText>
+                            </View>
+                        ) : null}
+                    </View>
+                ) : null}
 
                 <View style={styles.categoryRow}>
                     <CustomText style={styles.label}>Kategoriat:</CustomText>
@@ -476,19 +618,22 @@ const PantryItemDetails = ({
                     />
                 </View>
 
-                <FormDateField
-                    label="Viimeinen käyttöpäivä"
-                    value={
-                        new Date(
-                            editedValues.expirationDate || item.expirationDate
-                        )
-                    }
-                    onChange={(selectedDate) =>
-                        handleChange('expirationDate', selectedDate)
-                    }
-                    style={styles.expirationDateField}
-                    testID="pantryExpirationDate"
-                />
+                {showInventoryFields ? (
+                    <FormDateField
+                        label="Viimeinen käyttöpäivä"
+                        value={
+                            new Date(
+                                editedValues.expirationDate ||
+                                    item.expirationDate
+                            )
+                        }
+                        onChange={(selectedDate) =>
+                            handleChange('expirationDate', selectedDate)
+                        }
+                        style={styles.expirationDateField}
+                        testID="pantryExpirationDate"
+                    />
+                ) : null}
 
                 {Object.keys(editedValues).length > 0 && (
                     <View style={styles.buttonContainer}>
@@ -601,6 +746,49 @@ const styles = StyleSheet.create({
     label: {
         fontWeight: 'bold',
         flex: 1,
+    },
+    sectionLabel: {
+        fontWeight: '600',
+        fontSize: 15,
+        color: '#1f2937',
+        marginBottom: 8,
+    },
+    nutritionBlock: {
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+    offBlock: {
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+    nutritionRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingVertical: 4,
+        gap: 12,
+    },
+    nutritionLabel: {
+        color: '#4b5563',
+        fontSize: 14,
+        flexShrink: 0,
+    },
+    nutritionValue: {
+        color: '#1f2937',
+        fontSize: 14,
+        fontWeight: '500',
+        textAlign: 'right',
+        flex: 1,
+    },
+    offTextRow: {
+        paddingVertical: 6,
+        gap: 4,
+    },
+    offTextValue: {
+        color: '#1f2937',
+        fontSize: 14,
+        lineHeight: 20,
     },
     valueContainer: {
         flexDirection: 'row',

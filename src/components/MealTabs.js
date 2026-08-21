@@ -1,24 +1,30 @@
 import { useState } from 'react'
 import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native'
-import { Feather, MaterialIcons } from '@expo/vector-icons'
+import { Feather } from '@expo/vector-icons'
 import Button from './Button'
 import CustomText from './CustomText'
 import FoodItemRow from './FoodItemRow'
+
+const TABS = [
+    { id: 'ingredients', label: 'Raaka-aineet' },
+    { id: 'recipe', label: 'Valmistusohje' },
+    { id: 'details', label: 'Tiedot' },
+]
 
 const MealTabs = ({
     foodItems,
     foodItemsWithAvailability = [],
     recipe,
     isRecipeEditing,
-    editingFoodItem,
     onAddFoodItem,
-    onEditFoodItem,
+    onOpenFoodItem,
     onRemoveFoodItem,
-    onItemChange,
     onRecipeChange,
     onToggleRecipeEdit,
     onAddToShoppingList,
     onAddToPantry,
+    nutritionContent,
+    detailsContent,
 }) => {
     const [activeTab, setActiveTab] = useState('ingredients')
 
@@ -27,8 +33,10 @@ const MealTabs = ({
             return (
                 <View style={styles.detailSection}>
                     <View style={styles.sectionHeader}>
-                        <CustomText style={styles.sectionTitle}>
-                            Raaka-aineet:
+                        <CustomText style={styles.sectionHint}>
+                            {foodItems?.length
+                                ? `${foodItems.length} raaka-ainetta`
+                                : 'Ei raaka-aineita'}
                         </CustomText>
                         <Button
                             title="+ Lisää"
@@ -43,96 +51,99 @@ const MealTabs = ({
                             (availItem) => availItem.name === item.name || availItem._id === item._id
                         ) || item
                         const availability = itemWithAvailability.availability || {}
-                        const showSuggestion = 
-                            !availability.inPantry || !availability.inShoppingList
+                        const inPantry = Boolean(availability.inPantry)
+                        const inShoppingList = Boolean(availability.inShoppingList)
+                        const statusParts = [
+                            inPantry ? 'ruokavarastossa' : null,
+                            inShoppingList ? 'ostoslistalla' : null,
+                        ].filter(Boolean)
+                        const canAddToShoppingList =
+                            !inShoppingList && Boolean(onAddToShoppingList)
+                        const canAddToPantry =
+                            !inPantry && Boolean(onAddToPantry)
+
+                        const availabilityFooter =
+                            canAddToShoppingList || canAddToPantry ? (
+                                <View style={styles.availabilityActions}>
+                                    {canAddToShoppingList ? (
+                                        <TouchableOpacity
+                                            onPress={() =>
+                                                onAddToShoppingList(item)
+                                            }
+                                            hitSlop={{
+                                                top: 6,
+                                                bottom: 6,
+                                                left: 4,
+                                                right: 4,
+                                            }}
+                                        >
+                                            <CustomText
+                                                style={
+                                                    styles.availabilityAction
+                                                }
+                                            >
+                                                Lisää ostoslistalle
+                                            </CustomText>
+                                        </TouchableOpacity>
+                                    ) : null}
+                                    {canAddToPantry ? (
+                                        <TouchableOpacity
+                                            onPress={() =>
+                                                onAddToPantry(item)
+                                            }
+                                            hitSlop={{
+                                                top: 6,
+                                                bottom: 6,
+                                                left: 4,
+                                                right: 4,
+                                            }}
+                                        >
+                                            <CustomText
+                                                style={
+                                                    styles.availabilityAction
+                                                }
+                                            >
+                                                Lisää ruokavarastoon
+                                            </CustomText>
+                                        </TouchableOpacity>
+                                    ) : null}
+                                </View>
+                            ) : null
 
                         return (
-                            <View key={index}>
-                                <FoodItemRow
-                                    item={item}
-                                    index={index}
-                                    onEdit={(index) =>
-                                        onEditFoodItem(
-                                            editingFoodItem === index ? null : index
-                                        )
-                                    }
-                                    onRemove={onRemoveFoodItem}
-                                    isEditing={editingFoodItem === index}
-                                    onItemChange={onItemChange}
-                                />
-                                {/* Show availability status */}
-                                {(availability.inPantry || availability.inShoppingList || showSuggestion) && (
-                                    <View style={styles.availabilityContainer}>
-                                        {availability.inPantry && (
-                                            <View style={styles.availabilityBadge}>
-                                                <MaterialIcons name="check-circle" size={16} color="#10B981" />
-                                                <CustomText style={styles.availabilityText}>
-                                                    Ruokavarastossa ({availability.pantryQuantity || 0} {item.unit || 'kpl'})
-                                                </CustomText>
-                                            </View>
-                                        )}
-                                        {availability.inShoppingList && (
-                                            <View style={styles.availabilityBadge}>
-                                                <MaterialIcons name="check-circle" size={16} color="#10B981" />
-                                                <CustomText style={styles.availabilityText}>
-                                                    Ostoslistalla ({availability.shoppingListQuantity || 0} {item.unit || 'kpl'})
-                                                </CustomText>
-                                            </View>
-                                        )}
-                                        {showSuggestion && onAddToShoppingList && onAddToPantry && (
-                                            <>
-                                                <CustomText style={styles.suggestionText}>
-                                                    Lisää raaka-aine myös:
-                                                </CustomText>
-                                                <View style={styles.suggestionButtons}>
-                                                    {!availability.inShoppingList && (
-                                                        <TouchableOpacity
-                                                            style={styles.suggestionButton}
-                                                            onPress={() => onAddToShoppingList(item)}
-                                                        >
-                                                            <MaterialIcons name="shopping-cart" size={16} color="#000000" />
-                                                            <CustomText style={styles.suggestionButtonText}>
-                                                                Ostoslistalle
-                                                            </CustomText>
-                                                        </TouchableOpacity>
-                                                    )}
-                                                    {!availability.inPantry && (
-                                                        <TouchableOpacity
-                                                            style={styles.suggestionButton}
-                                                            activeOpacity={0.7}
-                                                            onPress={async () => {
-                                                                try {
-                                                                    await onAddToPantry(item)
-                                                                } catch (error) {
-                                                                    console.error(
-                                                                        'Error adding to pantry from MealTabs:',
-                                                                        error
-                                                                    )
-                                                                }
-                                                            }}
-                                                        >
-                                                            <MaterialIcons name="kitchen" size={16} color="#000000" />
-                                                            <CustomText style={styles.suggestionButtonText}>
-                                                                Ruokavarastoon
-                                                            </CustomText>
-                                                        </TouchableOpacity>
-                                                    )}
-                                                </View>
-                                            </>
-                                        )}
-                                    </View>
-                                )}
-                            </View>
+                            <FoodItemRow
+                                key={item.tempId || item._id || item.foodId || index}
+                                item={item}
+                                index={index}
+                                onOpenDetails={onOpenFoodItem}
+                                onRemove={onRemoveFoodItem}
+                                details={
+                                    statusParts.length ? (
+                                        <CustomText
+                                            style={styles.availabilityStatus}
+                                        >
+                                            {statusParts.join(' · ')}
+                                        </CustomText>
+                                    ) : undefined
+                                }
+                                footer={availabilityFooter}
+                            />
                         )
                     })}
+                    {nutritionContent}
                 </View>
             )
-        } else {
-            return (
+        }
+
+        if (activeTab === 'details') {
+            return <View style={styles.detailSection}>{detailsContent}</View>
+        }
+
+        return (
                 <View style={styles.detailSection}>
                     <View style={styles.recipeHeader}>
-                        <CustomText style={styles.sectionTitle}>
-                            Valmistusohje:
+                        <CustomText style={styles.sectionHint}>
+                            {recipe ? 'Reseptin vaiheet' : 'Ei valmistusohjetta'}
                         </CustomText>
                         <TouchableOpacity
                             style={styles.editIcon}
@@ -160,45 +171,31 @@ const MealTabs = ({
                     )}
                 </View>
             )
-        }
     }
 
     return (
         <>
             <View style={styles.tabsContainer}>
-                <TouchableOpacity
-                    style={[
-                        styles.tab,
-                        activeTab === 'ingredients' && styles.activeTab,
-                    ]}
-                    onPress={() => setActiveTab('ingredients')}
-                >
-                    <CustomText
+                {TABS.map((tab) => (
+                    <TouchableOpacity
+                        key={tab.id}
                         style={[
-                            styles.tabText,
-                            activeTab === 'ingredients' &&
-                                styles.activeTabText,
+                            styles.tab,
+                            activeTab === tab.id && styles.activeTab,
                         ]}
+                        onPress={() => setActiveTab(tab.id)}
                     >
-                        Raaka-aineet
-                    </CustomText>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[
-                        styles.tab,
-                        activeTab === 'recipe' && styles.activeTab,
-                    ]}
-                    onPress={() => setActiveTab('recipe')}
-                >
-                    <CustomText
-                        style={[
-                            styles.tabText,
-                            activeTab === 'recipe' && styles.activeTabText,
-                        ]}
-                    >
-                        Valmistusohje
-                    </CustomText>
-                </TouchableOpacity>
+                        <CustomText
+                            style={[
+                                styles.tabText,
+                                activeTab === tab.id && styles.activeTabText,
+                            ]}
+                            numberOfLines={1}
+                        >
+                            {tab.label}
+                        </CustomText>
+                    </TouchableOpacity>
+                ))}
             </View>
             {renderTabContent()}
         </>
@@ -208,14 +205,14 @@ const MealTabs = ({
 const styles = StyleSheet.create({
     tabsContainer: {
         flexDirection: 'row',
-        marginTop: 20,
-        marginBottom: 10,
+        marginTop: 4,
+        marginBottom: 4,
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
     },
     tab: {
         flex: 1,
-        paddingVertical: 10,
+        paddingVertical: 12,
         alignItems: 'center',
         borderBottomWidth: 2,
         borderBottomColor: 'transparent',
@@ -224,7 +221,7 @@ const styles = StyleSheet.create({
         borderBottomColor: '#5844BB',
     },
     tabText: {
-        fontSize: 16,
+        fontSize: 14,
         color: '#666',
     },
     activeTabText: {
@@ -232,12 +229,11 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     detailSection: {
-        marginTop: 20,
+        marginTop: 12,
     },
-    sectionTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 10,
+    sectionHint: {
+        fontSize: 14,
+        color: '#6b7280',
     },
     sectionHeader: {
         flexDirection: 'row',
@@ -275,58 +271,21 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
         wordBreak: 'break-word',
     },
-    availabilityContainer: {
-        marginTop: 8,
-        marginBottom: 12,
-        padding: 12,
-        backgroundColor: '#F3F4F6',
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
-        gap: 8,
-    },
-    availabilityBadge: {
+    availabilityActions: {
         flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        paddingVertical: 6,
-        paddingHorizontal: 10,
-        backgroundColor: '#D1FAE5',
-        borderRadius: 6,
-    },
-    availabilityText: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: '#065F46',
-    },
-    suggestionText: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: '#374151',
-        marginTop: 4,
-        marginBottom: 8,
-    },
-    suggestionButtons: {
-        flexDirection: 'row',
-        gap: 8,
         flexWrap: 'wrap',
+        gap: 12,
     },
-    suggestionButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        backgroundColor: 'transparent',
-        borderWidth: 2,
-        borderColor: '#5844BB',
-        borderRadius: 25,
-        paddingVertical: 6,
-        paddingHorizontal: 12,
-        minHeight: 32,
+    availabilityStatus: {
+        fontSize: 12,
+        color: '#4b5563',
+        marginTop: 4,
     },
-    suggestionButtonText: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#000000',
+    availabilityAction: {
+        fontSize: 12,
+        color: '#5844BB',
+        textDecorationLine: 'underline',
+        fontWeight: '500',
     },
 })
 

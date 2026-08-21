@@ -1,8 +1,11 @@
+import axios from 'axios'
 import { useEffect, useState } from 'react'
-import { ScrollView, StyleSheet } from 'react-native'
+import { Alert, ScrollView, StyleSheet } from 'react-native'
 import useMealFoodItemActions from '../hooks/useMealFoodItemActions'
+import { getServerUrl } from '../utils/getServerUrl'
 import { clampDatesToMin } from '../utils/mealDates'
 import {
+    mergeUpdatedFoodItem,
     normalizeMealFoodItem,
     prepareMealFoodItemsForSave,
 } from '../utils/mealFoodItem'
@@ -11,16 +14,68 @@ import {
     scaleMealFoodItems,
 } from '../utils/mealServings'
 import { parseMealCategories, parseMealRoles } from '../utils/mealUtils'
+import storage from '../utils/storage'
+import { getFoodItemImageUrl } from '../utils/openFoodFactsMapper'
 import AddFoodItemPanel from './AddFoodItemPanel'
 import MealDetailsForm from './MealDetailsForm'
+import PantryItemDetails from './PantryItemDetails'
 import ResponsiveModal from './ResponsiveModal'
 import ShoppingListPickerModal from './ShoppingListPickerModal'
+
+const isPersistedFoodItemId = (id) =>
+    typeof id === 'string' && /^[a-fA-F0-9]{24}$/.test(id)
+
+const resolveCatalogId = (item) => {
+    if (!item) return ''
+    if (item.foodId && typeof item.foodId === 'object') {
+        return String(item.foodId._id || '')
+    }
+    if (item.foodId) return String(item.foodId)
+    if (item._id && typeof item._id === 'object') {
+        return String(item._id._id || item._id)
+    }
+    return item._id ? String(item._id) : ''
+}
+
+const toFoodItemDetails = (item) => {
+    const catalogId = resolveCatalogId(item)
+    const catalog =
+        item.foodId && typeof item.foodId === 'object' ? item.foodId : null
+    const merged = {
+        ...(catalog && typeof catalog === 'object' ? catalog : {}),
+        ...item,
+    }
+    const imageUrl = getFoodItemImageUrl(merged)
+
+    return {
+        ...merged,
+        name: item.name || catalog?.name,
+        category: Array.isArray(item.category)
+            ? item.category
+            : catalog?.category || [],
+        image: merged.image?.url
+            ? merged.image
+            : imageUrl
+              ? { url: imageUrl }
+              : merged.image,
+        calories:
+            item.calories ??
+            catalog?.calories ??
+            merged.nutrition?.calories ??
+            merged.openFoodFactsData?.nutrition?.calories,
+        nutrition: item.nutrition || catalog?.nutrition || merged.nutrition,
+        openFoodFactsData:
+            item.openFoodFactsData || catalog?.openFoodFactsData,
+        _id: catalogId || item._id,
+        foodId: catalogId ? { _id: catalogId } : item.foodId,
+    }
+}
 
 const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
     const [editableFields, setEditableFields] = useState({})
     const [editedValues, setEditedValues] = useState({})
-    const [editingFoodItem, setEditingFoodItem] = useState(null)
     const [showFoodItemForm, setShowFoodItemForm] = useState(false)
+    const [selectedFoodItem, setSelectedFoodItem] = useState(null)
     const [foodItemsWithAvailability, setFoodItemsWithAvailability] = useState(
         []
     )
@@ -150,6 +205,90 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
         }))
     }
 
+    const handleOpenFoodItem = (item) => {
+        setSelectedFoodItem(toFoodItemDetails(item))
+    }
+
+    const handleUpdateFoodItem = async (itemId, updatedData) => {
+        const catalogId = resolveCatalogId({
+            ...updatedData,
+            _id: itemId,
+            foodId: updatedData.foodId || itemId,
+        })
+        const token = await storage.getItem('userToken')
+        const isImageUpload =
+            updatedData.foodId &&
+            typeof updatedData.foodId === 'object' &&
+            Object.keys(updatedData.foodId).length > 1
+
+        if (token && isPersistedFoodItemId(catalogId) && !isImageUpload) {
+            try {
+                await axios.put(
+                    getServerUrl(`/food-items/${catalogId}`),
+                    {
+                        name: updatedData.name,
+                        isFood: updatedData.isFood !== false,
+                        category: updatedData.category || [],
+                        price: parseFloat(updatedData.price) || 0,
+                        ...(updatedData.calories != null
+                            ? {
+                                  calories:
+                                      parseInt(updatedData.calories, 10) || 0,
+                              }
+                            : {}),
+                        ...(updatedData.nutrition
+                            ? { nutrition: updatedData.nutrition }
+                            : {}),
+                        ...(updatedData.openFoodFactsData
+                            ? {
+                                  openFoodFactsData:
+                                      updatedData.openFoodFactsData,
+                              }
+                            : {}),
+                    },
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                )
+            } catch (error) {
+                if (error.response?.status !== 404) {
+                    console.error('Error updating food item:', error)
+                    Alert.alert('Virhe', 'Raaka-aineen päivitys epäonnistui')
+                    return
+                }
+            }
+        }
+
+        const nextItem = {
+            ...updatedData,
+            _id: catalogId || itemId,
+            image:
+                updatedData.image !== undefined
+                    ? updatedData.image
+                    : updatedData.foodId?.image,
+        }
+        const nextFoodItems = mergeUpdatedFoodItem(
+            editedValues.foodItems || [],
+            selectedFoodItem,
+            nextItem
+        )
+        setFoodItems(nextFoodItems)
+
+        if (isImageUpload) {
+            setSelectedFoodItem(
+                toFoodItemDetails({
+                    ...(selectedFoodItem || {}),
+                    ...nextItem,
+                })
+            )
+            return
+        }
+
+        setSelectedFoodItem(null)
+    }
+
     const handleSave = async () => {
         try {
             const updatedMeal = {
@@ -182,7 +321,7 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
             if (didSave === false) return
 
             setEditableFields({})
-            setEditingFoodItem(null)
+            setSelectedFoodItem(null)
             onClose()
         } catch (error) {
             console.error('Error saving updates:', error)
@@ -197,6 +336,10 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                     closeShoppingListPicker()
                     return
                 }
+                if (selectedFoodItem) {
+                    setSelectedFoodItem(null)
+                    return
+                }
                 if (showFoodItemForm) {
                     setShowFoodItemForm(false)
                     return
@@ -206,11 +349,17 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
             title={
                 showShoppingListPicker
                     ? 'Valitse ostoslista'
-                    : showFoodItemForm
-                      ? 'Lisää raaka-aine'
-                      : meal?.name
+                    : selectedFoodItem
+                      ? selectedFoodItem.name || 'Raaka-aine'
+                      : showFoodItemForm
+                        ? 'Lisää raaka-aine'
+                        : meal?.name
             }
-            showBackButton={showFoodItemForm || showShoppingListPicker}
+            showBackButton={
+                showFoodItemForm ||
+                showShoppingListPicker ||
+                Boolean(selectedFoodItem)
+            }
             maxWidth={640}
         >
             {!meal ? null : showShoppingListPicker ? (
@@ -224,6 +373,14 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                     onSelect={(listId) =>
                         addItemToShoppingList(pendingShoppingListItem, listId)
                     }
+                />
+            ) : selectedFoodItem ? (
+                <PantryItemDetails
+                    item={selectedFoodItem}
+                    embedded
+                    showInventoryFields={false}
+                    onClose={() => setSelectedFoodItem(null)}
+                    onUpdate={handleUpdateFoodItem}
                 />
             ) : showFoodItemForm ? (
                 <AddFoodItemPanel
@@ -242,7 +399,6 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                         meal={meal}
                         editedValues={editedValues}
                         editableFields={editableFields}
-                        editingFoodItem={editingFoodItem}
                         foodItemsWithAvailability={foodItemsWithAvailability}
                         onToggleEdit={toggleEdit}
                         onChange={handleChange}
@@ -251,7 +407,7 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                             handleChange('plannedEatingDates', dates)
                         }
                         onAddFoodItem={() => setShowFoodItemForm(true)}
-                        onEditFoodItem={setEditingFoodItem}
+                        onOpenFoodItem={handleOpenFoodItem}
                         onRemoveFoodItem={handleRemoveFoodItem}
                         onToggleRecipeEdit={() => toggleEdit('recipe')}
                         onAddToShoppingList={requestAddToShoppingList}
@@ -271,7 +427,6 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
 const styles = StyleSheet.create({
     detailScroll: {
         paddingTop: 20,
-        paddingHorizontal: 20,
     },
 })
 

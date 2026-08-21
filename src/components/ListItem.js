@@ -111,20 +111,24 @@ const ListItem = ({
     )
 
     const trailingNode =
-        trailing ||
-        (onDelete ? (
-            <TouchableOpacity
-                style={styles.deleteButton}
-                onPress={disabled ? undefined : onDelete}
-                disabled={disabled}
-                activeOpacity={0.7}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                accessibilityRole="button"
-                accessibilityLabel={deleteAccessibilityLabel}
-            >
-                <MaterialIcons name="delete" size={20} color="#666" />
-            </TouchableOpacity>
-        ) : null)
+        trailing || onDelete ? (
+            <View style={styles.trailingWrap}>
+                {trailing}
+                {onDelete ? (
+                    <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={disabled ? undefined : onDelete}
+                        disabled={disabled}
+                        activeOpacity={0.7}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        accessibilityRole="button"
+                        accessibilityLabel={deleteAccessibilityLabel}
+                    >
+                        <MaterialIcons name="delete" size={20} color="#666" />
+                    </TouchableOpacity>
+                ) : null}
+            </View>
+        ) : null
 
     const main = (
         <View
@@ -255,6 +259,12 @@ const styles = StyleSheet.create({
         textDecorationLine: 'line-through',
         color: '#888',
     },
+    trailingWrap: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginLeft: 8,
+        gap: 4,
+    },
     deleteButton: {
         backgroundColor: '#e0e0e0',
         width: 36,
@@ -262,7 +272,6 @@ const styles = StyleSheet.create({
         borderRadius: 18,
         justifyContent: 'center',
         alignItems: 'center',
-        marginLeft: 8,
         elevation: 2,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },

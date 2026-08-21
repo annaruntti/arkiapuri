@@ -333,22 +333,7 @@ const MealsScreen = ({ route, navigation }) => {
                         resolveId(item.foodId) || resolveId(item._id)
 
                     if (isPersistedFoodItemId(catalogId)) {
-                        try {
-                            await axios.put(
-                                getServerUrl(`/food-items/${catalogId}`),
-                                catalogPayload,
-                                {
-                                    headers: {
-                                        Authorization: `Bearer ${token}`,
-                                    },
-                                }
-                            )
-                            return { foodId: catalogId, quantity, unit }
-                        } catch (error) {
-                            if (error.response?.status !== 404) {
-                                throw error
-                            }
-                        }
+                        return { foodId: catalogId, quantity, unit }
                     }
 
                     const response = await axios.post(
