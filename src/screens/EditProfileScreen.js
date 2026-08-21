@@ -18,6 +18,7 @@ import CustomText from '../components/CustomText'
 import ResponsiveLayout from '../components/ResponsiveLayout'
 import { useLogin } from '../context/LoginProvider'
 import { getServerUrl } from '../utils/getServerUrl'
+import { passwordLengthRules } from '../utils/passwordRules'
 import { getShowNutrition } from '../utils/userPreferences'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
@@ -412,10 +413,7 @@ const EditProfileScreen = () => {
                                             required: showPasswordFields
                                                 ? 'Uusi salasana vaaditaan'
                                                 : false,
-                                            minLength: {
-                                                value: 6,
-                                                message: 'Vähintään 6 merkkiä',
-                                            },
+                                            ...passwordLengthRules,
                                         }}
                                     />
 

@@ -11,6 +11,7 @@ import AuthLayout from '../components/AuthLayout'
 import Button from '../components/Button'
 import CustomInput from '../components/CustomInput'
 import CustomText from '../components/CustomText'
+import { passwordLengthRules } from '../utils/passwordRules'
 
 const ResetPasswordScreen = ({ navigation }) => {
     const [isLoading, setIsLoading] = useState(false)
@@ -100,11 +101,7 @@ const ResetPasswordScreen = ({ navigation }) => {
                             control={control}
                             rules={{
                                 required: 'Salasana on pakollinen',
-                                minLength: {
-                                    value: 6,
-                                    message:
-                                        'Salasanan pituuden tulee olla vähintään 6 merkkiä',
-                                },
+                                ...passwordLengthRules,
                             }}
                             secureTextEntry
                         />

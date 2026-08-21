@@ -11,6 +11,7 @@ import AuthLayout from '../components/AuthLayout'
 import Button from '../components/Button'
 import CustomInput from '../components/CustomInput'
 import CustomText from '../components/CustomText'
+import { passwordLengthRules } from '../utils/passwordRules'
 
 const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/
 
@@ -142,16 +143,7 @@ const SignUpScreen = () => {
                     secureTextEntry
                     rules={{
                         required: 'Salasana on pakollinen tieto',
-                        minLength: {
-                            value: 6,
-                            message:
-                                'Salasanan pituuden tulee olla vähintään 6 merkkiä',
-                        },
-                        maxLength: {
-                            value: 24,
-                            message:
-                                'Salasanan pituuden tulee olla enintään 24 merkkiä',
-                        },
+                        ...passwordLengthRules,
                     }}
                 />
                 <CustomInput
