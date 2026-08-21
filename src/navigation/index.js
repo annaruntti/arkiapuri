@@ -422,11 +422,9 @@ function ReadingOrderStackScreen() {
 const ProfileStack = createNativeStackNavigator()
 
 function ProfileStackScreen() {
-    const navigation = useNavigation()
-
     return (
         <ProfileStack.Navigator
-            screenOptions={({ route }) => ({
+            screenOptions={({ route, navigation }) => ({
                 headerStyle: {
                     backgroundColor: '#fff',
                 },
@@ -434,7 +432,18 @@ function ProfileStackScreen() {
                 headerLeft: () => (
                     <TouchableOpacity
                         onPress={() => {
-                            const fromScreen = route.params?.from || 'HomeStack'
+                            if (route.name !== 'Omat tiedot') {
+                                navigation.navigate('Omat tiedot')
+                                return
+                            }
+
+                            const fromScreen =
+                                route.params?.from || 'HomeStack'
+                            const parent = navigation.getParent()
+                            if (parent) {
+                                parent.navigate(fromScreen)
+                                return
+                            }
                             navigation.navigate(fromScreen)
                         }}
                         style={[styles.iconButton, styles.backButton]}

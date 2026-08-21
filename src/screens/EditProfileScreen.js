@@ -267,16 +267,6 @@ const EditProfileScreen = () => {
                 <View style={getContainerStyle()}>
                     <View style={getContentStyle()}>
                         <View style={styles.header}>
-                            <TouchableOpacity
-                                onPress={() => navigation.goBack()}
-                                style={styles.backButton}
-                            >
-                                <Feather
-                                    name="arrow-left"
-                                    size={24}
-                                    color="#1f2937"
-                                />
-                            </TouchableOpacity>
                             <CustomText
                                 style={[
                                     styles.title,
@@ -554,25 +544,13 @@ const styles = StyleSheet.create({
         marginVertical: 0,
     },
     header: {
-        flexDirection: 'row',
-        alignItems: 'center',
         marginBottom: 20,
-        position: 'relative',
-    },
-    backButton: {
-        padding: 8,
-        marginLeft: -8,
-        ...(Platform.OS === 'web' && {
-            cursor: 'pointer',
-        }),
     },
     title: {
         fontSize: 24,
         fontWeight: '700',
         color: '#1f2937',
-        flex: 1,
         textAlign: 'center',
-        marginRight: 40, // Balance the back button
     },
     desktopTitle: {
         fontSize: 28,
