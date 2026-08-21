@@ -4,33 +4,62 @@ import axios from 'axios'
 import React, { useState } from 'react'
 import {
     Alert,
-    Image,
+    Platform,
     ScrollView,
     StyleSheet,
     TextInput,
-    TouchableOpacity,
     View,
 } from 'react-native'
+import { AUTH_FORM_MAX_WIDTH } from '../components/AuthLayout'
 import Button from '../components/Button'
 import CustomText from '../components/CustomText'
+import ListItem from '../components/ListItem'
 import ResponsiveLayout from '../components/ResponsiveLayout'
 import ResponsiveModal from '../components/ResponsiveModal'
 import { useLogin } from '../context/LoginProvider'
+import { authFormStyles } from '../styles/authFormStyles'
 import { getServerUrl } from '../utils/getServerUrl'
+import { useResponsiveDimensions } from '../utils/responsive'
+import { showAlert, showConfirm } from '../utils/showAlert'
+import { getProfileImageSource } from '../utils/profileImage'
 import storage from '../utils/storage'
+
+const getRefId = (value) => {
+    if (value == null || value === '') return ''
+    if (typeof value === 'string') {
+        if (
+            value === 'undefined' ||
+            value === 'null' ||
+            value.startsWith('[object ')
+        ) {
+            return ''
+        }
+        return value
+    }
+    if (typeof value === 'object') {
+        if (value._id != null) return getRefId(value._id)
+        if (typeof value.id === 'string' && value.id) return value.id
+    }
+    return ''
+}
+
+const getMemberId = (member) =>
+    getRefId(member?.userId) || getRefId(member?._id)
+
+const getRoleLabel = (role) => {
+    if (role === 'owner') return 'Omistaja'
+    if (role === 'admin') return 'Ylläpitäjä'
+    return 'Jäsen'
+}
 
 const FamilyManagementScreen = ({ navigation }) => {
     const { profile } = useLogin()
+    const { isDesktop, isTablet } = useResponsiveDimensions()
     const [household, setHousehold] = useState(null)
     const [loading, setLoading] = useState(true)
     const [inviteEmail, setInviteEmail] = useState('')
     const [showInviteModal, setShowInviteModal] = useState(false)
 
-    const defaultImage = {
-        uri: 'https://images.ctfassets.net/hef5a6s5axrs/2wzxlzyydJLVr8T7k67cOO/90074490ee64362fe6f0e384d2b3daf8/arkiapuri-removebg-preview.png',
-    }
-
-    // Fetch household data when screen is focused
     useFocusEffect(
         React.useCallback(() => {
             fetchHousehold()
@@ -48,12 +77,10 @@ const FamilyManagementScreen = ({ navigation }) => {
             })
 
             if (response.data.success) {
-                // Set household even if it's null (user has no household)
                 setHousehold(response.data.household)
             }
         } catch (error) {
             console.error('Error fetching household:', error)
-            // Don't show alert on fetch error - just keep current state
             setHousehold(null)
         } finally {
             setLoading(false)
@@ -76,12 +103,10 @@ const FamilyManagementScreen = ({ navigation }) => {
             )
 
             if (response.data.success) {
-                // Immediately set the household from the create response
                 if (response.data.household) {
                     setHousehold(response.data.household)
                 }
                 Alert.alert('Onnistui', 'Perhe luotu onnistuneesti')
-                // Also refresh to ensure we have the latest data with populated fields
                 await fetchHousehold()
             }
         } catch (error) {
@@ -114,11 +139,12 @@ const FamilyManagementScreen = ({ navigation }) => {
             )
 
             if (response.data.success) {
+                const sentTo = inviteEmail.trim()
                 setInviteEmail('')
                 setShowInviteModal(false)
-                Alert.alert(
+                showAlert(
                     'Kutsu lähetetty!',
-                    `Kutsuviesti on lähetetty sähköpostiosoitteeseen ${inviteEmail.trim()}. Vastaanottaja voi liittyä perheeseen klikkaamalla sähköpostissa olevaa linkkiä.`
+                    `Kutsuviesti on lähetetty sähköpostiosoitteeseen ${sentTo}. Vastaanottaja voi liittyä perheeseen klikkaamalla sähköpostissa olevaa linkkiä.`
                 )
                 fetchHousehold()
             }
@@ -133,90 +159,166 @@ const FamilyManagementScreen = ({ navigation }) => {
     }
 
     const handleLeaveHousehold = () => {
-        Alert.alert(
-            'Poistu perheestä',
-            'Haluatko varmasti poistua perheestä? Et voi enää nähdä perheen jaettuja tietoja.',
-            [
-                { text: 'Peruuta', style: 'cancel' },
-                {
-                    text: 'Poistu',
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            const token = await storage.getItem('userToken')
-                            const response = await axios.post(
-                                getServerUrl('/household/leave'),
-                                {},
-                                {
-                                    headers: {
-                                        Authorization: `Bearer ${token}`,
-                                    },
-                                }
-                            )
-
-                            if (response.data.success) {
-                                Alert.alert('Onnistui', 'Poistuit perheestä')
-                                navigation.goBack()
-                            }
-                        } catch (error) {
-                            console.error('Error leaving household:', error)
-                            Alert.alert(
-                                'Virhe',
-                                error.response?.data?.message ||
-                                    'Perheestä poistuminen epäonnistui'
-                            )
+        showConfirm({
+            title: 'Poistu perheestä',
+            message:
+                'Haluatko varmasti poistua perheestä? Et voi enää nähdä perheen jaettuja tietoja.',
+            confirmText: 'Poistu',
+            destructive: true,
+            onConfirm: async () => {
+                try {
+                    const token = await storage.getItem('userToken')
+                    const response = await axios.post(
+                        getServerUrl('/household/leave'),
+                        {},
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                            },
                         }
-                    },
-                },
-            ]
-        )
+                    )
+
+                    if (response.data.success) {
+                        showAlert('Onnistui', 'Poistuit perheestä')
+                        navigation.goBack()
+                    }
+                } catch (error) {
+                    console.error('Error leaving household:', error)
+                    showAlert(
+                        'Virhe',
+                        error.response?.data?.message ||
+                            'Perheestä poistuminen epäonnistui'
+                    )
+                }
+            },
+        })
     }
 
     const handleRemoveMember = (memberId, memberName) => {
-        Alert.alert(
-            'Poista jäsen',
-            `Haluatko varmasti poistaa jäsenen ${memberName} perheestä?`,
-            [
-                { text: 'Peruuta', style: 'cancel' },
-                {
-                    text: 'Poista',
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            const token = await storage.getItem('userToken')
-                            const response = await axios.delete(
-                                getServerUrl(`/household/members/${memberId}`),
-                                {
-                                    headers: {
-                                        Authorization: `Bearer ${token}`,
-                                    },
-                                }
-                            )
+        if (!memberId) {
+            showAlert('Virhe', 'Jäsenen tunniste puuttuu')
+            return
+        }
 
-                            if (response.data.success) {
-                                Alert.alert('Onnistui', 'Jäsen poistettu')
-                                fetchHousehold()
-                            }
-                        } catch (error) {
-                            console.error('Error removing member:', error)
-                            Alert.alert(
-                                'Virhe',
-                                error.response?.data?.message ||
-                                    'Jäsenen poistaminen epäonnistui'
-                            )
+        showConfirm({
+            title: 'Poista jäsen',
+            message: `Haluatko varmasti poistaa jäsenen ${memberName} perheestä?`,
+            confirmText: 'Poista',
+            destructive: true,
+            onConfirm: async () => {
+                try {
+                    const token = await storage.getItem('userToken')
+                    const response = await axios.delete(
+                        getServerUrl(`/household/members/${memberId}`),
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                            },
                         }
-                    },
-                },
-            ]
-        )
+                    )
+
+                    if (response.data.success) {
+                        showAlert('Onnistui', 'Jäsen poistettu')
+                        fetchHousehold()
+                    }
+                } catch (error) {
+                    console.error('Error removing member:', error)
+                    showAlert(
+                        'Virhe',
+                        error.response?.data?.message ||
+                            'Jäsenen poistaminen epäonnistui'
+                    )
+                }
+            },
+        })
     }
 
-    const isOwner =
-        household?.owner?.toString() === profile?._id ||
-        household?.owner?._id === profile?._id
+    const handleCancelInvitation = (invitationId, email) => {
+        showConfirm({
+            title: 'Peru kutsu',
+            message: `Haluatko varmasti perua kutsun osoitteeseen ${email}?`,
+            confirmText: 'Peru kutsu',
+            destructive: true,
+            onConfirm: async () => {
+                try {
+                    const token = await storage.getItem('userToken')
+                    const response = await axios.delete(
+                        getServerUrl(`/household/invitations/${invitationId}`),
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                            },
+                        }
+                    )
+
+                    if (response.data.success) {
+                        showAlert('Onnistui', 'Kutsu peruttu')
+                        fetchHousehold()
+                    }
+                } catch (error) {
+                    console.error('Error cancelling invitation:', error)
+                    showAlert(
+                        'Virhe',
+                        error.response?.data?.message ||
+                            'Kutsun peruminen epäonnistui'
+                    )
+                }
+            },
+        })
+    }
+
+    const profileId = getRefId(profile)
+    const isOwner = getRefId(household?.owner) === profileId
     const userRole = household?.members?.find(
-        (m) => m.userId?._id === profile?._id
+        (m) => getRefId(m.userId) === profileId
     )?.role
+    const canManageMembers = isOwner || userRole === 'admin'
+    const pendingInvitations =
+        household?.invitations?.filter((inv) => inv.status === 'pending') || []
+
+    const getContainerStyle = () => [
+        styles.container,
+        isDesktop && styles.desktopContainer,
+        isTablet && styles.tabletContainer,
+    ]
+
+    const getContentStyle = () => [
+        styles.content,
+        (isDesktop || isTablet) && styles.wideContent,
+    ]
+
+    const inviteModal = (
+        <ResponsiveModal
+            visible={showInviteModal}
+            onClose={() => {
+                setShowInviteModal(false)
+                setInviteEmail('')
+            }}
+            title="Kutsu perheenjäsen"
+        >
+            <View style={styles.modalContent}>
+                <CustomText style={styles.modalDescription}>
+                    Syötä kutsuttavan henkilön sähköpostiosoite. Hänelle
+                    lähetetään kutsulinkki, jolla voi liittyä perheeseen.
+                </CustomText>
+                <TextInput
+                    style={styles.input}
+                    placeholder="Sähköpostiosoite"
+                    value={inviteEmail}
+                    onChangeText={setInviteEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                />
+                <Button
+                    title="Lähetä kutsu"
+                    onPress={handleInviteMember}
+                    fullWidth
+                    style={authFormStyles.primaryButton}
+                    textStyle={authFormStyles.buttonText}
+                />
+            </View>
+        </ResponsiveModal>
+    )
 
     if (loading) {
         return (
@@ -231,28 +333,36 @@ const FamilyManagementScreen = ({ navigation }) => {
     if (!household) {
         return (
             <ResponsiveLayout activeRoute="ProfileStack">
-                <ScrollView style={styles.container}>
-                    <View style={styles.emptyState}>
-                        <MaterialIcons
-                            name="people-outline"
-                            size={80}
-                            color="#5844BB"
-                        />
-                        <CustomText style={styles.emptyTitle}>
-                            Et ole vielä osa perhettä
-                        </CustomText>
-                        <CustomText style={styles.emptySubtitle}>
-                            Luo oma perhe tai liity olemassa olevaan perheeseen
-                            kutsulinkin kautta
-                        </CustomText>
-
-                        <View style={styles.actionButtons}>
-                            <Button
-                                title="Luo perhe"
-                                onPress={handleCreateHousehold}
-                                style={styles.primaryButton}
-                                textStyle={styles.buttonText}
-                            />
+                <ScrollView
+                    style={styles.scrollView}
+                    contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                >
+                    <View style={getContainerStyle()}>
+                        <View style={getContentStyle()}>
+                            <View style={styles.emptyState}>
+                                <MaterialIcons
+                                    name="people-outline"
+                                    size={80}
+                                    color="#5844BB"
+                                />
+                                <CustomText style={styles.emptyTitle}>
+                                    Et ole vielä osa perhettä
+                                </CustomText>
+                                <CustomText style={styles.emptySubtitle}>
+                                    Luo oma perhe tai liity olemassa olevaan
+                                    perheeseen kutsulinkin kautta
+                                </CustomText>
+                                <View style={authFormStyles.buttonSection}>
+                                    <Button
+                                        title="Luo perhe"
+                                        onPress={handleCreateHousehold}
+                                        fullWidth
+                                        style={authFormStyles.primaryButton}
+                                        textStyle={authFormStyles.buttonText}
+                                    />
+                                </View>
+                            </View>
                         </View>
                     </View>
                 </ScrollView>
@@ -262,205 +372,199 @@ const FamilyManagementScreen = ({ navigation }) => {
 
     return (
         <ResponsiveLayout activeRoute="ProfileStack">
-            <ScrollView style={styles.container}>
-                <View style={styles.header}>
-                    <CustomText style={styles.title}>
-                        {household.name}
-                    </CustomText>
-                    {isOwner && (
-                        <CustomText style={styles.ownerBadge}>
-                            Omistaja
-                        </CustomText>
-                    )}
-                </View>
-
-                {/* Members Section */}
-                <View style={styles.section}>
-                    <View style={styles.sectionHeader}>
-                        <CustomText style={styles.sectionTitle}>
-                            Perheenjäsenet ({household.members?.length || 0})
-                        </CustomText>
-                        {(isOwner || userRole === 'admin') && (
-                            <TouchableOpacity
-                                onPress={() => setShowInviteModal(true)}
-                                style={styles.inviteButton}
+            <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+            >
+                <View style={getContainerStyle()}>
+                    <View style={getContentStyle()}>
+                        <View style={styles.header}>
+                            <CustomText
+                                style={[
+                                    styles.title,
+                                    isDesktop && styles.desktopTitle,
+                                ]}
                             >
-                                <MaterialIcons
-                                    name="person-add"
-                                    size={20}
-                                    color="#5844BB"
-                                />
-                                <CustomText style={styles.inviteButtonText}>
-                                    Kutsu
+                                {household.name}
+                            </CustomText>
+                            {isOwner && (
+                                <CustomText
+                                    style={[
+                                        styles.subtitle,
+                                        isDesktop && styles.desktopSubtitle,
+                                    ]}
+                                >
+                                    Omistaja
                                 </CustomText>
-                            </TouchableOpacity>
+                            )}
+                        </View>
+
+                        <View style={styles.section}>
+                            <CustomText style={styles.sectionTitle}>
+                                Perheenjäsenet (
+                                {household.members?.length || 0})
+                            </CustomText>
+                            {household.members?.map((member) => {
+                                const memberUserId = getMemberId(member)
+                                const isCurrentUser =
+                                    Boolean(memberUserId) &&
+                                    memberUserId === profileId
+                                const isMemberOwner =
+                                    Boolean(memberUserId) &&
+                                    getRefId(household.owner) === memberUserId
+                                const hasUserProfile = Boolean(
+                                    member.userId?.username ||
+                                        member.userId?.email
+                                )
+                                const displayName = hasUserProfile
+                                    ? member.userId?.username ||
+                                      member.userId?.email
+                                    : 'Tuntematon käyttäjä'
+                                const canRemove =
+                                    canManageMembers &&
+                                    !isMemberOwner &&
+                                    !isCurrentUser &&
+                                    Boolean(memberUserId)
+
+                                return (
+                                    <ListItem
+                                        key={member._id || memberUserId}
+                                        image={getProfileImageSource(
+                                            member.userId
+                                        )}
+                                        imageShape="circle"
+                                        title={
+                                            isCurrentUser
+                                                ? `${displayName} (Sinä)`
+                                                : displayName
+                                        }
+                                        subtitle={
+                                            member.userId?.email ||
+                                            (hasUserProfile
+                                                ? undefined
+                                                : 'Jäsenen tiedot puuttuvat')
+                                        }
+                                        details={getRoleLabel(member.role)}
+                                        onDelete={
+                                            canRemove
+                                                ? () =>
+                                                      handleRemoveMember(
+                                                          memberUserId,
+                                                          displayName
+                                                      )
+                                                : undefined
+                                        }
+                                        deleteAccessibilityLabel={`Poista ${displayName}`}
+                                    />
+                                )
+                            })}
+                            {canManageMembers && (
+                                <Button
+                                    title="Kutsu perheenjäsen"
+                                    type="TERTIARY"
+                                    fullWidth
+                                    onPress={() => setShowInviteModal(true)}
+                                    style={authFormStyles.tertiaryButton}
+                                    textStyle={authFormStyles.buttonText}
+                                />
+                            )}
+                        </View>
+
+                        {pendingInvitations.length > 0 && (
+                            <View style={styles.section}>
+                                <CustomText style={styles.sectionTitle}>
+                                    Odottavat kutsut
+                                </CustomText>
+                                {pendingInvitations.map((invitation) => (
+                                    <ListItem
+                                        key={invitation._id}
+                                        icon="mail-outline"
+                                        title={invitation.email}
+                                        subtitle={`Lähetetty ${new Date(
+                                            invitation.createdAt
+                                        ).toLocaleDateString('fi-FI')}`}
+                                        onDelete={
+                                            canManageMembers
+                                                ? () =>
+                                                      handleCancelInvitation(
+                                                          invitation._id,
+                                                          invitation.email
+                                                      )
+                                                : undefined
+                                        }
+                                        deleteAccessibilityLabel={`Peru kutsu osoitteeseen ${invitation.email}`}
+                                    />
+                                ))}
+                            </View>
+                        )}
+
+                        {!isOwner && (
+                            <View style={authFormStyles.buttonSection}>
+                                <Button
+                                    title="Poistu perheestä"
+                                    type="TERTIARY"
+                                    fullWidth
+                                    onPress={handleLeaveHousehold}
+                                    style={authFormStyles.tertiaryButton}
+                                    textStyle={authFormStyles.buttonText}
+                                />
+                            </View>
                         )}
                     </View>
-
-                    <View style={styles.membersList}>
-                        {household.members?.map((member) => {
-                            const isCurrentUser =
-                                member.userId?._id === profile?._id
-                            const isMemberOwner =
-                                household.owner?.toString() ===
-                                    member.userId?._id ||
-                                household.owner?._id === member.userId?._id
-
-                            return (
-                                <View
-                                    key={member._id}
-                                    style={styles.memberCard}
-                                >
-                                    <Image
-                                        source={
-                                            member.userId?.profileImage
-                                                ? {
-                                                      uri: member.userId
-                                                          .profileImage,
-                                                  }
-                                                : defaultImage
-                                        }
-                                        style={styles.memberAvatar}
-                                    />
-                                    <View style={styles.memberInfo}>
-                                        <CustomText style={styles.memberName}>
-                                            {member.userId?.username}
-                                            {isCurrentUser && (
-                                                <CustomText
-                                                    style={styles.youBadge}
-                                                >
-                                                    {' '}
-                                                    (Sinä)
-                                                </CustomText>
-                                            )}
-                                        </CustomText>
-                                        <CustomText style={styles.memberEmail}>
-                                            {member.userId?.email}
-                                        </CustomText>
-                                        <CustomText style={styles.memberRole}>
-                                            {member.role === 'owner'
-                                                ? 'Omistaja'
-                                                : member.role === 'admin'
-                                                  ? 'Ylläpitäjä'
-                                                  : 'Jäsen'}
-                                        </CustomText>
-                                    </View>
-                                    {!isMemberOwner &&
-                                        !isCurrentUser &&
-                                        (isOwner || userRole === 'admin') && (
-                                            <TouchableOpacity
-                                                onPress={() =>
-                                                    handleRemoveMember(
-                                                        member.userId?._id,
-                                                        member.userId?.username
-                                                    )
-                                                }
-                                                style={styles.removeButton}
-                                            >
-                                                <MaterialIcons
-                                                    name="remove-circle-outline"
-                                                    size={24}
-                                                    color="#ef4444"
-                                                />
-                                            </TouchableOpacity>
-                                        )}
-                                </View>
-                            )
-                        })}
-                    </View>
-                </View>
-
-                {/* Pending Invitations */}
-                {household.invitations?.filter(
-                    (inv) => inv.status === 'pending'
-                ).length > 0 && (
-                    <View style={styles.section}>
-                        <CustomText style={styles.sectionTitle}>
-                            Odottavat kutsut
-                        </CustomText>
-                        {household.invitations
-                            .filter((inv) => inv.status === 'pending')
-                            .map((invitation) => (
-                                <View
-                                    key={invitation._id}
-                                    style={styles.invitationCard}
-                                >
-                                    <MaterialIcons
-                                        name="mail-outline"
-                                        size={24}
-                                        color="#5844BB"
-                                    />
-                                    <View style={styles.invitationInfo}>
-                                        <CustomText
-                                            style={styles.invitationEmail}
-                                        >
-                                            {invitation.email}
-                                        </CustomText>
-                                        <CustomText
-                                            style={styles.invitationDate}
-                                        >
-                                            Lähetetty{' '}
-                                            {new Date(
-                                                invitation.createdAt
-                                            ).toLocaleDateString('fi-FI')}
-                                        </CustomText>
-                                    </View>
-                                </View>
-                            ))}
-                    </View>
-                )}
-
-                {/* Actions */}
-                <View style={styles.actionsSection}>
-                    {!isOwner && (
-                        <Button
-                            title="Poistu perheestä"
-                            onPress={handleLeaveHousehold}
-                            style={styles.dangerButton}
-                            textStyle={styles.buttonText}
-                        />
-                    )}
                 </View>
             </ScrollView>
-
-            {/* Invite Modal */}
-            <ResponsiveModal
-                visible={showInviteModal}
-                onClose={() => {
-                    setShowInviteModal(false)
-                    setInviteEmail('')
-                }}
-                title="Kutsu perheenjäsen"
-            >
-                <View style={styles.modalContent}>
-                    <CustomText style={styles.modalDescription}>
-                        Syötä kutsuttavan henkilön sähköpostiosoite. Hänelle
-                        lähetetään kutsulinkki, jolla voi liittyä perheeseen.
-                    </CustomText>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Sähköpostiosoite"
-                        value={inviteEmail}
-                        onChangeText={setInviteEmail}
-                        keyboardType="email-address"
-                        autoCapitalize="none"
-                    />
-                    <Button
-                        title="Lähetä kutsu"
-                        onPress={handleInviteMember}
-                        style={styles.primaryButton}
-                        textStyle={styles.buttonText}
-                    />
-                </View>
-            </ResponsiveModal>
+            {inviteModal}
         </ResponsiveLayout>
     )
 }
 
 const styles = StyleSheet.create({
-    container: {
+    scrollView: {
         flex: 1,
         backgroundColor: '#ffffff',
+    },
+    scrollContent: {
+        flexGrow: 1,
+    },
+    container: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 40,
+        minHeight: '100%',
+        backgroundColor: '#ffffff',
+    },
+    desktopContainer: {
+        paddingHorizontal: 24,
+        paddingVertical: 48,
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        backgroundColor: '#ffffff',
+        width: '100%',
+        ...(Platform.OS === 'web' && {
+            minHeight: '100vh',
+        }),
+    },
+    tabletContainer: {
+        paddingHorizontal: 24,
+        paddingVertical: 48,
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        backgroundColor: '#ffffff',
+        width: '100%',
+    },
+    content: {
+        width: '100%',
+        maxWidth: AUTH_FORM_MAX_WIDTH,
+        alignItems: 'center',
+    },
+    wideContent: {
+        maxWidth: AUTH_FORM_MAX_WIDTH,
+        width: '100%',
+        alignItems: 'center',
+        padding: 0,
     },
     loadingContainer: {
         flex: 1,
@@ -468,185 +572,58 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     emptyState: {
-        flex: 1,
-        justifyContent: 'center',
+        width: '100%',
         alignItems: 'center',
-        padding: 40,
-        minHeight: 400,
     },
     emptyTitle: {
         fontSize: 24,
         fontWeight: '700',
         color: '#1f2937',
         marginTop: 24,
-        marginBottom: 12,
+        marginBottom: 8,
         textAlign: 'center',
     },
     emptySubtitle: {
+        fontSize: 15,
+        color: '#6b7280',
+        textAlign: 'center',
+        lineHeight: 22,
+        marginBottom: 8,
+        width: '100%',
+    },
+    header: {
+        alignItems: 'center',
+        marginBottom: 28,
+        width: '100%',
+    },
+    title: {
+        fontSize: 24,
+        fontWeight: '700',
+        color: '#1f2937',
+        textAlign: 'center',
+        marginBottom: 8,
+    },
+    desktopTitle: {
+        fontSize: 28,
+        marginBottom: 8,
+    },
+    subtitle: {
         fontSize: 16,
         color: '#6b7280',
         textAlign: 'center',
-        marginBottom: 32,
-        lineHeight: 24,
     },
-    actionButtons: {
-        width: '100%',
-        gap: 16,
-        maxWidth: 300,
-    },
-    header: {
-        padding: 20,
-        backgroundColor: '#f9fafb',
-        borderBottomWidth: 1,
-        borderBottomColor: '#e5e7eb',
-    },
-    title: {
-        fontSize: 28,
-        fontWeight: '700',
-        color: '#1f2937',
-        marginBottom: 8,
-    },
-    ownerBadge: {
-        fontSize: 14,
-        color: '#5844BB',
-        fontWeight: '600',
+    desktopSubtitle: {
+        fontSize: 18,
     },
     section: {
-        padding: 20,
-        borderBottomWidth: 1,
-        borderBottomColor: '#e5e7eb',
-    },
-    sectionHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 16,
+        width: '100%',
+        marginBottom: 24,
     },
     sectionTitle: {
         fontSize: 18,
-        fontWeight: '600',
+        fontWeight: '700',
         color: '#1f2937',
-    },
-    inviteButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        backgroundColor: '#f3f0ff',
-        borderRadius: 8,
-    },
-    inviteButtonText: {
-        color: '#5844BB',
-        fontWeight: '600',
-        fontSize: 14,
-    },
-    membersList: {
-        gap: 12,
-    },
-    memberCard: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 16,
-        backgroundColor: '#f9fafb',
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#e5e7eb',
-    },
-    memberAvatar: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
-        marginRight: 16,
-        borderWidth: 2,
-        borderColor: '#5844BB',
-    },
-    memberInfo: {
-        flex: 1,
-    },
-    memberName: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#1f2937',
-        marginBottom: 4,
-    },
-    youBadge: {
-        fontSize: 14,
-        fontWeight: '400',
-        color: '#5844BB',
-    },
-    memberEmail: {
-        fontSize: 14,
-        color: '#6b7280',
-        marginBottom: 4,
-    },
-    memberRole: {
-        fontSize: 12,
-        color: '#5844BB',
-        fontWeight: '500',
-    },
-    removeButton: {
-        padding: 8,
-    },
-    invitationCard: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 16,
-        backgroundColor: '#f9fafb',
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#e5e7eb',
         marginBottom: 12,
-    },
-    invitationInfo: {
-        marginLeft: 12,
-        flex: 1,
-    },
-    invitationEmail: {
-        fontSize: 14,
-        fontWeight: '500',
-        color: '#1f2937',
-        marginBottom: 4,
-    },
-    invitationDate: {
-        fontSize: 12,
-        color: '#6b7280',
-    },
-    actionsSection: {
-        padding: 20,
-        gap: 12,
-    },
-    primaryButton: {
-        borderRadius: 25,
-        paddingVertical: 8,
-        paddingHorizontal: 16,
-        elevation: 2,
-        backgroundColor: '#AE9CFC',
-        width: '100%',
-    },
-    secondaryButton: {
-        borderRadius: 25,
-        paddingVertical: 8,
-        paddingHorizontal: 16,
-        elevation: 2,
-        backgroundColor: '#fff',
-        width: '100%',
-        borderWidth: 2,
-        borderColor: '#5844BB',
-    },
-    dangerButton: {
-        borderRadius: 25,
-        paddingVertical: 12,
-        paddingHorizontal: 24,
-        elevation: 2,
-        backgroundColor: '#ef4444',
-        width: '100%',
-    },
-    buttonText: {
-        color: '#000000',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        fontSize: 16,
     },
     modalContent: {
         padding: 20,
@@ -658,12 +635,16 @@ const styles = StyleSheet.create({
         lineHeight: 20,
     },
     input: {
-        borderWidth: 1,
-        borderColor: '#d1d5db',
-        borderRadius: 8,
-        padding: 12,
-        fontSize: 16,
         backgroundColor: '#ffffff',
+        borderColor: '#d1d5db',
+        borderWidth: 1,
+        height: 48,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        borderRadius: 8,
+        fontSize: 16,
+        color: '#1f2937',
+        width: '100%',
     },
 })
 

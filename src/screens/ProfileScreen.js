@@ -22,6 +22,7 @@ import { openAuthScreen } from '../utils/authNavigation'
 import storage from '../utils/storage'
 import { AUTH_FORM_MAX_WIDTH } from '../components/AuthLayout'
 import { authFormStyles } from '../styles/authFormStyles'
+import { getProfileImageSource } from '../utils/profileImage'
 
 const ProfileScreen = () => {
     const { logout, profile, setProfile, isLoggedIn } = useLogin()
@@ -29,10 +30,6 @@ const ProfileScreen = () => {
     const { isDesktop, isTablet } = useResponsiveDimensions()
     const [household, setHousehold] = React.useState(null)
     const [loadingHousehold, setLoadingHousehold] = React.useState(true)
-
-    const defaultImage = {
-        uri: 'https://images.ctfassets.net/hef5a6s5axrs/2wzxlzyydJLVr8T7k67cOO/90074490ee64362fe6f0e384d2b3daf8/arkiapuri-removebg-preview.png',
-    }
 
     // Fetch household data when screen is focused
     useFocusEffect(
@@ -132,7 +129,8 @@ const ProfileScreen = () => {
                 // Update profile with the new image URL from the nested object
                 setProfile({
                     ...profile,
-                    profileImage: response.data.user.profileImage.url,
+                    profileImage:
+                        response.data.user.profileImage.url,
                 })
                 // Refresh household data to update the image in family section
                 await fetchHousehold()
@@ -192,7 +190,7 @@ const ProfileScreen = () => {
                                         ]}
                                     >
                                         <Image
-                                            source={defaultImage}
+                                            source={getProfileImageSource(null)}
                                             style={styles.profileImage}
                                         />
                                     </View>
@@ -261,13 +259,9 @@ const ProfileScreen = () => {
                                             ]}
                                         >
                                             <Image
-                                                source={
-                                                    profile?.profileImage
-                                                        ? {
-                                                              uri: profile.profileImage,
-                                                          }
-                                                        : defaultImage
-                                                }
+                                                source={getProfileImageSource(
+                                                    profile
+                                                )}
                                                 style={styles.profileImage}
                                             />
                                             <View style={styles.editOverlay}>

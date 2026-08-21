@@ -1,10 +1,27 @@
-import { Image, StyleSheet, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import { useResponsiveDimensions } from '../utils/responsive'
 import Button from './Button'
 import CustomText from './CustomText'
+import ListItem from './ListItem'
+import { getProfileImageSource } from '../utils/profileImage'
 
-const defaultImage = {
-    uri: 'https://images.ctfassets.net/hef5a6s5axrs/2wzxlzyydJLVr8T7k67cOO/90074490ee64362fe6f0e384d2b3daf8/arkiapuri-removebg-preview.png',
+const getRefId = (value) => {
+    if (value == null || value === '') return ''
+    if (typeof value === 'string') {
+        if (
+            value === 'undefined' ||
+            value === 'null' ||
+            value.startsWith('[object ')
+        ) {
+            return ''
+        }
+        return value
+    }
+    if (typeof value === 'object') {
+        if (value._id != null) return getRefId(value._id)
+        if (typeof value.id === 'string' && value.id) return value.id
+    }
+    return ''
 }
 
 const FamilySection = ({ household, onManagePress }) => {
@@ -27,31 +44,21 @@ const FamilySection = ({ household, onManagePress }) => {
 
             <View style={styles.familyMembers}>
                 {household.members.map((member) => (
-                    <View key={member._id} style={styles.memberRow}>
-                        <Image
-                            source={
-                                member.userId?.profileImage?.url
-                                    ? { uri: member.userId.profileImage.url }
-                                    : defaultImage
-                            }
-                            style={styles.memberAvatar}
-                        />
-                        <View style={styles.memberInfo}>
-                            <CustomText style={styles.memberName}>
-                                {member.userId?.username}
-                                {household.owner.toString() ===
-                                    member.userId?._id && (
-                                    <CustomText style={styles.ownerBadge}>
-                                        {' '}
-                                        (Omistaja)
-                                    </CustomText>
-                                )}
-                            </CustomText>
-                            <CustomText style={styles.memberEmail}>
-                                {member.userId?.email}
-                            </CustomText>
-                        </View>
-                    </View>
+                    <ListItem
+                        key={member._id}
+                        image={getProfileImageSource(member.userId)}
+                        imageShape="circle"
+                        imageSize={48}
+                        title={member.userId?.username}
+                        subtitle={member.userId?.email}
+                        details={
+                            getRefId(household.owner) ===
+                            getRefId(member.userId)
+                                ? 'Omistaja'
+                                : undefined
+                        }
+                        style={styles.memberItem}
+                    />
                 ))}
                 <Button
                     title="Hallinnoi perhettä"
@@ -90,42 +97,10 @@ const styles = StyleSheet.create({
         fontSize: 20,
     },
     familyMembers: {
-        gap: 12,
+        width: '100%',
     },
-    memberRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 12,
+    memberItem: {
         backgroundColor: '#ffffff',
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#e5e7eb',
-    },
-    memberAvatar: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        marginRight: 12,
-        borderWidth: 2,
-        borderColor: '#5844BB',
-    },
-    memberInfo: {
-        flex: 1,
-    },
-    memberName: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#1f2937',
-        marginBottom: 4,
-    },
-    ownerBadge: {
-        fontSize: 14,
-        fontWeight: '400',
-        color: '#5844BB',
-    },
-    memberEmail: {
-        fontSize: 14,
-        color: '#6b7280',
     },
     manageFamilyButton: {
         borderRadius: 25,
@@ -136,6 +111,7 @@ const styles = StyleSheet.create({
         elevation: 2,
         backgroundColor: '#38E4D9',
         width: '100%',
+        marginTop: 4,
     },
     buttonText: {
         color: '#000000',

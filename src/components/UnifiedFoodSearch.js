@@ -4,7 +4,6 @@ import {
     ActivityIndicator,
     Alert,
     FlatList,
-    Image,
     Modal,
     Platform,
     StyleSheet,
@@ -21,6 +20,7 @@ import openFoodFactsApi from '../services/openFoodFactsApi'
 import { addPantryItem, addShoppingListItems } from '../services/collectionApi'
 import BarcodeScanner from './BarcodeScanner'
 import CustomText from './CustomText'
+import ListItem from './ListItem'
 import MealIngredientQuantityModal from './MealIngredientQuantityModal'
 import {
     applyIngredientQuantity,
@@ -557,36 +557,26 @@ const UnifiedFoodSearch = ({
                 : null
 
         return (
-            <TouchableOpacity
+            <ListItem
+                variant="row"
+                title={String(item.name || 'Nimetön tuote').trim()}
+                subtitle={
+                    calorieText
+                        ? `${categoryText} · ${calorieText}`
+                        : categoryText
+                }
+                onPress={
+                    !allowDuplicates && addedItems.has(item._id)
+                        ? undefined
+                        : () => handleSelectLocalItem(item)
+                }
                 style={[
-                    styles.item,
+                    styles.searchItem,
                     addedItems.has(item._id) && styles.addedItem,
                 ]}
-                onPress={() => handleSelectLocalItem(item)}
-                disabled={!allowDuplicates && addedItems.has(item._id)}
-            >
-                <View style={styles.itemContent}>
-                    <View style={styles.itemLeft}>
-                        <View style={styles.itemNameContainer}>
-                            <CustomText style={styles.itemName}>
-                                {String(item.name || 'Nimetön tuote').trim()}
-                            </CustomText>
-                            {calorieText ? (
-                                <CustomText style={styles.itemCalories}>
-                                    {calorieText}
-                                </CustomText>
-                            ) : null}
-                        </View>
-                        <View style={styles.itemDetails}>
-                            <CustomText style={styles.itemCategory}>
-                                {categoryText}
-                            </CustomText>
-                        </View>
-                    </View>
+                trailing={
                     <View style={styles.itemRight}>
-                        <CustomText style={styles.sourceLabel}>
-                            {String('Oma')}
-                        </CustomText>
+                        <CustomText style={styles.sourceLabel}>Oma</CustomText>
                         {addedItems.has(item._id) ? (
                             <Ionicons
                                 name="checkmark-circle"
@@ -601,80 +591,65 @@ const UnifiedFoodSearch = ({
                             />
                         )}
                     </View>
-                </View>
-            </TouchableOpacity>
+                }
+            />
         )
     }
 
     const renderOpenFoodFactsItem = ({ item }) => {
+        const imageUrl = item.image?.url || item.imageUrl
+        const caloriesText =
+            showNutrition && item.nutrition?.calories > 0
+                ? `${Math.round(item.nutrition.calories || 0)} kcal`
+                : null
+        const grade = showNutrition ? item.nutritionGrade?.trim() : ''
+
         return (
-            <TouchableOpacity
-                style={styles.item}
-                onPress={() => handleSelectOpenFoodFactsItem(item)}
-            >
-                <View style={styles.itemContent}>
-                    <View style={styles.imageItemLeft}>
-                        {(item.image?.url || item.imageUrl) && (
-                            <Image
-                                source={{
-                                    uri: item.image?.url || item.imageUrl,
-                                }}
-                                style={styles.productImage}
-                            />
-                        )}
-                        <View style={styles.itemInfo}>
-                            <CustomText
-                                style={styles.itemName}
-                                numberOfLines={2}
-                            >
-                                {String(item.name || 'Nimetön tuote').trim()}
-                            </CustomText>
-                            {item.brands &&
-                            item.brands.trim().length > 0 &&
-                            String(item.brands).trim() !== '' ? (
-                                <CustomText
-                                    style={styles.itemBrand}
-                                    numberOfLines={1}
+            <ListItem
+                variant="row"
+                image={imageUrl ? { uri: imageUrl } : undefined}
+                imageSize={40}
+                title={String(item.name || 'Nimetön tuote').trim()}
+                subtitle={
+                    item.brands && item.brands.trim().length > 0
+                        ? String(item.brands).trim()
+                        : undefined
+                }
+                details={
+                    grade || caloriesText ? (
+                        <View style={styles.productMeta}>
+                            {grade ? (
+                                <View
+                                    style={[
+                                        styles.gradeBox,
+                                        {
+                                            backgroundColor: getGradeColor(
+                                                item.nutritionGrade
+                                            ),
+                                        },
+                                    ]}
                                 >
-                                    {String(item.brands).trim()}
+                                    <CustomText style={styles.gradeText}>
+                                        {String(item.nutritionGrade)
+                                            .trim()
+                                            .toUpperCase()}
+                                    </CustomText>
+                                </View>
+                            ) : null}
+                            {caloriesText ? (
+                                <CustomText style={styles.itemCalories}>
+                                    {caloriesText}
                                 </CustomText>
                             ) : null}
-                            <View style={styles.productMeta}>
-                                {showNutrition &&
-                                item.nutritionGrade &&
-                                item.nutritionGrade.trim().length > 0 &&
-                                String(item.nutritionGrade).trim() !== '' ? (
-                                    <View
-                                        style={[
-                                            styles.gradeBox,
-                                            {
-                                                backgroundColor: getGradeColor(
-                                                    item.nutritionGrade
-                                                ),
-                                            },
-                                        ]}
-                                    >
-                                        <CustomText style={styles.gradeText}>
-                                            {String(item.nutritionGrade)
-                                                .trim()
-                                                .toUpperCase()}
-                                        </CustomText>
-                                    </View>
-                                ) : null}
-                                {showNutrition &&
-                                item.nutrition?.calories > 0 ? (
-                                    <CustomText style={styles.itemCalories}>
-                                        {String(
-                                            `${Math.round(item.nutrition.calories || 0)} kcal`
-                                        ).trim()}
-                                    </CustomText>
-                                ) : null}
-                            </View>
                         </View>
-                    </View>
+                    ) : null
+                }
+                onPress={() => handleSelectOpenFoodFactsItem(item)}
+                style={styles.searchItem}
+                trailing={
                     <View style={styles.itemRight}>
                         <CustomText style={styles.sourceLabelOFF}>
-                            {String('OFF')}
+                            OFF
                         </CustomText>
                         <Ionicons
                             name="add-circle-outline"
@@ -682,8 +657,8 @@ const UnifiedFoodSearch = ({
                             color="#5844BB"
                         />
                     </View>
-                </View>
-            </TouchableOpacity>
+                }
+            />
         )
     }
 
@@ -1019,62 +994,15 @@ const styles = StyleSheet.create({
     resultsList: {
         maxHeight: 280,
     },
-    item: {
-        paddingHorizontal: 12,
+    searchItem: {
+        paddingLeft: 12,
+        paddingRight: 12,
         paddingVertical: 10,
-        borderBottomWidth: 1,
         borderBottomColor: '#f0f0f0',
     },
     addedItem: {
         backgroundColor: '#f0f8f0',
-    },
-    itemContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-    },
-    itemNameContainer: {
-        flexDirection: 'row',
-        alignItems: 'left',
-        justifyContent: 'space-between',
-    },
-    itemLeft: {
-        flex: 1,
-        alignItems: 'left',
-    },
-    imageItemLeft: {
-        flexDirection: 'row',
-        alignItems: 'left',
-        justifyContent: 'space-between',
-    },
-    productImage: {
-        width: 40,
-        height: 40,
-        borderRadius: 4,
-        marginRight: 10,
-    },
-    itemInfo: {
-        flex: 1,
-    },
-    itemName: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginBottom: 2,
-    },
-    itemBrand: {
-        fontSize: 12,
-        color: '#666',
-        marginBottom: 4,
-    },
-    itemDetails: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    itemCategory: {
-        fontSize: 12,
-        color: '#666',
-        flex: 1,
+        opacity: 1,
     },
     itemCalories: {
         fontSize: 12,
@@ -1085,6 +1013,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
+        marginTop: 4,
     },
     gradeBox: {
         paddingHorizontal: 4,

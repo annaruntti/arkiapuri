@@ -457,36 +457,40 @@ const EditProfileScreen = () => {
                             />
                         </View>
 
-                        {/* Danger Zone */}
-                        <View style={styles.dangerZone}>
-                            <View style={styles.dangerZoneHeader}>
-                                <CustomText style={styles.dangerZoneTitle}>
+                        <View
+                            style={[
+                                styles.accountSection,
+                                { borderTopColor: '#e5e7eb' },
+                            ]}
+                        >
+                            <View style={styles.accountSectionHeader}>
+                                <CustomText
+                                    style={[
+                                        styles.accountSectionTitle,
+                                        { color: '#1f2937' },
+                                    ]}
+                                >
                                     Vaarallinen alue
                                 </CustomText>
-                                <CustomText style={styles.dangerZoneSubtitle}>
+                                <CustomText style={styles.accountSectionSubtitle}>
                                     Näitä toimintoja ei voi peruuttaa
                                 </CustomText>
                             </View>
-                            <TouchableOpacity
-                                style={[
-                                    styles.deleteButton,
-                                    loading && styles.deleteButtonDisabled,
-                                ]}
+                            <Button
+                                title="Poista tili pysyvästi"
+                                type="TERTIARY"
+                                fullWidth
+                                style={styles.tertiaryButton}
                                 onPress={onDeleteAccountPressed}
                                 disabled={loading}
-                                activeOpacity={0.7}
-                                accessibilityLabel="Poista tili pysyvästi"
-                                accessibilityRole="button"
-                            >
-                                <Feather
-                                    name="trash-2"
-                                    size={18}
-                                    color="#ffffff"
-                                />
-                                <CustomText style={styles.deleteButtonText}>
-                                    Poista tili pysyvästi
-                                </CustomText>
-                            </TouchableOpacity>
+                                icon={
+                                    <Feather
+                                        name="alert-circle"
+                                        size={18}
+                                        color="#1f2937"
+                                    />
+                                }
+                            />
                         </View>
                     </View>
                 </View>
@@ -665,50 +669,25 @@ const styles = StyleSheet.create({
     tertiaryButton: {
         width: '100%',
     },
-    dangerZone: {
+    accountSection: {
         marginTop: 40,
         paddingTop: 24,
         borderTopWidth: 1,
-        borderTopColor: '#fecaca',
+        borderTopColor: '#e5e7eb',
         width: '100%',
     },
-    dangerZoneHeader: {
+    accountSectionHeader: {
         marginBottom: 16,
     },
-    dangerZoneTitle: {
+    accountSectionTitle: {
         fontSize: 16,
         fontWeight: '700',
-        color: '#b91c1c',
+        color: '#1f2937',
         marginBottom: 4,
     },
-    dangerZoneSubtitle: {
+    accountSectionSubtitle: {
         fontSize: 13,
         color: '#6b7280',
-    },
-    deleteButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-        paddingVertical: 14,
-        paddingHorizontal: 24,
-        backgroundColor: '#dc2626',
-        borderRadius: 25,
-        ...(Platform.OS === 'web' && {
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-            '&:hover': {
-                backgroundColor: '#b91c1c',
-                borderColor: '#991b1b',
-            },
-        }),
-    },
-    deleteButtonText: {
-        fontSize: 15,
-        fontWeight: '700',
-        color: '#ffffff',
-    },
-    deleteButtonDisabled: {
-        opacity: 0.5,
+        marginBottom: 5,
     },
 })

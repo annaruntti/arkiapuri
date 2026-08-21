@@ -1,13 +1,13 @@
 import {
-    Image,
     SectionList,
     StyleSheet,
-    TouchableOpacity,
     View,
 } from 'react-native'
 import Button from './Button'
 import CustomText from './CustomText'
 import GuestWarningBanner from './GuestWarningBanner'
+import ListItem from './ListItem'
+import CategorySectionHeader from './CategorySectionHeader'
 import { getMealRoles } from '../utils/mealFilters'
 
 const PLACEHOLDER_IMAGE_URL =
@@ -109,41 +109,20 @@ const MealSelectionList = ({
                           : mealTypeTranslations[roles[0]] || roles[0]
 
                 return (
-                    <TouchableOpacity
-                        style={[
-                            styles.mealItem,
-                            selectedDates.length === 0 &&
-                                styles.disabledMealItem,
-                        ]}
-                        onPress={() =>
-                            selectedDates.length > 0
-                                ? onMealSelect(item)
-                                : null
-                        }
+                    <ListItem
+                        image={{
+                            uri: item.image?.url || PLACEHOLDER_IMAGE_URL,
+                        }}
+                        imageSize={50}
+                        title={item.name}
+                        subtitle={roleLabel}
+                        onPress={() => onMealSelect(item)}
                         disabled={selectedDates.length === 0}
-                    >
-                        <Image
-                            source={{
-                                uri: item.image?.url || PLACEHOLDER_IMAGE_URL,
-                            }}
-                            style={styles.mealImage}
-                            resizeMode="cover"
-                        />
-                        <View style={styles.mealTextContainer}>
-                            <CustomText style={styles.mealName}>
-                                {item.name}
-                            </CustomText>
-                            <CustomText style={styles.mealType}>
-                                {roleLabel}
-                            </CustomText>
-                        </View>
-                    </TouchableOpacity>
+                    />
                 )
             }}
             renderSectionHeader={({ section: { title } }) => (
-                <View style={styles.sectionHeader}>
-                    <CustomText style={styles.sectionTitle}>{title}</CustomText>
-                </View>
+                <CategorySectionHeader title={title} showCount={false} />
             )}
             keyExtractor={(item) => item._id}
             contentContainerStyle={styles.listContent}
@@ -174,61 +153,6 @@ const styles = StyleSheet.create({
         color: '#000',
         fontWeight: 'bold',
         textAlign: 'center',
-    },
-    mealItem: {
-        backgroundColor: '#f8f8f8',
-        padding: 15,
-        borderRadius: 8,
-        marginBottom: 10,
-        flexDirection: 'row',
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 1,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 2,
-    },
-    disabledMealItem: {
-        opacity: 0.5,
-    },
-    mealImage: {
-        width: 50,
-        height: 50,
-        borderRadius: 6,
-        marginRight: 12,
-    },
-    mealTextContainer: {
-        flex: 1,
-        flexDirection: 'column',
-    },
-    mealName: {
-        fontSize: 16,
-        fontWeight: '500',
-    },
-    mealType: {
-        fontSize: 14,
-        color: '#666',
-        marginTop: 4,
-    },
-    sectionHeader: {
-        backgroundColor: '#F0EBFF',
-        paddingVertical: 10,
-        paddingHorizontal: 15,
-        borderRadius: 8,
-        marginTop: 15,
-        marginBottom: 8,
-        borderLeftWidth: 4,
-        borderLeftColor: '#5844BB',
-        boxShadow: 'rgba(0, 0, 0, 0.1) 0px 1px 2px',
-    },
-    sectionTitle: {
-        fontSize: 19,
-        fontWeight: 'bold',
-        color: '#333',
-        letterSpacing: 0.5,
     },
     listContent: {
         padding: 15,

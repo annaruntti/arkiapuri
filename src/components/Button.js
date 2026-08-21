@@ -13,6 +13,7 @@ export default function Button(props) {
         variant = 'filled',
         size = 'medium',
         fullWidth = false,
+        icon,
     } = props
     const { isDesktop, isTablet } = useResponsiveDimensions()
 
@@ -27,6 +28,7 @@ export default function Button(props) {
         isTablet && styles[`tablet${type}Button`],
         isTablet && type !== 'TERTIARY' && styles.tabletButton,
         fullWidth && styles.fullWidthButton,
+        icon && styles.buttonWithIcon,
         disabled && styles.disabledButton,
         pressed && !disabled && styles.pressed,
         isDesktop && styles[`desktop${type}Button`],
@@ -51,6 +53,7 @@ export default function Button(props) {
             disabled={disabled}
             android_ripple={{ color: 'transparent' }}
         >
+            {icon}
             <CustomText style={getTextStyle()}>{title}</CustomText>
         </Pressable>
     )
@@ -70,6 +73,9 @@ const styles = StyleSheet.create({
             cursor: 'pointer',
             transition: 'all 0.2s ease-in-out',
         }),
+    },
+    buttonWithIcon: {
+        gap: 8,
     },
 
     // Size variants

@@ -1,4 +1,4 @@
-import { View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import CustomText from './CustomText'
 
 const CategorySectionHeader = ({ title, count, showCount = true }) => {
@@ -12,24 +12,15 @@ const CategorySectionHeader = ({ title, count, showCount = true }) => {
     )
 }
 
-const styles = {
+const styles = StyleSheet.create({
     sectionHeader: {
-        backgroundColor: '#F0EBFF',
-        paddingVertical: 10,
-        paddingHorizontal: 15,
-        borderRadius: 8,
-        marginTop: 15,
+        marginTop: 16,
         marginBottom: 8,
-        borderLeftWidth: 4,
-        borderLeftColor: '#5844BB',
-        boxShadow: 'rgba(0, 0, 0, 0.1) 0px 1px 2px',
     },
     sectionHeaderText: {
-        fontSize: 19,
-        fontWeight: 'bold',
-        color: '#333',
-        letterSpacing: 0.5,
+        fontSize: 16,
+        color: '#1f2937',
     },
-}
+})
 
 export default CategorySectionHeader

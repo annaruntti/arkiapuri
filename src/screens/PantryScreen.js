@@ -9,7 +9,6 @@ import {
     View,
 } from 'react-native'
 import axios from 'axios'
-import { MaterialIcons } from '@expo/vector-icons'
 import { useFocusEffect } from '@react-navigation/native'
 import * as ImagePicker from 'expo-image-picker'
 
@@ -553,23 +552,14 @@ const PantryScreen = ({}) => {
 
     const renderItem = ({ item }) => (
         <FoodListItemRow
+            variant="card"
             item={item}
             onPress={() => {
                 setSelectedItem(item)
                 setDetailsVisible(true)
             }}
-            trailingAction={
-                <View style={styles.itemActions}>
-                    <TouchableOpacity
-                        style={styles.deleteButton}
-                        onPress={() => handleRemoveItem(item._id)}
-                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    >
-                        <MaterialIcons name="delete" size={20} color="#666" />
-                    </TouchableOpacity>
-                </View>
-            }
-            style={styles.pantryItemRow}
+            onDelete={() => handleRemoveItem(item._id)}
+            deleteAccessibilityLabel={`Poista ${item.name}`}
         />
     )
 
@@ -1158,80 +1148,6 @@ const styles = StyleSheet.create({
         color: '#000000',
         fontWeight: 'bold',
         textAlign: 'center',
-    },
-    itemContainer: {
-        backgroundColor: '#f8f8f8',
-        padding: 15,
-        borderRadius: 10,
-        marginBottom: 10,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 1,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 2,
-    },
-    pantryItemRow: {
-        backgroundColor: '#f8f8f8',
-        borderRadius: 10,
-        marginBottom: 10,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 1,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 2,
-    },
-    itemImage: {
-        width: 60,
-        height: 60,
-        borderRadius: 8,
-        marginRight: 12,
-    },
-    itemInfo: {
-        flex: 1,
-        flexDirection: 'row',
-        marginRight: 10,
-        alignItems: 'center',
-    },
-    itemTextContainer: {
-        flex: 1,
-        flexDirection: 'column',
-    },
-    itemName: {
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
-    itemDetails: {
-        color: '#666',
-        fontSize: 14,
-    },
-    itemActions: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    deleteButton: {
-        backgroundColor: '#e0e0e0',
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        justifyContent: 'center',
-        alignItems: 'center',
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 1,
-        },
-        shadowOpacity: 0.2,
-        shadowRadius: 1.41,
     },
     list: {
         width: '100%',

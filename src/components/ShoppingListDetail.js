@@ -600,6 +600,7 @@ const ShoppingListDetail = ({
 
     const renderItem = ({ item }) => (
         <FoodListItemRow
+            variant="card"
             item={item}
             bought={Boolean(item.bought)}
             showImageInfoIcon
@@ -955,34 +956,6 @@ const styles = StyleSheet.create({
     listContent: {
         paddingBottom: 20,
     },
-    itemRow: {
-        backgroundColor: '#f8f8f8',
-        padding: 15,
-        borderRadius: 10,
-        marginBottom: 10,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 1,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 2,
-    },
-    itemContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    itemImage: {
-        width: 60,
-        height: 60,
-        borderRadius: 8,
-        marginRight: 12,
-    },
-    itemContent: {
-        flex: 1,
-    },
     checkboxContainer: {
         marginLeft: 10,
     },
@@ -990,28 +963,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         marginLeft: 4,
-    },
-    itemName: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginBottom: 4,
-    },
-    itemDetails: {
-        fontSize: 14,
-        color: '#666',
-    },
-    itemCategories: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 5,
-        marginTop: 5,
-    },
-    category: {
-        backgroundColor: '#e0e0e0',
-        paddingVertical: 2,
-        paddingHorizontal: 8,
-        borderRadius: 12,
-        fontSize: 12,
     },
     primaryButton: {
         borderRadius: 25,

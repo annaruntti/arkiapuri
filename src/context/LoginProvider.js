@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react'
 import storage from '../utils/storage'
 import axios from 'axios'
 import { getServerUrl } from '../utils/getServerUrl'
+import { getProfileImageUrl } from '../utils/profileImage'
 
 const LoginContext = createContext()
 
@@ -26,11 +27,9 @@ const LoginProvider = ({ children }) => {
 
 
                     if (response.data.success) {
-                        // Store complete user data including profile image URL
                         setProfile({
                             ...response.data.user,
-                            profileImage:
-                                response.data.user.profileImage?.url || null,
+                            profileImage: getProfileImageUrl(response.data.user),
                         })
                         setIsLoggedIn(true)
                         await storage.setItem('isLoggedIn', 'true')
@@ -68,7 +67,10 @@ const LoginProvider = ({ children }) => {
 
             // Update state
             setIsLoggedIn(true)
-            setProfile(userProfile)
+            setProfile({
+                ...userProfile,
+                profileImage: getProfileImageUrl(userProfile),
+            })
         } catch (error) {
             console.error('Failed to save login data', error)
             // Clean up if something goes wrong

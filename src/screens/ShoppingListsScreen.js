@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Alert, StyleSheet, View } from 'react-native'
 import Button from '../components/Button'
 import CustomText from '../components/CustomText'
+import ListItem from '../components/ListItem'
 import FormAddShoppingList from '../components/FormAddShoppingList'
 import LoginPromptModal from '../components/LoginPromptModal'
 import useLoginPrompt from '../hooks/useLoginPrompt'
@@ -141,16 +142,11 @@ const ShoppingListsScreen = () => {
     }
 
     const renderShoppingList = (item) => (
-        <View key={item._id} style={styles.listItem}>
-            <View style={styles.listItemHeader}>
-                <View style={styles.listHeader}>
-                    <CustomText style={styles.listTitle}>
-                        {item.name}
-                    </CustomText>
-                    <CustomText style={styles.listDescription}>
-                        {item.description}
-                    </CustomText>
-                </View>
+        <ListItem
+            key={item._id}
+            title={item.name}
+            subtitle={item.description}
+            trailing={
                 <Button
                     style={[
                         styles.tertiaryButton,
@@ -161,24 +157,29 @@ const ShoppingListsScreen = () => {
                     onPress={() => handleViewList(item)}
                     textStyle={styles.listItemButtonText}
                 />
-            </View>
-            <View style={styles.listStats}>
-                <CustomText>Tuotteita: {item.items?.length || 0}</CustomText>
-                <CustomText>
-                    Arvioitu hinta:{' '}
-                    {item.items && item.items.length > 0
-                        ? item.items
-                              .reduce(
-                                  (sum, listItem) =>
-                                      sum + (parseFloat(listItem.price) || 0),
-                                  0
-                              )
-                              .toFixed(2)
-                        : item.totalEstimatedPrice || 0}
-                    €
-                </CustomText>
-            </View>
-        </View>
+            }
+            footer={
+                <>
+                    <CustomText>
+                        Tuotteita: {item.items?.length || 0}
+                    </CustomText>
+                    <CustomText>
+                        Arvioitu hinta:{' '}
+                        {item.items && item.items.length > 0
+                            ? item.items
+                                  .reduce(
+                                      (sum, listItem) =>
+                                          sum +
+                                          (parseFloat(listItem.price) || 0),
+                                      0
+                                  )
+                                  .toFixed(2)
+                            : item.totalEstimatedPrice || 0}
+                        €
+                    </CustomText>
+                </>
+            }
+        />
     )
 
     return (
@@ -316,42 +317,6 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         marginBottom: 20,
-    },
-    listItem: {
-        backgroundColor: '#f8f8f8',
-        padding: 15,
-        borderRadius: 10,
-        marginBottom: 10,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 1,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 2,
-    },
-    listItemHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: 10,
-    },
-    listHeader: {
-        flex: 1,
-        marginRight: 15,
-    },
-    listTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
-    listDescription: {
-        color: '#666',
-    },
-    listStats: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 10,
     },
     primaryButton: {
         borderRadius: 25,
