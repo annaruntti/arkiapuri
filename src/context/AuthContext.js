@@ -54,6 +54,23 @@ export const AuthProvider = ({ children }) => {
 
     const logout = async () => {
         try {
+            const token = await storage.getItem('userToken')
+            if (token) {
+                try {
+                    await axios.post(
+                        getServerUrl('/sign-out'),
+                        {},
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                            },
+                        }
+                    )
+                } catch (error) {
+                    console.error('Server sign-out failed:', error)
+                }
+            }
+
             await storage.removeItem('userToken')
             setUser(null)
             setIsAuthenticated(false)

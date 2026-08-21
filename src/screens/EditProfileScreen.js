@@ -77,6 +77,10 @@ const EditProfileScreen = () => {
             )
 
             if (response.data.success) {
+                if (response.data.token) {
+                    await storage.setItem('userToken', response.data.token)
+                }
+
                 // Update profile in context
                 setProfile({
                     ...profile,
