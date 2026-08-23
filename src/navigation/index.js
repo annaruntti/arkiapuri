@@ -31,6 +31,7 @@ import HomeScreen from '../screens/HomeScreen'
 import ImageUploadScreen from '../screens/ImageUploadScreen'
 import PersonalizationScreen from '../screens/PersonalizationScreen'
 import LandingScreen from '../screens/LandingScreen'
+import OnboardingScreen from '../screens/OnboardingScreen'
 import MealsScreen from '../screens/MealsScreen'
 import PantryScreen from '../screens/PantryScreen'
 import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen'
@@ -101,26 +102,21 @@ const useNavigationHistory = () => {
 
 function LogoTitle() {
     const navigation = useNavigation()
-    const { isLoggedIn } = useLogin()
+    const { isLoggedIn, hasCompletedOnboarding } = useLogin()
 
     const image = {
         uri: 'https://images.ctfassets.net/hef5a6s5axrs/2wzxlzyydJLVr8T7k67cOO/90074490ee64362fe6f0e384d2b3daf8/arkiapuri-removebg-preview.png',
     }
 
     const handleLogoPress = () => {
-        if (isLoggedIn) {
-            // Navigate to HomeScreen when logged in
-            navigation.navigate('Main', {
-                screen: 'HomeStack',
-                params: { screen: 'Arkiapuri' },
-            })
-        } else {
-            // Navigate to HomeScreen in guest mode when not logged in
-            navigation.navigate('Main', {
-                screen: 'HomeStack',
-                params: { screen: 'Arkiapuri' },
-            })
+        if (!isLoggedIn && !hasCompletedOnboarding) {
+            return
         }
+
+        navigation.navigate('Main', {
+            screen: 'HomeStack',
+            params: { screen: 'Arkiapuri' },
+        })
     }
 
     return (
@@ -203,17 +199,10 @@ const ConditionalBackButton = () => {
 
 /** Back control for Auth modal: pop within Auth, else return to origin in Main. */
 const AuthBackButton = ({ route, navigation }) => {
+    const { isLoggedIn, hasCompletedOnboarding } = useLogin()
+
     const handleBackPress = () => {
-        const state = navigation.getState()
-        const routes = state?.routes ?? []
-        const previousRoute = routes[routes.length - 2]
-
-        // Auth opens over Main as a modal; never send the user back to the
-        // landing screen — dismiss the whole Auth modal instead.
-        const shouldDismissAuth =
-            !navigation.canGoBack() || previousRoute?.name === 'Tervetuloa'
-
-        if (shouldDismissAuth) {
+        if (!navigation.canGoBack()) {
             const returnTo = route.params?.returnTo
             if (returnTo) {
                 // Return to the exact Main tab/screen that opened Auth
@@ -224,6 +213,11 @@ const AuthBackButton = ({ route, navigation }) => {
             const parent = navigation.getParent()
             if (parent?.canGoBack?.()) {
                 parent.goBack()
+                return
+            }
+
+            if (!isLoggedIn && !hasCompletedOnboarding) {
+                navigation.navigate('Tervetuloa')
                 return
             }
 
@@ -646,6 +640,7 @@ const linking = {
             Auth: {
                 screens: {
                     Tervetuloa: '',
+                    Tutustu: 'tutustu',
                     'Kirjaudu sisään': 'sign-in',
                     'Luo tunnus': 'sign-up',
                     'Unohtunut salasana': 'forgot-password',
@@ -700,15 +695,21 @@ const linking = {
 }
 
 export default function Navigation() {
-    const { isLoading } = useLogin()
-    const [isReady, setIsReady] = React.useState(Platform.OS === 'web') // Web is ready immediately (uses linking)
+    const { isLoading, isLoggedIn, hasCompletedOnboarding } = useLogin()
+    const [isReady, setIsReady] = React.useState(false)
     const [initialState, setInitialState] = React.useState()
+    const startInApp = isLoggedIn || hasCompletedOnboarding
 
     React.useEffect(() => {
+        if (isLoading) {
+            return
+        }
+
         const restoreState = async () => {
             try {
-                // Only restore state on mobile (web uses URL-based linking)
-                if (Platform.OS !== 'web') {
+                // Only restore state on mobile (web uses URL-based linking).
+                // First-time guests should always start at landing.
+                if (Platform.OS !== 'web' && startInApp) {
                     const savedState = await getStoredState()
                     if (savedState !== undefined) {
                         setInitialState(savedState)
@@ -724,7 +725,7 @@ export default function Navigation() {
         if (!isReady) {
             restoreState()
         }
-    }, [isReady])
+    }, [isReady, isLoading, startInApp])
 
     // Wait for auth loading to complete before rendering navigation
     if (!isReady || isLoading) {
@@ -738,7 +739,10 @@ export default function Navigation() {
                 initialState={Platform.OS === 'web' ? undefined : initialState}
                 onStateChange={(state) => setStoredState(state)}
             >
-                <RootStack.Navigator screenOptions={{ headerShown: false }}>
+                <RootStack.Navigator
+                    initialRouteName={startInApp ? 'Main' : 'Auth'}
+                    screenOptions={{ headerShown: false }}
+                >
                     <RootStack.Screen name="Main" component={TabNavigator} />
                     <RootStack.Screen
                         name="Auth"
@@ -768,7 +772,8 @@ function AuthStackScreen({ route }) {
     const initialRoute =
         route?.state?.routes?.[route.state?.index ?? 0]?.name ?? 'Tervetuloa'
     const [currentRoute, setCurrentRoute] = React.useState(initialRoute)
-    const showAppNav = currentRoute !== 'Tervetuloa'
+    const showAppNav =
+        currentRoute !== 'Tervetuloa' && currentRoute !== 'Tutustu'
 
     React.useEffect(() => {
         const name =
@@ -812,6 +817,19 @@ function AuthStackScreen({ route }) {
                     <>
                         <NavigationTracker screenName="Tervetuloa" />
                         <LandingScreen {...props} />
+                    </>
+                )}
+            </HomeStack.Screen>
+            <HomeStack.Screen
+                name="Tutustu"
+                options={{
+                    headerRight: () => null,
+                }}
+            >
+                {(props) => (
+                    <>
+                        <NavigationTracker screenName="Tutustu" />
+                        <OnboardingScreen {...props} />
                     </>
                 )}
             </HomeStack.Screen>

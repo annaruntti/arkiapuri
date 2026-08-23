@@ -13,20 +13,24 @@ const StickyListLayout = ({
     refreshControl,
     showsVerticalScrollIndicator = false,
     keyboardShouldPersistTaps = 'handled',
-}) => (
+}) => {
+    const hasHeader = header != null
+
+    return (
     <ScrollView
         style={[styles.scrollView, style]}
         contentContainerStyle={contentContainerStyle}
-        stickyHeaderIndices={[1]}
+        stickyHeaderIndices={[hasHeader ? 1 : 0]}
         showsVerticalScrollIndicator={showsVerticalScrollIndicator}
         refreshControl={refreshControl}
         keyboardShouldPersistTaps={keyboardShouldPersistTaps}
     >
-        <View style={styles.headerSection}>{header}</View>
+        {hasHeader ? <View style={styles.headerSection}>{header}</View> : null}
         <View style={styles.stickySection}>{sticky}</View>
         <View style={styles.body}>{children}</View>
     </ScrollView>
-)
+    )
+}
 
 const styles = StyleSheet.create({
     scrollView: {

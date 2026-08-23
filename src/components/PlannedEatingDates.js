@@ -3,15 +3,22 @@ import {
     eatingDateMinimum,
     OVERDUE_EATING_MESSAGE,
 } from '../utils/mealDates'
-import Button from './Button'
+import { formStyles } from '../styles/formStyles'
 import CustomText from './CustomText'
 import FormDateField from './FormDateField'
 
-const PlannedEatingDates = ({ dates = [], onChange, cookingDate }) => {
+const PlannedEatingDates = ({
+    dates = [],
+    onChange,
+    cookingDate,
+    label = 'Suunnitellut syöntipäivät',
+    labelRight,
+    style,
+}) => {
     const minimumDate = eatingDateMinimum(cookingDate)
 
-    const addEatingDate = () => {
-        onChange([...dates, cookingDate || new Date()])
+    const addEatingDate = (selectedDate) => {
+        onChange([...dates, selectedDate || cookingDate || new Date()])
     }
 
     const updateEatingDate = (index, selectedDate) => {
@@ -25,15 +32,10 @@ const PlannedEatingDates = ({ dates = [], onChange, cookingDate }) => {
     }
 
     return (
-        <View style={styles.eatingDatesContainer}>
-            <CustomText style={styles.label}>
-                Suunnitellut syöntipäivät
-            </CustomText>
-            {dates.length === 0 && (
-                <CustomText style={styles.emptyDatesText}>
-                    Ei lisättyjä syöntipäiviä (käytetään valmistuspäivää)
-                </CustomText>
-            )}
+        <View style={[styles.eatingDatesContainer, style]}>
+            {label ? (
+                <CustomText style={formStyles.label}>{label}</CustomText>
+            ) : null}
 
             {dates.map((date, index) => (
                 <FormDateField
@@ -49,15 +51,14 @@ const PlannedEatingDates = ({ dates = [], onChange, cookingDate }) => {
                 />
             ))}
 
-            <View style={styles.addButtonWrap}>
-                <Button
-                    title="+ Lisää syöntipäivä"
-                    onPress={addEatingDate}
-                    type="TERTIARY"
-                    size="small"
-                    style={styles.addButton}
-                />
-            </View>
+            <FormDateField
+                value={null}
+                placeholder="Lisää syöntipäivä"
+                onChange={addEatingDate}
+                minimumDate={minimumDate}
+                labelRight={labelRight}
+                testID="addEatingDate"
+            />
         </View>
     )
 }
@@ -70,25 +71,8 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
     },
-    label: {
-        fontWeight: 'bold',
-        marginBottom: 8,
-    },
     eatingDateField: {
         marginBottom: 10,
-    },
-    emptyDatesText: {
-        fontSize: 14,
-        color: '#999',
-        fontStyle: 'italic',
-        marginBottom: 10,
-    },
-    addButtonWrap: {
-        alignItems: 'flex-start',
-    },
-    addButton: {
-        alignSelf: 'flex-start',
-        width: 'auto',
     },
 })
 

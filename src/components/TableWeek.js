@@ -930,11 +930,7 @@ const Table = ({ onRequireLogin }) => {
         return (
             <View style={styles.headerContainer}>
                 <CustomText style={styles.introText}>
-                    Täältä löydät viikon lukujärjestyksesi
-                </CustomText>
-                <CustomText style={[styles.infoText, isDesktop && styles.infoTextDesktop]}>
-                    Luo lukujärjestys ja suunnittele viikon ohjelma ja ateriat.
-                    Lisää ateriat lukujärjestykseen helpottaaksesi arkea.
+                    Lisää ateriat viikon päiville.
                 </CustomText>
             </View>
         )
@@ -1186,8 +1182,6 @@ const styles = StyleSheet.create({
         paddingBottom: 7,
         paddingLeft: 10,
         paddingRight: 10,
-        elevation: 0,
-        backgroundColor: '#AE9CFC',
         marginLeft: 10,
         alignItems: 'center',
     },

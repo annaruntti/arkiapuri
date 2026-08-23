@@ -100,6 +100,11 @@ const styles = StyleSheet.create({
         backgroundColor: '#AE9CFC',
         borderWidth: 0,
         borderRadius: 25,
+        shadowColor: '#5844BB',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.28,
+        shadowRadius: 8,
+        elevation: 6,
     },
     desktopPrimaryButton: {
         backgroundColor: '#AE9CFC',
@@ -117,22 +122,21 @@ const styles = StyleSheet.create({
         }),
     },
 
-    // Type variants - SECONDARY
+    // Type variants - SECONDARY (shared teal, same as formStyles.buttonStyles)
     secondaryButton: {
-        backgroundColor: '#f3f4f6',
-        borderWidth: 1,
-        borderColor: '#d1d5db',
+        backgroundColor: '#38E4D9',
+        borderWidth: 0,
         borderRadius: 25,
+        shadowOpacity: 0,
+        shadowRadius: 0,
+        elevation: 0,
     },
     desktopSecondaryButton: {
-        backgroundColor: '#ffffff',
-        borderColor: '#e5e7eb',
+        backgroundColor: '#38E4D9',
         borderRadius: 25,
         ...(Platform.OS === 'web' && {
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
             '&:hover': {
-                backgroundColor: '#f9fafb',
-                borderColor: '#9ca3af',
+                backgroundColor: '#2ad4c8',
             },
         }),
     },
@@ -146,6 +150,9 @@ const styles = StyleSheet.create({
         paddingVertical: 5,
         paddingHorizontal: 10,
         minHeight: 40,
+        shadowOpacity: 0,
+        shadowRadius: 0,
+        elevation: 0,
     },
     desktopTertiaryButton: {
         backgroundColor: 'transparent',

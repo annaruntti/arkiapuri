@@ -20,9 +20,7 @@ import { useLogin } from '../context/LoginProvider'
 import { getServerUrl } from '../utils/getServerUrl'
 import {
     clampDatesToMin,
-    eatingDateMinimum,
     OVERDUE_COOKING_MESSAGE,
-    OVERDUE_EATING_MESSAGE,
 } from '../utils/mealDates'
 import {
     getDifficultyEnum,
@@ -39,6 +37,7 @@ import CustomText from './CustomText'
 import DifficultySelector from './DifficultySelector'
 import FormDateField from './FormDateField'
 import FormFoodItem from './FormFoodItem'
+import PlannedEatingDates from './PlannedEatingDates'
 import GuestWarningBanner from './GuestWarningBanner'
 import CollapsibleFormSection from './CollapsibleFormSection'
 import MealCategorySelector from './MealCategorySelector'
@@ -903,25 +902,6 @@ const AddMealForm = ({ onSubmit }) => {
         setPlannedEatingDates((prev) => clampDatesToMin(prev, selectedDate))
     }
 
-    const addEatingDate = () => {
-        setPlannedEatingDates((prev) => [
-            ...prev,
-            plannedCookingDate || new Date(),
-        ])
-    }
-
-    const updateEatingDate = (index, selectedDate) => {
-        setPlannedEatingDates((prev) => {
-            const updated = [...prev]
-            updated[index] = selectedDate
-            return updated
-        })
-    }
-
-    const removeEatingDate = (index) => {
-        setPlannedEatingDates((prev) => prev.filter((_, i) => i !== index))
-    }
-
     const handleUpdateQuantity = (index, newQuantity) => {
         setFoodItems((prevItems) => {
             const updatedItems = [...prevItems]
@@ -1208,46 +1188,19 @@ const AddMealForm = ({ onSubmit }) => {
                             }
                         />
 
-                        <View style={styles.eatingDatesContainer}>
-                            <View style={styles.labelWithInfo}>
-                                <CustomText style={styles.label}>
-                                    Suunnitellut syöntipäivät (valinnainen)
-                                </CustomText>
+                        <PlannedEatingDates
+                            dates={plannedEatingDates}
+                            onChange={setPlannedEatingDates}
+                            cookingDate={plannedCookingDate}
+                            label="Suunnitellut syöntipäivät (valinnainen)"
+                            labelRight={
                                 <Info
                                     title="Suunnitellut syöntipäivät"
                                     content="Voit lisätä useita päivämääriä, jos aiot syödä saman aterian useampana päivänä. Jos jätät tämän tyhjäksi, syöntipäiväksi asetetaan sama päivä kuin valmistuspäivä."
                                 />
-                            </View>
-
-                            {plannedEatingDates.map((date, index) => (
-                                <FormDateField
-                                    key={`eating-date-${index}`}
-                                    value={date}
-                                    onChange={(selected) =>
-                                        updateEatingDate(index, selected)
-                                    }
-                                    onRemove={() => removeEatingDate(index)}
-                                    minimumDate={eatingDateMinimum(
-                                        plannedCookingDate
-                                    )}
-                                    warnIfPast
-                                    overdueMessage={OVERDUE_EATING_MESSAGE}
-                                    style={styles.eatingDateField}
-                                    testID={`plannedEatingDate-${index}`}
-                                />
-                            ))}
-
-                            <View style={styles.addEatingDateButtonWrap}>
-                                <Button
-                                    title="+ Lisää syöntipäivä"
-                                    onPress={addEatingDate}
-                                    type="TERTIARY"
-                                    size="small"
-                                    style={styles.addEatingDateButton}
-                                    textStyle={styles.buttonText}
-                                />
-                            </View>
-                        </View>
+                            }
+                            style={styles.eatingDatesContainer}
+                        />
 
                         <View style={styles.foodItemSelectorContainer}>
                             <CustomText style={styles.label}>
@@ -1393,12 +1346,6 @@ const styles = StyleSheet.create({
         paddingBottom: 20,
     },
     label: {
-        paddingTop: 10,
-        marginBottom: 5,
-    },
-    labelWithInfo: {
-        flexDirection: 'row',
-        alignItems: 'center',
         paddingTop: 10,
         marginBottom: 5,
     },
@@ -1753,17 +1700,9 @@ const styles = StyleSheet.create({
     },
     eatingDatesContainer: {
         marginBottom: 15,
-    },
-    eatingDateField: {
-        marginBottom: 10,
-    },
-    addEatingDateButtonWrap: {
-        alignItems: 'flex-start',
-        marginTop: 4,
-    },
-    addEatingDateButton: {
-        alignSelf: 'flex-start',
-        width: 'auto',
+        paddingTop: 0,
+        paddingBottom: 0,
+        borderBottomWidth: 0,
     },
     datePickerContainer: {
         marginTop: 10,

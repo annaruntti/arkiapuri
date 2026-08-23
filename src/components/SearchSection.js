@@ -1,8 +1,10 @@
-import { TextInput, TouchableOpacity, View } from 'react-native'
+import { useState } from 'react'
+import { Platform, TextInput, TouchableOpacity, View } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
 import Button from './Button'
 import CustomText from './CustomText'
 import GenericFilterSection from './GenericFilterSection'
+import PrimaryActionFade from './PrimaryActionFade'
 import { useResponsiveDimensions } from '../utils/responsive'
 
 const SearchSection = ({
@@ -20,9 +22,11 @@ const SearchSection = ({
     buttonStyle,
     buttonTextStyle,
     extraButtonTitle,
+    extraButtonType = 'TERTIARY',
     onExtraButtonPress,
     extraButtonStyle,
     extraButtonTextStyle,
+    buttonType = 'PRIMARY',
     actionsLabel,
     filterComponent,
     filterPlacement = 'withActions',
@@ -30,6 +34,7 @@ const SearchSection = ({
     filterSectionProps,
 }) => {
     const { isDesktop } = useResponsiveDimensions()
+    const [isSearchFocused, setIsSearchFocused] = useState(false)
     const filterWithSearch = filterPlacement === 'withSearch' && filterComponent
     const fillButtonsOnMobile = filterWithSearch && !isDesktop
 
@@ -40,6 +45,7 @@ const SearchSection = ({
                     style={[
                         styles.searchInputContainer,
                         filterWithSearch && styles.searchInputWithFilter,
+                        isSearchFocused && styles.searchInputContainerFocused,
                     ]}
                 >
                     <MaterialIcons
@@ -54,6 +60,8 @@ const SearchSection = ({
                         value={searchQuery}
                         onChangeText={onSearchChange}
                         placeholderTextColor="#999"
+                        onFocus={() => setIsSearchFocused(true)}
+                        onBlur={() => setIsSearchFocused(false)}
                     />
                     {searchQuery.length > 0 && (
                         <TouchableOpacity
@@ -78,7 +86,7 @@ const SearchSection = ({
             )}
 
             {showButtonSection && (
-                <View
+                <PrimaryActionFade
                     style={[
                         styles.buttonSection,
                         filterWithSearch && styles.buttonSectionSeparated,
@@ -99,6 +107,7 @@ const SearchSection = ({
                         {buttonTitle && onButtonPress && (
                             <Button
                                 title={buttonTitle}
+                                type={buttonType}
                                 onPress={onButtonPress}
                                 style={[
                                     buttonStyle,
@@ -110,6 +119,7 @@ const SearchSection = ({
                         {extraButtonTitle && onExtraButtonPress && (
                             <Button
                                 title={extraButtonTitle}
+                                type={extraButtonType}
                                 onPress={onExtraButtonPress}
                                 style={[
                                     extraButtonStyle,
@@ -126,7 +136,7 @@ const SearchSection = ({
                             {...filterSectionProps}
                         />
                     )}
-                </View>
+                </PrimaryActionFade>
             )}
         </View>
     )
@@ -160,6 +170,12 @@ const styles = {
         flex: 1,
         minWidth: 180,
     },
+    searchInputContainerFocused: {
+        borderColor: '#5844BB',
+        ...(Platform.OS === 'web' && {
+            boxShadow: '0 0 0 3px rgba(88, 68, 187, 0.15)',
+        }),
+    },
     searchInputWithFilter: {
         flexGrow: 1,
         flexShrink: 1,
@@ -173,6 +189,10 @@ const styles = {
         fontSize: 16,
         color: '#333',
         paddingVertical: 0,
+        ...(Platform.OS === 'web' && {
+            outlineStyle: 'none',
+            outlineWidth: 0,
+        }),
     },
     clearButton: {
         padding: 4,

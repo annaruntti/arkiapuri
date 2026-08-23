@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Alert, StyleSheet, View } from 'react-native'
 import Button from '../components/Button'
 import CustomText from '../components/CustomText'
+import PrimaryActionFade from '../components/PrimaryActionFade'
 import ListItem from '../components/ListItem'
 import FormAddShoppingList from '../components/FormAddShoppingList'
 import LoginPromptModal from '../components/LoginPromptModal'
@@ -218,21 +219,8 @@ const ShoppingListsScreen = () => {
 
                     <View style={styles.content}>
                         <StickyListLayout
-                            header={
-                                <CustomText
-                                    style={[
-                                        styles.introText,
-                                        isDesktop && styles.desktopIntroText,
-                                    ]}
-                                >
-                                    Täällä voit luoda uusia ostoslistoja ja
-                                    jakaa ne perheenjäsenten kanssa. Voitte
-                                    käyttää ja päivittää ostoslistoja
-                                    reaaliajassa.
-                                </CustomText>
-                            }
                             sticky={
-                                <View
+                                <PrimaryActionFade
                                     style={[
                                         styles.buttonContainer,
                                         isDesktop &&
@@ -242,14 +230,8 @@ const ShoppingListsScreen = () => {
                                     <Button
                                         title="Luo uusi ostoslista"
                                         onPress={handleOpenCreateList}
-                                        style={[
-                                            styles.primaryButton,
-                                            isDesktop &&
-                                                styles.desktopPrimaryButton,
-                                        ]}
-                                        textStyle={styles.buttonText}
                                     />
-                                </View>
+                                </PrimaryActionFade>
                             }
                             contentContainerStyle={{ paddingBottom: 20 }}
                         >
@@ -387,6 +369,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         gap: 10,
         marginBottom: 10,
+        paddingHorizontal: 5,
+        paddingTop: 10,
         alignItems: 'flex-start',
     },
     desktopButtonContainer: {

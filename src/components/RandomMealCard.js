@@ -28,6 +28,10 @@ const RandomMealCard = ({ onMealPress, iconImage, filterByPantry = false }) => {
     const fetchPantry = async () => {
         try {
             const token = await storage.getItem('userToken')
+            if (!token) {
+                return []
+            }
+
             const response = await axios.get(getServerUrl('/pantry'), {
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -44,7 +48,9 @@ const RandomMealCard = ({ onMealPress, iconImage, filterByPantry = false }) => {
             }
             return []
         } catch (error) {
-            console.error('Error fetching pantry:', error)
+            if (error?.response?.status !== 401) {
+                console.error('Error fetching pantry:', error)
+            }
             return []
         }
     }
@@ -80,6 +86,11 @@ const RandomMealCard = ({ onMealPress, iconImage, filterByPantry = false }) => {
         try {
             setLoading(true)
             const token = await storage.getItem('userToken')
+            if (!token) {
+                setAllMeals([])
+                setRandomMeal(null)
+                return
+            }
 
             // Fetch pantry first if filtering by pantry
             let availableFoodIds = []
@@ -119,7 +130,9 @@ const RandomMealCard = ({ onMealPress, iconImage, filterByPantry = false }) => {
                 }
             }
         } catch (error) {
-            console.error('Error fetching meals:', error)
+            if (error?.response?.status !== 401) {
+                console.error('Error fetching meals:', error)
+            }
         } finally {
             setLoading(false)
         }
@@ -136,6 +149,10 @@ const RandomMealCard = ({ onMealPress, iconImage, filterByPantry = false }) => {
             try {
                 setLoading(true)
                 const token = await storage.getItem('userToken')
+                if (!token) {
+                    return
+                }
+
                 const availableFoodIds = await fetchPantry()
 
                 const response = await axios.get(getServerUrl('/meals'), {
@@ -187,7 +204,9 @@ const RandomMealCard = ({ onMealPress, iconImage, filterByPantry = false }) => {
                     }
                 }
             } catch (error) {
-                console.error('Error fetching meals for raffle:', error)
+                if (error?.response?.status !== 401) {
+                    console.error('Error fetching meals for raffle:', error)
+                }
             } finally {
                 setLoading(false)
             }

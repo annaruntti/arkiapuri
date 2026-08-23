@@ -66,28 +66,28 @@ const HomeScreen = () => {
             image: mealImage,
             route: 'MealsStack',
             screen: 'Ateriat',
-            text: 'Ateriat-osiossa voit selata ja suunnitella aterioita ja reseptejä. Käytä pentterin sisältöä avuksesi luodessasi aterioita, ja lisää luodut ateriat lukujärjestykseesi.',
+            text: 'Selaa ja luo aterioita. Puuttuvat ainekset voit lisätä ostoslistalle.',
         },
         {
             title: 'Pentteri',
             image: pantryImage,
             route: 'PantryStack',
             screen: 'Pentteri',
-            text: 'Pentteri tarkoittaa virtuaalista ruokavarastoasi. Ylläpidä pentteriäsi, jotta Arkiapuri voi ehdottaa aterioita, jotka voit valmistaa niistä.',
+            text: 'Virtuaalinen ruokavarastosi. Skannaa kaappi tai lisää tuotteita käsin.',
         },
         {
             title: 'Ostoslista',
             image: shoppingListImage,
             route: 'ShoppingListStack',
             screen: 'Ostoslista',
-            text: 'Ostoslista-osiossa voit luoda älykkäitä ostoslistoja, jotka perustuvat ateriasuunnitelmiisi.',
+            text: 'Listat ateriasuunnitelmasta. Ostetut tuotteet siirtyvät pentteriin.',
         },
         {
             title: 'Lukujärjestys',
             image: readingOrderImage,
             route: 'ReadingOrderStack',
             screen: 'Lukujärjestys',
-            text: 'Lukujärjestykseen voit lisätä luomiasi aterioita eri päiville ja aikoihin, jotta näet selkeän suunnitelman siitä, mitä aiot syödä ja milloin.',
+            text: 'Ateriat päiville ja kellonoille.',
         },
     ]
 
@@ -145,10 +145,9 @@ const HomeScreen = () => {
                                     styles.desktopIntroText,
                                 ]}
                             >
-                                Arkiapurin avulla voit helposti suunnitella ja
-                                selata aterioita ja reseptejä, luoda oman
-                                lukujärjestyksesi, sekä luoda älykkäitä
-                                ostoslistoja.
+                                Suunnittele ateriat, pidä pentteri ajan tasalla
+                                ja tee ostoslistat ja lukujärjestys samassa
+                                paikassa.
                             </CustomText>
                         </View>
                     </View>
@@ -274,9 +273,8 @@ const HomeScreen = () => {
                         Tervetuloa käyttämään Arkiapuria!
                     </CustomText>
                     <CustomText style={styles.introText}>
-                        Arkiapurin avulla voit helposti suunnitella ja selata
-                        aterioita ja reseptejä, luoda oman lukujärjestyksesi,
-                        sekä luoda älykkäitä ostoslistoja.
+                        Suunnittele ateriat, pidä pentteri ajan tasalla ja tee
+                        ostoslistat ja lukujärjestys samassa paikassa.
                     </CustomText>
                 </View>
             </View>
@@ -350,7 +348,7 @@ const HomeScreen = () => {
                                     </CustomText>
                                     <Info
                                         title="Ateriat"
-                                        content="Ateriat-osiossa voit selata ja suunnitella aterioita ja reseptejä. Käytä pentteriä hyväksesi löytääksesi aterioita, jotka voit valmistaa olemassa olevista aineksista, tai selaa koko reseptikokoelmaamme inspiraatiota varten. Aterioiden puuttuvat ainekset voit helposti lisätä ostoslistalle."
+                                        content="Selaa ja luo aterioita. Puuttuvat ainekset voit lisätä ostoslistalle."
                                     />
                                 </View>
                             </TouchableOpacity>
@@ -375,7 +373,7 @@ const HomeScreen = () => {
                                     </CustomText>
                                      <Info
                                         title="Pentteri"
-                                        content="Pentteri tarkoittaa virtuaalista ruokavarastoasi. Ylläpidä pentteriäsi, jotta Arkiapuri voi ehdottaa aterioita, jotka voit valmistaa niistä."
+                                        content="Virtuaalinen ruokavarastosi. Skannaa kaappi tai lisää tuotteita käsin."
                                     />
                                 </View>
                             </TouchableOpacity>
@@ -402,7 +400,7 @@ const HomeScreen = () => {
                                     </CustomText>
                                      <Info
                                         title="Ostoslista"
-                                        content="Ostoslista-osiossa voit luoda älykkäitä ostoslistoja, jotka perustuvat ateriasuunnitelmiisi. Voit helposti lisätä aterioiden ainesosia ostoslistalle ja siirtää ostetut tuotteet Pentteriin, jolloin pysyt ajan tasalla siitä, mitä sinun vielä tarvitsee hankkia."
+                                        content="Listat ateriasuunnitelmasta. Ostetut tuotteet siirtyvät pentteriin."
                                     />
                                 </View>
                             </TouchableOpacity>
@@ -427,7 +425,7 @@ const HomeScreen = () => {
                                     </CustomText>
                                      <Info
                                         title="Lukujärjestys"
-                                        content="Lukujärjestykseen voit lisätä luomiasi aterioita eri päiville ja aikoihin, jotta näet selkeän suunnitelman siitä, mitä aiot syödä ja milloin"
+                                        content="Ateriat päiville ja kellonoille."
                                     />
                                 </View>
                             </TouchableOpacity>

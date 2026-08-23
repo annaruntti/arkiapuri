@@ -5,7 +5,6 @@ import {
     Platform,
     SectionList,
     StyleSheet,
-    TouchableOpacity,
     View,
 } from 'react-native'
 import axios from 'axios'
@@ -141,7 +140,6 @@ const PantryScreen = ({}) => {
     const [loading, setLoading] = useState(true)
     const [selectedItem, setSelectedItem] = useState(null)
     const [detailsVisible, setDetailsVisible] = useState(false)
-    const [showFullInstructions, setShowFullInstructions] = useState(false)
     const [showAddItemSearch, setShowAddItemSearch] = useState(false)
     const [aiEntitlement, setAiEntitlement] = useState(null)
     const [scanLockVisible, setScanLockVisible] = useState(false)
@@ -783,95 +781,6 @@ const PantryScreen = ({}) => {
                     </ResponsiveModal>
 
                     <StickyListLayout
-                        header={
-                            <>
-                                <CustomText
-                                    style={[
-                                        styles.introText,
-                                        isDesktop && styles.desktopIntroText,
-                                    ]}
-                                >
-                                    Etsi ja lisää pentterisi tuotteita
-                                </CustomText>
-                                <View style={styles.instructionsContainer}>
-                                    {showFullInstructions ? (
-                                        <>
-                                            <CustomText
-                                                style={[
-                                                    styles.infoText,
-                                                    isDesktop &&
-                                                        styles.desktopInfoText,
-                                                ]}
-                                            >
-                                                Täällä voit selata pentterisi
-                                                eli ruokakomerosi sisältöä, sekä
-                                                lisätä sinne uusia tuotteita.
-                                                Pentterillä tarkoitetaan mitä
-                                                tahansa kotisi elintarvikkeiden
-                                                säilyttämiseen tarkoitettuja
-                                                paikkoja. Esim. jääkaappi,
-                                                pakastin ja kuiva-ainekaappi.
-                                                Lisää ja ylläpidä pentterisi
-                                                sisältöä täällä, jotta voit
-                                                hyödyntää sen sisältämiä
-                                                elintarvikkeita
-                                                ateriasuunnittelussa.
-                                            </CustomText>
-                                            <CustomText
-                                                style={[
-                                                    styles.infoText,
-                                                    isDesktop &&
-                                                        styles.desktopInfoText,
-                                                ]}
-                                            >
-                                                Jo pentterissä olevia tuotteita
-                                                voit etsiä nimellä tai
-                                                suodattaa kategorioittain.
-                                                Uusia tuotteita voit lisätä
-                                                skannaamalla pentterin
-                                                kameralla, jolloin tekoäly
-                                                ehdottaa näkemiään tuotteita,
-                                                tai lisäämällä tuotteita yksi
-                                                kerrallaan.
-                                            </CustomText>
-                                        </>
-                                    ) : (
-                                        <CustomText
-                                            style={[
-                                                styles.infoText,
-                                                isDesktop &&
-                                                    styles.desktopInfoText,
-                                            ]}
-                                        >
-                                            Selaa pentterin sisältöä haulla ja
-                                            suodattimella. Lisää uusia tuotteita
-                                            skannaamalla pentteri tai yksi
-                                            kerrallaan.
-                                        </CustomText>
-                                    )}
-                                    <TouchableOpacity
-                                        style={styles.toggleInstructionsButton}
-                                        onPress={() =>
-                                            setShowFullInstructions(
-                                                !showFullInstructions
-                                            )
-                                        }
-                                    >
-                                        <CustomText
-                                            style={[
-                                                styles.toggleInstructionsText,
-                                                isDesktop &&
-                                                    styles.desktopToggleInstructionsText,
-                                            ]}
-                                        >
-                                            {showFullInstructions
-                                                ? 'Näytä vähemmän'
-                                                : 'Lue lisää'}
-                                        </CustomText>
-                                    </TouchableOpacity>
-                                </View>
-                            </>
-                        }
                         sticky={
                             <SearchSection
                                 searchQuery={searchQuery}
@@ -886,12 +795,9 @@ const PantryScreen = ({}) => {
                                 actionsLabel="Lisää tuotteita"
                                 buttonTitle="Skannaa pentteri"
                                 onButtonPress={handleOpenPantryScan}
-                                buttonStyle={styles.primaryButton}
-                                buttonTextStyle={styles.buttonText}
                                 extraButtonTitle="Lisää yksi kerrallaan"
+                                extraButtonType="TERTIARY"
                                 onExtraButtonPress={handleOpenAddItemSearch}
-                                extraButtonStyle={styles.scanButton}
-                                extraButtonTextStyle={styles.buttonText}
                                 filterComponent={
                                     <GenericFilter
                                         selectedFilters={
@@ -1043,36 +949,6 @@ const styles = StyleSheet.create({
     productList: {
         flex: 1,
     },
-    introText: {
-        fontSize: 19,
-        textAlign: 'left',
-        marginBottom: 10,
-    },
-    desktopIntroText: {
-        fontSize: 21,
-        paddingVertical: 16,
-    },
-    infoText: {
-        fontSize: 17,
-        textAlign: 'left',
-        marginBottom: 10,
-    },
-    desktopInfoText: {
-        fontSize: 19,
-    },
-    toggleInstructionsButton: {
-        alignSelf: 'left',
-        paddingVertical: 5,
-    },
-    toggleInstructionsText: {
-        fontSize: 14,
-        color: '#5844BB',
-        fontWeight: '600',
-        textDecorationLine: 'underline',
-    },
-    desktopToggleInstructionsText: {
-        fontSize: 17,
-    },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -1106,18 +982,6 @@ const styles = StyleSheet.create({
         paddingBottom: 7,
         paddingLeft: 10,
         paddingRight: 10,
-        elevation: 2,
-        backgroundColor: '#AE9CFC',
-        minWidth: 150,
-    },
-    scanButton: {
-        borderRadius: 25,
-        paddingTop: 7,
-        paddingBottom: 7,
-        paddingLeft: 10,
-        paddingRight: 10,
-        elevation: 2,
-        backgroundColor: '#38E4D9',
         minWidth: 150,
     },
     scanLoadingBox: {

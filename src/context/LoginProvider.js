@@ -3,6 +3,10 @@ import storage from '../utils/storage'
 import axios from 'axios'
 import { getServerUrl } from '../utils/getServerUrl'
 import { getProfileImageUrl } from '../utils/profileImage'
+import {
+    readOnboardingComplete,
+    writeOnboardingComplete,
+} from '../utils/onboarding'
 
 const LoginContext = createContext()
 
@@ -11,11 +15,15 @@ const LoginProvider = ({ children }) => {
     const [profile, setProfile] = useState({})
     const [isLoading, setIsLoading] = useState(true)
     const [continueWithoutLogin, setContinueWithoutLogin] = useState(false)
+    const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false)
 
     useEffect(() => {
         const checkToken = async () => {
             setIsLoading(true)
             try {
+                const seenOnboarding = await readOnboardingComplete()
+                setHasCompletedOnboarding(seenOnboarding)
+
                 const token = await storage.getItem('userToken')
 
                 if (token) {
@@ -71,6 +79,8 @@ const LoginProvider = ({ children }) => {
                 ...userProfile,
                 profileImage: getProfileImageUrl(userProfile),
             })
+            await writeOnboardingComplete()
+            setHasCompletedOnboarding(true)
         } catch (error) {
             console.error('Failed to save login data', error)
             // Clean up if something goes wrong
@@ -115,6 +125,11 @@ const LoginProvider = ({ children }) => {
         setContinueWithoutLogin(true)
     }
 
+    const completeOnboarding = async () => {
+        await writeOnboardingComplete()
+        setHasCompletedOnboarding(true)
+    }
+
     return (
         <LoginContext.Provider
             value={{
@@ -127,6 +142,8 @@ const LoginProvider = ({ children }) => {
                 logout,
                 continueWithoutLogin,
                 allowContinueWithoutLogin,
+                hasCompletedOnboarding,
+                completeOnboarding,
             }}
         >
             {children}

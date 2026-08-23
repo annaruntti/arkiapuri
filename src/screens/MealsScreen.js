@@ -491,17 +491,6 @@ const MealsScreen = ({ route, navigation }) => {
             <LoginPromptModal {...loginPromptProps} />
 
             <StickyListLayout
-                header={
-                    <CustomText
-                        style={[
-                            styles.introText,
-                            isDesktop && styles.desktopIntroText,
-                        ]}
-                    >
-                        Selaa ja hallinnoi aterioitasi. Voit lisätä uusia
-                        aterioita ja muokata olemassa olevia.
-                    </CustomText>
-                }
                 sticky={
                     <SearchSection
                         searchQuery={searchQuery}
@@ -514,8 +503,6 @@ const MealsScreen = ({ route, navigation }) => {
                         showButtonSection={true}
                         buttonTitle="+ Lisää ateria"
                         onButtonPress={handleOpenAddMeal}
-                        buttonStyle={styles.primaryButton}
-                        buttonTextStyle={styles.buttonText}
                         showFilters={showFilters}
                         filterComponent={
                             <GenericFilter

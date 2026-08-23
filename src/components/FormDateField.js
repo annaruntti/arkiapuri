@@ -25,8 +25,8 @@ const formatDate = (date) => {
 }
 
 /**
- * Date field matching form inputs: bordered text field (+ optional remove
- * inside), calendar icon in the trailing slot outside the border.
+ * Date field matching form inputs: bordered text field (+ optional info
+ * and remove inside), calendar icon in the trailing slot outside the border.
  */
 const FormDateField = ({
     label,
@@ -36,6 +36,7 @@ const FormDateField = ({
     minimumDate,
     maximumDate,
     labelRight,
+    placeholder,
     style,
     testID = 'dateTimePicker',
     warnIfPast = false,
@@ -43,8 +44,10 @@ const FormDateField = ({
 }) => {
     const [show, setShow] = useState(false)
     const [showOverdue, setShowOverdue] = useState(false)
-    const dateValue = value ? new Date(value) : new Date()
-    const isOverdue = warnIfPast && Boolean(value) && isDateInPast(value)
+    const hasValue = value != null && value !== ''
+    const fallbackDate = minimumDate ? new Date(minimumDate) : new Date()
+    const dateValue = hasValue ? new Date(value) : fallbackDate
+    const isOverdue = warnIfPast && hasValue && isDateInPast(value)
     const calendarValue = isOverdue ? new Date() : dateValue
 
     const togglePicker = () => setShow((open) => !open)
@@ -66,14 +69,9 @@ const FormDateField = ({
             ]}
             testID={testID}
         >
-            {(label || labelRight) && (
-                <View style={styles.labelRow}>
-                    {label ? (
-                        <CustomText style={formStyles.label}>{label}</CustomText>
-                    ) : null}
-                    {labelRight}
-                </View>
-            )}
+            {label ? (
+                <CustomText style={formStyles.label}>{label}</CustomText>
+            ) : null}
 
             <View style={formStyles.inputRow}>
                 <View style={[formStyles.inputInRow, styles.fieldBox]}>
@@ -82,10 +80,23 @@ const FormDateField = ({
                         onPress={togglePicker}
                         activeOpacity={0.7}
                     >
-                        <Text style={styles.dateText}>
-                            {formatDate(dateValue)}
+                        <Text
+                            style={[
+                                styles.dateText,
+                                !hasValue && placeholder
+                                    ? styles.placeholderText
+                                    : null,
+                            ]}
+                        >
+                            {hasValue
+                                ? formatDate(dateValue)
+                                : placeholder || formatDate(dateValue)}
                         </Text>
                     </TouchableOpacity>
+
+                    {labelRight ? (
+                        <View style={styles.fieldAction}>{labelRight}</View>
+                    ) : null}
 
                     {onRemove ? (
                         <TouchableOpacity
@@ -182,11 +193,6 @@ const FormDateField = ({
 }
 
 const styles = StyleSheet.create({
-    labelRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-    },
     fieldElevated: {
         zIndex: 20,
         elevation: 20,
@@ -208,10 +214,18 @@ const styles = StyleSheet.create({
         minHeight: 38,
         paddingVertical: 8,
     },
+    fieldAction: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: 38,
+    },
     dateText: {
         fontSize: 16,
         color: '#333',
         fontFamily: 'FiraSans-Regular',
+    },
+    placeholderText: {
+        color: '#9ca3af',
     },
     removeButton: {
         width: 36,

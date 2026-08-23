@@ -981,8 +981,6 @@ const styles = StyleSheet.create({
         paddingBottom: 7,
         paddingLeft: 10,
         paddingRight: 10,
-        elevation: 2,
-        backgroundColor: '#AE9CFC',
         minWidth: 150,
         marginBottom: 10,
     },

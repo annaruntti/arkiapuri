@@ -1,8 +1,18 @@
+import { useEffect } from 'react'
 import { ImageBackground, StyleSheet, View } from 'react-native'
 import Svg, { Path } from 'react-native-svg'
+import Animated, {
+    Easing,
+    useAnimatedStyle,
+    useSharedValue,
+    withDelay,
+    withTiming,
+} from 'react-native-reanimated'
+
 import Button from '../components/Button'
 import CustomText from '../components/CustomText'
 import FullWidthLayout from '../components/FullWidthLayout'
+import { useLogin } from '../context/LoginProvider'
 import { useResponsiveDimensions } from '../utils/responsive'
 
 const image = {
@@ -11,13 +21,33 @@ const image = {
 
 const LandingScreen = ({ navigation }) => {
     const { isDesktop, isTablet } = useResponsiveDimensions()
+    const { isLoggedIn } = useLogin()
+    const opacity = useSharedValue(0)
+    const translateY = useSharedValue(36)
 
-    const onSignUpPress = () => {
-        navigation.navigate('Main', {
-            screen: 'HomeStack',
-            params: { screen: 'Arkiapuri' },
-        })
-    }
+    useEffect(() => {
+        if (isLoggedIn) {
+            navigation.reset({
+                index: 0,
+                routes: [{ name: 'Main' }],
+            })
+        }
+    }, [isLoggedIn, navigation])
+
+    useEffect(() => {
+        const motion = {
+            duration: 900,
+            easing: Easing.out(Easing.cubic),
+        }
+        opacity.value = withDelay(180, withTiming(1, motion))
+        translateY.value = withDelay(180, withTiming(0, motion))
+    }, [opacity, translateY])
+
+    const panelStyle = useAnimatedStyle(() => ({
+        opacity: opacity.value,
+        transform: [{ translateY: translateY.value }],
+    }))
+
     return (
         <FullWidthLayout>
             <View style={styles.loginView}>
@@ -28,11 +58,12 @@ const LandingScreen = ({ navigation }) => {
                     style={styles.image}
                     source={image}
                 >
-                    <View
+                    <Animated.View
                         style={[
                             styles.bottomBox,
                             isTablet && styles.tabletBottomBox,
                             isDesktop && styles.desktopBottomBox,
+                            panelStyle,
                         ]}
                     >
                         <View
@@ -74,34 +105,31 @@ const LandingScreen = ({ navigation }) => {
                                         isDesktop && styles.desktopIntroText,
                                     ]}
                                 >
-                                    Arkiapuri tekee arjen ruokahuollon suunnittelusta helppoa ja nopeaa.
+                                    Arkiapuri tekee arjen ruokahuollon
+                                    suunnittelusta helppoa ja nopeaa.
                                 </CustomText>
-                                <CustomText
-                                    style={[
-                                        styles.bottomBoxText,
-                                        isTablet && styles.tabletBottomBoxText,
-                                        isDesktop &&
-                                            styles.desktopBottomBoxText,
-                                    ]}
-                                >
-                                    {isDesktop || isTablet
-                                        ? 'Luo omat ateriat ja reseptit, suunnittele viikon ruokailut ja pidä kirjaa ruokakomerosi sisällöstä.\nNäe mitä aineksia sinulla on ja lisää puuttuvat suoraan ostoslistalle.'
-                                        : 'Luo omat ateriat ja reseptit, suunnittele viikon ruokailut ja pidä kirjaa ruokakomerosi sisällöstä.\nNäe mitä aineksia sinulla on ja lisää puuttuvat suoraan ostoslistalle.'}
-                                </CustomText>
-                                <Button
-                                    title="Aloitetaan!"
-                                    onPress={onSignUpPress}
-                                    style={[
-                                        styles.primaryButtonStart,
-                                        isTablet && styles.tabletPrimaryButton,
-                                        isDesktop &&
-                                            styles.desktopPrimaryButton,
-                                    ]}
-                                    textStyle={styles.buttonText}
-                                />
+                                <View style={styles.actions}>
+                                    <Button
+                                        title="Aloitetaan"
+                                        onPress={() =>
+                                            navigation.navigate('Tutustu')
+                                        }
+                                        fullWidth
+                                    />
+                                    <Button
+                                        title="Minulla on jo tili"
+                                        type="TERTIARY"
+                                        onPress={() =>
+                                            navigation.navigate(
+                                                'Kirjaudu sisään'
+                                            )
+                                        }
+                                        fullWidth
+                                    />
+                                </View>
                             </View>
                         </View>
-                    </View>
+                    </Animated.View>
                 </ImageBackground>
             </View>
         </FullWidthLayout>
@@ -125,30 +153,6 @@ const styles = StyleSheet.create({
         height: '100%',
         alignItems: 'center',
     },
-    background: {
-        borderRadius: 10,
-        paddingHorizontal: 25,
-        paddingVertical: 20,
-        marginHorizontal: 20,
-        marginVertical: 15,
-        minHeight: 150,
-        justifyContent: 'center',
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 4,
-        },
-        shadowOpacity: 0.3,
-        shadowRadius: 4.65,
-        elevation: 8,
-    },
-    textContentArea: {
-        flex: 1,
-        justifyContent: 'top',
-        width: '100%',
-        padding: 40,
-    },
     introTextTitle: {
         fontSize: 26,
         fontWeight: 'bold',
@@ -159,14 +163,14 @@ const styles = StyleSheet.create({
     introText: {
         textAlign: 'center',
         fontSize: 19,
-        marginBottom: 10,
-    },
-    layer: {
-        height: '100%',
+        marginBottom: 24,
+        color: '#333',
+        lineHeight: 26,
     },
     bottomBox: {
         marginTop: 'auto',
         alignItems: 'center',
+        width: '100%',
     },
     bottomBoxContent: {
         paddingTop: 25,
@@ -180,52 +184,12 @@ const styles = StyleSheet.create({
         position: 'relative',
         overflow: 'visible',
     },
-    bottomBoxText: {
-        fontSize: 15,
-        fontWeight: '500',
-        color: '#000',
-        textAlign: 'center',
-        lineHeight: 24,
-        marginBottom: 20,
-    },
-    primaryButtonStart: {
-        borderRadius: 25,
-        paddingTop: 12,
-        paddingBottom: 12,
-        paddingLeft: 20,
-        paddingRight: 20,
-        elevation: 2,
-        backgroundColor: '#AE9CFC',
-        marginBottom: 20,
-        marginHorizontal: 'auto',
-        minWidth: 200,
+    actions: {
+        width: '100%',
         maxWidth: 400,
         alignSelf: 'center',
-    },
-    secondaryButton: {
-        borderRadius: 25,
-        paddingTop: 7,
-        paddingBottom: 7,
-        paddingLeft: 10,
-        paddingRight: 10,
-        elevation: 2,
-        backgroundColor: '#38E4D9',
-        width: 'auto',
-    },
-    tertiaryButton: {
-        borderRadius: 25,
-        paddingTop: 7,
-        paddingBottom: 7,
-        paddingLeft: 10,
-        paddingRight: 10,
-        elevation: 2,
-        backgroundColor: '#38E4D9',
-        width: 'auto',
-    },
-    buttonText: {
-        color: '#000000',
-        fontWeight: 'bold',
-        textAlign: 'center',
+        gap: 12,
+        marginBottom: 12,
     },
     bottomWavy: {
         position: 'absolute',
@@ -237,8 +201,9 @@ const styles = StyleSheet.create({
     },
     contentPadding: {
         paddingHorizontal: 20,
+        width: '100%',
+        alignItems: 'center',
     },
-    // Tablet responsive styles
     tabletBottomBox: {
         flex: 1,
         justifyContent: 'center',
@@ -257,6 +222,8 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 12,
         elevation: 8,
+        width: '100%',
+        maxWidth: 560,
     },
     tabletIntroTextTitle: {
         fontSize: 30,
@@ -268,35 +235,11 @@ const styles = StyleSheet.create({
     tabletIntroText: {
         fontSize: 20,
         lineHeight: 28,
-        marginBottom: 20,
+        marginBottom: 28,
         color: '#555',
         fontWeight: '400',
         paddingHorizontal: 20,
     },
-    tabletBottomBoxText: {
-        fontSize: 16,
-        lineHeight: 24,
-        marginBottom: 28,
-        color: '#666',
-        fontWeight: '400',
-        paddingHorizontal: 20,
-    },
-    tabletPrimaryButton: {
-        paddingHorizontal: 40,
-        paddingVertical: 16,
-        borderRadius: 30,
-        backgroundColor: '#AE9CFC',
-        shadowColor: '#5844BB',
-        shadowOffset: {
-            width: 0,
-            height: 4,
-        },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 8,
-        width: '30%',
-    },
-    // Desktop responsive styles
     desktopBottomBox: {
         flex: 1,
         alignItems: 'center',
@@ -318,6 +261,8 @@ const styles = StyleSheet.create({
         elevation: 12,
         borderWidth: 1,
         borderColor: 'rgba(255, 255, 255, 0.2)',
+        width: '100%',
+        maxWidth: 640,
     },
     desktopIntroTextTitle: {
         fontSize: 36,
@@ -330,34 +275,10 @@ const styles = StyleSheet.create({
     desktopIntroText: {
         fontSize: 21,
         lineHeight: 32,
-        marginBottom: 0,
+        marginBottom: 28,
         color: '#555',
         textAlign: 'center',
         fontWeight: '400',
         paddingVertical: 16,
-    },
-    desktopBottomBoxText: {
-        fontSize: 18,
-        lineHeight: 28,
-        marginBottom: 32,
-        color: '#666',
-        textAlign: 'center',
-        fontWeight: '400',
-        paddingHorizontal: 20,
-    },
-    desktopPrimaryButton: {
-        paddingHorizontal: 40,
-        paddingVertical: 16,
-        borderRadius: 30,
-        backgroundColor: '#AE9CFC',
-        shadowColor: '#5844BB',
-        shadowOffset: {
-            width: 0,
-            height: 4,
-        },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 8,
-        width: '30%',
     },
 })
