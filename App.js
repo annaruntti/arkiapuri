@@ -27,8 +27,7 @@ const markSplashShown = () => {
 const App = () => {
     const [appIsReady, setAppIsReady] = useState(false)
     const [showSplash, setShowSplash] = useState(!hasShownSplash())
-    const { containerMaxWidth, responsivePadding, isDesktop, isWeb } =
-        useResponsiveDimensions()
+    useResponsiveDimensions()
     const [fontsLoaded] = useFonts({
         'FireSans-Regular': require('./src/assets/fonts/FiraSans-Regular.ttf'),
         'FiraSans-Regular': require('./src/assets/fonts/FiraSans-Regular.ttf'),

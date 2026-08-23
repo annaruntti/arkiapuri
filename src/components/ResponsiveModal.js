@@ -125,7 +125,7 @@ const ResponsiveModal = ({
             ]
         }
         if (isTablet) {
-            return [...baseStyle, styles.tabletModalContent]
+            return [...baseStyle, styles.tabletModalContent, { maxWidth }]
         }
         return baseStyle
     }
@@ -167,6 +167,7 @@ const ResponsiveModal = ({
                     <View
                         style={[
                             styles.modalHeader,
+                            isTablet && styles.tabletModalHeader,
                             isDesktop && styles.desktopModalHeader,
                             showBackButton && styles.modalHeaderWithBack,
                             showBackButton &&
@@ -234,7 +235,11 @@ const ResponsiveModal = ({
                 </Pressable>
             )}
             <View
-                style={[styles.modalBody, isDesktop && styles.desktopModalBody]}
+                style={[
+                    styles.modalBody,
+                    isTablet && styles.tabletModalBody,
+                    isDesktop && styles.desktopModalBody,
+                ]}
             >
                 {children}
             </View>
@@ -386,7 +391,18 @@ const styles = StyleSheet.create({
         height: 'auto',
         maxHeight: '85%',
         width: '100%',
-        paddingTop: 25,
+        alignSelf: 'center',
+        paddingTop: 32,
+        paddingBottom: 8,
+    },
+    tabletModalHeader: {
+        paddingHorizontal: 40,
+        paddingTop: 16,
+        marginBottom: 8,
+    },
+    tabletModalBody: {
+        paddingHorizontal: 40,
+        paddingBottom: 36,
     },
 
     desktopModalView: {

@@ -25,6 +25,7 @@ import { useLogin } from '../context/LoginProvider'
 import PantryItemDetails from '../components/PantryItemDetails'
 import PantryScanReview from '../components/PantryScanReview'
 import PantryScanLockedModal from '../components/PantryScanLockedModal'
+import ContentContainer from '../components/ContentContainer'
 import ResponsiveLayout from '../components/ResponsiveLayout'
 import ResponsiveModal from '../components/ResponsiveModal'
 import SearchSection from '../components/SearchSection'
@@ -35,7 +36,6 @@ import { PANTRY_SORT_OPTIONS, SORT_OPTION_IDS } from '../utils/listSort'
 import { groupItemsByFoodCategory } from '../utils/foodCategories'
 import { getServerUrl } from '../utils/getServerUrl'
 import { getFoodItemImageUrl } from '../utils/openFoodFactsMapper'
-import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 import { findOrCreateFoodItem } from '../services/foodItemApi'
 import { addPantryItem, deletePantryItem } from '../services/collectionApi'
@@ -154,7 +154,6 @@ const mergeDuplicatePantryItems = (items = []) => {
 }
 
 const PantryScreen = ({}) => {
-    const { isDesktop } = useResponsiveDimensions()
     const { continueWithoutLogin } = useLogin()
     const { showLoginPrompt, loginPromptProps } = useLoginPrompt()
     const [pantryItems, setPantryItems] = useState([])
@@ -740,11 +739,7 @@ const PantryScreen = ({}) => {
 
     return (
         <ResponsiveLayout>
-            <View
-                style={
-                    isDesktop ? styles.desktopContentWrapper : styles.fullWidth
-                }
-            >
+            <ContentContainer>
                 <View style={styles.container}>
                     <LoginPromptModal {...loginPromptProps} />
 
@@ -908,7 +903,7 @@ const PantryScreen = ({}) => {
                         onUpdate={handleUpdateItem}
                     />
                 </View>
-            </View>
+            </ContentContainer>
         </ResponsiveLayout>
     )
 }
@@ -920,13 +915,6 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#fff',
         padding: 15,
-    },
-    desktopContentWrapper: {
-        flex: 1,
-        width: '100%',
-        maxWidth: 960,
-        alignSelf: 'left',
-        paddingHorizontal: 40,
     },
     productListContainer: {
         flex: 1,
@@ -1004,9 +992,5 @@ const styles = StyleSheet.create({
     },
     formContainer: {
         padding: 15,
-    },
-    fullWidth: {
-        flex: 1,
-        width: '100%',
     },
 })

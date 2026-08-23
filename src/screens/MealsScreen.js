@@ -18,6 +18,7 @@ import ListStatsRow from '../components/ListStatsRow'
 import MealItem from '../components/MealItem'
 import MealItemDetail from '../components/MealItemDetail'
 import LoginPromptModal from '../components/LoginPromptModal'
+import ContentContainer from '../components/ContentContainer'
 import ResponsiveLayout from '../components/ResponsiveLayout'
 import useLoginPrompt from '../hooks/useLoginPrompt'
 import ResponsiveModal from '../components/ResponsiveModal'
@@ -52,7 +53,6 @@ import {
     groupMealsByCategory,
     getMealCountsForCategories,
 } from '../utils/mealGrouping'
-import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 
 const MealsScreen = ({ route, navigation }) => {
@@ -70,7 +70,6 @@ const MealsScreen = ({ route, navigation }) => {
         useState(null)
     const [selectedCookingTimeFilter, setSelectedCookingTimeFilter] =
         useState(null)
-    const { isDesktop } = useResponsiveDimensions()
 
     // Get filter params from navigation, use only if they have actual values
     const filterDifficulty =
@@ -637,15 +636,11 @@ const MealsScreen = ({ route, navigation }) => {
         </View>
     )
 
-    if (isDesktop) {
-        return (
-            <ResponsiveLayout activeRoute="MealsStack">
-                <View style={styles.desktopContentWrapper}>{content}</View>
-            </ResponsiveLayout>
-        )
-    }
-
-    return content
+    return (
+        <ResponsiveLayout activeRoute="MealsStack">
+            <ContentContainer>{content}</ContentContainer>
+        </ResponsiveLayout>
+    )
 }
 
 const styles = StyleSheet.create({
@@ -653,6 +648,9 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#fff',
         padding: 15,
+        // todo: add these styles only to tablet
+        // marginVertical: 15,
+        // borderRadius: 10,
     },
     introText: {
         fontSize: 17,
@@ -696,13 +694,6 @@ const styles = StyleSheet.create({
     },
     categorySection: {
         marginBottom: 20,
-    },
-    desktopContentWrapper: {
-        flex: 1,
-        width: '100%',
-        maxWidth: 960,
-        alignSelf: 'left',
-        paddingHorizontal: 40,
     },
 })
 

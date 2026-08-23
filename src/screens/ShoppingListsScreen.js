@@ -14,6 +14,7 @@ import storage from '../utils/storage'
 
 import ResponsiveLayout from '../components/ResponsiveLayout'
 import ResponsiveModal from '../components/ResponsiveModal'
+import ContentContainer from '../components/ContentContainer'
 import StickyListLayout from '../components/StickyListLayout'
 import { useResponsiveDimensions } from '../utils/responsive'
 
@@ -185,11 +186,7 @@ const ShoppingListsScreen = () => {
 
     return (
         <ResponsiveLayout>
-            <View
-                style={
-                    isDesktop ? styles.desktopContentWrapper : styles.fullWidth
-                }
-            >
+            <ContentContainer>
                 <View style={styles.container}>
                     <ResponsiveModal
                         visible={modalVisible}
@@ -246,7 +243,7 @@ const ShoppingListsScreen = () => {
                         </StickyListLayout>
                     </View>
                 </View>
-            </View>
+            </ContentContainer>
         </ResponsiveLayout>
     )
 }
@@ -403,16 +400,5 @@ const styles = StyleSheet.create({
     modalBody: {
         flex: 1,
         padding: 15,
-    },
-    desktopContentWrapper: {
-        flex: 1,
-        width: '100%',
-        maxWidth: 960,
-        alignSelf: 'left',
-        paddingHorizontal: 40,
-    },
-    fullWidth: {
-        flex: 1,
-        width: '100%',
     },
 })
