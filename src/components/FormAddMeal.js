@@ -1046,7 +1046,7 @@ const AddMealForm = ({ onSubmit }) => {
                 ref={scrollViewRef}
                 style={styles.scrollView}
                 contentContainerStyle={styles.formScroll}
-                showsVerticalScrollIndicator={true}
+                showsVerticalScrollIndicator={false}
                 bounces={false}
                 keyboardShouldPersistTaps="handled"
             >
@@ -1333,6 +1333,11 @@ const styles = StyleSheet.create({
     },
     scrollView: {
         flex: 1,
+        ...(Platform.OS === 'web' && {
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+            '::-webkit-scrollbar': { display: 'none' },
+        }),
     },
     formContainer: {
         paddingVertical: 5,

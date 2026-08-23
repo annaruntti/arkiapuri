@@ -1,8 +1,11 @@
 import { useState } from 'react'
-import { ScrollView, TouchableOpacity, View } from 'react-native'
+import { TouchableOpacity, View } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
 import ClearFiltersButton from './ClearFiltersButton'
 import CustomText from './CustomText'
+import ExpandableListPanel, {
+    ExpandableListChipRow,
+} from './ExpandableListPanel'
 import FilterChip from './FilterChip'
 
 const GenericFilterSection = ({
@@ -20,8 +23,6 @@ const GenericFilterSection = ({
         main: true,
     })
 
-    if (!showFilters) return null
-
     const itemCounts = getItemCounts()
 
     const toggleGroup = (groupKey) => {
@@ -32,24 +33,67 @@ const GenericFilterSection = ({
     }
 
     return (
-        <View style={styles.filterSection}>
-            <ScrollView
-                style={styles.filterScrollView}
-                nestedScrollEnabled={true}
-                showsVerticalScrollIndicator={true}
+        <ExpandableListPanel visible={showFilters} scrollable>
+            <TouchableOpacity
+                style={styles.filterGroupHeader}
+                onPress={() => toggleGroup('main')}
             >
-                <View style={styles.filterContainer}>
-                    {/* Main filter group (Diet) */}
+                <CustomText style={styles.filterTitle}>{filterTitle}</CustomText>
+                <MaterialIcons
+                    name={
+                        expandedGroups.main
+                            ? 'keyboard-arrow-up'
+                            : 'keyboard-arrow-down'
+                    }
+                    size={24}
+                    color="#333"
+                />
+            </TouchableOpacity>
+
+            {expandedGroups.main && (
+                <>
+                    <ExpandableListChipRow>
+                        {categories.map((category) => {
+                            const isSelected = selectedFilters.some(
+                                (filterId) =>
+                                    String(filterId) === String(category.id)
+                            )
+                            const itemCount = itemCounts[category.id] || 0
+                            const isDisabled = itemCount === 0 || disabled
+
+                            return (
+                                <FilterChip
+                                    key={category.id}
+                                    label={category.name}
+                                    count={itemCount}
+                                    isSelected={isSelected}
+                                    isDisabled={isDisabled}
+                                    onPress={() => onToggleFilter(category.id)}
+                                />
+                            )
+                        })}
+                    </ExpandableListChipRow>
+                    {selectedFilters.length > 0 && (
+                        <ClearFiltersButton
+                            onPress={onClearFilters}
+                            text="Tyhjennä suodattimet"
+                        />
+                    )}
+                </>
+            )}
+
+            {additionalFilterGroups.map((group, index) => (
+                <View key={index} style={styles.additionalFilterGroup}>
                     <TouchableOpacity
                         style={styles.filterGroupHeader}
-                        onPress={() => toggleGroup('main')}
+                        onPress={() => toggleGroup(`group_${index}`)}
                     >
-                        <CustomText style={styles.filterTitle}>
-                            {filterTitle}
+                        <CustomText style={styles.filterGroupTitle}>
+                            {group.title}
                         </CustomText>
                         <MaterialIcons
                             name={
-                                expandedGroups.main
+                                expandedGroups[`group_${index}`]
                                     ? 'keyboard-arrow-up'
                                     : 'keyboard-arrow-down'
                             }
@@ -58,117 +102,41 @@ const GenericFilterSection = ({
                         />
                     </TouchableOpacity>
 
-                    {expandedGroups.main && (
-                        <>
-                            <View style={styles.filterChipsContainer}>
-                                {categories.map((category) => {
-                                    const isSelected = selectedFilters.some(
-                                        (filterId) =>
-                                            String(filterId) ===
-                                            String(category.id)
-                                    )
-                                    const itemCount =
-                                        itemCounts[category.id] || 0
-                                    const isDisabled =
-                                        itemCount === 0 || disabled
-
-                                    return (
-                                        <FilterChip
-                                            key={category.id}
-                                            label={category.name}
-                                            count={itemCount}
-                                            isSelected={isSelected}
-                                            isDisabled={isDisabled}
-                                            onPress={() =>
-                                                onToggleFilter(category.id)
-                                            }
-                                        />
-                                    )
-                                })}
-                            </View>
-                            {selectedFilters.length > 0 && (
-                                <ClearFiltersButton
-                                    onPress={onClearFilters}
-                                    text="Tyhjennä suodattimet"
-                                />
-                            )}
-                        </>
-                    )}
-
-                    {/* Additional filter groups */}
-                    {additionalFilterGroups.map((group, index) => (
-                        <View key={index} style={styles.additionalFilterGroup}>
-                            <TouchableOpacity
-                                style={styles.filterGroupHeader}
-                                onPress={() => toggleGroup(`group_${index}`)}
-                            >
-                                <CustomText style={styles.filterGroupTitle}>
-                                    {group.title}
-                                </CustomText>
-                                <MaterialIcons
-                                    name={
-                                        expandedGroups[`group_${index}`]
-                                            ? 'keyboard-arrow-up'
-                                            : 'keyboard-arrow-down'
-                                    }
-                                    size={24}
-                                    color="#333"
-                                />
-                            </TouchableOpacity>
-
-                            {expandedGroups[`group_${index}`] && (
-                                <View style={styles.filterChipsContainer}>
-                                    {group.options.map((option) => {
-                                        const count = group.getItemCount
-                                            ? group.getItemCount(option.value)
-                                            : null
-                                        return (
-                                            <FilterChip
-                                                key={option.value}
-                                                label={option.label}
-                                                count={count}
-                                                isSelected={
-                                                    group.selectedValue ===
+                    {expandedGroups[`group_${index}`] && (
+                        <ExpandableListChipRow>
+                            {group.options.map((option) => {
+                                const count = group.getItemCount
+                                    ? group.getItemCount(option.value)
+                                    : null
+                                return (
+                                    <FilterChip
+                                        key={option.value}
+                                        label={option.label}
+                                        count={count}
+                                        isSelected={
+                                            group.selectedValue === option.value
+                                        }
+                                        isDisabled={false}
+                                        onPress={() =>
+                                            group.onSelect(
+                                                group.selectedValue ===
                                                     option.value
-                                                }
-                                                isDisabled={false}
-                                                onPress={() =>
-                                                    group.onSelect(
-                                                        group.selectedValue ===
-                                                            option.value
-                                                            ? null
-                                                            : option.value
-                                                    )
-                                                }
-                                            />
-                                        )
-                                    })}
-                                </View>
-                            )}
-                        </View>
-                    ))}
+                                                    ? null
+                                                    : option.value
+                                            )
+                                        }
+                                    />
+                                )
+                            })}
+                        </ExpandableListChipRow>
+                    )}
                 </View>
-            </ScrollView>
-        </View>
+            ))}
+        </ExpandableListPanel>
     )
 }
 
 const styles = {
-    filterSection: {
-        marginTop: 15,
-        marginBottom: 15,
-        width: '100%',
-        maxHeight: 400,
-    },
-    filterScrollView: {
-        maxHeight: 400,
-    },
-    filterContainer: {
-        padding: 15,
-        backgroundColor: 'rgb(248, 248, 248)',
-        boxShadow: 'rgba(0, 0, 0, 0.1) 0px 1px 2px',
-        borderRadius: 10,
-    },
     filterGroupHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -179,12 +147,6 @@ const styles = {
         fontSize: 16,
         fontWeight: 'bold',
         color: '#333',
-    },
-    filterChipsContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 8,
-        marginBottom: 10,
     },
     additionalFilterGroup: {
         marginTop: 15,

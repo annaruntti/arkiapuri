@@ -20,11 +20,21 @@
                     "fonts": ["./src/assets/fonts/FiraSans-Regular.ttf"]
                 }
             ],
-            "expo-web-browser"
+            "expo-web-browser",
+            [
+                "expo-camera",
+                {
+                    "cameraPermission": "Arkiapuri käyttää kameraa viivakoodien lukemiseen.",
+                    "recordAudioAndroid": false
+                }
+            ]
         ],
         "ios": {
             "supportsTablet": true,
-            "bundleIdentifier": "com.arkiapuri.app"
+            "bundleIdentifier": "com.arkiapuri.app",
+            "infoPlist": {
+                "NSCameraUsageDescription": "Arkiapuri käyttää kameraa viivakoodien lukemiseen."
+            }
         },
         "android": {
             "adaptiveIcon": {

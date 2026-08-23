@@ -6,6 +6,23 @@ import {
 } from '../utils/foodCategories'
 import { SORT_OPTION_IDS, sortListItems } from '../utils/listSort'
 
+const getItemSearchValues = (item) => {
+    const food =
+        item?.foodId && typeof item.foodId === 'object' ? item.foodId : {}
+    const off = item?.openFoodFactsData || food.openFoodFactsData || {}
+
+    return [
+        item?.name,
+        food.name,
+        item?.barcode,
+        food.barcode,
+        off.barcode,
+        off.code,
+    ]
+        .filter(Boolean)
+        .map((value) => String(value).toLowerCase())
+}
+
 /**
  * Shared search + category filter + sort state for pantry and shopping list screens.
  */
@@ -33,9 +50,7 @@ export const useFilteredItemList = ({
 
             const query = searchQuery.toLowerCase().trim()
             return list.filter((item) =>
-                String(item.name || '')
-                    .toLowerCase()
-                    .includes(query)
+                getItemSearchValues(item).some((value) => value.includes(query))
             )
         },
         [searchQuery]

@@ -793,12 +793,16 @@ const UnifiedFoodSearch = ({
                         />
                     )}
                 </View>
-                <TouchableOpacity
-                    style={styles.scanButton}
-                    onPress={() => setShowScanner(true)}
-                >
-                    <Ionicons name="barcode" size={24} color="#5844BB" />
-                </TouchableOpacity>
+                {!isDesktop ? (
+                    <TouchableOpacity
+                        style={styles.scanButton}
+                        onPress={() => setShowScanner(true)}
+                        accessibilityRole="button"
+                        accessibilityLabel="Skannaa viivakoodi"
+                    >
+                        <Ionicons name="barcode" size={24} color="#5844BB" />
+                    </TouchableOpacity>
+                ) : null}
             </View>
 
             {isListVisible && searchQuery.length >= 2 && (
@@ -895,14 +899,11 @@ const UnifiedFoodSearch = ({
                 </View>
             )}
 
-            {/* Barcode Scanner Modal */}
-            <Modal visible={showScanner} animationType="slide">
-                <BarcodeScanner
-                    onScanSuccess={handleBarcodeScanned}
-                    onCancel={() => setShowScanner(false)}
-                    isVisible={showScanner}
-                />
-            </Modal>
+            <BarcodeScanner
+                onScanSuccess={handleBarcodeScanned}
+                onCancel={() => setShowScanner(false)}
+                isVisible={showScanner}
+            />
             </>
             )}
         </View>

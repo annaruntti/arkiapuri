@@ -1225,7 +1225,7 @@ const FormFoodItem = forwardRef(
                 ref={ref}
                 style={styles.formScrollView}
                 contentContainerStyle={styles.formScroll}
-                showsVerticalScrollIndicator={true}
+                showsVerticalScrollIndicator={false}
                 bounces={false}
                 keyboardShouldPersistTaps="handled"
                 onScrollBeginDrag={closeUnitMenu}
@@ -1345,7 +1345,12 @@ const styles = StyleSheet.create({
     },
     formScrollView: {
         width: '100%',
-        ...(Platform.OS === 'web' && { overflow: 'visible' }),
+        ...(Platform.OS === 'web' && {
+            overflow: 'visible',
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+            '::-webkit-scrollbar': { display: 'none' },
+        }),
     },
     formScroll: {
         flexGrow: 1,

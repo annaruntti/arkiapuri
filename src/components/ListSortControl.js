@@ -1,13 +1,15 @@
-import { useMemo, useState } from 'react'
+import { useLayoutEffect, useState } from 'react'
 import { View } from 'react-native'
-import Button from './Button'
+import ExpandableListPanel, {
+    ExpandableListChipRow,
+} from './ExpandableListPanel'
+import FilterChip from './FilterChip'
+import { useListSortPanelSlot } from './ListStatsRow'
 import ToggleButton from './ToggleButton'
-import { getSortOptionById, getSortOptionLabel } from '../utils/listSort'
 
 /**
  * Reusable list sort control.
- * Trigger keeps a sort icon and uses small tertiary styling;
- * each sort direction is its own option button.
+ * Trigger stays in the stats action row; options use the same panel as filters.
  */
 const ListSortControl = ({
     options = [],
@@ -18,6 +20,7 @@ const ListSortControl = ({
     showOptions: controlledShowOptions,
     onToggleShowOptions,
 }) => {
+    const registerSortPanel = useListSortPanelSlot()
     const [internalShowOptions, setInternalShowOptions] = useState(false)
     const showOptions =
         controlledShowOptions !== undefined
@@ -32,111 +35,51 @@ const ListSortControl = ({
         setInternalShowOptions((prev) => !prev)
     }
 
-    const selectedOption = useMemo(
-        () => getSortOptionById(options, value),
-        [options, value]
+    const isDisabled = disabled || options.length === 0
+
+    const renderOptionsPanel = () => (
+        <ExpandableListPanel visible title="Järjestä:">
+            <ExpandableListChipRow>
+                {options.map((option) => (
+                    <FilterChip
+                        key={option.id}
+                        label={option.label}
+                        isSelected={option.id === value}
+                        showRemoveIcon={false}
+                        onPress={() => onChange?.(option.id)}
+                    />
+                ))}
+            </ExpandableListChipRow>
+        </ExpandableListPanel>
     )
 
-    const title = selectedOption
-        ? getSortOptionLabel(options, value, { short: true })
-        : buttonText
-
-    const isDisabled = disabled || options.length === 0
+    useLayoutEffect(() => {
+        if (!registerSortPanel) {
+            return undefined
+        }
+        registerSortPanel(showOptions ? renderOptionsPanel() : null)
+        return () => registerSortPanel(null)
+    }, [registerSortPanel, showOptions, options, value])
 
     return (
         <View style={styles.container}>
             <ToggleButton
                 variant="pill"
-                label={title}
+                label={buttonText}
                 icon="sort"
                 expanded={showOptions}
                 onPress={isDisabled ? undefined : toggleShowOptions}
                 disabled={isDisabled}
             />
-
-            {showOptions ? (
-                <View style={styles.optionsPanel}>
-                    <View style={styles.optionsRow}>
-                        {options.map((option) => {
-                            const selected = option.id === value
-                            return (
-                                <Button
-                                    key={option.id}
-                                    title={option.label}
-                                    type="TERTIARY"
-                                    size="small"
-                                    onPress={() => {
-                                        onChange?.(option.id)
-                                        if (
-                                            controlledShowOptions === undefined
-                                        ) {
-                                            setInternalShowOptions(false)
-                                        }
-                                    }}
-                                    style={
-                                        selected
-                                            ? styles.selectedOptionButton
-                                            : styles.optionButton
-                                    }
-                                    textStyle={
-                                        selected
-                                            ? styles.selectedOptionText
-                                            : undefined
-                                    }
-                                />
-                            )
-                        })}
-                    </View>
-                </View>
-            ) : null}
+            {registerSortPanel ? null : showOptions ? renderOptionsPanel() : null}
         </View>
     )
 }
 
 const styles = {
     container: {
-        flexShrink: 1,
-        alignItems: 'flex-end',
-        position: 'relative',
+        flexShrink: 0,
         zIndex: 20,
-    },
-    optionsPanel: {
-        position: 'absolute',
-        top: 40,
-        right: 0,
-        backgroundColor: '#fff',
-        borderRadius: 10,
-        borderWidth: 1,
-        borderColor: '#E4DFF5',
-        padding: 10,
-        gap: 8,
-        minWidth: 280,
-        maxWidth: 360,
-        width: 320,
-        shadowColor: '#000',
-        shadowOpacity: 0.08,
-        shadowRadius: 6,
-        shadowOffset: { width: 0, height: 2 },
-        elevation: 3,
-        zIndex: 30,
-    },
-    optionsRow: {
-        flexDirection: 'column',
-        alignItems: 'stretch',
-        gap: 8,
-    },
-    optionButton: {
-        backgroundColor: '#FAFAFC',
-        alignSelf: 'stretch',
-        width: '100%',
-    },
-    selectedOptionButton: {
-        backgroundColor: '#AE9CFC',
-        alignSelf: 'stretch',
-        width: '100%',
-    },
-    selectedOptionText: {
-        fontWeight: '700',
     },
 }
 

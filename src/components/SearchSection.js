@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { Platform, TextInput, TouchableOpacity, View } from 'react-native'
-import { MaterialIcons } from '@expo/vector-icons'
+import { Ionicons, MaterialIcons } from '@expo/vector-icons'
+import BarcodeScanner from './BarcodeScanner'
 import Button from './Button'
 import CustomText from './CustomText'
-import GenericFilterSection from './GenericFilterSection'
 import PrimaryActionFade from './PrimaryActionFade'
 import { useResponsiveDimensions } from '../utils/responsive'
 
@@ -28,15 +28,12 @@ const SearchSection = ({
     extraButtonTextStyle,
     buttonType = 'PRIMARY',
     actionsLabel,
-    filterComponent,
-    filterPlacement = 'withActions',
-    showFilters,
-    filterSectionProps,
+    onBarcodeScanned,
 }) => {
     const { isDesktop } = useResponsiveDimensions()
     const [isSearchFocused, setIsSearchFocused] = useState(false)
-    const filterWithSearch = filterPlacement === 'withSearch' && filterComponent
-    const fillButtonsOnMobile = filterWithSearch && !isDesktop
+    const [showScanner, setShowScanner] = useState(false)
+    const showBarcodeScan = Boolean(onBarcodeScanned) && !isDesktop
 
     return (
         <View style={styles.searchSection}>
@@ -44,7 +41,9 @@ const SearchSection = ({
                 <View
                     style={[
                         styles.searchInputContainer,
-                        filterWithSearch && styles.searchInputWithFilter,
+                        showBarcodeScan
+                            ? styles.searchInputWithScan
+                            : styles.searchInputFullWidth,
                         isSearchFocused && styles.searchInputContainerFocused,
                     ]}
                 >
@@ -72,9 +71,17 @@ const SearchSection = ({
                         </TouchableOpacity>
                     )}
                 </View>
-                {filterWithSearch}
+                {showBarcodeScan ? (
+                    <TouchableOpacity
+                        style={styles.scanButton}
+                        onPress={() => setShowScanner(true)}
+                        accessibilityRole="button"
+                        accessibilityLabel="Skannaa viivakoodi"
+                    >
+                        <Ionicons name="barcode" size={24} color="#5844BB" />
+                    </TouchableOpacity>
+                ) : null}
             </View>
-
             {showResultsInfo && searchQuery.length > 0 && (
                 <View style={styles.searchResultsInfo}>
                     <CustomText style={styles.searchResultsText}>
@@ -86,33 +93,19 @@ const SearchSection = ({
             )}
 
             {showButtonSection && (
-                <PrimaryActionFade
-                    style={[
-                        styles.buttonSection,
-                        filterWithSearch && styles.buttonSectionSeparated,
-                    ]}
-                >
+                <PrimaryActionFade style={styles.buttonSection}>
                     {actionsLabel ? (
                         <CustomText style={styles.actionsLabel}>
                             {actionsLabel}
                         </CustomText>
                     ) : null}
-                    <View
-                        style={[
-                            styles.buttonContainer,
-                            filterWithSearch && styles.buttonContainerStart,
-                            fillButtonsOnMobile && styles.buttonContainerFill,
-                        ]}
-                    >
+                    <View style={styles.buttonContainer}>
                         {buttonTitle && onButtonPress && (
                             <Button
                                 title={buttonTitle}
                                 type={buttonType}
                                 onPress={onButtonPress}
-                                style={[
-                                    buttonStyle,
-                                    fillButtonsOnMobile && styles.fillButton,
-                                ]}
+                                style={buttonStyle}
                                 textStyle={buttonTextStyle}
                             />
                         )}
@@ -121,23 +114,24 @@ const SearchSection = ({
                                 title={extraButtonTitle}
                                 type={extraButtonType}
                                 onPress={onExtraButtonPress}
-                                style={[
-                                    extraButtonStyle,
-                                    fillButtonsOnMobile && styles.fillButton,
-                                ]}
+                                style={extraButtonStyle}
                                 textStyle={extraButtonTextStyle}
                             />
                         )}
-                        {filterPlacement !== 'withSearch' && filterComponent}
                     </View>
-                    {filterSectionProps && (
-                        <GenericFilterSection
-                            showFilters={showFilters}
-                            {...filterSectionProps}
-                        />
-                    )}
                 </PrimaryActionFade>
             )}
+
+            {showBarcodeScan ? (
+                <BarcodeScanner
+                    isVisible={showScanner}
+                    onCancel={() => setShowScanner(false)}
+                    onScanSuccess={(barcode) => {
+                        setShowScanner(false)
+                        onBarcodeScanned(barcode)
+                    }}
+                />
+            ) : null}
         </View>
     )
 }
@@ -156,7 +150,8 @@ const styles = {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 10,
-        flexWrap: 'wrap',
+        width: '100%',
+        alignSelf: 'stretch',
     },
     searchInputContainer: {
         flexDirection: 'row',
@@ -168,7 +163,21 @@ const styles = {
         paddingHorizontal: 12,
         paddingVertical: 8,
         flex: 1,
-        minWidth: 180,
+        minWidth: 0,
+    },
+    searchInputFullWidth: {
+        width: '100%',
+        flexGrow: 1,
+        flexBasis: '100%',
+        minWidth: '100%',
+        alignSelf: 'stretch',
+    },
+    searchInputWithScan: {
+        flexGrow: 1,
+        flexShrink: 1,
+        flexBasis: 0,
+        minWidth: 0,
+        width: undefined,
     },
     searchInputContainerFocused: {
         borderColor: '#5844BB',
@@ -176,27 +185,36 @@ const styles = {
             boxShadow: '0 0 0 3px rgba(88, 68, 187, 0.15)',
         }),
     },
-    searchInputWithFilter: {
-        flexGrow: 1,
-        flexShrink: 1,
-        flexBasis: 180,
-    },
     searchIcon: {
         marginRight: 8,
     },
     searchInput: {
         flex: 1,
+        minWidth: 0,
         fontSize: 16,
         color: '#333',
         paddingVertical: 0,
         ...(Platform.OS === 'web' && {
             outlineStyle: 'none',
             outlineWidth: 0,
+            width: '100%',
         }),
     },
     clearButton: {
         padding: 4,
         marginLeft: 8,
+    },
+    scanButton: {
+        padding: 8,
+        height: 40,
+        minWidth: 40,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#5844BB',
+        backgroundColor: '#fff',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
     },
     searchResultsInfo: {
         marginTop: 10,
@@ -208,12 +226,6 @@ const styles = {
     },
     buttonSection: {
         marginTop: 15,
-    },
-    buttonSectionSeparated: {
-        marginTop: 16,
-        paddingTop: 14,
-        borderTopWidth: 1,
-        borderTopColor: '#e4e4e4',
     },
     actionsLabel: {
         fontSize: 13,
@@ -227,17 +239,6 @@ const styles = {
         gap: 10,
         justifyContent: 'space-between',
         flexWrap: 'wrap',
-    },
-    buttonContainerStart: {
-        justifyContent: 'flex-start',
-    },
-    buttonContainerFill: {
-        alignItems: 'stretch',
-    },
-    fillButton: {
-        flexGrow: 1,
-        flexBasis: 0,
-        minWidth: 0,
     },
 }
 export default SearchSection

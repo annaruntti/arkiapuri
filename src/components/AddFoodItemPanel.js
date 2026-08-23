@@ -29,7 +29,7 @@ const AddFoodItemPanel = ({
     return (
         <ScrollView
             style={styles.modalScrollView}
-            showsVerticalScrollIndicator={true}
+            showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.addItemModalContainer}
             keyboardShouldPersistTaps="handled"
         >
@@ -86,9 +86,13 @@ const styles = StyleSheet.create({
     modalScrollView: {
         maxHeight: Platform.OS === 'web' ? '80vh' : undefined,
         flex: 1,
+        ...(Platform.OS === 'web' && {
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+            '::-webkit-scrollbar': { display: 'none' },
+        }),
     },
     addItemModalContainer: {
-        padding: 10,
         paddingBottom: 24,
     },
     guestWarning: {

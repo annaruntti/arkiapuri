@@ -212,8 +212,8 @@ const ShoppingListsScreen = () => {
                         onUpdate={handleListUpdate}
                         fetchShoppingLists={fetchShoppingLists}
                         fetchPantryItems={fetchPantryItems}
-                        onRequireLogin={(trigger) =>
-                            showLoginPrompt(trigger || 'ai_feature')
+                        onRequireLogin={(trigger, action) =>
+                            showLoginPrompt(trigger || 'shopping_list', action)
                         }
                     />
 

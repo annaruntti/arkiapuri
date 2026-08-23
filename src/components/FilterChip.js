@@ -8,6 +8,7 @@ const FilterChip = ({
     isSelected,
     isDisabled,
     onPress,
+    showRemoveIcon = true,
 }) => {
     return (
         <TouchableOpacity
@@ -39,7 +40,7 @@ const FilterChip = ({
                     ({count})
                 </CustomText>
             )}
-            {isSelected && (
+            {isSelected && showRemoveIcon && (
                 <MaterialIcons
                     name="close"
                     size={16}
@@ -59,8 +60,11 @@ const styles = {
         borderRadius: 20,
         flexDirection: 'row',
         alignItems: 'center',
+        flexWrap: 'wrap',
         borderWidth: 1,
         borderColor: 'transparent',
+        maxWidth: '100%',
+        flexShrink: 1,
     },
     filterChipSelected: {
         backgroundColor: '#AE9CFC',

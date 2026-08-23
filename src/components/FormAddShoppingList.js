@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import {
     Alert,
     FlatList,
+    Platform,
     ScrollView,
     StyleSheet,
     TouchableOpacity,
@@ -335,7 +336,6 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
                                         selectedShoppingListId={
                                             selectedShoppingListId
                                         }
-                                        showBackButton
                                     />
                                 </View>
                             )}
@@ -409,11 +409,15 @@ const styles = StyleSheet.create({
     },
     scrollView: {
         flex: 1,
-        paddingHorizontal: 15,
+        ...(Platform.OS === 'web' && {
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+            '::-webkit-scrollbar': { display: 'none' },
+        }),
     },
     formContainer: {
-        paddingBottom: 20,
-        paddingTop: 10,
+        paddingBottom: 12,
+        paddingTop: 0,
     },
     itemsList: {
         marginTop: 10,
@@ -535,9 +539,8 @@ const styles = StyleSheet.create({
     inlineFoodFormContainer: {
         backgroundColor: '#f8f9fa',
         borderRadius: 12,
-        padding: 20,
-        marginVertical: 15,
-        marginBottom: 20,
+        padding: 12,
+        marginVertical: 10,
         borderWidth: 1,
         borderColor: '#e9ecef',
     },

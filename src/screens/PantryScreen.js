@@ -14,6 +14,7 @@ import * as ImagePicker from 'expo-image-picker'
 import GenericFilter from '../components/GenericFilter'
 import GenericFilterSection from '../components/GenericFilterSection'
 import ListSortControl from '../components/ListSortControl'
+import ListStatsRow from '../components/ListStatsRow'
 import CategorySectionHeader from '../components/CategorySectionHeader'
 import CustomText from '../components/CustomText'
 import AddFoodItemPanel from '../components/AddFoodItemPanel'
@@ -37,7 +38,8 @@ import { getFoodItemImageUrl } from '../utils/openFoodFactsMapper'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 import { findOrCreateFoodItem } from '../services/foodItemApi'
-import { addPantryItem } from '../services/collectionApi'
+import { addPantryItem, deletePantryItem } from '../services/collectionApi'
+import { showConfirm } from '../utils/showAlert'
 import {
     compressPantryScanImage,
     getAiEntitlement,
@@ -70,6 +72,17 @@ const getPantryFoodId = (item) => {
     return String(item.foodId)
 }
 
+const collectPantryMergedIds = (item) => {
+    const ids = []
+    if (Array.isArray(item?.mergedIds)) {
+        ids.push(...item.mergedIds)
+    }
+    if (item?._id) {
+        ids.push(item._id)
+    }
+    return [...new Set(ids.filter(Boolean).map(String))]
+}
+
 /** Show the same product only once; sum quantities. Name is the merge key. */
 const mergeDuplicatePantryItems = (items = []) => {
     const groups = new Map()
@@ -92,6 +105,7 @@ const mergeDuplicatePantryItems = (items = []) => {
         // Keep different units of the same product separate so quantities
         // are not summed across incompatible units (e.g. 1 kpl + 500 g).
         const mergeKey = `${key}:unit:${itemUnit}`
+        const incomingIds = collectPantryMergedIds(item)
 
         const existing = groups.get(mergeKey)
         if (!existing) {
@@ -99,8 +113,15 @@ const mergeDuplicatePantryItems = (items = []) => {
                 ...item,
                 name: displayName || item.name,
                 unit: itemUnit,
+                mergedIds: incomingIds,
             })
             continue
+        }
+
+        for (const id of incomingIds) {
+            if (!existing.mergedIds.includes(id)) {
+                existing.mergedIds.push(id)
+            }
         }
 
         existing.quantity =
@@ -367,94 +388,58 @@ const PantryScreen = ({}) => {
         }
     }
 
-    const handleRemoveItem = async (itemId) => {
-        try {
-            const token = await storage.getItem('userToken')
+    const getPantryItemIds = (item) => collectPantryMergedIds(item)
 
-            if (!token) {
-                if (!continueWithoutLogin) {
-                    showLoginPrompt('save')
-                    return
-                }
-                Alert.alert(
-                    'Poista tuote',
-                    'Haluatko varmasti poistaa tuotteen pentteristä?',
-                    [
-                        { text: 'Peruuta', style: 'cancel' },
-                        {
-                            text: 'Poista',
-                            style: 'destructive',
-                            onPress: () => {
-                                setPantryItems((prevItems) =>
-                                    prevItems.filter(
-                                        (item) => item._id !== itemId
-                                    )
-                                )
-                            },
-                        },
-                    ]
-                )
-                return
-            }
-
-            // Show confirmation dialog
-            Alert.alert(
-                'Poista tuote',
-                'Haluatko varmasti poistaa tuotteen pentteristä?',
-                [
-                    {
-                        text: 'Peruuta',
-                        style: 'cancel',
-                    },
-                    {
-                        text: 'Poista',
-                        onPress: async () => {
-                            try {
-                                setLoading(true) // Show loading state
-                                const response = await axios.delete(
-                                    getServerUrl(`/pantry/items/${itemId}`),
-                                    {
-                                        headers: {
-                                            Authorization: `Bearer ${token}`,
-                                        },
-                                    }
-                                )
-
-                                if (response.data.success) {
-                                    // Update local state to remove the item
-                                    setPantryItems((prevItems) =>
-                                        prevItems.filter(
-                                            (item) => item._id !== itemId
-                                        )
-                                    )
-                                    // Fetch updated list to ensure sync with server
-                                    await fetchPantryItems()
-                                } else {
-                                    Alert.alert(
-                                        'Virhe',
-                                        'Tuotteen poisto epäonnistui'
-                                    )
-                                }
-                            } catch (error) {
-                                console.error('Error removing item:', error)
-                                Alert.alert(
-                                    'Virhe',
-                                    'Tuotteen poisto epäonnistui: ' +
-                                        (error.response?.data?.message ||
-                                            error.message)
-                                )
-                            } finally {
-                                setLoading(false) // Hide loading state
-                            }
-                        },
-                        style: 'destructive',
-                    },
-                ]
+    const removeItemsLocally = (idsToRemove) => {
+        const removeSet = new Set(idsToRemove.map(String))
+        setPantryItems((prevItems) =>
+            prevItems.filter(
+                (row) =>
+                    !collectPantryMergedIds(row).some((id) => removeSet.has(id))
             )
-        } catch (error) {
-            console.error('Error in handleRemoveItem:', error)
-            Alert.alert('Virhe', 'Tuotteen poisto epäonnistui')
+        )
+    }
+
+    const handleRemoveItem = async (item) => {
+        const idsToRemove = getPantryItemIds(item)
+        if (idsToRemove.length === 0) return
+
+        const token = await storage.getItem('userToken')
+        if (!token && !continueWithoutLogin) {
+            showLoginPrompt('save')
+            return
         }
+
+        showConfirm({
+            title: 'Poista tuote',
+            message: 'Haluatko varmasti poistaa tuotteen pentteristä?',
+            confirmText: 'Poista',
+            destructive: true,
+            onConfirm: async () => {
+                try {
+                    if (!token) {
+                        removeItemsLocally(idsToRemove)
+                        return
+                    }
+
+                    setLoading(true)
+                    await Promise.all(
+                        idsToRemove.map((id) => deletePantryItem(id))
+                    )
+                    removeItemsLocally(idsToRemove)
+                    await fetchPantryItems()
+                } catch (error) {
+                    console.error('Error removing item:', error)
+                    Alert.alert(
+                        'Virhe',
+                        'Tuotteen poisto epäonnistui: ' +
+                            (error.response?.data?.message || error.message)
+                    )
+                } finally {
+                    setLoading(false)
+                }
+            },
+        })
     }
 
     const handleUpdateItem = async (itemId, updatedData) => {
@@ -556,7 +541,7 @@ const PantryScreen = ({}) => {
                 setSelectedItem(item)
                 setDetailsVisible(true)
             }}
-            onDelete={() => handleRemoveItem(item._id)}
+            onDelete={() => handleRemoveItem(item)}
             deleteAccessibilityLabel={`Poista ${item.name}`}
         />
     )
@@ -790,55 +775,56 @@ const PantryScreen = ({}) => {
                                 resultsCount={filteredPantryItems.length}
                                 resultsText="Löytyi {count} tuotetta"
                                 noResultsText="Tuotteita ei löytynyt"
-                                filterPlacement="withSearch"
                                 showButtonSection={true}
                                 actionsLabel="Lisää tuotteita"
                                 buttonTitle="Skannaa pentteri"
                                 onButtonPress={handleOpenPantryScan}
                                 extraButtonTitle="Lisää yksi kerrallaan"
-                                extraButtonType="TERTIARY"
+                                extraButtonType="SECONDARY"
                                 onExtraButtonPress={handleOpenAddItemSearch}
-                                filterComponent={
-                                    <GenericFilter
-                                        selectedFilters={
-                                            selectedCategoryFilters
-                                        }
-                                        showFilters={showFilters}
-                                        onToggleShowFilters={() =>
-                                            setShowFilters(!showFilters)
-                                        }
-                                    />
-                                }
                             />
                         }
                     >
-                        <GenericFilterSection
-                            selectedFilters={selectedCategoryFilters}
-                            showFilters={showFilters}
-                            filterTitle="Suodata kategorioittain:"
-                            categories={ingredientCategories}
-                            onToggleFilter={toggleCategoryFilter}
-                            onClearFilters={() =>
-                                setSelectedCategoryFilters([])
-                            }
-                            getItemCounts={getCategoryItemCounts}
-                        />
-
                         <View style={styles.productListContainer}>
-                            <View style={styles.stats}>
+                            <ListStatsRow
+                                actions={
+                                    <>
+                                        <ListSortControl
+                                            options={PANTRY_SORT_OPTIONS}
+                                            value={sortId}
+                                            onChange={setSortId}
+                                        />
+                                        <GenericFilter
+                                            selectedFilters={
+                                                selectedCategoryFilters
+                                            }
+                                            showFilters={showFilters}
+                                            onToggleShowFilters={() =>
+                                                setShowFilters(!showFilters)
+                                            }
+                                        />
+                                    </>
+                                }
+                            >
+                                <CustomText>Tuotteita:</CustomText>
                                 <CustomText>
-                                    Tuotteita:{' '}
                                     {searchQuery.length > 0 ||
                                     selectedCategoryFilters.length > 0
                                         ? `${filteredPantryItems.length} / ${pantryItems?.length || 0}`
                                         : `${pantryItems?.length || 0} kpl`}
                                 </CustomText>
-                                <ListSortControl
-                                    options={PANTRY_SORT_OPTIONS}
-                                    value={sortId}
-                                    onChange={setSortId}
-                                />
-                            </View>
+                            </ListStatsRow>
+                            <GenericFilterSection
+                                selectedFilters={selectedCategoryFilters}
+                                showFilters={showFilters}
+                                filterTitle="Suodata kategorioittain:"
+                                categories={ingredientCategories}
+                                onToggleFilter={toggleCategoryFilter}
+                                onClearFilters={() =>
+                                    setSelectedCategoryFilters([])
+                                }
+                                getItemCounts={getCategoryItemCounts}
+                            />
                             <SectionList
                                 sections={pantryItemSections}
                                 renderItem={renderItem}
@@ -966,15 +952,6 @@ const styles = StyleSheet.create({
     },
     manualAddContainerMobile: {
         width: '100%',
-    },
-    stats: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        zIndex: 5,
-        position: 'relative',
-        overflow: 'visible',
-        marginBottom: 8,
     },
     primaryButton: {
         borderRadius: 25,

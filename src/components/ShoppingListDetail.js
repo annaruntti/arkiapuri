@@ -18,6 +18,7 @@ import FoodListItemRow from './FoodListItemRow'
 import GenericFilter from './GenericFilter'
 import GenericFilterSection from './GenericFilterSection'
 import ListSortControl from './ListSortControl'
+import ListStatsRow from './ListStatsRow'
 import PantryItemDetails from './PantryItemDetails'
 import ResponsiveModal from './ResponsiveModal'
 import SearchSection from './SearchSection'
@@ -37,6 +38,7 @@ import {
     SORT_OPTION_IDS,
 } from '../utils/listSort'
 import { useResponsiveDimensions } from '../utils/responsive'
+import storage from '../utils/storage'
 
 const getListItemId = (item) => {
     if (!item) return ''
@@ -121,6 +123,17 @@ const ShoppingListDetail = ({
     const goToListView = () => {
         setModalView(MODAL_VIEWS.LIST)
         setSelectedItem(null)
+    }
+
+    const openAddItemView = async () => {
+        const token = await storage.getItem('userToken')
+        if (!token && onRequireLogin) {
+            onRequireLogin('shopping_list', () =>
+                setModalView(MODAL_VIEWS.ADD_ITEM)
+            )
+            return
+        }
+        setModalView(MODAL_VIEWS.ADD_ITEM)
     }
 
     const handleModalClose = () => {
@@ -702,79 +715,77 @@ const ShoppingListDetail = ({
                                 searchQuery={searchQuery}
                                 onSearchChange={setSearchQuery}
                                 onClearSearch={() => setSearchQuery('')}
+                                onBarcodeScanned={setSearchQuery}
                                 placeholder="Hae ostoslistasta..."
                                 resultsCount={filteredItems.length}
                                 resultsText="Löytyi {count} tuotetta"
                                 noResultsText="Tuotteita ei löytynyt"
                                 showButtonSection={true}
                                 buttonTitle="+ Luo uusi tuote"
-                                onButtonPress={() =>
-                                    setModalView(MODAL_VIEWS.ADD_ITEM)
-                                }
+                                onButtonPress={openAddItemView}
                                 buttonStyle={styles.smallPrimaryButton}
                                 buttonTextStyle={styles.buttonText}
-                                filterComponent={
-                                    <GenericFilter
-                                        selectedFilters={
-                                            selectedCategoryFilters
-                                        }
-                                        showFilters={showFilters}
-                                        onToggleShowFilters={() =>
-                                            setShowFilters(!showFilters)
-                                        }
-                                        buttonText="Suodata"
-                                    />
-                                }
                             />
                         }
                     >
-                        <GenericFilterSection
-                            selectedFilters={selectedCategoryFilters}
-                            showFilters={showFilters}
-                            filterTitle="Suodata kategorioittain:"
-                            categories={ingredientCategories}
-                            onToggleFilter={toggleCategoryFilter}
-                            onClearFilters={() =>
-                                setSelectedCategoryFilters([])
-                            }
-                            getItemCounts={getCategoryItemCounts}
-                        />
-
                         <View style={styles.itemsListContainer}>
-                            <View style={styles.stats}>
-                                <View style={styles.statsTextColumn}>
-                                    <CustomText>
-                                        Tuotteita:{' '}
-                                        {searchQuery.length > 0 ||
-                                        selectedCategoryFilters.length > 0
-                                            ? `${filteredItems.length} / ${shoppingList.items?.length || 0}`
-                                            : `${shoppingList.items?.length || 0} kpl`}
-                                    </CustomText>
-                                    <CustomText>
-                                        Kokonaishinta:{' '}
-                                        {filteredItems &&
-                                        filteredItems.length > 0
-                                            ? filteredItems
-                                                  .reduce(
-                                                      (sum, item) =>
-                                                          sum +
-                                                          (parseFloat(
-                                                              item.price
-                                                          ) || 0),
-                                                      0
-                                                  )
-                                                  .toFixed(2)
-                                            : shoppingList.totalEstimatedPrice ||
-                                              0}
-                                        €
-                                    </CustomText>
-                                </View>
-                                <ListSortControl
-                                    options={SHOPPING_SORT_OPTIONS}
-                                    value={sortId}
-                                    onChange={setSortId}
-                                />
-                            </View>
+                            <ListStatsRow
+                                actions={
+                                    <>
+                                        <ListSortControl
+                                            options={SHOPPING_SORT_OPTIONS}
+                                            value={sortId}
+                                            onChange={setSortId}
+                                        />
+                                        <GenericFilter
+                                            selectedFilters={
+                                                selectedCategoryFilters
+                                            }
+                                            showFilters={showFilters}
+                                            onToggleShowFilters={() =>
+                                                setShowFilters(!showFilters)
+                                            }
+                                        />
+                                    </>
+                                }
+                            >
+                                <CustomText>Tuotteita:</CustomText>
+                                <CustomText>
+                                    {searchQuery.length > 0 ||
+                                    selectedCategoryFilters.length > 0
+                                        ? `${filteredItems.length} / ${shoppingList.items?.length || 0}`
+                                        : `${shoppingList.items?.length || 0} kpl`}
+                                </CustomText>
+                                <CustomText>
+                                    Kokonaishinta:{' '}
+                                    {filteredItems &&
+                                    filteredItems.length > 0
+                                        ? filteredItems
+                                              .reduce(
+                                                  (sum, item) =>
+                                                      sum +
+                                                      (parseFloat(
+                                                          item.price
+                                                      ) || 0),
+                                                  0
+                                              )
+                                              .toFixed(2)
+                                        : shoppingList.totalEstimatedPrice ||
+                                          0}
+                                    €
+                                </CustomText>
+                            </ListStatsRow>
+                            <GenericFilterSection
+                                selectedFilters={selectedCategoryFilters}
+                                showFilters={showFilters}
+                                filterTitle="Suodata kategorioittain:"
+                                categories={ingredientCategories}
+                                onToggleFilter={toggleCategoryFilter}
+                                onClearFilters={() =>
+                                    setSelectedCategoryFilters([])
+                                }
+                                getItemCounts={getCategoryItemCounts}
+                            />
                             <SectionList
                                 sections={itemSections}
                                 renderItem={renderItem}
@@ -935,23 +946,6 @@ const styles = StyleSheet.create({
     description: {
         marginBottom: 5,
         color: '#666',
-    },
-    stats: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: 10,
-        paddingBottom: 5,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-        zIndex: 5,
-        position: 'relative',
-        overflow: 'visible',
-    },
-    statsTextColumn: {
-        flex: 1,
-        gap: 2,
-        paddingRight: 8,
     },
     listContent: {
         paddingBottom: 20,
