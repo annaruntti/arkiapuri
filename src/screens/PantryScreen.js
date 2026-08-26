@@ -706,41 +706,85 @@ const PantryScreen = ({}) => {
     const handleCommitScanItems = async (selectedItems) => {
         if (!selectedItems?.length) return
         setScanSubmitting(true)
+        const succeededKeys = []
+        let lastError = null
         try {
             for (const item of selectedItems) {
-                await addPantryItem({
-                    name: item.name,
-                    quantity: item.quantity,
-                    unit: item.unit,
-                    category: item.category || [],
-                    foodId: item.foodId || undefined,
-                    calories: item.calories,
-                    nutrition: item.nutrition,
-                    barcode: item.barcode,
-                    imageUrl: item.imageUrl,
-                    openFoodFactsData:
-                        item.barcode || item.imageUrl
-                            ? {
-                                  barcode: item.barcode,
-                                  imageUrl: item.imageUrl,
-                                  nutrition: item.nutrition,
-                              }
-                            : undefined,
-                    addedFrom: 'pantry',
-                })
+                try {
+                    await addPantryItem({
+                        name: item.name,
+                        quantity: item.quantity,
+                        unit: item.unit,
+                        category: item.category || [],
+                        foodId: item.foodId || undefined,
+                        calories: item.calories,
+                        nutrition: item.nutrition,
+                        barcode: item.barcode,
+                        imageUrl: item.imageUrl,
+                        openFoodFactsData:
+                            item.barcode || item.imageUrl
+                                ? {
+                                      barcode: item.barcode,
+                                      imageUrl: item.imageUrl,
+                                      nutrition: item.nutrition,
+                                  }
+                                : undefined,
+                        addedFrom: 'pantry',
+                    })
+                    if (item.key) succeededKeys.push(item.key)
+                } catch (error) {
+                    lastError = error
+                    console.error('Error committing scan item:', error)
+                }
             }
-            setScanReviewVisible(false)
-            setScanCandidates([])
-            await fetchPantryItems()
-            Alert.alert(
-                'Onnistui',
-                `${selectedItems.length} tuotetta lisätty pentteriin`
-            )
-        } catch (error) {
-            console.error('Error committing scan items:', error)
+
+            if (succeededKeys.length === selectedItems.length) {
+                setScanReviewVisible(false)
+                setScanCandidates([])
+                await fetchPantryItems()
+                Alert.alert(
+                    'Onnistui',
+                    `${selectedItems.length} tuotetta lisätty pentteriin`
+                )
+                return
+            }
+
+            if (succeededKeys.length > 0) {
+                const succeededSet = new Set(succeededKeys)
+                const submittedByKey = new Map(
+                    selectedItems.map((item) => [item.key, item])
+                )
+                setScanCandidates((prev) =>
+                    prev.flatMap((candidate, index) => {
+                        const key = `${candidate.foodId || candidate.name}-${index}`
+                        if (succeededSet.has(key)) return []
+                        const submitted = submittedByKey.get(key)
+                        if (!submitted) return [candidate]
+                        return [
+                            {
+                                ...candidate,
+                                name: submitted.name,
+                                quantity: submitted.quantity,
+                                unit: submitted.unit,
+                                category: submitted.category,
+                                foodId: submitted.foodId,
+                                calories: submitted.calories,
+                                nutrition: submitted.nutrition,
+                                barcode: submitted.barcode,
+                                imageUrl: submitted.imageUrl,
+                            },
+                        ]
+                    })
+                )
+                await fetchPantryItems()
+            }
+
             Alert.alert(
                 'Virhe',
-                'Tuotteiden lisääminen epäonnistui. Voit lisätä ne manuaalisesti.'
+                succeededKeys.length > 0
+                    ? `${succeededKeys.length} tuotetta lisättiin, mutta kaikkia ei voitu lisätä. Yritä uudelleen jäljellä oleville.`
+                    : lastError?.response?.data?.message ||
+                          'Tuotteiden lisääminen epäonnistui. Voit lisätä ne manuaalisesti.'
             )
         } finally {
             setScanSubmitting(false)

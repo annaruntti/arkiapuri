@@ -43,6 +43,8 @@ const isSameCatalogProduct = (typedName, catalogName) => {
     return Boolean(typedKey && catalogKey && typedKey === catalogKey)
 }
 
+const isHttpUrl = (value) => /^https?:\/\//i.test(String(value || '').trim())
+
 const formatNumber = (value) => {
     const parsed = Number(value)
     if (!Number.isFinite(parsed)) return ''
@@ -91,28 +93,28 @@ const mapScanItemToRow = (item, index) => ({
 
 const applyLookupResult = (row, result) => {
     if (!result) return { ...row, lookingUp: false }
-    const catalogName = result.matchName || result.name
-    const sameProduct =
-        result.source === 'catalog' &&
-        isSameCatalogProduct(row.name, catalogName)
+    const adoptedName = result.matchName || result.name
+    const fromKnownSource =
+        result.source === 'catalog' || result.source === 'openfoodfacts'
+    if (!fromKnownSource) {
+        return {
+            ...row,
+            lookingUp: false,
+            barcode: result.barcode || row.barcode,
+            imageUrl: result.imageUrl || row.imageUrl,
+        }
+    }
     return {
         ...row,
         lookingUp: false,
+        name: adoptedName || row.name,
         category: result.category?.length ? result.category : row.category,
         calories: result.calories ?? row.calories,
         nutrition: result.nutrition ?? row.nutrition,
-        foodId: sameProduct ? result.foodId : null,
-        matchSource: sameProduct
-            ? result.source
-            : result.source === 'catalog'
-              ? 'inferred'
-              : result.source,
-        matchName: sameProduct
-            ? catalogName
-            : result.source === 'openfoodfacts'
-              ? result.matchName
-              : undefined,
-        barcode: result.barcode,
+        foodId: result.source === 'catalog' ? result.foodId : null,
+        matchSource: result.source,
+        matchName: adoptedName,
+        barcode: result.barcode || row.barcode,
         imageUrl: result.imageUrl || row.imageUrl,
     }
 }
@@ -294,6 +296,7 @@ const PantryScanReview = ({
         const selected = rows
             .filter((row) => row.selected && row.name.trim())
             .map((row) => ({
+                key: row.key,
                 name: row.name.trim(),
                 quantity: parseQuantityInput(row.quantity, 1),
                 unit: row.unit || 'kpl',
@@ -405,9 +408,9 @@ const PantryScanReview = ({
                                     </TouchableOpacity>
                                     <Image
                                         source={{
-                                            uri:
-                                                row.imageUrl ||
-                                                FOOD_PLACEHOLDER_IMAGE_URL,
+                                            uri: isHttpUrl(row.imageUrl)
+                                                ? row.imageUrl
+                                                : FOOD_PLACEHOLDER_IMAGE_URL,
                                         }}
                                         style={styles.thumbnail}
                                         resizeMode="cover"
