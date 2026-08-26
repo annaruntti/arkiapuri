@@ -813,8 +813,8 @@ const ShoppingListDetail = ({
                             style={[
                                 styles.floatingActionBar,
                                 isDesktop && styles.desktopFloatingActionBar,
+                                { pointerEvents: 'box-none' },
                             ]}
-                            pointerEvents="box-none"
                         >
                             <View
                                 style={[

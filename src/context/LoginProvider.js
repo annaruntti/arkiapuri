@@ -50,7 +50,9 @@ const LoginProvider = ({ children }) => {
                     setIsLoggedIn(false)
                 }
             } catch (error) {
-                console.error('Token verification failed:', error)
+                if (error?.response?.status !== 401) {
+                    console.error('Token verification failed:', error)
+                }
                 await storage.removeItem('userToken')
                 await storage.removeItem('isLoggedIn')
                 setIsLoggedIn(false)

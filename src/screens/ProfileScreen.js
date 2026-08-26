@@ -34,14 +34,24 @@ const ProfileScreen = () => {
     // Fetch household data when screen is focused
     useFocusEffect(
         React.useCallback(() => {
-            fetchHousehold()
-        }, [])
+            if (isLoggedIn) {
+                fetchHousehold()
+            } else {
+                setHousehold(null)
+                setLoadingHousehold(false)
+            }
+        }, [isLoggedIn])
     )
 
     const fetchHousehold = async () => {
         try {
             setLoadingHousehold(true)
             const token = await storage.getItem('userToken')
+            if (!token) {
+                setHousehold(null)
+                return
+            }
+
             const response = await axios.get(getServerUrl('/household'), {
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -52,8 +62,10 @@ const ProfileScreen = () => {
                 setHousehold(response.data.household)
             }
         } catch (error) {
-            console.error('Error fetching household:', error)
-            // Silent fail - household is optional
+            if (error?.response?.status !== 401) {
+                console.error('Error fetching household:', error)
+            }
+            setHousehold(null)
         } finally {
             setLoadingHousehold(false)
         }
@@ -192,6 +204,7 @@ const ProfileScreen = () => {
                                         <Image
                                             source={getProfileImageSource(null)}
                                             style={styles.profileImage}
+                                            resizeMode="cover"
                                         />
                                     </View>
 
@@ -263,6 +276,7 @@ const ProfileScreen = () => {
                                                     profile
                                                 )}
                                                 style={styles.profileImage}
+                                                resizeMode="cover"
                                             />
                                             <View style={styles.editOverlay}>
                                                 <CustomText
@@ -431,7 +445,6 @@ const styles = StyleSheet.create({
     profileImage: {
         width: '100%',
         height: '100%',
-        resizeMode: 'cover',
     },
     editOverlay: {
         position: 'absolute',

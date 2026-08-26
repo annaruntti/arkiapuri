@@ -70,6 +70,11 @@ const FamilyManagementScreen = ({ navigation }) => {
         try {
             setLoading(true)
             const token = await storage.getItem('userToken')
+            if (!token) {
+                setHousehold(null)
+                return
+            }
+
             const response = await axios.get(getServerUrl('/household'), {
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -80,7 +85,9 @@ const FamilyManagementScreen = ({ navigation }) => {
                 setHousehold(response.data.household)
             }
         } catch (error) {
-            console.error('Error fetching household:', error)
+            if (error?.response?.status !== 401) {
+                console.error('Error fetching household:', error)
+            }
             setHousehold(null)
         } finally {
             setLoading(false)

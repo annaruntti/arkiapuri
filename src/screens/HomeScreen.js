@@ -107,6 +107,7 @@ const HomeScreen = () => {
                         <Image
                             source={card.image}
                             style={styles.desktopCardImage}
+                            resizeMode="contain"
                         />
                         <View style={styles.desktopCardContent}>
                             <CustomText style={styles.desktopCardTitle}>
@@ -706,7 +707,6 @@ const styles = StyleSheet.create({
     desktopCardImage: {
         width: 120,
         height: 120,
-        resizeMode: 'contain',
         alignSelf: 'center',
         marginTop: 25,
         marginBottom: 10,

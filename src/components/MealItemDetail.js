@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { useEffect, useState } from 'react'
-import { Alert, ScrollView, StyleSheet } from 'react-native'
+import { Alert, Platform, ScrollView, StyleSheet } from 'react-native'
 import useMealFoodItemActions from '../hooks/useMealFoodItemActions'
 import { getServerUrl } from '../utils/getServerUrl'
 import { clampDatesToMin } from '../utils/mealDates'
@@ -394,7 +394,10 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                     servings={normalizeServings(editedValues.servings)}
                 />
             ) : (
-                <ScrollView style={styles.detailScroll}>
+                <ScrollView
+                    style={styles.detailScroll}
+                    showsVerticalScrollIndicator={false}
+                >
                     <MealDetailsForm
                         meal={meal}
                         editedValues={editedValues}
@@ -427,6 +430,11 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
 const styles = StyleSheet.create({
     detailScroll: {
         paddingTop: 20,
+        ...(Platform.OS === 'web' && {
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+            '::-webkit-scrollbar': { display: 'none' },
+        }),
     },
 })
 

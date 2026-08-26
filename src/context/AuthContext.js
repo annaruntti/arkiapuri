@@ -34,7 +34,9 @@ export const AuthProvider = ({ children }) => {
                 }
             }
         } catch (error) {
-            console.error('Auth check failed:', error)
+            if (error?.response?.status !== 401) {
+                console.error('Auth check failed:', error)
+            }
             await storage.removeItem('userToken')
         } finally {
             setIsLoading(false)

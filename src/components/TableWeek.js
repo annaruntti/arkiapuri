@@ -1021,9 +1021,9 @@ const Table = ({ onRequireLogin }) => {
                         {
                             left: dragPosition.x - 140,
                             top: dragPosition.y - 140,
+                            pointerEvents: 'none',
                         },
                     ]}
-                    pointerEvents="none"
                 >
                     <View style={styles.mealItemContainer}>
                         <View style={styles.mealItemInfo}>
