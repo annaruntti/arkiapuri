@@ -21,6 +21,8 @@ import { getServerUrl } from '../utils/getServerUrl'
 import {
     clampDatesToMin,
     OVERDUE_COOKING_MESSAGE,
+    toStoredMealDate,
+    toStoredMealDates,
 } from '../utils/mealDates'
 import {
     getDifficultyEnum,
@@ -316,8 +318,8 @@ const AddMealForm = ({ onSubmit }) => {
                     })),
                     defaultRoles: [...selectedRoles],
                     mealCategory: parseMealCategories(mealCategory, []),
-                    plannedCookingDate,
-                    plannedEatingDates: eatingDates,
+                    plannedCookingDate: toStoredMealDate(plannedCookingDate),
+                    plannedEatingDates: toStoredMealDates(eatingDates),
                     servings,
                     image: mealImage
                         ? { url: mealImage.uri || mealImage }
@@ -400,8 +402,8 @@ const AddMealForm = ({ onSubmit }) => {
                 foodItems: createdFoodItemIds,
                 defaultRoles: [...selectedRoles],
                 mealCategory: parseMealCategories(mealCategory, []),
-                plannedCookingDate,
-                plannedEatingDates: eatingDates,
+                plannedCookingDate: toStoredMealDate(plannedCookingDate),
+                plannedEatingDates: toStoredMealDates(eatingDates),
                 servings,
                 user: profile._id,
             }

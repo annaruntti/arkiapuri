@@ -28,6 +28,11 @@ import { getServerUrl } from '../utils/getServerUrl'
 import { DEFAULT_SERVINGS } from '../utils/mealServings'
 import { getIngredientQuantity } from '../utils/mealFoodItem'
 import {
+    clampDatesToMin,
+    toStoredMealDate,
+    toStoredMealDates,
+} from '../utils/mealDates'
+import {
     MEAL_SORT_OPTIONS,
     SORT_OPTION_IDS,
     sortListItems,
@@ -370,8 +375,15 @@ const MealsScreen = ({ route, navigation }) => {
                     ['dinner']
                 ),
                 mealCategory: parseMealCategories(updatedMeal.mealCategory, []),
-                plannedCookingDate: updatedMeal.plannedCookingDate,
-                plannedEatingDates: updatedMeal.plannedEatingDates || [],
+                plannedCookingDate: toStoredMealDate(
+                    updatedMeal.plannedCookingDate
+                ),
+                plannedEatingDates: toStoredMealDates(
+                    clampDatesToMin(
+                        updatedMeal.plannedEatingDates || [],
+                        updatedMeal.plannedCookingDate
+                    )
+                ),
                 servings: parseInt(updatedMeal.servings, 10) || DEFAULT_SERVINGS,
                 recipe: updatedMeal.recipe || '',
                 foodItems: processedFoodItems,

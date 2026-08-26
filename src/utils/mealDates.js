@@ -53,6 +53,26 @@ export const clampDatesToMin = (dates, minValue) => {
     return dates.map((date) => clampDateToMin(date, minValue))
 }
 
+/** Local calendar day as YYYY-MM-DD, so UTC+ timezones do not shift the meal date. */
+export const toMealDateKey = (value) => {
+    const day = startOfDayDate(value)
+    if (!day) return null
+    const year = day.getFullYear()
+    const month = String(day.getMonth() + 1).padStart(2, '0')
+    const date = String(day.getDate()).padStart(2, '0')
+    return `${year}-${month}-${date}`
+}
+
+export const toStoredMealDate = (value) => {
+    const key = toMealDateKey(value)
+    return key ? `${key}T00:00:00.000Z` : null
+}
+
+export const toStoredMealDates = (dates) => {
+    if (!Array.isArray(dates)) return []
+    return [...new Set(dates.map(toStoredMealDate).filter(Boolean))]
+}
+
 export const isAnyDateBeforeCooking = (dates, cookingDate) => {
     if (!cookingDate || !Array.isArray(dates) || dates.length === 0) {
         return false

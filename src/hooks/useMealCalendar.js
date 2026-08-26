@@ -8,6 +8,8 @@ import storage from '../utils/storage'
 import {
     EATING_BEFORE_COOKING_MESSAGE,
     isAnyDateBeforeCooking,
+    toStoredMealDate,
+    toStoredMealDates,
 } from '../utils/mealDates'
 import { parseMealCategories } from '../utils/mealUtils'
 
@@ -139,9 +141,7 @@ export const useMealCalendar = ({ onRequireLogin }) => {
             const token = await getAuthTokenOrPrompt('sync')
             if (!token) return
             
-            const formattedDates = selectedDates.map(
-                (date) => format(date, 'yyyy-MM-dd') + 'T00:00:00.000Z'
-            )
+            const formattedDates = toStoredMealDates(selectedDates)
 
             const response = await axios.put(
                 getServerUrl(`/meals/${meal._id}`),
@@ -179,7 +179,7 @@ export const useMealCalendar = ({ onRequireLogin }) => {
             await axios.put(
                 getServerUrl(`/meals/${mealId}`),
                 {
-                    plannedEatingDates: newDates,
+                    plannedEatingDates: toStoredMealDates(newDates),
                 },
                 {
                     headers: {
@@ -236,8 +236,12 @@ export const useMealCalendar = ({ onRequireLogin }) => {
                 cookingTime: updatedMeal.cookingTime,
                 defaultRoles: updatedMeal.defaultRoles,
                 mealCategory: parseMealCategories(updatedMeal.mealCategory, []),
-                plannedCookingDate: updatedMeal.plannedCookingDate,
-                plannedEatingDates: updatedMeal.plannedEatingDates,
+                plannedCookingDate: toStoredMealDate(
+                    updatedMeal.plannedCookingDate
+                ),
+                plannedEatingDates: toStoredMealDates(
+                    updatedMeal.plannedEatingDates
+                ),
                 servings: updatedMeal.servings,
                 foodItems: Array.isArray(updatedMeal.foodItems)
                     ? updatedMeal.foodItems.map((item) =>

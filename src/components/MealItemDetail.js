@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { Alert, Platform, ScrollView, StyleSheet } from 'react-native'
 import useMealFoodItemActions from '../hooks/useMealFoodItemActions'
 import { getServerUrl } from '../utils/getServerUrl'
-import { clampDatesToMin } from '../utils/mealDates'
+import { clampDatesToMin, toStoredMealDate, toStoredMealDates } from '../utils/mealDates'
 import {
     mergeUpdatedFoodItem,
     normalizeMealFoodItem,
@@ -306,12 +306,17 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                     []
                 ),
                 servings: normalizeServings(editedValues.servings),
-                plannedEatingDates: editedValues.plannedCookingDate
-                    ? clampDatesToMin(
-                          editedValues.plannedEatingDates || [],
-                          editedValues.plannedCookingDate
-                      )
-                    : editedValues.plannedEatingDates || [],
+                plannedCookingDate: toStoredMealDate(
+                    editedValues.plannedCookingDate
+                ),
+                plannedEatingDates: toStoredMealDates(
+                    editedValues.plannedCookingDate
+                        ? clampDatesToMin(
+                              editedValues.plannedEatingDates || [],
+                              editedValues.plannedCookingDate
+                          )
+                        : editedValues.plannedEatingDates || []
+                ),
                 _id: undefined,
                 id: undefined,
                 __v: undefined,
