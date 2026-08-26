@@ -79,7 +79,6 @@ const ListSortControl = ({
 const styles = {
     container: {
         flexShrink: 0,
-        zIndex: 20,
     },
 }
 

@@ -37,7 +37,8 @@ const styles = StyleSheet.create({
         maxWidth: '100%',
         minWidth: 0,
         marginBottom: 8,
-        zIndex: 20,
+        zIndex: 0,
+        elevation: 0,
     },
     stats: {
         flexDirection: 'row',
@@ -62,7 +63,6 @@ const styles = StyleSheet.create({
         gap: 8,
         flexShrink: 1,
         minWidth: 0,
-        zIndex: 20,
     },
 })
 

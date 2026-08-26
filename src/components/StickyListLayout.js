@@ -36,7 +36,6 @@ const styles = StyleSheet.create({
     scrollView: {
         flex: 1,
         width: '100%',
-        zIndex: 1,
     },
     headerSection: {
         backgroundColor: '#fff',
@@ -46,11 +45,13 @@ const styles = StyleSheet.create({
     },
     stickySection: {
         backgroundColor: '#fff',
-        zIndex: 20,
-        overflow: 'visible',
+        zIndex: 100,
+        elevation: 4,
     },
     body: {
         flexGrow: 1,
+        zIndex: 0,
+        elevation: 0,
     },
 })
 
