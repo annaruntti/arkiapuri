@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
     ActivityIndicator,
+    Image,
     Keyboard,
     Platform,
+    Pressable,
     ScrollView,
     StyleSheet,
     TextInput,
@@ -10,11 +12,13 @@ import {
     View,
 } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import CustomText from './CustomText'
 import ResponsiveModal from './ResponsiveModal'
-import Button from './Button'
 import { APP_UNITS } from '../utils/units'
 import { lookupFoodItemsByName } from '../services/foodItemApi'
+import { FOOD_PLACEHOLDER_IMAGE_URL } from '../constants/images'
+import { parseQuantityInput } from '../utils/parseQuantity'
 
 const NAME_LOOKUP_DELAY_MS = 450
 
@@ -22,6 +26,21 @@ const SOURCE_LABELS = {
     catalog: 'Omasta tietokannasta',
     openfoodfacts: 'Open Food Facts',
     inferred: null,
+}
+
+const itemMergeKey = (name) =>
+    String(name || '')
+        .normalize('NFKC')
+        .toLowerCase()
+        .replace(/[\u200B-\u200D\uFEFF]/g, '')
+        .trim()
+        .replace(/\s+/g, ' ')
+        .replace(/[^\p{L}\p{N}]+/gu, '')
+
+const isSameCatalogProduct = (typedName, catalogName) => {
+    const typedKey = itemMergeKey(typedName)
+    const catalogKey = itemMergeKey(catalogName)
+    return Boolean(typedKey && catalogKey && typedKey === catalogKey)
 }
 
 const formatNumber = (value) => {
@@ -62,23 +81,39 @@ const mapScanItemToRow = (item, index) => ({
     matchSource: item.matchSource,
     matchName: item.matchName,
     barcode: item.barcode,
+    imageUrl: item.imageUrl,
     lookingUp:
         String(item.name || '').trim().length >= 2 &&
-        !(item.calories || item.nutrition?.calories),
+        !item.matchSource &&
+        !(item.calories || item.nutrition?.calories) &&
+        !item.imageUrl,
 })
 
 const applyLookupResult = (row, result) => {
     if (!result) return { ...row, lookingUp: false }
+    const catalogName = result.matchName || result.name
+    const sameProduct =
+        result.source === 'catalog' &&
+        isSameCatalogProduct(row.name, catalogName)
     return {
         ...row,
         lookingUp: false,
         category: result.category?.length ? result.category : row.category,
         calories: result.calories ?? row.calories,
         nutrition: result.nutrition ?? row.nutrition,
-        foodId: result.source === 'catalog' ? result.foodId : null,
-        matchSource: result.source,
-        matchName: result.matchName,
+        foodId: sameProduct ? result.foodId : null,
+        matchSource: sameProduct
+            ? result.source
+            : result.source === 'catalog'
+              ? 'inferred'
+              : result.source,
+        matchName: sameProduct
+            ? catalogName
+            : result.source === 'openfoodfacts'
+              ? result.matchName
+              : undefined,
         barcode: result.barcode,
+        imageUrl: result.imageUrl || row.imageUrl,
     }
 }
 
@@ -187,7 +222,9 @@ const PantryScanReview = ({
             name,
             foodId: undefined,
             matchSource: undefined,
+            matchName: undefined,
             barcode: undefined,
+            imageUrl: undefined,
             lookingUp: String(name || '').trim().length >= 2,
         })
         scheduleNameLookup(key, name)
@@ -202,13 +239,13 @@ const PantryScanReview = ({
         }
         const nextRows = (items || []).map(mapScanItemToRow)
         setRows(nextRows)
-        const names = nextRows
-            .map((row) => row.name.trim())
-            .filter((name) => name.length >= 2)
-        if (!names.length) return undefined
+        const needsLookup = nextRows.filter(
+            (row) => row.name.trim().length >= 2 && !row.matchSource
+        )
+        if (!needsLookup.length) return undefined
 
         const token = ++batchLookupToken.current
-        lookupFoodItemsByName(names)
+        lookupFoodItemsByName(needsLookup.map((row) => row.name.trim()))
             .then((results) => {
                 if (batchLookupToken.current !== token) return
                 const byQuery = new Map(
@@ -258,12 +295,16 @@ const PantryScanReview = ({
             .filter((row) => row.selected && row.name.trim())
             .map((row) => ({
                 name: row.name.trim(),
-                quantity: Number(row.quantity) || 1,
+                quantity: parseQuantityInput(row.quantity, 1),
                 unit: row.unit || 'kpl',
                 category: row.category,
-                foodId: row.foodId,
+                foodId: isSameCatalogProduct(row.name, row.matchName)
+                    ? row.foodId
+                    : undefined,
                 calories: row.calories,
                 nutrition: row.nutrition,
+                barcode: row.barcode,
+                imageUrl: row.imageUrl,
             }))
         onSubmit?.(selected)
     }
@@ -362,6 +403,15 @@ const PantryScanReview = ({
                                             }
                                         />
                                     </TouchableOpacity>
+                                    <Image
+                                        source={{
+                                            uri:
+                                                row.imageUrl ||
+                                                FOOD_PLACEHOLDER_IMAGE_URL,
+                                        }}
+                                        style={styles.thumbnail}
+                                        resizeMode="cover"
+                                    />
                                     <View style={styles.fields}>
                                         <TextInput
                                             style={styles.nameInput}
@@ -496,24 +546,41 @@ const PantryScanReview = ({
                     </>
                 )}
 
-                <View style={styles.footer}>
-                    <Button
-                        title={
-                            submitting
-                                ? 'Lisätään...'
-                                : `Lisää valitut pentteriin (${selectedCount})`
-                        }
-                        onPress={handleSubmit}
-                        disabled={submitting || selectedCount === 0}
-                        style={styles.submitButton}
-                    />
+                <SafeAreaView
+                    edges={['bottom']}
+                    style={[
+                        styles.footer,
+                        keyboardHeight > 0 && { paddingBottom: 16 },
+                    ]}
+                >
+                    <View style={styles.submitWrap}>
+                        <Pressable
+                            onPress={handleSubmit}
+                            disabled={submitting || selectedCount === 0}
+                            style={({ pressed }) => [
+                                styles.submitButton,
+                                (submitting || selectedCount === 0) &&
+                                    styles.submitButtonDisabled,
+                                pressed &&
+                                    selectedCount > 0 &&
+                                    !submitting &&
+                                    styles.submitButtonPressed,
+                            ]}
+                        >
+                            <CustomText style={styles.submitButtonText}>
+                                {submitting
+                                    ? 'Lisätään...'
+                                    : `Lisää valitut pentteriin (${selectedCount})`}
+                            </CustomText>
+                        </Pressable>
+                    </View>
                     {submitting ? (
                         <ActivityIndicator
                             color="#5844BB"
                             style={styles.spinner}
                         />
                     ) : null}
-                </View>
+                </SafeAreaView>
             </View>
         </ResponsiveModal>
     )
@@ -574,6 +641,14 @@ const styles = StyleSheet.create({
     checkbox: {
         paddingTop: 6,
         marginRight: 8,
+    },
+    thumbnail: {
+        width: 48,
+        height: 48,
+        borderRadius: 8,
+        backgroundColor: '#eee',
+        marginRight: 8,
+        marginTop: 4,
     },
     fields: {
         flex: 1,
@@ -639,12 +714,43 @@ const styles = StyleSheet.create({
         color: '#5844BB',
         fontWeight: '600',
     },
+    submitWrap: {
+        alignSelf: 'center',
+        maxWidth: '100%',
+    },
     submitButton: {
+        minWidth: 240,
+        minHeight: 48,
+        paddingHorizontal: 36,
+        paddingVertical: 12,
+        borderRadius: 25,
         backgroundColor: '#AE9CFC',
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#5844BB',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.28,
+        shadowRadius: 8,
+        elevation: 6,
+    },
+    submitButtonPressed: {
+        opacity: 0.85,
+    },
+    submitButtonDisabled: {
+        backgroundColor: '#e5e7eb',
+        shadowOpacity: 0,
+        elevation: 0,
+    },
+    submitButtonText: {
+        textAlign: 'center',
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#000000',
     },
     footer: {
+        alignItems: 'center',
         paddingTop: 12,
-        paddingBottom: 16,
+        paddingBottom: 24,
     },
     spinner: {
         marginTop: 8,

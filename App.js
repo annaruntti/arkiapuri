@@ -1,3 +1,6 @@
+import 'react-native-gesture-handler'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { useFonts } from 'expo-font'
 import * as SplashScreen from 'expo-splash-screen'
 import React, { useEffect, useState } from 'react'
@@ -90,21 +93,29 @@ const App = () => {
     }
 
     return (
-        <View style={styles.container}>
-            <View style={dynamicStyles} onLayout={onLayoutRootView}>
-                {showSplash ? (
-                    <AnimatedSplashScreen />
-                ) : (
-                    <LoginProvider>
-                        <Navigation />
-                    </LoginProvider>
-                )}
-            </View>
-        </View>
+        <SafeAreaProvider>
+            <GestureHandlerRootView style={styles.gestureRoot}>
+                <View style={styles.container}>
+                    <View style={dynamicStyles} onLayout={onLayoutRootView}>
+                        {showSplash ? (
+                            <AnimatedSplashScreen />
+                        ) : (
+                            <LoginProvider>
+                                <Navigation />
+                            </LoginProvider>
+                        )}
+                    </View>
+                </View>
+            </GestureHandlerRootView>
+        </SafeAreaProvider>
     )
 }
 
 const styles = StyleSheet.create({
+    gestureRoot: {
+        flex: 1,
+        width: '100%',
+    },
     container: {
         flex: 1,
         backgroundColor: '#fff',

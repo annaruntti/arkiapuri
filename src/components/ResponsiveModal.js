@@ -13,6 +13,7 @@ import {
     GestureDetector,
     GestureHandlerRootView,
 } from 'react-native-gesture-handler'
+import { SafeAreaProvider } from 'react-native-safe-area-context'
 import Animated, {
     runOnJS,
     useAnimatedStyle,
@@ -254,7 +255,8 @@ const ResponsiveModal = ({
             onRequestClose={onClose}
         >
             <GestureHandlerRootView style={styles.gestureRoot}>
-                <View style={getModalViewStyle()}>
+                <SafeAreaProvider>
+                    <View style={getModalViewStyle()}>
                     {isMobileSheet ? (
                         <>
                             <Animated.View
@@ -283,6 +285,7 @@ const ResponsiveModal = ({
                         <View style={getModalContentStyle()}>{sheetBody}</View>
                     )}
                 </View>
+                </SafeAreaProvider>
             </GestureHandlerRootView>
         </Modal>
     )

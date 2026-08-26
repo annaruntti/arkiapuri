@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { StyleSheet, View } from 'react-native'
-import { AntDesign, Feather, FontAwesome6 } from '@expo/vector-icons'
+import { AntDesign, Feather, MaterialIcons } from '@expo/vector-icons'
 import {
     Gesture,
     GestureDetector,
@@ -32,8 +32,8 @@ const STEPS = [
     },
     {
         title: 'Ateriat',
-        IconComponent: FontAwesome6,
-        icon: 'bowl-food',
+        IconComponent: MaterialIcons,
+        icon: 'restaurant',
         body: 'Selaa ja luo aterioita ja reseptejä. Puuttuvat ainekset voit lisätä suoraan ostoslistalle. Aterioita luodessasi, voit lisätä niille suunnitellut valmistus- ja syöntipäivät, jolloin ne sirtyvät suoraa lukujärjestykseesi.',
     },
     {
@@ -70,26 +70,30 @@ const OnboardingScreen = ({ navigation, route }) => {
     const { allowContinueWithoutLogin, completeOnboarding } = useLogin()
     const { isDesktop, isTablet } = useResponsiveDimensions()
     const stepIndex = clampStep(route.params?.step)
-    const isAnimating = useRef(false)
     const enterFrom = useRef(1)
-    const opacity = useSharedValue(0)
-    const translateX = useSharedValue(22)
+    const hasEntered = useRef(false)
+    const opacity = useSharedValue(1)
+    const translateX = useSharedValue(0)
 
     const step = STEPS[stepIndex]
     const isLast = Boolean(step.isLast)
     const Icon = step.IconComponent
 
     useEffect(() => {
-        translateX.value = enterFrom.current * 22
+        if (!hasEntered.current) {
+            hasEntered.current = true
+            return
+        }
+        translateX.value = enterFrom.current * 18
+        opacity.value = 0
         opacity.value = withTiming(1, {
-            duration: 420,
+            duration: 280,
             easing: Easing.out(Easing.cubic),
         })
         translateX.value = withTiming(0, {
-            duration: 420,
+            duration: 280,
             easing: Easing.out(Easing.cubic),
         })
-        isAnimating.current = false
     }, [stepIndex, opacity, translateX])
 
     const contentStyle = useAnimatedStyle(() => ({
@@ -97,37 +101,13 @@ const OnboardingScreen = ({ navigation, route }) => {
         transform: [{ translateX: translateX.value }],
     }))
 
-    const applyStep = (nextIndex) => {
-        navigation.setParams({ step: clampStep(nextIndex) })
-    }
-
     const goToStep = (nextIndex) => {
-        if (nextIndex === stepIndex || isAnimating.current) {
+        const clamped = clampStep(nextIndex)
+        if (clamped === stepIndex) {
             return
         }
-
-        isAnimating.current = true
-        const direction = nextIndex > stepIndex ? 1 : -1
-        enterFrom.current = direction
-
-        opacity.value = withTiming(
-            0,
-            {
-                duration: 240,
-                easing: Easing.in(Easing.cubic),
-            },
-            (finished) => {
-                if (finished) {
-                    runOnJS(applyStep)(nextIndex)
-                } else {
-                    isAnimating.current = false
-                }
-            }
-        )
-        translateX.value = withTiming(direction * -18, {
-            duration: 240,
-            easing: Easing.in(Easing.cubic),
-        })
+        enterFrom.current = clamped > stepIndex ? 1 : -1
+        navigation.setParams({ step: clamped })
     }
 
     const handleBack = () => {
@@ -200,80 +180,80 @@ const OnboardingScreen = ({ navigation, route }) => {
             <GestureHandlerRootView>
                 <GestureDetector gesture={panGesture}>
                     <View style={styles.swipeArea}>
-                        <View style={styles.dots}>
-                            {STEPS.map((item, index) => (
-                                <View
-                                    key={item.title}
-                                    style={[
-                                        styles.dot,
-                                        index === stepIndex && styles.dotActive,
-                                    ]}
-                                />
-                            ))}
-                        </View>
+                    <View style={styles.dots}>
+                        {STEPS.map((item, index) => (
+                            <View
+                                key={item.title}
+                                style={[
+                                    styles.dot,
+                                    index === stepIndex && styles.dotActive,
+                                ]}
+                            />
+                        ))}
+                    </View>
 
-                        <Animated.View style={[styles.step, contentStyle]}>
-                            <View style={styles.iconCircle}>
-                                <Icon
-                                    name={step.icon}
-                                    size={32}
-                                    color="#5844BB"
-                                />
-                            </View>
-                            <CustomText
-                                style={[
-                                    styles.title,
-                                    (isDesktop || isTablet) && styles.wideTitle,
-                                ]}
-                            >
-                                {step.title}
-                            </CustomText>
-                            <CustomText
-                                style={[
-                                    styles.body,
-                                    (isDesktop || isTablet) && styles.wideBody,
-                                ]}
-                            >
-                                {step.body}
-                            </CustomText>
-                        </Animated.View>
+                    <Animated.View style={[styles.step, contentStyle]}>
+                        <View style={styles.iconCircle}>
+                            <Icon
+                                name={step.icon}
+                                size={32}
+                                color="#5844BB"
+                            />
+                        </View>
+                        <CustomText
+                            style={[
+                                styles.title,
+                                (isDesktop || isTablet) && styles.wideTitle,
+                            ]}
+                        >
+                            {step.title}
+                        </CustomText>
+                        <CustomText
+                            style={[
+                                styles.body,
+                                (isDesktop || isTablet) && styles.wideBody,
+                            ]}
+                        >
+                            {step.body}
+                        </CustomText>
+                    </Animated.View>
                     </View>
                 </GestureDetector>
             </GestureHandlerRootView>
 
             <View style={styles.actions}>
                 {isLast ? (
-                    <>
+                    <View style={styles.lastActions}>
                         <Button
                             title="Jatka ilman kirjautumista"
                             onPress={handleContinueAsGuest}
-                            fullWidth
+                            style={styles.lastActionButton}
                         />
                         <Button
                             title="Kirjaudu sisään"
                             type="SECONDARY"
                             onPress={handleSignIn}
-                            fullWidth
+                            style={styles.lastActionButton}
                         />
                         <Button
                             title="Takaisin"
                             type="TERTIARY"
                             onPress={handleBack}
-                            fullWidth
+                            style={styles.lastActionButton}
                         />
-                    </>
+                    </View>
                 ) : (
                     <>
                         <Button
                             title="Seuraava"
                             onPress={() => goToStep(stepIndex + 1)}
-                            fullWidth
+                            style={styles.actionButton}
                         />
                         <Button
                             title="Takaisin"
                             type="TERTIARY"
                             onPress={handleBack}
-                            fullWidth
+                            style={styles.actionButton}
                         />
                     </>
                 )}
@@ -312,6 +292,8 @@ const styles = StyleSheet.create({
     step: {
         alignItems: 'center',
         marginBottom: 28,
+        width: '100%',
+        paddingHorizontal: 20,
     },
     iconCircle: {
         width: 72,
@@ -344,6 +326,26 @@ const styles = StyleSheet.create({
     },
     actions: {
         width: '100%',
+        alignItems: 'center',
         gap: 12,
+        paddingBottom: 8,
+    },
+    actionButton: {
+        alignSelf: 'center',
+        minWidth: 200,
+        minHeight: 48,
+        paddingHorizontal: 36,
+        paddingVertical: 12,
+    },
+    lastActions: {
+        alignSelf: 'center',
+        alignItems: 'stretch',
+        gap: 12,
+    },
+    lastActionButton: {
+        alignSelf: 'stretch',
+        minHeight: 48,
+        paddingHorizontal: 36,
+        paddingVertical: 12,
     },
 })

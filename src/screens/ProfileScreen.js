@@ -21,7 +21,6 @@ import { useResponsiveDimensions } from '../utils/responsive'
 import { openAuthScreen } from '../utils/authNavigation'
 import storage from '../utils/storage'
 import { AUTH_FORM_MAX_WIDTH } from '../components/AuthLayout'
-import { authFormStyles } from '../styles/authFormStyles'
 import { getProfileImageSource } from '../utils/profileImage'
 
 const ProfileScreen = () => {
@@ -230,12 +229,10 @@ const ProfileScreen = () => {
                                     </View>
                                 </View>
 
-                                <View style={authFormStyles.buttonSection}>
+                                <View style={styles.lastActions}>
                                     <Button
                                         title="Kirjaudu sisään"
-                                        fullWidth
-                                        style={authFormStyles.primaryButton}
-                                        textStyle={authFormStyles.buttonText}
+                                        style={styles.lastActionButton}
                                         onPress={() =>
                                             openAuthScreen(
                                                 navigation,
@@ -246,9 +243,7 @@ const ProfileScreen = () => {
                                     <Button
                                         title="Luo käyttäjätunnus"
                                         type="TERTIARY"
-                                        fullWidth
-                                        style={authFormStyles.tertiaryButton}
-                                        textStyle={authFormStyles.buttonText}
+                                        style={styles.lastActionButton}
                                         onPress={() =>
                                             openAuthScreen(
                                                 navigation,
@@ -309,18 +304,18 @@ const ProfileScreen = () => {
                                     </View>
                                 </View>
 
-                                <View style={authFormStyles.buttonSection}>
-                                    <Button
-                                        title="Muokkaa tietoja"
-                                        fullWidth
-                                        style={authFormStyles.primaryButton}
-                                        textStyle={authFormStyles.buttonText}
-                                        onPress={() =>
-                                            navigation.navigate(
-                                                'Muokkaa tietoja'
-                                            )
-                                        }
-                                    />
+                                <View style={styles.actions}>
+                                    <View style={styles.lastActions}>
+                                        <Button
+                                            title="Muokkaa tietoja"
+                                            style={styles.lastActionButton}
+                                            onPress={() =>
+                                                navigation.navigate(
+                                                    'Muokkaa tietoja'
+                                                )
+                                            }
+                                        />
+                                    </View>
 
                                     {!loadingHousehold && (
                                         <FamilySection
@@ -333,14 +328,14 @@ const ProfileScreen = () => {
                                         />
                                     )}
 
-                                    <Button
-                                        title="Kirjaudu ulos"
-                                        type="TERTIARY"
-                                        fullWidth
-                                        style={authFormStyles.tertiaryButton}
-                                        textStyle={authFormStyles.buttonText}
-                                        onPress={handleLogout}
-                                    />
+                                    <View style={styles.lastActions}>
+                                        <Button
+                                            title="Kirjaudu ulos"
+                                            type="TERTIARY"
+                                            style={styles.lastActionButton}
+                                            onPress={handleLogout}
+                                        />
+                                    </View>
                                 </View>
                             </>
                         )}
@@ -484,5 +479,22 @@ const styles = StyleSheet.create({
     },
     desktopEmail: {
         fontSize: 15,
+    },
+    actions: {
+        width: '100%',
+        alignItems: 'center',
+        gap: 12,
+    },
+    lastActions: {
+        alignSelf: 'center',
+        alignItems: 'stretch',
+        gap: 12,
+    },
+    lastActionButton: {
+        alignSelf: 'stretch',
+        minWidth: 240,
+        minHeight: 48,
+        paddingHorizontal: 36,
+        paddingVertical: 12,
     },
 })

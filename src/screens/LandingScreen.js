@@ -73,7 +73,7 @@ const LandingScreen = ({ navigation }) => {
                         >
                             {!isDesktop && !isTablet && (
                                 <Svg
-                                    height={90}
+                                    height={110}
                                     width="100%"
                                     viewBox="0 0 1440 320"
                                     preserveAspectRatio="none"
@@ -112,7 +112,7 @@ const LandingScreen = ({ navigation }) => {
                                         onPress={() =>
                                             navigation.navigate('Tutustu')
                                         }
-                                        fullWidth
+                                        style={styles.actionButton}
                                     />
                                     <Button
                                         title="Minulla on jo tili"
@@ -122,7 +122,7 @@ const LandingScreen = ({ navigation }) => {
                                                 'Kirjaudu sisään'
                                             )
                                         }
-                                        fullWidth
+                                        style={styles.actionButton}
                                     />
                                 </View>
                             </View>
@@ -170,9 +170,9 @@ const styles = StyleSheet.create({
         width: '100%',
     },
     bottomBoxContent: {
-        paddingTop: 25,
+        paddingTop: 28,
         paddingRight: 0,
-        paddingBottom: 20,
+        paddingBottom: 44,
         paddingLeft: 0,
         backgroundColor: '#fff',
         width: '100%',
@@ -183,14 +183,20 @@ const styles = StyleSheet.create({
     },
     actions: {
         width: '100%',
-        maxWidth: 400,
-        alignSelf: 'center',
+        alignItems: 'center',
         gap: 12,
-        marginBottom: 12,
+        marginBottom: 8,
+    },
+    actionButton: {
+        alignSelf: 'center',
+        minWidth: 200,
+        minHeight: 48,
+        paddingHorizontal: 36,
+        paddingVertical: 12,
     },
     bottomWavy: {
         position: 'absolute',
-        top: -90,
+        top: -110,
         left: 0,
         right: 0,
         width: '100%',

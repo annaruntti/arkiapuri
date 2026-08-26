@@ -59,7 +59,7 @@ export const scanPantryImage = async (image) => {
             },
             await authConfig({
                 maxBodyLength: Infinity,
-                timeout: 45000,
+                timeout: 90000,
             })
         )
 

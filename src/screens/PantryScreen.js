@@ -716,6 +716,16 @@ const PantryScreen = ({}) => {
                     foodId: item.foodId || undefined,
                     calories: item.calories,
                     nutrition: item.nutrition,
+                    barcode: item.barcode,
+                    imageUrl: item.imageUrl,
+                    openFoodFactsData:
+                        item.barcode || item.imageUrl
+                            ? {
+                                  barcode: item.barcode,
+                                  imageUrl: item.imageUrl,
+                                  nutrition: item.nutrition,
+                              }
+                            : undefined,
                     addedFrom: 'pantry',
                 })
             }
