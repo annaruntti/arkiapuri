@@ -19,6 +19,7 @@ import { APP_UNITS } from '../utils/units'
 import { lookupFoodItemsByName } from '../services/foodItemApi'
 import { FOOD_PLACEHOLDER_IMAGE_URL } from '../constants/images'
 import { parseQuantityInput } from '../utils/parseQuantity'
+import { shouldAutoSelectScanItem } from '../utils/scanReviewSelect'
 
 const NAME_LOOKUP_DELAY_MS = 450
 
@@ -69,7 +70,7 @@ const formatNutritionLine = (nutrition, calories) => {
 
 const mapScanItemToRow = (item, index) => ({
     key: `${item.foodId || item.name}-${index}`,
-    selected: item.confidence >= 0.35,
+    selected: shouldAutoSelectScanItem(item),
     name: item.name || '',
     quantity: String(item.quantity || 1),
     unit: item.unit || 'kpl',
@@ -104,7 +105,7 @@ const applyLookupResult = (row, result) => {
             imageUrl: result.imageUrl || row.imageUrl,
         }
     }
-    return {
+    const next = {
         ...row,
         lookingUp: false,
         name: adoptedName || row.name,
@@ -116,6 +117,10 @@ const applyLookupResult = (row, result) => {
         matchName: adoptedName,
         barcode: result.barcode || row.barcode,
         imageUrl: result.imageUrl || row.imageUrl,
+    }
+    return {
+        ...next,
+        selected: shouldAutoSelectScanItem(next),
     }
 }
 
