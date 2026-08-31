@@ -54,32 +54,54 @@ import {
     formatScaledQuantity,
     scaleMealFoodItems,
 } from '../utils/mealServings'
+import { SOURCE_LABELS } from '../utils/dishFromPhotoDraft'
+import openFoodFactsApi from '../services/openFoodFactsApi'
 
 import Info from './Info'
 import MealServingsStepper from './MealServingsStepper'
 
-const AddMealForm = ({ onSubmit }) => {
+const isPersistedFoodItemId = (id) =>
+    typeof id === 'string' && /^[a-fA-F0-9]{24}$/.test(id)
+
+const resolveCatalogFoodId = (item) => {
+    const raw = item?.foodId
+    if (raw && typeof raw === 'object') {
+        return String(raw._id || raw.id || '')
+    }
+    if (raw) return String(raw)
+    return item?._id ? String(item._id) : ''
+}
+
+const AddMealForm = ({ onSubmit, aiDraft }) => {
     const { profile } = useLogin()
     const { isDesktop } = useResponsiveDimensions()
-    const [foodItems, setFoodItems] = useState([])
+    const [foodItems, setFoodItems] = useState(aiDraft?.foodItems || [])
 
     const { control, handleSubmit: handleRHFSubmit, formState: { errors: fieldErrors }, reset: resetFields } = useForm({
         defaultValues: {
-            name: '',
-            recipe: '',
-            cookingTime: '',
+            name: aiDraft?.name || '',
+            recipe: aiDraft?.recipe || '',
+            cookingTime: aiDraft?.cookingTime || '',
         },
     })
-    const [difficultyLevel, setDifficultyLevel] = useState('')
-    const [selectedRoles, setSelectedRoles] = useState([])
-    const [rolesExpanded, setRolesExpanded] = useState(false)
-    const [mealCategory, setMealCategory] = useState([])
+    const [difficultyLevel, setDifficultyLevel] = useState(
+        aiDraft?.difficultyLevel || ''
+    )
+    const [selectedRoles, setSelectedRoles] = useState(
+        aiDraft?.defaultRoles || []
+    )
+    const [rolesExpanded, setRolesExpanded] = useState(
+        Boolean(aiDraft?.defaultRoles?.length)
+    )
+    const [mealCategory, setMealCategory] = useState(aiDraft?.mealCategory || [])
     const [plannedCookingDate, setPlannedCookingDate] = useState(new Date())
     const [plannedEatingDates, setPlannedEatingDates] = useState([])
-    const [servings, setServings] = useState(DEFAULT_SERVINGS)
+    const [servings, setServings] = useState(
+        aiDraft?.servings || DEFAULT_SERVINGS
+    )
     const [selectedShoppingListId, setSelectedShoppingListId] = useState(null)
     const [showItemForm, setShowItemForm] = useState(false)
-    const [mealImage, setMealImage] = useState(null)
+    const [mealImage, setMealImage] = useState(aiDraft?.image || null)
     const [formErrors, setFormErrors] = useState({})
 
     // Refs scroll-to-error -toimintoa varten
@@ -87,6 +109,22 @@ const AddMealForm = ({ onSubmit }) => {
     const nameErrorRef = useRef(null)
     const rolesErrorRef = useRef(null)
     const foodItemsErrorRef = useRef(null)
+
+    useEffect(() => {
+        if (!aiDraft) return
+        resetFields({
+            name: aiDraft.name || '',
+            recipe: aiDraft.recipe || '',
+            cookingTime: aiDraft.cookingTime || '',
+        })
+        setDifficultyLevel(aiDraft.difficultyLevel || '')
+        setSelectedRoles(aiDraft.defaultRoles || [])
+        setRolesExpanded(Boolean(aiDraft.defaultRoles?.length))
+        setMealCategory(aiDraft.mealCategory || [])
+        setServings(aiDraft.servings || DEFAULT_SERVINGS)
+        setFoodItems(aiDraft.foodItems || [])
+        if (aiDraft.image) setMealImage(aiDraft.image)
+    }, [aiDraft, resetFields])
 
     const fetchShoppingLists = async () => {
         try {
@@ -333,6 +371,48 @@ const AddMealForm = ({ onSubmit }) => {
             const createdFoodItemIds = await Promise.all(
                 foodItems.map(async (item) => {
                     try {
+                        const mealQuantity = getIngredientQuantity(item)
+                        const existingId = resolveCatalogFoodId(item)
+                        if (isPersistedFoodItemId(existingId)) {
+                            return {
+                                foodId: existingId,
+                                quantity: mealQuantity || 1,
+                                unit: item.unit || 'kpl',
+                            }
+                        }
+
+                        const barcode =
+                            item.barcode ||
+                            item.openFoodFactsData?.barcode
+                        if (barcode) {
+                            try {
+                                const offData =
+                                    await openFoodFactsApi.addToFoodItems(
+                                        barcode,
+                                        {
+                                            location: 'meal',
+                                            quantity: mealQuantity || 1,
+                                            unit: item.unit || 'kpl',
+                                        }
+                                    )
+                                if (offData.success && offData.foodItem?._id) {
+                                    return {
+                                        foodId: offData.foodItem._id,
+                                        quantity: mealQuantity || 1,
+                                        unit:
+                                            item.unit ||
+                                            offData.foodItem.unit ||
+                                            'kpl',
+                                    }
+                                }
+                            } catch (offError) {
+                                console.warn(
+                                    'OFF add from meal draft failed:',
+                                    offError
+                                )
+                            }
+                        }
+
                         // Prepare category array
                         const categoryArray = (() => {
                             let catArray = item.category
@@ -353,8 +433,6 @@ const AddMealForm = ({ onSubmit }) => {
                                 })
                                 .filter((cat) => cat && cat.trim() !== '')
                         })()
-
-                        const mealQuantity = getIngredientQuantity(item)
 
                         const findOrCreateResponse = await axios.post(
                             getServerUrl('/food-items/find-or-create'),
@@ -937,6 +1015,13 @@ const AddMealForm = ({ onSubmit }) => {
             !item.availability || 
             availability.inPantry !== true || 
             availability.inShoppingList !== true
+        const sourceLabel = SOURCE_LABELS[item.matchSource]
+        const visibilityLabel =
+            item.visibleInPhoto === true
+                ? 'Näkyy kuvassa'
+                : item.visibleInPhoto === false
+                  ? 'Tyypillinen ainesosa'
+                  : null
 
         return (
             <View style={styles.selectedItem}>
@@ -952,6 +1037,13 @@ const AddMealForm = ({ onSubmit }) => {
                     <CustomText style={styles.itemDetails}>
                         {`${formatScaledQuantity(getIngredientQuantity(item))} ${item.unit || 'kpl'}`}
                     </CustomText>
+                    {(sourceLabel || visibilityLabel) && (
+                        <CustomText style={styles.ingredientSourceText}>
+                            {[visibilityLabel, sourceLabel]
+                                .filter(Boolean)
+                                .join(' · ')}
+                        </CustomText>
+                    )}
                     <View style={styles.quantityRow}>
                         <CustomText style={styles.quantityLabel}>Määrä:</CustomText>
                         <TextInput
@@ -1054,6 +1146,15 @@ const AddMealForm = ({ onSubmit }) => {
             >
                 <View style={[styles.formContainer, isDesktop && styles.formContainerDesktop]}>
                     <GuestWarningBanner message="Tietosi eivät tallennu pysyvästi ilman käyttäjätunnusta. Kirjaudu sisään tallentaaksesi tiedot." />
+                    {aiDraft ? (
+                        <View style={styles.aiDraftBanner}>
+                            <CustomText style={styles.aiDraftBannerText}>
+                                AI:n ehdotus – tarkista raaka-aineet ja määrät.
+                                Ravintoarvot haetaan omasta tietokannasta tai
+                                Open Food Factsista.
+                            </CustomText>
+                        </View>
+                    ) : null}
                         <View ref={nameErrorRef}>
                             <CustomInput
                                 control={control}
@@ -1766,6 +1867,25 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '600',
         color: '#000000',
+    },
+    aiDraftBanner: {
+        backgroundColor: '#EEF2FF',
+        borderColor: '#5844BB',
+        borderWidth: 1,
+        borderRadius: 8,
+        padding: 12,
+        marginBottom: 16,
+    },
+    aiDraftBannerText: {
+        fontSize: 14,
+        lineHeight: 20,
+        color: '#312E81',
+    },
+    ingredientSourceText: {
+        fontSize: 12,
+        color: '#6B7280',
+        marginTop: 2,
+        marginBottom: 4,
     },
     formFoodItemSection: {
         marginTop: 20,

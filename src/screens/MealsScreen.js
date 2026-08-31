@@ -1,12 +1,14 @@
 import axios from 'axios'
 import { useEffect, useState } from 'react'
 import {
+    ActivityIndicator,
     Alert,
     Platform,
     RefreshControl,
     StyleSheet,
     View,
 } from 'react-native'
+import * as ImagePicker from 'expo-image-picker'
 import ActiveFilterBanner from '../components/ActiveFilterBanner'
 import CategorySectionHeader from '../components/CategorySectionHeader'
 import CustomText from '../components/CustomText'
@@ -24,9 +26,11 @@ import useLoginPrompt from '../hooks/useLoginPrompt'
 import ResponsiveModal from '../components/ResponsiveModal'
 import SearchSection from '../components/SearchSection'
 import StickyListLayout from '../components/StickyListLayout'
+import PantryScanLockedModal from '../components/PantryScanLockedModal'
 import { getServerUrl } from '../utils/getServerUrl'
 import { DEFAULT_SERVINGS } from '../utils/mealServings'
 import { getIngredientQuantity } from '../utils/mealFoodItem'
+import { mapDishScanToFormDraft } from '../utils/dishFromPhotoDraft'
 import {
     clampDatesToMin,
     toStoredMealDate,
@@ -59,6 +63,11 @@ import {
     getMealCountsForCategories,
 } from '../utils/mealGrouping'
 import storage from '../utils/storage'
+import {
+    compressPantryScanImage,
+    getAiEntitlement,
+    scanDishImage,
+} from '../services/aiApi'
 
 const MealsScreen = ({ route, navigation }) => {
     const [modalVisible, setModalVisible] = useState(false)
@@ -67,6 +76,11 @@ const MealsScreen = ({ route, navigation }) => {
     const [loading, setLoading] = useState(true)
     const [selectedMeal, setSelectedMeal] = useState(null)
     const [detailModalVisible, setDetailModalVisible] = useState(false)
+    const [aiDraft, setAiDraft] = useState(null)
+    const [aiEntitlement, setAiEntitlement] = useState(null)
+    const [scanLockVisible, setScanLockVisible] = useState(false)
+    const [scanLockReason, setScanLockReason] = useState('upgrade_required')
+    const [scanLoading, setScanLoading] = useState(false)
     const [selectedDietFilters, setSelectedDietFilters] = useState([])
     const [showFilters, setShowFilters] = useState(false)
     const [sortId, setSortId] = useState(SORT_OPTION_IDS.NAME_ASC)
@@ -165,6 +179,7 @@ const MealsScreen = ({ route, navigation }) => {
             // Add the new meal to the existing meals array
             setMeals((prevMeals) => [...prevMeals, newMeal])
             setModalVisible(false)
+            setAiDraft(null)
         } catch (error) {
             console.error('Error updating meals list:', error)
             Alert.alert('Virhe', 'Aterian lisääminen listaan epäonnistui')
@@ -451,12 +466,156 @@ const MealsScreen = ({ route, navigation }) => {
 
     const handleOpenAddMeal = async () => {
         const token = await storage.getItem('userToken')
+        setAiDraft(null)
         if (!token) {
             // Retry action opens the modal directly — no re-auth check needed
             showLoginPrompt('meal_create', () => setModalVisible(true))
             return
         }
         setModalVisible(true)
+    }
+
+    const isScanDeniedCode = (code) =>
+        code === 'upgrade_required' ||
+        code === 'quota_exceeded' ||
+        code === 'household_too_large' ||
+        code === 'not_configured' ||
+        code === 'budget_exceeded'
+
+    const showScanDenied = (reason) => {
+        setScanLockReason(reason || 'upgrade_required')
+        setScanLockVisible(true)
+    }
+
+    const runDishScan = async (asset) => {
+        setScanLoading(true)
+        try {
+            const image = await compressPantryScanImage(asset)
+            const result = await scanDishImage(image)
+            setAiDraft(mapDishScanToFormDraft(result, asset))
+            setModalVisible(true)
+            if (result.usage) {
+                setAiEntitlement((prev) =>
+                    prev
+                        ? {
+                              ...prev,
+                              remainingCredits: result.usage.remainingCredits,
+                              creditsUsed:
+                                  (prev.creditLimit || 0) -
+                                  result.usage.remainingCredits,
+                          }
+                        : prev
+                )
+            }
+        } catch (error) {
+            const code = error.code || error.response?.data?.code
+            const message =
+                error.response?.data?.message ||
+                error.message ||
+                'Skannaus epäonnistui'
+            if (isScanDeniedCode(code)) {
+                showScanDenied(code)
+                return
+            }
+            Alert.alert('Virhe', message)
+        } finally {
+            setScanLoading(false)
+        }
+    }
+
+    const pickDishScanImage = async (fromCamera) => {
+        try {
+            if (fromCamera) {
+                const { status } =
+                    await ImagePicker.requestCameraPermissionsAsync()
+                if (status !== 'granted') {
+                    Alert.alert(
+                        'Lupa tarvitaan',
+                        'Tämä toiminto vaatii kameran käyttöoikeuden.'
+                    )
+                    return
+                }
+                const result = await ImagePicker.launchCameraAsync({
+                    mediaTypes: ['images'],
+                    quality: 0.8,
+                })
+                if (!result.canceled && result.assets?.[0]) {
+                    await runDishScan(result.assets[0])
+                }
+                return
+            }
+
+            const { status } =
+                await ImagePicker.requestMediaLibraryPermissionsAsync()
+            if (status !== 'granted') {
+                Alert.alert(
+                    'Lupa tarvitaan',
+                    'Tämä toiminto vaatii kuvakirjaston käyttöoikeuden.'
+                )
+                return
+            }
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],
+                quality: 0.8,
+            })
+            if (!result.canceled && result.assets?.[0]) {
+                await runDishScan(result.assets[0])
+            }
+        } catch (error) {
+            Alert.alert(
+                'Virhe',
+                'Kuvan valitseminen epäonnistui: ' +
+                    (error.message || 'Tuntematon virhe')
+            )
+        }
+    }
+
+    const handleOpenDishScan = async () => {
+        try {
+            const token = await storage.getItem('userToken')
+            if (!token) {
+                showLoginPrompt('meal_create', () => handleOpenDishScan())
+                return
+            }
+
+            const entitlement =
+                aiEntitlement || (await getAiEntitlement()).entitlement
+            setAiEntitlement(entitlement)
+            if (!entitlement?.hasAccess) {
+                showScanDenied(entitlement?.denyCode)
+                return
+            }
+
+            const openLibrary = () => pickDishScanImage(false)
+            const openCamera = () => pickDishScanImage(true)
+
+            if (Platform.OS === 'web') {
+                await openLibrary()
+                return
+            }
+
+            Alert.alert(
+                'Lisää ateria kuvasta',
+                'Ota kuva annoksesta tai valitse kuva galleriasta. AI ehdottaa nimeä, raaka-aineita ja valmistusohjetta.',
+                [
+                    { text: 'Kamera', onPress: openCamera },
+                    { text: 'Galleria', onPress: openLibrary },
+                    { text: 'Peruuta', style: 'cancel' },
+                ]
+            )
+        } catch (error) {
+            const code = error.response?.data?.code || error.code
+            if (isScanDeniedCode(code)) {
+                showScanDenied(code)
+                return
+            }
+            Alert.alert(
+                'Virhe',
+                error.response?.data?.message ||
+                    error.message ||
+                    'AI-skannausta ei voitu avata'
+            )
+        }
     }
 
     const searchedMeals = filterMealsBySearch(meals, searchQuery)
@@ -491,13 +650,21 @@ const MealsScreen = ({ route, navigation }) => {
         <View style={styles.container}>
             <ResponsiveModal
                 visible={modalVisible}
-                onClose={() => setModalVisible(false)}
-                title="Lisää uusi ateria"
+                onClose={() => {
+                    setModalVisible(false)
+                    setAiDraft(null)
+                }}
+                title={aiDraft ? 'Tarkista AI:n ehdotus' : 'Lisää uusi ateria'}
                 maxWidth={640}
             >
                 <AddMealForm
+                    key={aiDraft ? 'ai-draft' : 'manual'}
                     onSubmit={handleAddMeal}
-                    onClose={() => setModalVisible(false)}
+                    onClose={() => {
+                        setModalVisible(false)
+                        setAiDraft(null)
+                    }}
+                    aiDraft={aiDraft}
                 />
             </ResponsiveModal>
 
@@ -516,6 +683,9 @@ const MealsScreen = ({ route, navigation }) => {
                         showButtonSection={true}
                         buttonTitle="+ Lisää ateria"
                         onButtonPress={handleOpenAddMeal}
+                        extraButtonTitle="+ Lisää kuvasta"
+                        extraButtonType="SECONDARY"
+                        onExtraButtonPress={handleOpenDishScan}
                     />
                 }
                 contentContainerStyle={styles.listContent}
@@ -645,6 +815,31 @@ const MealsScreen = ({ route, navigation }) => {
                 onClose={handleCloseDetail}
                 onUpdate={handleUpdateMeal}
             />
+            <PantryScanLockedModal
+                visible={scanLockVisible}
+                onClose={() => setScanLockVisible(false)}
+                onAddManually={() => {
+                    setScanLockVisible(false)
+                    handleOpenAddMeal()
+                }}
+                reason={scanLockReason}
+                manualButtonTitle="Lisää ateria manuaalisesti"
+                upgradeMessage="Aterian tunnistus kuvasta kuuluu maksulliseen sopimukseen. Ilmaisella tilillä voit lisätä aterian manuaalisesti."
+            />
+            <ResponsiveModal
+                visible={scanLoading}
+                onClose={() => {}}
+                title="Tunnistetaan ateriaa"
+                maxWidth={400}
+                showCloseButton={false}
+            >
+                <View style={styles.scanLoadingBox}>
+                    <ActivityIndicator size="large" color="#5844BB" />
+                    <CustomText style={styles.scanLoadingText}>
+                        Analysoidaan kuvaa. Tämä voi kestää hetken.
+                    </CustomText>
+                </View>
+            </ResponsiveModal>
         </View>
     )
 
@@ -706,6 +901,16 @@ const styles = StyleSheet.create({
     },
     categorySection: {
         marginBottom: 20,
+    },
+    scanLoadingBox: {
+        alignItems: 'center',
+        paddingVertical: 20,
+    },
+    scanLoadingText: {
+        marginTop: 16,
+        fontSize: 16,
+        textAlign: 'center',
+        color: '#374151',
     },
 })
 

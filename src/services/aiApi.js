@@ -83,3 +83,38 @@ export const scanPantryImage = async (image) => {
         throw error
     }
 }
+
+export const scanDishImage = async (image) => {
+    try {
+        const response = await axios.post(
+            getServerUrl('/ai/dish-from-photo'),
+            {
+                image: image.base64,
+                mimeType: image.mimeType || 'image/jpeg',
+            },
+            await authConfig({
+                maxBodyLength: Infinity,
+                timeout: 90000,
+            })
+        )
+
+        const data = response.data
+        if (!data.success) {
+            const error = new Error(data.message || 'Skannaus epäonnistui')
+            error.code = data.code
+            error.entitlement = data.entitlement
+            throw error
+        }
+        return data
+    } catch (error) {
+        if (error.response?.data) {
+            const wrapped = new Error(
+                error.response.data.message || 'Skannaus epäonnistui'
+            )
+            wrapped.code = error.response.data.code
+            wrapped.entitlement = error.response.data.entitlement
+            throw wrapped
+        }
+        throw error
+    }
+}

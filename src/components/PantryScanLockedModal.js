@@ -4,7 +4,14 @@ import CustomText from './CustomText'
 import ResponsiveModal from './ResponsiveModal'
 import Button from './Button'
 
-const PantryScanLockedModal = ({ visible, onClose, onAddManually, reason }) => {
+const PantryScanLockedModal = ({
+    visible,
+    onClose,
+    onAddManually,
+    reason,
+    manualButtonTitle = 'Lisää tuote manuaalisesti',
+    upgradeMessage,
+}) => {
     const [message, setMessage] = useState('')
 
     useEffect(() => {
@@ -18,14 +25,15 @@ const PantryScanLockedModal = ({ visible, onClose, onAddManually, reason }) => {
             )
         } else if (reason === 'not_configured' || reason === 'budget_exceeded') {
             setMessage(
-                'AI-skannaus ei ole juuri nyt käytettävissä. Voit lisätä tuotteet manuaalisesti.'
+                'AI-skannaus ei ole juuri nyt käytettävissä. Voit lisätä tiedot manuaalisesti.'
             )
         } else {
             setMessage(
-                'Pentterin skannaus kameralla kuuluu maksulliseen sopimukseen. Ilmaisella tilillä voit lisätä tuotteet manuaalisesti.'
+                upgradeMessage ||
+                    'Pentterin skannaus kameralla kuuluu maksulliseen sopimukseen. Ilmaisella tilillä voit lisätä tuotteet manuaalisesti.'
             )
         }
-    }, [reason])
+    }, [reason, upgradeMessage])
 
     return (
         <ResponsiveModal
@@ -37,7 +45,7 @@ const PantryScanLockedModal = ({ visible, onClose, onAddManually, reason }) => {
             <View style={styles.container}>
                 <CustomText style={styles.text}>{message}</CustomText>
                 <Button
-                    title="Lisää tuote manuaalisesti"
+                    title={manualButtonTitle}
                     onPress={onAddManually || onClose}
                     style={styles.button}
                 />
