@@ -45,6 +45,7 @@ import {
     getAiEntitlement,
     scanPantryImage,
 } from '../services/aiApi'
+import { pickScanImageFromLibrary } from '../utils/scanImage'
 
 const isPersistedFoodItemId = (id) =>
     typeof id === 'string' && /^[a-fA-F0-9]{24}$/.test(id)
@@ -633,12 +634,13 @@ const PantryScreen = ({}) => {
                 )
                 return
             }
-            const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ['images'],
-                quality: 0.8,
-            })
-            if (!result.canceled && result.assets?.[0]) {
-                await runPantryScan(result.assets[0])
+            const picked = await pickScanImageFromLibrary()
+            if (picked.error) {
+                Alert.alert('Tiedostotyyppi ei kelpaa', picked.error)
+                return
+            }
+            if (!picked.canceled && picked.asset) {
+                await runPantryScan(picked.asset)
             }
         } catch (error) {
             Alert.alert(

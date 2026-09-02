@@ -45,6 +45,7 @@ import {
     getDifficultyText,
     getMealRoleText,
     getDifficultyEnum,
+    mealRoles,
     parseMealCategories,
     parseMealRoles,
 } from '../utils/mealUtils'
@@ -57,6 +58,7 @@ import {
     getDietCategories,
     getMealCountByDifficulty,
     getMealCountByCookingTime,
+    getMealCountByType,
 } from '../utils/mealFilters'
 import {
     groupMealsByCategory,
@@ -68,6 +70,7 @@ import {
     getAiEntitlement,
     scanDishImage,
 } from '../services/aiApi'
+import { pickScanImageFromLibrary } from '../utils/scanImage'
 
 const MealsScreen = ({ route, navigation }) => {
     const [modalVisible, setModalVisible] = useState(false)
@@ -89,6 +92,7 @@ const MealsScreen = ({ route, navigation }) => {
         useState(null)
     const [selectedCookingTimeFilter, setSelectedCookingTimeFilter] =
         useState(null)
+    const [selectedMealTypeFilter, setSelectedMealTypeFilter] = useState(null)
 
     // Get filter params from navigation, use only if they have actual values
     const filterDifficulty =
@@ -119,6 +123,7 @@ const MealsScreen = ({ route, navigation }) => {
         })
         setSelectedDifficultyFilter(null)
         setSelectedCookingTimeFilter(null)
+        setSelectedMealTypeFilter(null)
     }
 
     // Get diet categories from categories.json
@@ -401,6 +406,9 @@ const MealsScreen = ({ route, navigation }) => {
                 ),
                 servings: parseInt(updatedMeal.servings, 10) || DEFAULT_SERVINGS,
                 recipe: updatedMeal.recipe || '',
+                recipeSteps: Array.isArray(updatedMeal.recipeSteps)
+                    ? updatedMeal.recipeSteps
+                    : [],
                 foodItems: processedFoodItems,
             }
 
@@ -492,7 +500,9 @@ const MealsScreen = ({ route, navigation }) => {
         try {
             const image = await compressPantryScanImage(asset)
             const result = await scanDishImage(image)
-            setAiDraft(mapDishScanToFormDraft(result, asset))
+            setAiDraft(
+                mapDishScanToFormDraft(result, image.previewAsset || asset)
+            )
             setModalVisible(true)
             if (result.usage) {
                 setAiEntitlement((prev) =>
@@ -554,12 +564,13 @@ const MealsScreen = ({ route, navigation }) => {
                 )
                 return
             }
-            const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ['images'],
-                quality: 0.8,
-            })
-            if (!result.canceled && result.assets?.[0]) {
-                await runDishScan(result.assets[0])
+            const picked = await pickScanImageFromLibrary()
+            if (picked.error) {
+                Alert.alert('Tiedostotyyppi ei kelpaa', picked.error)
+                return
+            }
+            if (!picked.canceled && picked.asset) {
+                await runDishScan(picked.asset)
             }
         } catch (error) {
             Alert.alert(
@@ -618,9 +629,10 @@ const MealsScreen = ({ route, navigation }) => {
         }
     }
 
+    const activeMealTypeFilter = selectedMealTypeFilter || filterMealType
     const searchedMeals = filterMealsBySearch(meals, searchQuery)
     const dietFiltered = filterMealsByDiet(searchedMeals, selectedDietFilters)
-    const typeFiltered = filterMealsByType(dietFiltered, filterMealType)
+    const typeFiltered = filterMealsByType(dietFiltered, activeMealTypeFilter)
     const difficultyFiltered = filterMealsByDifficulty(
         typeFiltered,
         selectedDifficultyFilter || filterDifficulty
@@ -631,16 +643,24 @@ const MealsScreen = ({ route, navigation }) => {
     )
     const sortedMeals = sortListItems(filteredMeals, sortId)
     const groupedMeals = groupMealsByCategory(sortedMeals)
+    const hasActiveFilters =
+        selectedDietFilters.length > 0 ||
+        selectedDifficultyFilter ||
+        selectedCookingTimeFilter ||
+        selectedMealTypeFilter ||
+        filterMealType ||
+        filterDifficulty ||
+        filterMaxCookingTime
 
     const emptyListMessage = (() => {
         if (Object.keys(groupedMeals).length > 0) return null
-        if (searchQuery.trim() && selectedDietFilters.length > 0) {
+        if (searchQuery.trim() && hasActiveFilters) {
             return `Ei aterioita hakusanalla "${searchQuery}" ja valituilla suodattimilla. Kokeile eri hakusanaa tai suodatinyhdistelmää.`
         }
         if (searchQuery.trim()) {
             return `Ei aterioita hakusanalla "${searchQuery}". Kokeile eri hakusanaa.`
         }
-        if (selectedDietFilters.length > 0) {
+        if (hasActiveFilters) {
             return 'Ei aterioita valituilla suodattimilla. Kokeile eri suodatinyhdistelmää.'
         }
         return null
@@ -702,7 +722,7 @@ const MealsScreen = ({ route, navigation }) => {
                         selectedDifficultyFilter={selectedDifficultyFilter}
                         filterMaxCookingTime={filterMaxCookingTime}
                         selectedCookingTimeFilter={selectedCookingTimeFilter}
-                        filterMealType={filterMealType}
+                        filterMealType={activeMealTypeFilter}
                         onClear={clearNavigationFilters}
                     />
                     <ListStatsRow
@@ -725,10 +745,7 @@ const MealsScreen = ({ route, navigation }) => {
                     >
                         <CustomText>
                             Aterioita:{' '}
-                            {searchQuery.length > 0 ||
-                            selectedDietFilters.length > 0 ||
-                            selectedDifficultyFilter ||
-                            selectedCookingTimeFilter
+                            {searchQuery.length > 0 || hasActiveFilters
                                 ? `${filteredMeals.length} / ${meals.length}`
                                 : `${filteredMeals.length} kpl`}
                         </CustomText>
@@ -744,6 +761,19 @@ const MealsScreen = ({ route, navigation }) => {
                             getMealCountsForCategories(searchedMeals)
                         }
                         additionalFilterGroups={[
+                            {
+                                title: 'Ateriatyyppi',
+                                selectedValue: selectedMealTypeFilter,
+                                onSelect: setSelectedMealTypeFilter,
+                                getItemCount: (mealType) =>
+                                    getMealCountByType(searchedMeals, mealType),
+                                options: Object.entries(mealRoles).map(
+                                    ([value, label]) => ({
+                                        value,
+                                        label,
+                                    })
+                                ),
+                            },
                             {
                                 title: 'Vaikeustaso',
                                 selectedValue: selectedDifficultyFilter,
