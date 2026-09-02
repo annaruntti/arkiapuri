@@ -41,6 +41,7 @@ import FormDateField from './FormDateField'
 import FormFoodItem from './FormFoodItem'
 import PlannedEatingDates from './PlannedEatingDates'
 import GuestWarningBanner from './GuestWarningBanner'
+import NoticeBanner from './NoticeBanner'
 import CollapsibleFormSection from './CollapsibleFormSection'
 import MealCategorySelector from './MealCategorySelector'
 import MealRoleSelector from './MealRoleSelector'
@@ -55,10 +56,22 @@ import {
     scaleMealFoodItems,
 } from '../utils/mealServings'
 import { SOURCE_LABELS } from '../utils/dishFromPhotoDraft'
+import {
+    checkFoodItemsAvailability,
+    mapAvailabilityFromApi,
+    mergeFoodItemAvailability,
+} from '../utils/foodItemAvailability'
+import { resolveAppUnit } from '../utils/units'
+import {
+    joinRecipeSteps,
+    normalizeRecipeSteps,
+    resolveRecipeSteps,
+} from '../utils/recipeSteps'
 import openFoodFactsApi from '../services/openFoodFactsApi'
 
 import Info from './Info'
 import MealServingsStepper from './MealServingsStepper'
+import RecipeStepsEditor from './RecipeStepsEditor'
 
 const isPersistedFoodItemId = (id) =>
     typeof id === 'string' && /^[a-fA-F0-9]{24}$/.test(id)
@@ -76,11 +89,18 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
     const { profile } = useLogin()
     const { isDesktop } = useResponsiveDimensions()
     const [foodItems, setFoodItems] = useState(aiDraft?.foodItems || [])
+    const [recipeSteps, setRecipeSteps] = useState(
+        resolveRecipeSteps(aiDraft?.recipeSteps, aiDraft?.recipe)
+    )
 
-    const { control, handleSubmit: handleRHFSubmit, formState: { errors: fieldErrors }, reset: resetFields } = useForm({
+    const {
+        control,
+        handleSubmit: handleRHFSubmit,
+        formState: { errors: fieldErrors },
+        reset: resetFields,
+    } = useForm({
         defaultValues: {
             name: aiDraft?.name || '',
-            recipe: aiDraft?.recipe || '',
             cookingTime: aiDraft?.cookingTime || '',
         },
     })
@@ -93,7 +113,9 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
     const [rolesExpanded, setRolesExpanded] = useState(
         Boolean(aiDraft?.defaultRoles?.length)
     )
-    const [mealCategory, setMealCategory] = useState(aiDraft?.mealCategory || [])
+    const [mealCategory, setMealCategory] = useState(
+        aiDraft?.mealCategory || []
+    )
     const [plannedCookingDate, setPlannedCookingDate] = useState(new Date())
     const [plannedEatingDates, setPlannedEatingDates] = useState([])
     const [servings, setServings] = useState(
@@ -109,12 +131,12 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
     const nameErrorRef = useRef(null)
     const rolesErrorRef = useRef(null)
     const foodItemsErrorRef = useRef(null)
+    const recipeErrorRef = useRef(null)
 
     useEffect(() => {
         if (!aiDraft) return
         resetFields({
             name: aiDraft.name || '',
-            recipe: aiDraft.recipe || '',
             cookingTime: aiDraft.cookingTime || '',
         })
         setDifficultyLevel(aiDraft.difficultyLevel || '')
@@ -122,8 +144,31 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
         setRolesExpanded(Boolean(aiDraft.defaultRoles?.length))
         setMealCategory(aiDraft.mealCategory || [])
         setServings(aiDraft.servings || DEFAULT_SERVINGS)
-        setFoodItems(aiDraft.foodItems || [])
+        const draftItems = aiDraft.foodItems || []
+        setFoodItems(draftItems)
+        setRecipeSteps(resolveRecipeSteps(aiDraft.recipeSteps, aiDraft.recipe))
         if (aiDraft.image) setMealImage(aiDraft.image)
+
+        let cancelled = false
+        if (draftItems.length > 0) {
+            checkFoodItemsAvailability(draftItems)
+                .then((withAvailability) => {
+                    if (cancelled) return
+                    setFoodItems((prev) =>
+                        mergeFoodItemAvailability(prev, withAvailability)
+                    )
+                })
+                .catch((error) => {
+                    console.error(
+                        'Error checking draft ingredient availability:',
+                        error
+                    )
+                })
+        }
+
+        return () => {
+            cancelled = true
+        }
     }, [aiDraft, resetFields])
 
     const fetchShoppingLists = async () => {
@@ -143,7 +188,10 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
                 } else if (lists.length > 1 && !selectedShoppingListId) {
                     // If multiple lists and none selected, use the first one
                     setSelectedShoppingListId(lists[0]._id)
-                    console.log('Auto-selected first shopping list:', lists[0]._id)
+                    console.log(
+                        'Auto-selected first shopping list:',
+                        lists[0]._id
+                    )
                 } else if (lists.length === 0) {
                     console.log('No shopping lists found')
                 }
@@ -296,16 +344,21 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
         if (!foodItems || foodItems.length === 0) {
             errors.foodItems = 'Lisää vähintään yksi raaka-aine'
         }
+        if (!normalizeRecipeSteps(recipeSteps).length) {
+            errors.recipeSteps = 'Lisää vähintään yksi valmistusohjeen vaihe'
+        }
         setFormErrors(errors)
         return Object.keys(errors).length === 0
     }
 
     // Scrollaa ensimmäiseen virheeseen lomakkeella
     const scrollToFirstError = (rhfErrors, customErrors) => {
-        // Järjestys: name → roles → foodItems
+        // Järjestys: name → recipe → roles → foodItems
         let targetRef = null
         if (rhfErrors?.name) {
             targetRef = nameErrorRef
+        } else if (customErrors?.recipeSteps) {
+            targetRef = recipeErrorRef
         } else if (customErrors?.roles) {
             targetRef = rolesErrorRef
         } else if (customErrors?.foodItems) {
@@ -315,7 +368,10 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
             targetRef.current.measureLayout(
                 scrollViewRef.current,
                 (_x, y) => {
-                    scrollViewRef.current.scrollTo({ y: Math.max(0, y - 24), animated: true })
+                    scrollViewRef.current.scrollTo({
+                        y: Math.max(0, y - 24),
+                        animated: true,
+                    })
                 },
                 () => {}
             )
@@ -327,7 +383,6 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
             return
         }
         try {
-
             const token = await storage.getItem('userToken')
 
             // Guest mode: keep meal in local UI state only
@@ -342,7 +397,8 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
                 const guestMeal = {
                     _id: `guest-meal-${Date.now()}`,
                     name: data.name,
-                    recipe: data.recipe || '',
+                    recipe: joinRecipeSteps(recipeSteps),
+                    recipeSteps: normalizeRecipeSteps(recipeSteps),
                     difficultyLevel: getDifficultyEnum(difficultyLevel),
                     cookingTime: parseInt(data.cookingTime) || 0,
                     foodItems: foodItems.map((item) => ({
@@ -382,8 +438,7 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
                         }
 
                         const barcode =
-                            item.barcode ||
-                            item.openFoodFactsData?.barcode
+                            item.barcode || item.openFoodFactsData?.barcode
                         if (barcode) {
                             try {
                                 const offData =
@@ -426,7 +481,10 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
                             if (!Array.isArray(catArray)) return []
                             return catArray
                                 .map((cat) => {
-                                    if (typeof cat === 'object' && cat !== null) {
+                                    if (
+                                        typeof cat === 'object' &&
+                                        cat !== null
+                                    ) {
                                         return cat.name || cat.id || String(cat)
                                     }
                                     return String(cat)
@@ -450,8 +508,7 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
                             }
                         )
 
-                        const foodItem =
-                            findOrCreateResponse.data.foodItem
+                        const foodItem = findOrCreateResponse.data.foodItem
 
                         return {
                             foodId: foodItem._id,
@@ -474,7 +531,8 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
 
             const mealData = {
                 name: data.name,
-                recipe: data.recipe || '',
+                recipe: joinRecipeSteps(recipeSteps),
+                recipeSteps: normalizeRecipeSteps(recipeSteps),
                 difficultyLevel: getDifficultyEnum(difficultyLevel),
                 cookingTime: parseInt(data.cookingTime) || 0,
                 foodItems: createdFoodItemIds,
@@ -566,9 +624,15 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
                 return
             }
 
+            const catalogFoodId = resolveCatalogFoodId(selectedItem)
             const availabilityResponse = await axios.post(
                 getServerUrl('/food-items/check-availability'),
-                { name: selectedItem.name },
+                {
+                    name: selectedItem.name,
+                    ...(isPersistedFoodItemId(catalogFoodId)
+                        ? { foodId: catalogFoodId }
+                        : {}),
+                },
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -581,13 +645,7 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
                 ...itemWithQty,
                 tempId: `${selectedItem._id || selectedItem.name}-${Date.now()}-${Math.random()}`,
                 shoppingListId: selectedShoppingListId,
-                availability: {
-                    inPantry: availability?.inPantry === true,
-                    inShoppingList: availability?.inShoppingList === true,
-                    pantryQuantity: availability?.pantryQuantity || 0,
-                    shoppingListQuantity:
-                        availability?.shoppingListQuantity || 0,
-                },
+                availability: mapAvailabilityFromApi(availability),
             }
 
             setFoodItems((prevItems) => {
@@ -623,24 +681,37 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
 
     const addItemToShoppingList = async (selectedItem, foodItemInList) => {
         try {
-            console.log('addItemToShoppingList called', { selectedShoppingListId, selectedItem, foodItemInList })
-            
+            console.log('addItemToShoppingList called', {
+                selectedShoppingListId,
+                selectedItem,
+                foodItemInList,
+            })
+
             // Get current shopping list ID
             let listIdToUse = selectedShoppingListId
             if (!listIdToUse) {
                 console.log('No shopping list selected, fetching...')
                 const token = await storage.getItem('userToken')
-                const response = await axios.get(getServerUrl('/shopping-lists'), {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                })
-                if (response.data.success && response.data.shoppingLists?.length > 0) {
+                const response = await axios.get(
+                    getServerUrl('/shopping-lists'),
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                )
+                if (
+                    response.data.success &&
+                    response.data.shoppingLists?.length > 0
+                ) {
                     listIdToUse = response.data.shoppingLists[0]._id
                     setSelectedShoppingListId(listIdToUse)
                     console.log('Auto-selected shopping list:', listIdToUse)
                 } else {
-                    Alert.alert('Virhe', 'Sinulla ei ole ostoslistaa. Luo ensin ostoslista.')
+                    Alert.alert(
+                        'Virhe',
+                        'Sinulla ei ole ostoslistaa. Luo ensin ostoslista.'
+                    )
                     return
                 }
             }
@@ -683,8 +754,14 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
                     name: selectedItem.name || foodItemInList.name,
                     unit: selectedItem.unit || foodItemInList.unit || 'kpl',
                     category: categoryArray,
-                    calories: parseInt(selectedItem.calories || foodItemInList.calories) || 0,
-                    price: parseFloat(selectedItem.price || foodItemInList.price) || 0,
+                    calories:
+                        parseInt(
+                            selectedItem.calories || foodItemInList.calories
+                        ) || 0,
+                    price:
+                        parseFloat(
+                            selectedItem.price || foodItemInList.price
+                        ) || 0,
                 },
                 {
                     headers: {
@@ -699,15 +776,23 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
             const shoppingListItem = {
                 foodId: foodItem._id,
                 name: selectedItem.name || foodItemInList.name,
-                estimatedPrice: parseFloat(selectedItem.price || foodItemInList.price) || 0,
+                estimatedPrice:
+                    parseFloat(selectedItem.price || foodItemInList.price) || 0,
                 quantity: quantity,
                 unit: selectedItem.unit || foodItemInList.unit || 'kpl',
                 category: categoryArray,
-                calories: parseInt(selectedItem.calories || foodItemInList.calories) || 0,
-                price: parseFloat(selectedItem.price || foodItemInList.price) || 0,
+                calories:
+                    parseInt(
+                        selectedItem.calories || foodItemInList.calories
+                    ) || 0,
+                price:
+                    parseFloat(selectedItem.price || foodItemInList.price) || 0,
             }
 
-            console.log('Sending request to add item to shopping list:', shoppingListItem)
+            console.log(
+                'Sending request to add item to shopping list:',
+                shoppingListItem
+            )
             const shoppingListResponse = await axios.post(
                 getServerUrl(`/shopping-lists/${listIdToUse}/items`),
                 { items: [shoppingListItem] },
@@ -723,19 +808,34 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
             // Get the quantity from the response
             // The response returns shoppingList with items array
             let actualQuantity = quantity
+            let actualUnit = selectedItem.unit || foodItemInList.unit || 'kpl'
             if (shoppingListResponse.data?.shoppingList?.items) {
-                const addedItem = shoppingListResponse.data.shoppingList.items.find(
-                    (item) => {
-                        const itemFoodId = item.foodId?._id?.toString() || item.foodId?.toString() || item.foodId
-                        const itemName = item.name || item.foodId?.name
-                        const searchName = selectedItem.name || foodItemInList.name
-                        return itemFoodId === foodItem._id.toString() || 
-                               (itemName && searchName && itemName.toLowerCase() === searchName.toLowerCase())
-                    }
-                )
+                const addedItem =
+                    shoppingListResponse.data.shoppingList.items.find(
+                        (item) => {
+                            const itemFoodId =
+                                item.foodId?._id?.toString() ||
+                                item.foodId?.toString() ||
+                                item.foodId
+                            const itemName = item.name || item.foodId?.name
+                            const searchName =
+                                selectedItem.name || foodItemInList.name
+                            return (
+                                itemFoodId === foodItem._id.toString() ||
+                                (itemName &&
+                                    searchName &&
+                                    itemName.toLowerCase() ===
+                                        searchName.toLowerCase())
+                            )
+                        }
+                    )
                 if (addedItem) {
                     actualQuantity = addedItem.quantity || quantity
-                    console.log('Found added item with quantity:', actualQuantity)
+                    actualUnit = addedItem.unit || actualUnit
+                    console.log(
+                        'Found added item with quantity:',
+                        actualQuantity
+                    )
                 }
             }
 
@@ -750,6 +850,7 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
                                 ...item.availability,
                                 inShoppingList: true,
                                 shoppingListQuantity: actualQuantity,
+                                shoppingListUnit: resolveAppUnit(actualUnit),
                             },
                         }
                     }
@@ -761,7 +862,13 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
         } catch (error) {
             console.error('Error adding to shopping list:', error)
             console.error('Error response:', error.response?.data)
-            Alert.alert('Virhe', 'Tuotteen lisääminen ostoslistaan epäonnistui: ' + (error.response?.data?.error || error.response?.data?.message || error.message))
+            Alert.alert(
+                'Virhe',
+                'Tuotteen lisääminen ostoslistaan epäonnistui: ' +
+                    (error.response?.data?.error ||
+                        error.response?.data?.message ||
+                        error.message)
+            )
         }
     }
 
@@ -798,8 +905,14 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
                     name: selectedItem.name || foodItemInList.name,
                     unit: selectedItem.unit || foodItemInList.unit || 'kpl',
                     category: categoryArray,
-                    calories: parseInt(selectedItem.calories || foodItemInList.calories) || 0,
-                    price: parseFloat(selectedItem.price || foodItemInList.price) || 0,
+                    calories:
+                        parseInt(
+                            selectedItem.calories || foodItemInList.calories
+                        ) || 0,
+                    price:
+                        parseFloat(
+                            selectedItem.price || foodItemInList.price
+                        ) || 0,
                 },
                 {
                     headers: {
@@ -818,8 +931,14 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
                     category: categoryArray,
                     quantity: quantity,
                     unit: selectedItem.unit || foodItemInList.unit || 'kpl',
-                    price: parseFloat(selectedItem.price || foodItemInList.price) || 0,
-                    calories: parseInt(selectedItem.calories || foodItemInList.calories) || 0,
+                    price:
+                        parseFloat(
+                            selectedItem.price || foodItemInList.price
+                        ) || 0,
+                    calories:
+                        parseInt(
+                            selectedItem.calories || foodItemInList.calories
+                        ) || 0,
                     foodId: foodItem._id,
                 },
                 {
@@ -829,20 +948,30 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
                 }
             )
 
-            // Get the quantity from the pantry response
+            // Get the quantity and unit from the pantry response
             let actualQuantity = quantity
+            let actualUnit = selectedItem.unit || foodItemInList.unit || 'kpl'
             if (pantryResponse.data?.pantry?.items) {
                 const pantryItem = pantryResponse.data.pantry.items.find(
                     (item) => {
-                        const itemFoodId = item.foodId?.toString() || item.foodId?._id?.toString()
+                        const itemFoodId =
+                            item.foodId?.toString() ||
+                            item.foodId?._id?.toString()
                         const itemName = item.name
-                        const searchName = selectedItem.name || foodItemInList.name
-                        return itemFoodId === foodItem._id.toString() || 
-                               (itemName && searchName && itemName.toLowerCase() === searchName.toLowerCase())
+                        const searchName =
+                            selectedItem.name || foodItemInList.name
+                        return (
+                            itemFoodId === foodItem._id.toString() ||
+                            (itemName &&
+                                searchName &&
+                                itemName.toLowerCase() ===
+                                    searchName.toLowerCase())
+                        )
                     }
                 )
                 if (pantryItem) {
                     actualQuantity = pantryItem.quantity || quantity
+                    actualUnit = pantryItem.unit || actualUnit
                 }
             }
 
@@ -856,6 +985,7 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
                                 ...item.availability,
                                 inPantry: true,
                                 pantryQuantity: actualQuantity,
+                                pantryUnit: resolveAppUnit(actualUnit),
                             },
                         }
                     }
@@ -865,7 +995,11 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
             Alert.alert('Onnistui', 'Tuote lisätty ruokavarastoon')
         } catch (error) {
             console.error('Error adding to pantry:', error)
-            Alert.alert('Virhe', 'Tuotteen lisääminen ruokavarastoon epäonnistui: ' + (error.response?.data?.error || error.message))
+            Alert.alert(
+                'Virhe',
+                'Tuotteen lisääminen ruokavarastoon epäonnistui: ' +
+                    (error.response?.data?.error || error.message)
+            )
         }
     }
 
@@ -880,9 +1014,15 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
             }
 
             // Check if item exists in pantry or shopping list
+            const catalogFoodId = resolveCatalogFoodId(itemData)
             const availabilityResponse = await axios.post(
                 getServerUrl('/food-items/check-availability'),
-                { name: itemData.name },
+                {
+                    name: itemData.name,
+                    ...(isPersistedFoodItemId(catalogFoodId)
+                        ? { foodId: catalogFoodId }
+                        : {}),
+                },
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -943,12 +1083,7 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
                     foodId: findOrCreateResponse.data.foodItem._id,
                     tempId: `new-${findOrCreateResponse.data.foodItem._id || itemData.name}-${Date.now()}-${Math.random()}`,
                     shoppingListId: selectedShoppingListId,
-                    availability: {
-                        inPantry: availability?.inPantry === true,
-                        inShoppingList: availability?.inShoppingList === true,
-                        pantryQuantity: availability?.pantryQuantity || 0,
-                        shoppingListQuantity: availability?.shoppingListQuantity || 0,
-                    },
+                    availability: mapAvailabilityFromApi(availability),
                 }
 
                 setFoodItems((prevItems) => {
@@ -1011,10 +1146,10 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
 
     const renderSelectedItem = ({ item, index }) => {
         const availability = item.availability || {}
-        const showSuggestion = 
-            !item.availability || 
-            availability.inPantry !== true || 
-            availability.inShoppingList !== true
+        const showSuggestion =
+            Boolean(item.availability) &&
+            (availability.inPantry !== true ||
+                availability.inShoppingList !== true)
         const sourceLabel = SOURCE_LABELS[item.matchSource]
         const visibilityLabel =
             item.visibleInPhoto === true
@@ -1031,7 +1166,7 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
                 >
                     <Feather name="trash-2" size={18} color="#666" />
                 </TouchableOpacity>
-                
+
                 <View style={styles.itemInfo}>
                     <CustomText style={styles.itemName}>{item.name}</CustomText>
                     <CustomText style={styles.itemDetails}>
@@ -1045,12 +1180,17 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
                         </CustomText>
                     )}
                     <View style={styles.quantityRow}>
-                        <CustomText style={styles.quantityLabel}>Määrä:</CustomText>
+                        <CustomText style={styles.quantityLabel}>
+                            Määrä:
+                        </CustomText>
                         <TextInput
                             style={styles.quantityInput}
                             value={String(getIngredientQuantity(item))}
                             onChangeText={(text) =>
-                                handleUpdateQuantity(index, parseFloat(text) || 0)
+                                handleUpdateQuantity(
+                                    index,
+                                    parseFloat(text) || 0
+                                )
                             }
                             keyboardType="numeric"
                             placeholder="0"
@@ -1059,22 +1199,34 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
                             {item.unit || 'kpl'}
                         </CustomText>
                     </View>
-                    
+
                     {/* Show availability status or suggestion */}
                     <View style={styles.availabilityContainer}>
                         {availability.inPantry && (
                             <View style={styles.availabilityBadge}>
-                                <MaterialIcons name="check-circle" size={16} color="#10B981" />
+                                <MaterialIcons
+                                    name="check-circle"
+                                    size={16}
+                                    color="#10B981"
+                                />
                                 <CustomText style={styles.availabilityText}>
-                                    Ruokavarastossa ({availability.pantryQuantity || 0} {item.unit || 'kpl'})
+                                    Ruokavarastossa (
+                                    {availability.pantryQuantity || 0}{' '}
+                                    {availability.pantryUnit || 'kpl'})
                                 </CustomText>
                             </View>
                         )}
                         {availability.inShoppingList && (
                             <View style={styles.availabilityBadge}>
-                                <MaterialIcons name="check-circle" size={16} color="#10B981" />
+                                <MaterialIcons
+                                    name="check-circle"
+                                    size={16}
+                                    color="#10B981"
+                                />
                                 <CustomText style={styles.availabilityText}>
-                                    Ostoslistalla ({availability.shoppingListQuantity || 0} {item.unit || 'kpl'})
+                                    Ostoslistalla (
+                                    {availability.shoppingListQuantity || 0}{' '}
+                                    {availability.shoppingListUnit || 'kpl'})
                                 </CustomText>
                             </View>
                         )}
@@ -1089,17 +1241,42 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
                                             style={styles.suggestionButton}
                                             activeOpacity={0.7}
                                             onPress={async () => {
-                                                console.log('Ostoslistaan button clicked', { selectedShoppingListId, item: item.name })
+                                                console.log(
+                                                    'Ostoslistaan button clicked',
+                                                    {
+                                                        selectedShoppingListId,
+                                                        item: item.name,
+                                                    }
+                                                )
                                                 try {
-                                                    await addItemToShoppingList(item, item)
+                                                    await addItemToShoppingList(
+                                                        item,
+                                                        item
+                                                    )
                                                 } catch (error) {
-                                                    console.error('Error in onPress handler:', error)
-                                                    Alert.alert('Virhe', 'Tuotteen lisääminen epäonnistui: ' + (error.message || 'Tuntematon virhe'))
+                                                    console.error(
+                                                        'Error in onPress handler:',
+                                                        error
+                                                    )
+                                                    Alert.alert(
+                                                        'Virhe',
+                                                        'Tuotteen lisääminen epäonnistui: ' +
+                                                            (error.message ||
+                                                                'Tuntematon virhe')
+                                                    )
                                                 }
                                             }}
                                         >
-                                            <MaterialIcons name="shopping-cart" size={16} color="#000000" />
-                                            <CustomText style={styles.suggestionButtonText}>
+                                            <MaterialIcons
+                                                name="shopping-cart"
+                                                size={16}
+                                                color="#000000"
+                                            />
+                                            <CustomText
+                                                style={
+                                                    styles.suggestionButtonText
+                                                }
+                                            >
                                                 Ostoslistalle
                                             </CustomText>
                                         </TouchableOpacity>
@@ -1108,11 +1285,22 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
                                         <TouchableOpacity
                                             style={styles.suggestionButton}
                                             onPress={async () => {
-                                                await addItemToPantry(item, item)
+                                                await addItemToPantry(
+                                                    item,
+                                                    item
+                                                )
                                             }}
                                         >
-                                            <MaterialIcons name="kitchen" size={16} color="#000000" />
-                                            <CustomText style={styles.suggestionButtonText}>
+                                            <MaterialIcons
+                                                name="kitchen"
+                                                size={16}
+                                                color="#000000"
+                                            />
+                                            <CustomText
+                                                style={
+                                                    styles.suggestionButtonText
+                                                }
+                                            >
                                                 Ruokavarastoon
                                             </CustomText>
                                         </TouchableOpacity>
@@ -1144,286 +1332,338 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
                 bounces={false}
                 keyboardShouldPersistTaps="handled"
             >
-                <View style={[styles.formContainer, isDesktop && styles.formContainerDesktop]}>
+                <View
+                    style={[
+                        styles.formContainer,
+                        isDesktop && styles.formContainerDesktop,
+                    ]}
+                >
                     <GuestWarningBanner message="Tietosi eivät tallennu pysyvästi ilman käyttäjätunnusta. Kirjaudu sisään tallentaaksesi tiedot." />
                     {aiDraft ? (
-                        <View style={styles.aiDraftBanner}>
-                            <CustomText style={styles.aiDraftBannerText}>
-                                AI:n ehdotus – tarkista raaka-aineet ja määrät.
-                                Ravintoarvot haetaan omasta tietokannasta tai
-                                Open Food Factsista.
-                            </CustomText>
-                        </View>
+                        <NoticeBanner variant="info">
+                            AI:n ehdotus – tarkista raaka-aineet ja määrät.
+                            Ravintoarvot haetaan omasta tietokannasta tai
+                            Open Food Factsista.
+                        </NoticeBanner>
                     ) : null}
-                        <View ref={nameErrorRef}>
-                            <CustomInput
-                                control={control}
-                                name="name"
-                                label="Aterian nimi"
-                                placeholder="Esim. kasvisrisotto"
-                                rules={{ required: 'Aterian nimi on pakollinen tieto' }}
-                                variant="form"
-                            />
-                        </View>
+                    <View ref={nameErrorRef}>
                         <CustomInput
                             control={control}
-                            name="recipe"
-                            label="Resepti"
-                            placeholder="Kirjoita resepti tähän..."
+                            name="name"
+                            label="Aterian nimi"
+                            placeholder="Esim. kasvisrisotto"
+                            rules={{
+                                required: 'Aterian nimi on pakollinen tieto',
+                            }}
                             variant="form"
-                            multiline
-                            numberOfLines={4}
-                            inputStyle={styles.multilineInput}
                         />
+                    </View>
+                    <View ref={recipeErrorRef}>
                         <CustomText style={styles.label}>
-                            Aterian kuva
+                            Valmistusohje
                         </CustomText>
-                        <TouchableOpacity
-                            style={styles.imagePicker}
-                            onPress={pickImage}
-                        >
-                            {mealImage ? (
-                                <Image
-                                    source={{ uri: mealImage.uri }}
-                                    style={styles.selectedImage}
-                                />
-                            ) : (
-                                <View style={styles.imagePlaceholder}>
-                                    <MaterialIcons
-                                        name="add-a-photo"
-                                        size={40}
-                                        color="#5844BB"
-                                    />
-                                    <CustomText
-                                        style={styles.imagePlaceholderText}
-                                    >
-                                        Lisää kuva
-                                    </CustomText>
-                                </View>
-                            )}
-                        </TouchableOpacity>
-                        <CustomText style={styles.label}>
-                            Vaikeustaso (1-5)
-                        </CustomText>
-                        <DifficultySelector
-                            value={difficultyLevel}
-                            onSelect={setDifficultyLevel}
-                        />
-                        <CustomInput
-                            control={control}
-                            name="cookingTime"
-                            label="Valmistusaika (min)"
-                            placeholder="Esim. 30"
-                            variant="form"
-                            keyboardType="numeric"
-                        />
-
-                        <MealServingsStepper
-                            value={servings}
-                            onChange={handleServingsChange}
-                        />
-
-                        <View ref={rolesErrorRef} style={styles.collapsibleFormSection}>
-                            <CollapsibleFormSection
-                                label="Aterian tyyppi"
-                                summary={
-                                    selectedRoles.length > 0
-                                        ? getMealTypeText(selectedRoles)
-                                        : ''
+                        <RecipeStepsEditor
+                            steps={recipeSteps}
+                            onChange={(next) => {
+                                setRecipeSteps(next)
+                                if (normalizeRecipeSteps(next).length) {
+                                    setFormErrors((e) => ({
+                                        ...e,
+                                        recipeSteps: undefined,
+                                    }))
                                 }
-                                expanded={rolesExpanded}
-                                onExpandedChange={setRolesExpanded}
-                            >
-                                <MealRoleSelector
-                                    value={selectedRoles}
-                                    onSelect={(next) => {
-                                        setSelectedRoles(next)
-                                        if (next.length > 0) {
-                                            setFormErrors((e) => ({
-                                                ...e,
-                                                roles: undefined,
-                                            }))
-                                        }
-                                    }}
+                            }}
+                        />
+                        {formErrors.recipeSteps && (
+                            <View style={styles.errorRow}>
+                                <MaterialIcons
+                                    name="error"
+                                    color="#e53e3e"
+                                    size={14}
                                 />
-                            </CollapsibleFormSection>
-                            {formErrors.roles && (
-                                <View style={styles.errorRow}>
-                                    <MaterialIcons
-                                        name="error"
-                                        color="#e53e3e"
-                                        size={14}
-                                    />
-                                    <CustomText style={styles.errorMsg}>
-                                        {formErrors.roles}
-                                    </CustomText>
-                                </View>
-                            )}
-                        </View>
+                                <CustomText style={styles.errorMsg}>
+                                    {formErrors.recipeSteps}
+                                </CustomText>
+                            </View>
+                        )}
+                    </View>
+                    <CustomText style={styles.label}>Aterian kuva</CustomText>
+                    <TouchableOpacity
+                        style={styles.imagePicker}
+                        onPress={pickImage}
+                    >
+                        {mealImage ? (
+                            <Image
+                                source={{ uri: mealImage.uri }}
+                                style={styles.selectedImage}
+                            />
+                        ) : (
+                            <View style={styles.imagePlaceholder}>
+                                <MaterialIcons
+                                    name="add-a-photo"
+                                    size={40}
+                                    color="#5844BB"
+                                />
+                                <CustomText style={styles.imagePlaceholderText}>
+                                    Lisää kuva
+                                </CustomText>
+                            </View>
+                        )}
+                    </TouchableOpacity>
+                    <CustomText style={styles.label}>
+                        Vaikeustaso (1-5)
+                    </CustomText>
+                    <DifficultySelector
+                        value={difficultyLevel}
+                        onSelect={setDifficultyLevel}
+                    />
+                    <CustomInput
+                        control={control}
+                        name="cookingTime"
+                        label="Valmistusaika (min)"
+                        placeholder="Esim. 30"
+                        variant="form"
+                        keyboardType="numeric"
+                    />
 
+                    <MealServingsStepper
+                        value={servings}
+                        onChange={handleServingsChange}
+                    />
+
+                    <View
+                        ref={rolesErrorRef}
+                        style={styles.collapsibleFormSection}
+                    >
                         <CollapsibleFormSection
-                            label="Ruokalaji"
-                            style={styles.collapsibleFormSection}
+                            label="Aterian tyyppi"
                             summary={
-                                mealCategory.length > 0
-                                    ? getMealCategoryText(mealCategory)
+                                selectedRoles.length > 0
+                                    ? getMealTypeText(selectedRoles)
                                     : ''
                             }
+                            expanded={rolesExpanded}
+                            onExpandedChange={setRolesExpanded}
                         >
-                            <MealCategorySelector
-                                value={mealCategory}
-                                onSelect={setMealCategory}
-                            />
-                        </CollapsibleFormSection>
-                        <FormDateField
-                            label="Suunniteltu valmistuspäivä"
-                            value={plannedCookingDate}
-                            onChange={handleCookingDateChange}
-                            minimumDate={new Date()}
-                            warnIfPast
-                            overdueMessage={OVERDUE_COOKING_MESSAGE}
-                            testID="plannedCookingDate"
-                            labelRight={
-                                <Info
-                                    title="Suunniteltu valmistuspäivä"
-                                    content="Tässä voit valita päivän, jolloin aiot valmistaa tämän aterian. Valittuasi suunnitellun valmistuspäivän, ateria ilmestyy lukujärjestykseesi kyseisen päivän kohdalle. Voit muuttaa päivämäärää myöhemmin tarvittaessa. Luotu ateria jää myös talteen Ateriat-listaasi ja voit asettaa aina uudelleen suunnitellun valmistuspäivämää sille kun haluat taas valmistaa kyseisen aterian."
-                                />
-                            }
-                        />
-
-                        <PlannedEatingDates
-                            dates={plannedEatingDates}
-                            onChange={setPlannedEatingDates}
-                            cookingDate={plannedCookingDate}
-                            label="Suunnitellut syöntipäivät (valinnainen)"
-                            labelRight={
-                                <Info
-                                    title="Suunnitellut syöntipäivät"
-                                    content="Voit lisätä useita päivämääriä, jos aiot syödä saman aterian useampana päivänä. Jos jätät tämän tyhjäksi, syöntipäiväksi asetetaan sama päivä kuin valmistuspäivä."
-                                />
-                            }
-                            style={styles.eatingDatesContainer}
-                        />
-
-                        <View style={styles.foodItemSelectorContainer}>
-                            <CustomText style={styles.label}>
-                                Raaka-aineet
-                            </CustomText>
-                            <UnifiedFoodSearch
-                                onSelectItem={addSelectedItemToMeal}
-                                location="meal"
-                                allowDuplicates={true}
-                                servings={servings}
-                            />
-                            {formErrors.foodItems && (
-                                <View ref={foodItemsErrorRef} style={[styles.errorRow, { marginTop: 8 }]}>
-                                    <MaterialIcons name="error" color="#e53e3e" size={14} />
-                                    <CustomText style={styles.errorMsg}>{formErrors.foodItems}</CustomText>
-                                </View>
-                            )}
-
-                            <View style={[styles.manualAddContainer, isDesktop && styles.desktopButtonContainer]}>
-                                <Button
-                                    title="+ Luo uusi tuote"
-                                    onPress={() => setShowItemForm(!showItemForm)}
-                                    style={[
-                                        styles.tertiaryButton,
-                                        isDesktop && styles.tertiaryButtonDesktop,
-                                    ]}
-                                    textStyle={styles.buttonText}
-                                />
-                            </View>
-
-                            {/* FormFoodItem section - shown when user clicks "Luo uusi tuote" */}
-                            {showItemForm && (
-                                <View style={styles.formFoodItemSection}>
-                                    <View style={styles.formFoodItemHeader}>
-                                        <CustomText style={styles.formFoodItemTitle}>
-                                            Luo uusi tuote
-                                        </CustomText>
-                                        <TouchableOpacity
-                                            onPress={() => setShowItemForm(false)}
-                                            style={styles.closeFormButton}
-                                        >
-                                            <MaterialIcons
-                                                name="close"
-                                                size={24}
-                                                color="#666"
-                                            />
-                                        </TouchableOpacity>
-                                    </View>
-                                    <FormFoodItem
-                                        onSubmit={handleAddNewItem}
-                                        location="meal"
-                                    />
-                                </View>
-                            )}
-
-                            {/* Display selected food items */}
-                            {foodItems.length > 0 && (
-                                <View style={styles.selectedItemsContainer}>
-                                    <CustomText
-                                        style={styles.selectedItemsTitle}
-                                    >
-                                        Valitut raaka-aineet:
-                                    </CustomText>
-                                    <FlatList
-                                        data={foodItems}
-                                        renderItem={renderSelectedItem}
-                                        keyExtractor={(item, index) =>
-                                            item.tempId ||
-                                            `${item._id || item.name}-${index}`
-                                        }
-                                        style={styles.selectedItemsList}
-                                        showsVerticalScrollIndicator={true}
-                                        nestedScrollEnabled={true}
-                                        scrollEnabled={true}
-                                        removeClippedSubviews={false}
-                                        getItemLayout={(data, index) => ({
-                                            length: 100,
-                                            offset: 100 * index,
-                                            index,
-                                        })}
-                                    />
-                                </View>
-                            )}
-                        </View>
-
-                        <View style={styles.buttonGroup}>
-                            <Button
-                                title="Tallenna ateria"
-                                onPress={() => {
-                                    const customErrors = {}
-                                    if (!selectedRoles || selectedRoles.length === 0) {
-                                        customErrors.roles = 'Valitse vähintään yksi ateriatyyppi'
-                                        setRolesExpanded(true)
-                                    }
-                                    if (!foodItems || foodItems.length === 0) {
-                                        customErrors.foodItems = 'Lisää vähintään yksi raaka-aine'
-                                    }
-                                    setFormErrors(customErrors)
-                                    handleRHFSubmit(
-                                        (data) => handleFormSubmit(data),
-                                        (rhfErrors) => {
-                                            // RHF-validointi epäonnistui — scrollaa ensimmäiseen virheeseen
-                                            scrollToFirstError(rhfErrors, customErrors)
-                                        }
-                                    )()
-                                    // Jos custom-kentissä virheitä, scrollaa niihin
-                                    if (Object.keys(customErrors).length > 0) {
-                                        // Pieni viive jotta ref ehtii renderöityä
-                                        setTimeout(() => scrollToFirstError(null, customErrors), 50)
+                            <MealRoleSelector
+                                value={selectedRoles}
+                                onSelect={(next) => {
+                                    setSelectedRoles(next)
+                                    if (next.length > 0) {
+                                        setFormErrors((e) => ({
+                                            ...e,
+                                            roles: undefined,
+                                        }))
                                     }
                                 }}
+                            />
+                        </CollapsibleFormSection>
+                        {formErrors.roles && (
+                            <View style={styles.errorRow}>
+                                <MaterialIcons
+                                    name="error"
+                                    color="#e53e3e"
+                                    size={14}
+                                />
+                                <CustomText style={styles.errorMsg}>
+                                    {formErrors.roles}
+                                </CustomText>
+                            </View>
+                        )}
+                    </View>
+
+                    <CollapsibleFormSection
+                        label="Ruokalaji"
+                        style={styles.collapsibleFormSection}
+                        summary={
+                            mealCategory.length > 0
+                                ? getMealCategoryText(mealCategory)
+                                : ''
+                        }
+                    >
+                        <MealCategorySelector
+                            value={mealCategory}
+                            onSelect={setMealCategory}
+                        />
+                    </CollapsibleFormSection>
+                    <FormDateField
+                        label="Suunniteltu valmistuspäivä"
+                        value={plannedCookingDate}
+                        onChange={handleCookingDateChange}
+                        minimumDate={new Date()}
+                        warnIfPast
+                        overdueMessage={OVERDUE_COOKING_MESSAGE}
+                        testID="plannedCookingDate"
+                        labelRight={
+                            <Info
+                                title="Suunniteltu valmistuspäivä"
+                                content="Tässä voit valita päivän, jolloin aiot valmistaa tämän aterian. Valittuasi suunnitellun valmistuspäivän, ateria ilmestyy lukujärjestykseesi kyseisen päivän kohdalle. Voit muuttaa päivämäärää myöhemmin tarvittaessa. Luotu ateria jää myös talteen Ateriat-listaasi ja voit asettaa aina uudelleen suunnitellun valmistuspäivämää sille kun haluat taas valmistaa kyseisen aterian."
+                            />
+                        }
+                    />
+
+                    <PlannedEatingDates
+                        dates={plannedEatingDates}
+                        onChange={setPlannedEatingDates}
+                        cookingDate={plannedCookingDate}
+                        label="Suunnitellut syöntipäivät (valinnainen)"
+                        labelRight={
+                            <Info
+                                title="Suunnitellut syöntipäivät"
+                                content="Voit lisätä useita päivämääriä, jos aiot syödä saman aterian useampana päivänä. Jos jätät tämän tyhjäksi, syöntipäiväksi asetetaan sama päivä kuin valmistuspäivä."
+                            />
+                        }
+                        style={styles.eatingDatesContainer}
+                    />
+
+                    <View style={styles.foodItemSelectorContainer}>
+                        <CustomText style={styles.label}>
+                            Raaka-aineet
+                        </CustomText>
+                        <UnifiedFoodSearch
+                            onSelectItem={addSelectedItemToMeal}
+                            location="meal"
+                            allowDuplicates={true}
+                            servings={servings}
+                        />
+                        {formErrors.foodItems && (
+                            <View
+                                ref={foodItemsErrorRef}
+                                style={[styles.errorRow, { marginTop: 8 }]}
+                            >
+                                <MaterialIcons
+                                    name="error"
+                                    color="#e53e3e"
+                                    size={14}
+                                />
+                                <CustomText style={styles.errorMsg}>
+                                    {formErrors.foodItems}
+                                </CustomText>
+                            </View>
+                        )}
+
+                        <View
+                            style={[
+                                styles.manualAddContainer,
+                                isDesktop && styles.desktopButtonContainer,
+                            ]}
+                        >
+                            <Button
+                                title="+ Luo uusi tuote"
+                                onPress={() => setShowItemForm(!showItemForm)}
                                 style={[
-                                    styles.primaryButton,
-                                    isDesktop && styles.desktopPrimaryButton,
+                                    styles.tertiaryButton,
+                                    isDesktop && styles.tertiaryButtonDesktop,
                                 ]}
                                 textStyle={styles.buttonText}
                             />
                         </View>
+
+                        {/* FormFoodItem section - shown when user clicks "Luo uusi tuote" */}
+                        {showItemForm && (
+                            <View style={styles.formFoodItemSection}>
+                                <View style={styles.formFoodItemHeader}>
+                                    <CustomText
+                                        style={styles.formFoodItemTitle}
+                                    >
+                                        Luo uusi tuote
+                                    </CustomText>
+                                    <TouchableOpacity
+                                        onPress={() => setShowItemForm(false)}
+                                        style={styles.closeFormButton}
+                                    >
+                                        <MaterialIcons
+                                            name="close"
+                                            size={24}
+                                            color="#666"
+                                        />
+                                    </TouchableOpacity>
+                                </View>
+                                <FormFoodItem
+                                    onSubmit={handleAddNewItem}
+                                    location="meal"
+                                />
+                            </View>
+                        )}
+
+                        {/* Display selected food items */}
+                        {foodItems.length > 0 && (
+                            <View style={styles.selectedItemsContainer}>
+                                <CustomText style={styles.selectedItemsTitle}>
+                                    Valitut raaka-aineet:
+                                </CustomText>
+                                <FlatList
+                                    data={foodItems}
+                                    renderItem={renderSelectedItem}
+                                    keyExtractor={(item, index) =>
+                                        item.tempId ||
+                                        `${item._id || item.name}-${index}`
+                                    }
+                                    style={styles.selectedItemsList}
+                                    showsVerticalScrollIndicator={true}
+                                    nestedScrollEnabled={true}
+                                    scrollEnabled={true}
+                                    removeClippedSubviews={false}
+                                    getItemLayout={(data, index) => ({
+                                        length: 100,
+                                        offset: 100 * index,
+                                        index,
+                                    })}
+                                />
+                            </View>
+                        )}
                     </View>
-                </ScrollView>
+
+                    <View style={styles.buttonGroup}>
+                        <Button
+                            title="Tallenna ateria"
+                            onPress={() => {
+                                const customErrors = {}
+                                if (
+                                    !selectedRoles ||
+                                    selectedRoles.length === 0
+                                ) {
+                                    customErrors.roles =
+                                        'Valitse vähintään yksi ateriatyyppi'
+                                    setRolesExpanded(true)
+                                }
+                                if (!foodItems || foodItems.length === 0) {
+                                    customErrors.foodItems =
+                                        'Lisää vähintään yksi raaka-aine'
+                                }
+                                setFormErrors(customErrors)
+                                handleRHFSubmit(
+                                    (data) => handleFormSubmit(data),
+                                    (rhfErrors) => {
+                                        // RHF-validointi epäonnistui — scrollaa ensimmäiseen virheeseen
+                                        scrollToFirstError(
+                                            rhfErrors,
+                                            customErrors
+                                        )
+                                    }
+                                )()
+                                // Jos custom-kentissä virheitä, scrollaa niihin
+                                if (Object.keys(customErrors).length > 0) {
+                                    // Pieni viive jotta ref ehtii renderöityä
+                                    setTimeout(
+                                        () =>
+                                            scrollToFirstError(
+                                                null,
+                                                customErrors
+                                            ),
+                                        50
+                                    )
+                                }
+                            }}
+                            style={[
+                                styles.primaryButton,
+                                isDesktop && styles.desktopPrimaryButton,
+                            ]}
+                            textStyle={styles.buttonText}
+                        />
+                    </View>
+                </View>
+            </ScrollView>
         </KeyboardAvoidingView>
     )
 }
@@ -1867,19 +2107,6 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '600',
         color: '#000000',
-    },
-    aiDraftBanner: {
-        backgroundColor: '#EEF2FF',
-        borderColor: '#5844BB',
-        borderWidth: 1,
-        borderRadius: 8,
-        padding: 12,
-        marginBottom: 16,
-    },
-    aiDraftBannerText: {
-        fontSize: 14,
-        lineHeight: 20,
-        color: '#312E81',
     },
     ingredientSourceText: {
         fontSize: 12,
