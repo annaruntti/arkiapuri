@@ -11,6 +11,7 @@ import {
 } from 'react-native'
 import Button from '../components/Button'
 import CustomText from '../components/CustomText'
+import NoticeBanner from '../components/NoticeBanner'
 import { useLogin } from '../context/LoginProvider'
 import { getServerUrl } from '../utils/getServerUrl'
 import { useResponsiveDimensions } from '../utils/responsive'
@@ -255,51 +256,45 @@ const AcceptInviteScreen = () => {
                     </View>
 
                     {!isLoggedIn && (
-                        <View style={styles.loginNotice}>
-                            <MaterialIcons
-                                name="info-outline"
-                                size={20}
-                                color="#5844BB"
-                            />
-                            <CustomText style={styles.loginNoticeText}>
-                                Sinulla ei ole vielä tiliä? Luo tili osoitteella{' '}
-                                <CustomText style={styles.emailHighlight}>
-                                    {invitationData.email}
-                                </CustomText>{' '}
-                                hyväksyäksesi kutsun.{'\n\n'}
-                                Jos sinulla on jo tili, voit{' '}
-                                <CustomText
-                                    style={styles.linkText}
-                                    onPress={() => {
-                                        storage.setItem(
-                                            'pendingInvitation',
-                                            invitationToken
-                                        )
-                                        navigation.navigate('Auth', {
-                                            screen: 'Kirjaudu sisään',
-                                        })
-                                    }}
-                                >
-                                    kirjautua sisään tästä
-                                </CustomText>
-                                .
+                        <NoticeBanner
+                            variant="info"
+                            icon="info-outline"
+                            style={styles.inviteNotice}
+                        >
+                            Sinulla ei ole vielä tiliä? Luo tili osoitteella{' '}
+                            <CustomText style={styles.emailHighlight}>
+                                {invitationData.email}
+                            </CustomText>{' '}
+                            hyväksyäksesi kutsun.{'\n\n'}
+                            Jos sinulla on jo tili, voit{' '}
+                            <CustomText
+                                style={styles.linkText}
+                                onPress={() => {
+                                    storage.setItem(
+                                        'pendingInvitation',
+                                        invitationToken
+                                    )
+                                    navigation.navigate('Auth', {
+                                        screen: 'Kirjaudu sisään',
+                                    })
+                                }}
+                            >
+                                kirjautua sisään tästä
                             </CustomText>
-                        </View>
+                            .
+                        </NoticeBanner>
                     )}
 
                     {isLoggedIn && invitationData.email !== profile?.email && (
-                        <View style={styles.warningNotice}>
-                            <MaterialIcons
-                                name="warning"
-                                size={20}
-                                color="#f59e0b"
-                            />
-                            <CustomText style={styles.warningNoticeText}>
-                                Tämä kutsu lähetettiin osoitteeseen{' '}
-                                {invitationData.email}, mutta olet kirjautunut
-                                sisään käyttäjänä {profile?.email}
-                            </CustomText>
-                        </View>
+                        <NoticeBanner
+                            variant="warning"
+                            icon="warning"
+                            style={styles.inviteNotice}
+                        >
+                            Tämä kutsu lähetettiin osoitteeseen{' '}
+                            {invitationData.email}, mutta olet kirjautunut
+                            sisään käyttäjänä {profile?.email}
+                        </NoticeBanner>
                     )}
 
                     <View style={styles.buttonContainer}>
@@ -413,44 +408,17 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#6b7280',
     },
-    loginNotice: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        gap: 8,
-        backgroundColor: '#f3f0ff',
-        padding: 16,
-        borderRadius: 8,
+    inviteNotice: {
         marginBottom: 24,
-    },
-    loginNoticeText: {
-        flex: 1,
-        fontSize: 14,
-        color: '#7c3aed',
-        lineHeight: 20,
     },
     emailHighlight: {
         fontWeight: '700',
-        color: '#7c3aed',
+        color: '#5844BB',
     },
     linkText: {
         fontWeight: '700',
-        color: '#7c3aed',
+        color: '#5844BB',
         textDecorationLine: 'underline',
-    },
-    warningNotice: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        gap: 8,
-        backgroundColor: '#fef3c7',
-        padding: 16,
-        borderRadius: 8,
-        marginBottom: 24,
-    },
-    warningNoticeText: {
-        flex: 1,
-        fontSize: 14,
-        color: '#92400e',
-        lineHeight: 20,
     },
     buttonContainer: {
         gap: 12,

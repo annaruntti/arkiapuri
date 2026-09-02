@@ -10,6 +10,7 @@ import AuthLayout from '../components/AuthLayout'
 import Button from '../components/Button'
 import CustomInput from '../components/CustomInput'
 import CustomText from '../components/CustomText'
+import NoticeBanner from '../components/NoticeBanner'
 
 const ForgotPasswordScreen = ({ navigation }) => {
     const [isLoading, setIsLoading] = useState(false)
@@ -43,8 +44,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
             } else {
                 setFeedback({
                     type: 'error',
-                    message:
-                        message || 'Sähköpostin lähettäminen epäonnistui',
+                    message: message || 'Sähköpostin lähettäminen epäonnistui',
                 })
                 showAlert(
                     'Virhe',
@@ -69,11 +69,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
                 'Verkkovirhe. Tarkista internetyhteys ja yritä uudelleen.'
             setFeedback({ type: 'error', message })
             showAlert('Virhe', message)
-            if (
-                typeof __DEV__ !== 'undefined' &&
-                __DEV__ &&
-                data?.previewUrl
-            ) {
+            if (typeof __DEV__ !== 'undefined' && __DEV__ && data?.previewUrl) {
                 console.log('Password reset preview URL:', data.previewUrl)
             }
         } finally {
@@ -87,9 +83,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
 
     return (
         <AuthLayout
-            title={
-                emailSent ? 'Sähköposti lähetetty' : 'Unohditko salasanasi?'
-            }
+            title={emailSent ? 'Sähköposti lähetetty' : 'Unohditko salasanasi?'}
             subtitle={
                 emailSent
                     ? 'Tarkista sähköpostisi ja seuraa ohjeita.'
@@ -116,11 +110,9 @@ const ForgotPasswordScreen = ({ navigation }) => {
                         />
 
                         {feedback?.type === 'error' && (
-                            <View style={styles.errorBanner}>
-                                <CustomText style={styles.errorBannerText}>
-                                    {feedback.message}
-                                </CustomText>
-                            </View>
+                            <NoticeBanner variant="error">
+                                {feedback.message}
+                            </NoticeBanner>
                         )}
 
                         <View style={authFormStyles.buttonSection}>
@@ -149,7 +141,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
                     </>
                 ) : (
                     <>
-                        <View style={styles.successBanner}>
+                        <NoticeBanner variant="success">
                             <CustomText style={styles.successMessage}>
                                 Sähköposti lähetetty!
                             </CustomText>
@@ -157,7 +149,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
                                 {feedback?.message ||
                                     'Tarkista sähköpostisi ja seuraa ohjeita salasanan vaihtamiseen. Jos et näe viestiä, tarkista roskaposti-kansio.'}
                             </CustomText>
-                        </View>
+                        </NoticeBanner>
 
                         <View style={authFormStyles.buttonSection}>
                             <Button
@@ -176,15 +168,6 @@ const ForgotPasswordScreen = ({ navigation }) => {
 }
 
 const styles = StyleSheet.create({
-    successBanner: {
-        width: '100%',
-        backgroundColor: '#f0fdf4',
-        borderWidth: 1,
-        borderColor: '#86efac',
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 8,
-    },
     description: {
         fontSize: 15,
         textAlign: 'left',
@@ -197,20 +180,6 @@ const styles = StyleSheet.create({
         color: '#15803d',
         marginBottom: 8,
         textAlign: 'left',
-    },
-    errorBanner: {
-        width: '100%',
-        backgroundColor: '#fef2f2',
-        borderWidth: 1,
-        borderColor: '#fecaca',
-        borderRadius: 12,
-        padding: 12,
-        marginBottom: 8,
-    },
-    errorBannerText: {
-        fontSize: 14,
-        color: '#b91c1c',
-        lineHeight: 20,
     },
 })
 

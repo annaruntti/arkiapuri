@@ -104,7 +104,8 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 18,
         fontWeight: 'bold',
-        marginBottom: 15,
+        paddingTop: 10,
+        marginBottom: 10,
         color: '#333',
         textAlign: 'left',
     },

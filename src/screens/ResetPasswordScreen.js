@@ -11,6 +11,7 @@ import AuthLayout from '../components/AuthLayout'
 import Button from '../components/Button'
 import CustomInput from '../components/CustomInput'
 import CustomText from '../components/CustomText'
+import NoticeBanner from '../components/NoticeBanner'
 import { passwordLengthRules } from '../utils/passwordRules'
 
 const ResetPasswordScreen = ({ navigation }) => {
@@ -33,8 +34,7 @@ const ResetPasswordScreen = ({ navigation }) => {
                 : null)
 
         if (!token) {
-            const message =
-                'Virheellinen linkki. Pyydä uusi salasanan vaihto.'
+            const message = 'Virheellinen linkki. Pyydä uusi salasanan vaihto.'
             setFeedback({ type: 'error', message })
             showAlert('Virhe', message)
             return
@@ -121,11 +121,9 @@ const ResetPasswordScreen = ({ navigation }) => {
                         />
 
                         {feedback?.type === 'error' && (
-                            <View style={styles.errorBanner}>
-                                <CustomText style={styles.errorBannerText}>
-                                    {feedback.message}
-                                </CustomText>
-                            </View>
+                            <NoticeBanner variant="error">
+                                {feedback.message}
+                            </NoticeBanner>
                         )}
 
                         <View style={authFormStyles.buttonSection}>
@@ -154,7 +152,7 @@ const ResetPasswordScreen = ({ navigation }) => {
                     </>
                 ) : (
                     <>
-                        <View style={styles.successBanner}>
+                        <NoticeBanner variant="success">
                             <CustomText style={styles.successMessage}>
                                 Salasana vaihdettu!
                             </CustomText>
@@ -162,7 +160,7 @@ const ResetPasswordScreen = ({ navigation }) => {
                                 {feedback?.message ||
                                     'Salasanasi on vaihdettu onnistuneesti. Voit nyt kirjautua sisään uudella salasanallasi.'}
                             </CustomText>
-                        </View>
+                        </NoticeBanner>
 
                         <View style={authFormStyles.buttonSection}>
                             <Button
@@ -181,15 +179,6 @@ const ResetPasswordScreen = ({ navigation }) => {
 }
 
 const styles = StyleSheet.create({
-    successBanner: {
-        width: '100%',
-        backgroundColor: '#f0fdf4',
-        borderWidth: 1,
-        borderColor: '#86efac',
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 8,
-    },
     description: {
         fontSize: 15,
         textAlign: 'left',
@@ -202,20 +191,6 @@ const styles = StyleSheet.create({
         color: '#15803d',
         marginBottom: 8,
         textAlign: 'left',
-    },
-    errorBanner: {
-        width: '100%',
-        backgroundColor: '#fef2f2',
-        borderWidth: 1,
-        borderColor: '#fecaca',
-        borderRadius: 12,
-        padding: 12,
-        marginBottom: 8,
-    },
-    errorBannerText: {
-        fontSize: 14,
-        color: '#b91c1c',
-        lineHeight: 20,
     },
 })
 

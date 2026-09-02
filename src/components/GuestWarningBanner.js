@@ -1,6 +1,6 @@
-import { StyleSheet, View } from 'react-native'
+import { StyleSheet } from 'react-native'
 import { useLogin } from '../context/LoginProvider'
-import CustomText from './CustomText'
+import NoticeBanner from './NoticeBanner'
 
 /**
  * GuestWarningBanner
@@ -25,23 +25,14 @@ const GuestWarningBanner = ({ message, style }) => {
         'Tietosi eivät tallennu pysyvästi ilman käyttäjätunnusta. Kirjaudu sisään tallentaaksesi tiedot.'
 
     return (
-        <View style={[styles.banner, style]}>
-            <CustomText style={styles.text}>{text}</CustomText>
-        </View>
+        <NoticeBanner variant="warning" style={style} textStyle={styles.text}>
+            {text}
+        </NoticeBanner>
     )
 }
 
 const styles = StyleSheet.create({
-    banner: {
-        backgroundColor: '#FFF3CD',
-        borderColor: '#FFC107',
-        borderWidth: 1,
-        borderRadius: 8,
-        padding: 12,
-        marginBottom: 12,
-    },
     text: {
-        color: '#856404',
         fontSize: 13,
         textAlign: 'center',
     },
