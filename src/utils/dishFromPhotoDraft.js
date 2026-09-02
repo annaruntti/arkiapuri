@@ -52,6 +52,7 @@ export const mapDishScanToFormDraft = (result, imageAsset) => {
         mealCategory: parseMealCategories(meal.mealCategory, []),
         servings: normalizeServings(meal.servings || DEFAULT_SERVINGS),
         foodItems: (result?.ingredients || []).map(mapDishIngredientToFoodItem),
+        recipeSteps: meal.recipeSteps || [],
         image: imageAsset || null,
     }
 }

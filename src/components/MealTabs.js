@@ -1,9 +1,11 @@
-import { useState } from 'react'
-import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native'
-import { Feather } from '@expo/vector-icons'
+import { useEffect, useState } from 'react'
+import { Pressable, StyleSheet, TouchableOpacity, View } from 'react-native'
+import { Feather, MaterialIcons } from '@expo/vector-icons'
 import Button from './Button'
 import CustomText from './CustomText'
 import FoodItemRow from './FoodItemRow'
+import RecipeStepsEditor from './RecipeStepsEditor'
+import { normalizeRecipeSteps } from '../utils/recipeSteps'
 
 const TABS = [
     { id: 'ingredients', label: 'Raaka-aineet' },
@@ -15,11 +17,14 @@ const MealTabs = ({
     foodItems,
     foodItemsWithAvailability = [],
     recipe,
+    recipeSteps = [],
+    mealId,
+    visible = true,
     isRecipeEditing,
     onAddFoodItem,
     onOpenFoodItem,
     onRemoveFoodItem,
-    onRecipeChange,
+    onRecipeStepsChange,
     onToggleRecipeEdit,
     onAddToShoppingList,
     onAddToPantry,
@@ -27,6 +32,12 @@ const MealTabs = ({
     detailsContent,
 }) => {
     const [activeTab, setActiveTab] = useState('ingredients')
+    const [doneSteps, setDoneSteps] = useState({})
+    const steps = normalizeRecipeSteps(recipeSteps)
+
+    useEffect(() => {
+        setDoneSteps({})
+    }, [mealId, visible])
 
     const renderTabContent = () => {
         if (activeTab === 'ingredients') {
@@ -143,7 +154,11 @@ const MealTabs = ({
                 <View style={styles.detailSection}>
                     <View style={styles.recipeHeader}>
                         <CustomText style={styles.sectionHint}>
-                            {recipe ? 'Reseptin vaiheet' : 'Ei valmistusohjetta'}
+                            {steps.length
+                                ? `${steps.length} vaihetta`
+                                : recipe
+                                  ? 'Reseptin vaiheet'
+                                  : 'Ei valmistusohjetta'}
                         </CustomText>
                         <TouchableOpacity
                             style={styles.editIcon}
@@ -157,13 +172,54 @@ const MealTabs = ({
                         </TouchableOpacity>
                     </View>
                     {isRecipeEditing ? (
-                        <TextInput
-                            style={[styles.input, styles.recipeInput]}
-                            value={recipe}
-                            onChangeText={onRecipeChange}
-                            multiline
-                            numberOfLines={4}
+                        <RecipeStepsEditor
+                            steps={
+                                recipeSteps?.length ? recipeSteps : ['']
+                            }
+                            onChange={onRecipeStepsChange}
                         />
+                    ) : steps.length ? (
+                        steps.map((step, index) => {
+                            const done = Boolean(doneSteps[index])
+                            return (
+                                <Pressable
+                                    key={`step-${index}`}
+                                    style={styles.stepRow}
+                                    onPress={() =>
+                                        setDoneSteps((prev) => ({
+                                            ...prev,
+                                            [index]: !prev[index],
+                                        }))
+                                    }
+                                >
+                                    <MaterialIcons
+                                        name={
+                                            done
+                                                ? 'check-box'
+                                                : 'check-box-outline-blank'
+                                        }
+                                        size={22}
+                                        color={done ? '#5844BB' : '#9CA3AF'}
+                                    />
+                                    <CustomText
+                                        style={[
+                                            styles.stepNumber,
+                                            done && styles.stepDone,
+                                        ]}
+                                    >
+                                        {index + 1}.
+                                    </CustomText>
+                                    <CustomText
+                                        style={[
+                                            styles.stepText,
+                                            done && styles.stepDone,
+                                        ]}
+                                    >
+                                        {step}
+                                    </CustomText>
+                                </Pressable>
+                            )
+                        })
                     ) : (
                         <CustomText style={styles.recipeText}>
                             {recipe || 'Ei valmistusohjetta'}
@@ -270,6 +326,29 @@ const styles = StyleSheet.create({
         flex: 1,
         flexWrap: 'wrap',
         wordBreak: 'break-word',
+    },
+    stepRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 8,
+        paddingVertical: 8,
+    },
+    stepNumber: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#5844BB',
+        width: 24,
+        lineHeight: 24,
+    },
+    stepText: {
+        flex: 1,
+        fontSize: 16,
+        lineHeight: 24,
+        color: '#111827',
+    },
+    stepDone: {
+        color: '#6B7280',
+        textDecorationLine: 'line-through',
     },
     availabilityActions: {
         flexDirection: 'row',

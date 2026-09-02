@@ -232,6 +232,9 @@ export const useMealCalendar = ({ onRequireLogin }) => {
             const cleanedMeal = {
                 name: updatedMeal.name,
                 recipe: updatedMeal.recipe,
+                recipeSteps: Array.isArray(updatedMeal.recipeSteps)
+                    ? updatedMeal.recipeSteps
+                    : [],
                 difficultyLevel: updatedMeal.difficultyLevel,
                 cookingTime: updatedMeal.cookingTime,
                 defaultRoles: updatedMeal.defaultRoles,

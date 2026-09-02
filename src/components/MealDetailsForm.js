@@ -28,6 +28,7 @@ import PlannedEatingDates from './PlannedEatingDates'
 
 const MealDetailsForm = ({
     meal,
+    visible = true,
     editedValues,
     editableFields,
     foodItemsWithAvailability,
@@ -120,11 +121,14 @@ const MealDetailsForm = ({
                 foodItems={editedValues.foodItems}
                 foodItemsWithAvailability={foodItemsWithAvailability}
                 recipe={editedValues.recipe}
+                recipeSteps={editedValues.recipeSteps}
+                mealId={meal?._id}
+                visible={visible}
                 isRecipeEditing={editableFields.recipe}
                 onAddFoodItem={onAddFoodItem}
                 onOpenFoodItem={onOpenFoodItem}
                 onRemoveFoodItem={onRemoveFoodItem}
-                onRecipeChange={(text) => onChange('recipe', text)}
+                onRecipeStepsChange={(steps) => onChange('recipeSteps', steps)}
                 onToggleRecipeEdit={onToggleRecipeEdit}
                 onAddToShoppingList={onAddToShoppingList}
                 onAddToPantry={onAddToPantry}

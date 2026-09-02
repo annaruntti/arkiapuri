@@ -14,6 +14,11 @@ import {
     scaleMealFoodItems,
 } from '../utils/mealServings'
 import { parseMealCategories, parseMealRoles } from '../utils/mealUtils'
+import {
+    joinRecipeSteps,
+    normalizeRecipeSteps,
+    resolveRecipeSteps,
+} from '../utils/recipeSteps'
 import storage from '../utils/storage'
 import { getFoodItemImageUrl } from '../utils/openFoodFactsMapper'
 import AddFoodItemPanel from './AddFoodItemPanel'
@@ -128,6 +133,14 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                         field === 'difficultyLevel'
                             ? meal.difficultyLevel || 'medium'
                             : meal[field],
+                    ...(field === 'recipe'
+                        ? {
+                              recipeSteps: resolveRecipeSteps(
+                                  values.recipeSteps,
+                                  values.recipe || meal.recipe
+                              ),
+                          }
+                        : {}),
                 }))
             }
             return {
@@ -291,6 +304,7 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
 
     const handleSave = async () => {
         try {
+            const steps = normalizeRecipeSteps(editedValues.recipeSteps)
             const updatedMeal = {
                 ...editedValues,
                 foodItems: prepareMealFoodItemsForSave(editedValues.foodItems),
@@ -306,6 +320,10 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                     []
                 ),
                 servings: normalizeServings(editedValues.servings),
+                recipeSteps: steps,
+                recipe: steps.length
+                    ? joinRecipeSteps(steps)
+                    : editedValues.recipe || '',
                 plannedCookingDate: toStoredMealDate(
                     editedValues.plannedCookingDate
                 ),
@@ -405,6 +423,7 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
                 >
                     <MealDetailsForm
                         meal={meal}
+                        visible={visible}
                         editedValues={editedValues}
                         editableFields={editableFields}
                         foodItemsWithAvailability={foodItemsWithAvailability}
