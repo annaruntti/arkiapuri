@@ -113,15 +113,16 @@ export const filterMealsByCookingTime = (meals, maxTime) => {
     })
 }
 
-// Filter meals by meal type (defaultRoles)
+// Filter meals by meal type (any matching defaultRole, not only the primary one)
 export const filterMealsByType = (meals, filterMealType) => {
     if (!filterMealType) {
         return meals
     }
 
+    const wanted = String(filterMealType).toLowerCase()
     return meals.filter((meal) => {
         const roles = getMealRoles(meal, [])
-        return roles.includes(filterMealType)
+        return roles.some((role) => String(role).toLowerCase() === wanted)
     })
 }
 
@@ -142,3 +143,7 @@ export const getMealCountByCookingTime = (meals, maxTime) => {
         return cookingTime > 0 && cookingTime <= maxTime
     }).length
 }
+
+// Count meals that have this type among their roles (not only as primary)
+export const getMealCountByType = (meals, mealType) =>
+    filterMealsByType(meals, mealType).length

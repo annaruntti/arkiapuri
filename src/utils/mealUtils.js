@@ -36,6 +36,8 @@ export const mealRoles = {
     other: 'Muu',
 }
 
+export const MEAL_ROLE_ORDER = Object.keys(mealRoles)
+
 export const parseMealRoles = (raw, fallback = ['other']) => {
     const roles = []
 

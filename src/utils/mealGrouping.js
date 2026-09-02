@@ -1,37 +1,44 @@
+import { MEAL_ROLE_ORDER } from './mealUtils'
 import {
     getDietCategories,
     getMealDietaryCategories,
     getMealRoles,
 } from './mealFilters'
 
-// Group meals by their default roles
+export { MEAL_ROLE_ORDER }
+
+// First matching role in app order (breakfast → lunch → snack → dinner → …)
+export const getPrimaryMealRole = (meal) => {
+    const roles = getMealRoles(meal).map((role) => String(role).toLowerCase())
+    return (
+        MEAL_ROLE_ORDER.find((role) => roles.includes(role)) ||
+        roles[0] ||
+        'other'
+    )
+}
+
+// Group meals by their primary default role (each meal in one section only)
 export const groupMealsByCategory = (meals) => {
     const grouped = {}
 
     meals.forEach((meal) => {
-        const roles = getMealRoles(meal)
-        roles.forEach((role) => {
-            if (!grouped[role]) {
-                grouped[role] = []
-            }
-            grouped[role].push(meal)
-        })
+        const role = getPrimaryMealRole(meal)
+        if (!grouped[role]) {
+            grouped[role] = []
+        }
+        grouped[role].push(meal)
     })
 
-    // Sort categories by predefined order
-    const categoryOrder = [
-        'breakfast',
-        'lunch',
-        'snack',
-        'dinner',
-        'supper',
-        'dessert',
-        'other',
-    ]
     const sortedGrouped = {}
 
-    categoryOrder.forEach((category) => {
+    MEAL_ROLE_ORDER.forEach((category) => {
         if (grouped[category] && grouped[category].length > 0) {
+            sortedGrouped[category] = grouped[category]
+        }
+    })
+
+    Object.keys(grouped).forEach((category) => {
+        if (!sortedGrouped[category] && grouped[category].length > 0) {
             sortedGrouped[category] = grouped[category]
         }
     })
