@@ -133,6 +133,64 @@ const ResponsiveModal = ({
 
     const showDesktopClose = showCloseButton && !showBackButton && !isMobileSheet
 
+    const headerEl =
+        title || showBackButton ? (
+            <View
+                style={[
+                    styles.modalHeader,
+                    isMobileSheet && styles.mobileModalHeader,
+                    isTablet && styles.tabletModalHeader,
+                    isDesktop && styles.desktopModalHeader,
+                    showBackButton && styles.modalHeaderWithBack,
+                    headerStyle,
+                ]}
+            >
+                {showBackButton ? (
+                    <View style={styles.headerSideSlot}>
+                        <Pressable
+                            onPress={onClose}
+                            style={[
+                                styles.backButton,
+                                isDesktop && styles.desktopBackButton,
+                            ]}
+                            hitSlop={{
+                                top: 10,
+                                bottom: 10,
+                                left: 10,
+                                right: 10,
+                            }}
+                            accessibilityRole="button"
+                            accessibilityLabel={backButtonLabel}
+                        >
+                            <MaterialIcons
+                                name="arrow-back"
+                                size={isDesktop ? 22 : 20}
+                                color="#5844BB"
+                            />
+                        </Pressable>
+                    </View>
+                ) : null}
+                {title ? (
+                    <CustomText
+                        style={[
+                            styles.modalTitle,
+                            isDesktop && styles.desktopModalTitle,
+                            showBackButton && styles.modalTitleWithBack,
+                            titleStyle,
+                        ]}
+                    >
+                        {title}
+                    </CustomText>
+                ) : null}
+                {showBackButton ? (
+                    <View
+                        style={styles.headerSideSlot}
+                        pointerEvents="none"
+                    />
+                ) : null}
+            </View>
+        ) : null
+
     const sheetBody = (
         <>
             {isMobileSheet ? (
@@ -145,75 +203,13 @@ const ResponsiveModal = ({
                         >
                             <View style={styles.handle} />
                         </View>
-                        {title ? (
-                            <View
-                                style={[
-                                    styles.modalHeader,
-                                    styles.mobileModalHeader,
-                                    showBackButton && styles.modalHeaderWithBack,
-                                    headerStyle,
-                                ]}
-                            >
-                                <CustomText
-                                    style={[styles.modalTitle, titleStyle]}
-                                >
-                                    {title}
-                                </CustomText>
-                            </View>
-                        ) : null}
+                        {!showBackButton ? headerEl : null}
                     </Animated.View>
                 </GestureDetector>
-            ) : (
-                title && (
-                    <View
-                        style={[
-                            styles.modalHeader,
-                            isTablet && styles.tabletModalHeader,
-                            isDesktop && styles.desktopModalHeader,
-                            showBackButton && styles.modalHeaderWithBack,
-                            showBackButton &&
-                                isDesktop &&
-                                styles.desktopModalHeaderWithBack,
-                            headerStyle,
-                        ]}
-                    >
-                        <CustomText
-                            style={[
-                                styles.modalTitle,
-                                isDesktop && styles.desktopModalTitle,
-                                titleStyle,
-                            ]}
-                        >
-                            {title}
-                        </CustomText>
-                    </View>
-                )
-            )}
-            {showBackButton && (
-                <Pressable
-                    onPress={onClose}
-                    style={[
-                        styles.backButton,
-                        isMobileSheet && styles.mobileBackButton,
-                        isDesktop && styles.desktopBackButton,
-                    ]}
-                    hitSlop={{
-                        top: 10,
-                        bottom: 10,
-                        left: 10,
-                        right: 10,
-                    }}
-                >
-                    <MaterialIcons
-                        name="arrow-back"
-                        size={isDesktop ? 22 : 20}
-                        color="#5844BB"
-                    />
-                    <CustomText style={styles.backButtonText}>
-                        {backButtonLabel}
-                    </CustomText>
-                </Pressable>
-            )}
+            ) : !showBackButton ? (
+                headerEl
+            ) : null}
+            {showBackButton ? headerEl : null}
             {showDesktopClose && (
                 <Pressable
                     onPress={onClose}
@@ -337,9 +333,6 @@ const styles = StyleSheet.create({
     mobileModalHeader: {
         paddingTop: 2,
     },
-    mobileBackButton: {
-        top: 36,
-    },
     modalHeader: {
         width: '100%',
         paddingTop: 10,
@@ -348,33 +341,39 @@ const styles = StyleSheet.create({
         marginBottom: 5,
     },
     modalHeaderWithBack: {
-        paddingTop: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingTop: 4,
+        paddingHorizontal: 8,
+    },
+    headerSideSlot: {
+        width: 48,
+        flexShrink: 0,
+        justifyContent: 'center',
+        alignItems: 'flex-start',
     },
     modalTitle: {
         fontSize: 20,
         fontWeight: 'bold',
         marginBottom: 10,
+        textAlign: 'center',
+    },
+    modalTitleWithBack: {
+        flex: 1,
+        flexShrink: 1,
+        marginTop: 0,
+        marginBottom: 0,
+        paddingHorizontal: 4,
     },
     modalBody: {
         flex: 1,
         paddingHorizontal: 20,
     },
     backButton: {
-        position: 'absolute',
-        left: 8,
-        top: 8,
-        paddingVertical: 10,
-        paddingHorizontal: 12,
-        zIndex: 2,
-        flexDirection: 'row',
+        paddingVertical: 8,
+        paddingHorizontal: 8,
         alignItems: 'center',
-        gap: 4,
-    },
-    backButtonText: {
-        color: '#5844BB',
-        fontSize: 15,
-        fontWeight: '500',
-        marginLeft: 2,
+        justifyContent: 'center',
     },
     closeButton: {
         position: 'absolute',
@@ -434,9 +433,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         marginBottom: 10,
     },
-    desktopModalHeaderWithBack: {
-        paddingTop: 40,
-    },
     desktopModalTitle: {
         fontSize: 24,
         marginBottom: 15,
@@ -447,10 +443,8 @@ const styles = StyleSheet.create({
         paddingBottom: 30,
     },
     desktopBackButton: {
-        left: 12,
-        top: 12,
-        paddingVertical: 12,
-        paddingHorizontal: 14,
+        paddingVertical: 8,
+        paddingHorizontal: 8,
         borderRadius: 20,
         backgroundColor: 'rgba(0, 0, 0, 0.05)',
     },

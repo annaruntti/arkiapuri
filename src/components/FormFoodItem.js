@@ -732,11 +732,10 @@ const FormFoodItem = forwardRef(
                     <TouchableOpacity
                         style={styles.backButton}
                         onPress={onClose}
+                        accessibilityRole="button"
+                        accessibilityLabel="Takaisin"
                     >
                         <MaterialIcons name="arrow-back" size={22} color="#5844BB" />
-                        <CustomText style={styles.backButtonText}>
-                            Takaisin
-                        </CustomText>
                     </TouchableOpacity>
                 )}
 
@@ -1284,19 +1283,13 @@ const styles = StyleSheet.create({
         marginTop: 12,
     },
     backButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
+        alignSelf: 'flex-start',
         paddingVertical: 8,
+        paddingRight: 12,
         paddingBottom: 12,
         marginBottom: 8,
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
-    },
-    backButtonText: {
-        color: '#5844BB',
-        fontSize: 15,
-        marginLeft: 4,
-        fontWeight: '500',
     },
     formContainer: {
         paddingTop: 5,
