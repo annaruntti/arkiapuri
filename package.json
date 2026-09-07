@@ -26,6 +26,7 @@
     "expo-splash-screen": "^31.0.13",
     "expo-web-browser": "^15.0.11",
     "heic-to": "^1.5.2",
+    "image-size": "file:vendor/image-size-compat",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-hook-form": "^7.51.0",
@@ -57,6 +58,6 @@
     "test-exclude": "7.0.2",
     "chromium-edge-launcher": "2.0.1",
     "react-native": "0.81.5",
-    "image-size": "npm:image-size-next@2.1.0"
+    "image-size": "$image-size"
   }
 }

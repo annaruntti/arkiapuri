@@ -1,0 +1,9 @@
+{
+  "name": "image-size",
+  "version": "2.1.0",
+  "private": true,
+  "main": "index.js",
+  "dependencies": {
+    "image-size-next": "2.1.0"
+  }
+}
