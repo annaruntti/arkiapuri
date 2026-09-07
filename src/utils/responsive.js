@@ -104,7 +104,15 @@ export const useResponsiveDimensions = () => {
         const subscription = Dimensions.addEventListener(
             'change',
             ({ window }) => {
-                setDimensions({ width: window.width, height: window.height })
+                setDimensions((prev) => {
+                    if (
+                        prev.width === window.width &&
+                        prev.height === window.height
+                    ) {
+                        return prev
+                    }
+                    return { width: window.width, height: window.height }
+                })
             }
         )
 

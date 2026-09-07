@@ -1,3 +1,4 @@
+import { Platform, View } from 'react-native'
 import { useEffect } from 'react'
 import Animated, {
     Easing,
@@ -6,8 +7,7 @@ import Animated, {
     withTiming,
 } from 'react-native-reanimated'
 
-/** One-shot fade/slide-in for a screen's primary actions. */
-const PrimaryActionFade = ({ children, style }) => {
+const PrimaryActionFadeNative = ({ children, style }) => {
     const opacity = useSharedValue(0)
     const translateY = useSharedValue(10)
 
@@ -20,7 +20,8 @@ const PrimaryActionFade = ({ children, style }) => {
             duration: 400,
             easing: Easing.out(Easing.cubic),
         })
-    }, [opacity, translateY])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     const animatedStyle = useAnimatedStyle(() => ({
         opacity: opacity.value,
@@ -29,5 +30,12 @@ const PrimaryActionFade = ({ children, style }) => {
 
     return <Animated.View style={[style, animatedStyle]}>{children}</Animated.View>
 }
+
+const PrimaryActionFadeWeb = ({ children, style }) => (
+    <View style={style}>{children}</View>
+)
+
+const PrimaryActionFade =
+    Platform.OS === 'web' ? PrimaryActionFadeWeb : PrimaryActionFadeNative
 
 export default PrimaryActionFade

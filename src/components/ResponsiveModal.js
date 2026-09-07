@@ -51,7 +51,9 @@ const ResponsiveModal = ({
         if (visible) {
             translateY.value = 0
         }
-    }, [visible, translateY])
+        // translateY is a stable shared value; listing it retriggers this on web.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [visible])
 
     const closeSheet = () => {
         onClose?.()

@@ -41,7 +41,8 @@ const LandingScreen = ({ navigation }) => {
         }
         opacity.value = withDelay(180, withTiming(1, motion))
         translateY.value = withDelay(180, withTiming(0, motion))
-    }, [opacity, translateY])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     const panelStyle = useAnimatedStyle(() => ({
         opacity: opacity.value,
