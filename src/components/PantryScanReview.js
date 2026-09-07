@@ -128,11 +128,14 @@ const PantryScanReview = ({
     visible,
     onClose,
     items = [],
+    suggestedRemovals = [],
+    locationName,
     usage,
     submitting = false,
     onSubmit,
 }) => {
     const [rows, setRows] = useState([])
+    const [removalRows, setRemovalRows] = useState([])
     const [keyboardHeight, setKeyboardHeight] = useState(0)
     const scrollRef = useRef(null)
     const rowOffsets = useRef({})
@@ -246,6 +249,15 @@ const PantryScanReview = ({
         }
         const nextRows = (items || []).map(mapScanItemToRow)
         setRows(nextRows)
+        setRemovalRows(
+            (suggestedRemovals || []).map((item) => ({
+                itemId: String(item.itemId || item._id),
+                name: item.name || item.itemName,
+                quantity: item.quantity,
+                unit: item.unit,
+                selected: true,
+            }))
+        )
         const needsLookup = nextRows.filter(
             (row) => row.name.trim().length >= 2 && !row.matchSource
         )
@@ -280,11 +292,15 @@ const PantryScanReview = ({
             })
 
         return () => clearNameLookupTimers()
-    }, [visible, items])
+    }, [visible, items, suggestedRemovals])
 
     const selectedCount = useMemo(
         () => rows.filter((row) => row.selected && row.name.trim()).length,
         [rows]
+    )
+    const selectedRemovalCount = useMemo(
+        () => removalRows.filter((row) => row.selected).length,
+        [removalRows]
     )
 
     const updateRow = (key, patch) => {
@@ -314,14 +330,24 @@ const PantryScanReview = ({
                 barcode: row.barcode,
                 imageUrl: row.imageUrl,
             }))
-        onSubmit?.(selected)
+        const removals = removalRows
+            .filter((row) => row.selected)
+            .map((row) => ({ itemId: row.itemId, name: row.name }))
+        const keptRemovals = removalRows
+            .filter((row) => !row.selected)
+            .map((row) => ({ itemId: row.itemId, name: row.name }))
+        onSubmit?.({ adds: selected, removals, keptRemovals })
     }
 
     return (
         <ResponsiveModal
             visible={visible}
             onClose={onClose}
-            title="Tunnistetut tuotteet"
+            title={
+                locationName
+                    ? `Tarkista: ${locationName}`
+                    : 'Tunnistetut tuotteet'
+            }
             maxWidth={640}
         >
             <View
@@ -339,34 +365,36 @@ const PantryScanReview = ({
                     </CustomText>
                 ) : null}
 
-                {rows.length === 0 ? (
+                {rows.length === 0 && removalRows.length === 0 ? (
                     <CustomText style={styles.emptyText}>
                         Kuvasta ei tunnistettu elintarvikkeita. Kokeile
                         lähempää kuvaa tai parempaa valaistusta.
                     </CustomText>
                 ) : (
                     <>
-                        <View style={styles.toolbar}>
-                            <CustomText style={styles.countText}>
-                                Tunnistettu {rows.length} tuotetta
-                            </CustomText>
-                            <View style={styles.toolbarLinks}>
-                                <TouchableOpacity
-                                    onPress={() => toggleAll(true)}
-                                >
-                                    <CustomText style={styles.link}>
-                                        Valitse kaikki
-                                    </CustomText>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    onPress={() => toggleAll(false)}
-                                >
-                                    <CustomText style={styles.link}>
-                                        Poista valinnat
-                                    </CustomText>
-                                </TouchableOpacity>
+                        {rows.length > 0 ? (
+                            <View style={styles.toolbar}>
+                                <CustomText style={styles.countText}>
+                                    Lisää tähän paikkaan ({rows.length})
+                                </CustomText>
+                                <View style={styles.toolbarLinks}>
+                                    <TouchableOpacity
+                                        onPress={() => toggleAll(true)}
+                                    >
+                                        <CustomText style={styles.link}>
+                                            Valitse kaikki
+                                        </CustomText>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        onPress={() => toggleAll(false)}
+                                    >
+                                        <CustomText style={styles.link}>
+                                            Poista valinnat
+                                        </CustomText>
+                                    </TouchableOpacity>
+                                </View>
                             </View>
-                        </View>
+                        ) : null}
                         <ScrollView
                             ref={scrollRef}
                             style={styles.list}
@@ -485,7 +513,7 @@ const PantryScanReview = ({
                                             )}
                                             %
                                             {row.alreadyInPantry
-                                                ? ' · Jo pentterissä'
+                                                ? ' · Jo tässä paikassa'
                                                 : ''}
                                             {row.notes ? ` · ${row.notes}` : ''}
                                         </CustomText>
@@ -550,6 +578,67 @@ const PantryScanReview = ({
                                     </View>
                                 </View>
                             ))}
+                            {removalRows.length > 0 ? (
+                                <View style={styles.removalSection}>
+                                    <CustomText style={styles.countText}>
+                                        Poista tästä paikasta (
+                                        {removalRows.length})
+                                    </CustomText>
+                                    <CustomText style={styles.removalHint}>
+                                        Ehdotetaan vain, jos tuote todennäköisesti
+                                        puuttuu tästä paikasta. Piilossa olevia
+                                        ei ole tarkoitus listata.
+                                    </CustomText>
+                                    {removalRows.map((row) => (
+                                        <TouchableOpacity
+                                            key={row.itemId}
+                                            style={styles.row}
+                                            onPress={() =>
+                                                setRemovalRows((prev) =>
+                                                    prev.map((entry) =>
+                                                        entry.itemId ===
+                                                        row.itemId
+                                                            ? {
+                                                                  ...entry,
+                                                                  selected:
+                                                                      !entry.selected,
+                                                              }
+                                                            : entry
+                                                    )
+                                                )
+                                            }
+                                        >
+                                            <View style={styles.checkbox}>
+                                                <MaterialIcons
+                                                    name={
+                                                        row.selected
+                                                            ? 'check-box'
+                                                            : 'check-box-outline-blank'
+                                                    }
+                                                    size={24}
+                                                    color={
+                                                        row.selected
+                                                            ? '#5844BB'
+                                                            : '#888'
+                                                    }
+                                                />
+                                            </View>
+                                            <View style={styles.fields}>
+                                                <CustomText
+                                                    style={styles.removalName}
+                                                >
+                                                    {row.name}
+                                                </CustomText>
+                                                <CustomText style={styles.hint}>
+                                                    {row.quantity
+                                                        ? `${row.quantity} ${row.unit || ''}`
+                                                        : 'Ei näkynyt kuvassa'}
+                                                </CustomText>
+                                            </View>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            ) : null}
                         </ScrollView>
                     </>
                 )}
@@ -564,21 +653,28 @@ const PantryScanReview = ({
                     <View style={styles.submitWrap}>
                         <Pressable
                             onPress={handleSubmit}
-                            disabled={submitting || selectedCount === 0}
+                            disabled={
+                                submitting ||
+                                (selectedCount === 0 &&
+                                    selectedRemovalCount === 0)
+                            }
                             style={({ pressed }) => [
                                 styles.submitButton,
-                                (submitting || selectedCount === 0) &&
+                                (submitting ||
+                                    (selectedCount === 0 &&
+                                        selectedRemovalCount === 0)) &&
                                     styles.submitButtonDisabled,
                                 pressed &&
-                                    selectedCount > 0 &&
+                                    (selectedCount > 0 ||
+                                        selectedRemovalCount > 0) &&
                                     !submitting &&
                                     styles.submitButtonPressed,
                             ]}
                         >
                             <CustomText style={styles.submitButtonText}>
                                 {submitting
-                                    ? 'Lisätään...'
-                                    : `Lisää valitut pentteriin (${selectedCount})`}
+                                    ? 'Tallennetaan...'
+                                    : `Tallenna valinnat (${selectedCount + selectedRemovalCount})`}
                             </CustomText>
                         </Pressable>
                     </View>
@@ -762,6 +858,19 @@ const styles = StyleSheet.create({
     },
     spinner: {
         marginTop: 8,
+    },
+    removalSection: {
+        marginTop: 12,
+        gap: 8,
+    },
+    removalHint: {
+        fontSize: 13,
+        color: '#666',
+        marginBottom: 4,
+    },
+    removalName: {
+        fontSize: 16,
+        fontWeight: '600',
     },
 })
 

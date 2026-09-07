@@ -19,14 +19,15 @@ const FoodListItemRow = ({
     variant = 'row',
     style,
 }) => {
-    const quantityText = hideQuantityInDetails
-        ? item.isFood === false
-            ? 'Muu tuote'
-            : ''
-        : `${item.quantity} ${item.unit || ''}`.trim()
-    const subtitle = hideQuantityInDetails
-        ? quantityText
-        : `${quantityText}${item.isFood === false ? ' · Muu tuote' : ''}`
+        const quantityText = hideQuantityInDetails
+            ? item.isFood === false
+                ? 'Muu tuote'
+                : ''
+            : `${item.quantity} ${item.unit || ''}`.trim()
+        const locationBit = item.locationName ? ` · ${item.locationName}` : ''
+        const subtitle = hideQuantityInDetails
+            ? quantityText
+            : `${quantityText}${locationBit}${item.isFood === false ? ' · Muu tuote' : ''}`
 
     return (
         <ListItem

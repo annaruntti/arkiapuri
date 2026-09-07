@@ -114,13 +114,14 @@ export const compressPantryScanImage = async (asset) => {
     }
 }
 
-export const scanPantryImage = async (image) => {
+export const scanPantryImage = async (image, { locationId } = {}) => {
     try {
         const response = await axios.post(
             getServerUrl('/ai/pantry-scan'),
             {
                 image: image.base64,
                 mimeType: image.mimeType || 'image/jpeg',
+                locationId,
             },
             await authConfig({
                 maxBodyLength: Infinity,

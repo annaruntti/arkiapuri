@@ -25,9 +25,15 @@ import { useLogin } from '../context/LoginProvider'
 import PantryItemDetails from '../components/PantryItemDetails'
 import PantryScanReview from '../components/PantryScanReview'
 import PantryScanLockedModal from '../components/PantryScanLockedModal'
+import PantryLocationChips from '../components/PantryLocationChips'
+import PantryLocationsEditor from '../components/PantryLocationsEditor'
+import PantryScanLocationPicker from '../components/PantryScanLocationPicker'
+import PantryRemovalSuggestionsModal from '../components/PantryRemovalSuggestionsModal'
+import NoticeBanner from '../components/NoticeBanner'
 import ContentContainer from '../components/ContentContainer'
 import ResponsiveLayout from '../components/ResponsiveLayout'
 import ResponsiveModal from '../components/ResponsiveModal'
+import AddActionSection from '../components/AddActionSection'
 import SearchSection from '../components/SearchSection'
 import StickyListLayout from '../components/StickyListLayout'
 
@@ -38,7 +44,14 @@ import { getServerUrl } from '../utils/getServerUrl'
 import { getFoodItemImageUrl } from '../utils/openFoodFactsMapper'
 import storage from '../utils/storage'
 import { findOrCreateFoodItem } from '../services/foodItemApi'
-import { addPantryItem, deletePantryItem } from '../services/collectionApi'
+import {
+    addPantryItem,
+    addPantryLocation,
+    deletePantryItem,
+    deletePantryLocation,
+    dismissPantryRemovalSuggestions,
+    updatePantryLocation,
+} from '../services/collectionApi'
 import { showConfirm } from '../utils/showAlert'
 import {
     compressPantryScanImage,
@@ -46,6 +59,16 @@ import {
     scanPantryImage,
 } from '../services/aiApi'
 import { pickScanImageFromLibrary } from '../utils/scanImage'
+import {
+    ALL_LOCATIONS_ID,
+    DEFAULT_PANTRY_LOCATIONS,
+    UNLOCATED_LOCATION_ID,
+    filterItemsByLocation,
+    groupItemsByPantryLocation,
+    inferLocationIdFromCategories,
+    locationIdOf,
+    locationNameOf,
+} from '../utils/pantryLocations'
 
 const isPersistedFoodItemId = (id) =>
     typeof id === 'string' && /^[a-fA-F0-9]{24}$/.test(id)
@@ -103,9 +126,9 @@ const mergeDuplicatePantryItems = (items = []) => {
               : `id:${item._id}`
 
         const itemUnit = item.unit === 'pcs' ? 'kpl' : item.unit || 'kpl'
-        // Keep different units of the same product separate so quantities
-        // are not summed across incompatible units (e.g. 1 kpl + 500 g).
-        const mergeKey = `${key}:unit:${itemUnit}`
+        const locationKey = locationIdOf(item) || UNLOCATED_LOCATION_ID
+        // Keep different units and locations of the same product separate.
+        const mergeKey = `${key}:unit:${itemUnit}:loc:${locationKey}`
         const incomingIds = collectPantryMergedIds(item)
 
         const existing = groups.get(mergeKey)
@@ -154,10 +177,31 @@ const mergeDuplicatePantryItems = (items = []) => {
     return [...groups.values()]
 }
 
+const decoratePantryItems = (items = [], locations = []) =>
+    items.map((item) => {
+        const locationId =
+            locationIdOf(item) ||
+            inferLocationIdFromCategories(item.category, locations)
+        const located = locationId ? { ...item, locationId } : item
+        return {
+            ...located,
+            locationName: locationNameOf(located, locations),
+        }
+    })
+
 const PantryScreen = ({}) => {
     const { continueWithoutLogin } = useLogin()
     const { showLoginPrompt, loginPromptProps } = useLoginPrompt()
     const [pantryItems, setPantryItems] = useState([])
+    const [pantryLocations, setPantryLocations] = useState(DEFAULT_PANTRY_LOCATIONS)
+    const [removalSuggestions, setRemovalSuggestions] = useState([])
+    const [selectedLocationId, setSelectedLocationId] = useState(ALL_LOCATIONS_ID)
+    const [locationsEditorVisible, setLocationsEditorVisible] = useState(false)
+    const [scanLocationPickerVisible, setScanLocationPickerVisible] = useState(false)
+    const [suggestionsModalVisible, setSuggestionsModalVisible] = useState(false)
+    const [suggestionsSubmitting, setSuggestionsSubmitting] = useState(false)
+    const [scanLocation, setScanLocation] = useState(null)
+    const [scanRemovals, setScanRemovals] = useState([])
     const [loading, setLoading] = useState(true)
     const [selectedItem, setSelectedItem] = useState(null)
     const [detailsVisible, setDetailsVisible] = useState(false)
@@ -186,9 +230,12 @@ const PantryScreen = ({}) => {
         sortId,
         setSortId,
     } = useFilteredItemList({
-        items: pantryItems,
+        items: filterItemsByLocation(pantryItems, selectedLocationId),
         postFilter: mergeDuplicatePantryItems,
-        groupItems: groupItemsByFoodCategory,
+        groupItems:
+            selectedLocationId === ALL_LOCATIONS_ID
+                ? (items) => groupItemsByPantryLocation(items, pantryLocations)
+                : groupItemsByFoodCategory,
         defaultSortId: SORT_OPTION_IDS.NAME_ASC,
     })
 
@@ -203,9 +250,8 @@ const PantryScreen = ({}) => {
             name: (itemData.name || '').trim(),
             quantity,
             unit: itemData.unit || 'kpl',
-            expirationDate:
-                itemData.expirationDate ||
-                new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            expirationDate: itemData.expirationDate || undefined,
+            expirationDateSetByUser: Boolean(itemData.expirationDate),
             foodId: itemData.foodId || itemData._id,
             category: itemData.category || [],
             calories: Number(itemData.calories) || 0,
@@ -214,6 +260,15 @@ const PantryScreen = ({}) => {
             openFoodFactsData: itemData.openFoodFactsData,
             source: itemData.source,
             addedFrom: 'pantry',
+            locationId:
+                selectedLocationId !== ALL_LOCATIONS_ID &&
+                selectedLocationId !== UNLOCATED_LOCATION_ID
+                    ? selectedLocationId
+                    : itemData.locationId ||
+                      inferLocationIdFromCategories(
+                          itemData.category,
+                          pantryLocations
+                      ),
         }
         setPantryItems((prev) =>
             mergeDuplicatePantryItems([...prev, guestItem])
@@ -239,9 +294,19 @@ const PantryScreen = ({}) => {
             })
 
             if (response.data.success) {
-                const items =
-                    response.data.pantry?.items || response.data.items || []
-                setPantryItems(mergeDuplicatePantryItems(items))
+                const pantry = response.data.pantry || {}
+                const locations = pantry.locations?.length
+                    ? pantry.locations
+                    : DEFAULT_PANTRY_LOCATIONS
+                const items = pantry.items || response.data.items || []
+                setPantryLocations(locations)
+                setRemovalSuggestions(pantry.removalSuggestions || [])
+                setPantryItems(
+                    decoratePantryItems(
+                        mergeDuplicatePantryItems(items),
+                        locations
+                    )
+                )
             } else {
                 console.error('Failed to fetch pantry items:', response.data)
                 setPantryItems([])
@@ -347,14 +412,26 @@ const PantryScreen = ({}) => {
                 name: itemData.name.trim(),
                 quantity,
                 unit: itemData.unit,
-                expirationDate:
-                    itemData.expirationDate ||
-                    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
                 foodId,
                 category: itemData.category || [],
                 calories: Number(itemData.calories) || 0,
                 price: Number(itemData.price) || 0,
                 addedFrom: 'pantry',
+                locationId:
+                    itemData.locationId ||
+                    (selectedLocationId !== ALL_LOCATIONS_ID &&
+                    selectedLocationId !== UNLOCATED_LOCATION_ID
+                        ? selectedLocationId
+                        : inferLocationIdFromCategories(
+                              itemData.category,
+                              pantryLocations
+                          ) || undefined),
+                ...(itemData.expirationDate
+                    ? {
+                          expirationDate: itemData.expirationDate,
+                          expirationDateSetByUser: true,
+                      }
+                    : {}),
             }
 
             const pantryResponse = await axios.post(
@@ -560,12 +637,20 @@ const PantryScreen = ({}) => {
         setScanLockVisible(true)
     }
 
-    const runPantryScan = async (asset) => {
+    const runPantryScan = async (asset, location) => {
+        if (!location?._id) {
+            Alert.alert('Virhe', 'Valitse ensin säilytyspaikka.')
+            return
+        }
         setScanLoading(true)
         try {
             const image = await compressPantryScanImage(asset)
-            const result = await scanPantryImage(image)
+            const result = await scanPantryImage(image, {
+                locationId: location._id,
+            })
+            setScanLocation(location)
             setScanCandidates(result.items || [])
+            setScanRemovals(result.suggestedRemovals || [])
             setScanUsage(result.usage || null)
             setScanReviewVisible(true)
             if (result.usage) {
@@ -603,7 +688,7 @@ const PantryScreen = ({}) => {
         }
     }
 
-    const pickPantryScanImage = async (fromCamera) => {
+    const pickPantryScanImage = async (fromCamera, location) => {
         try {
             if (fromCamera) {
                 const { status } =
@@ -620,7 +705,7 @@ const PantryScreen = ({}) => {
                     quality: 0.8,
                 })
                 if (!result.canceled && result.assets?.[0]) {
-                    await runPantryScan(result.assets[0])
+                    await runPantryScan(result.assets[0], location)
                 }
                 return
             }
@@ -640,7 +725,7 @@ const PantryScreen = ({}) => {
                 return
             }
             if (!picked.canceled && picked.asset) {
-                await runPantryScan(picked.asset)
+                await runPantryScan(picked.asset, location)
             }
         } catch (error) {
             Alert.alert(
@@ -667,23 +752,16 @@ const PantryScreen = ({}) => {
                 return
             }
 
-            const openLibrary = () => pickPantryScanImage(false)
-            const openCamera = () => pickPantryScanImage(true)
-
-            if (Platform.OS === 'web') {
-                await openLibrary()
+            if (!pantryLocations.length) {
+                Alert.alert(
+                    'Säilytyspaikka puuttuu',
+                    'Lisää ensin jääkaappi, pakastin tai kuivakaappi.'
+                )
+                setLocationsEditorVisible(true)
                 return
             }
 
-            Alert.alert(
-                'Skannaa pentteri',
-                'Ota kuva jääkaapista tai ruokakaapista, tai valitse kuva galleriasta.',
-                [
-                    { text: 'Kamera', onPress: openCamera },
-                    { text: 'Galleria', onPress: openLibrary },
-                    { text: 'Peruuta', style: 'cancel' },
-                ]
-            )
+            setScanLocationPickerVisible(true)
         } catch (error) {
             const code = error.response?.data?.code
             if (
@@ -705,8 +783,134 @@ const PantryScreen = ({}) => {
         }
     }
 
-    const handleCommitScanItems = async (selectedItems) => {
-        if (!selectedItems?.length) return
+    const startScanForLocation = async (location) => {
+        setScanLocationPickerVisible(false)
+        setScanLocation(location)
+        const openLibrary = () => pickPantryScanImage(false, location)
+        const openCamera = () => pickPantryScanImage(true, location)
+
+        if (Platform.OS === 'web') {
+            await openLibrary()
+            return
+        }
+
+        Alert.alert(
+            `Skannaa: ${location.name}`,
+            'Ota kuva tästä paikasta tai valitse kuva galleriasta.',
+            [
+                { text: 'Kamera', onPress: openCamera },
+                { text: 'Galleria', onPress: openLibrary },
+                { text: 'Peruuta', style: 'cancel' },
+            ]
+        )
+    }
+
+    const handleAddLocation = async ({ type, name }) => {
+        try {
+            const token = await storage.getItem('userToken')
+            if (!token) {
+                showLoginPrompt('save')
+                return
+            }
+            await addPantryLocation({ type, name })
+            await fetchPantryItems()
+        } catch (error) {
+            Alert.alert(
+                'Virhe',
+                error.response?.data?.message ||
+                    error.message ||
+                    'Säilytyspaikan lisääminen epäonnistui'
+            )
+        }
+    }
+
+    const handleRenameLocation = async (locationId, updates) => {
+        try {
+            await updatePantryLocation(locationId, updates)
+            await fetchPantryItems()
+        } catch (error) {
+            Alert.alert(
+                'Virhe',
+                error.response?.data?.message ||
+                    error.message ||
+                    'Säilytyspaikan päivitys epäonnistui'
+            )
+        }
+    }
+
+    const handleDeleteLocation = async (locationId) => {
+        try {
+            await deletePantryLocation(locationId)
+            await fetchPantryItems()
+            if (selectedLocationId === String(locationId)) {
+                setSelectedLocationId(ALL_LOCATIONS_ID)
+            }
+        } catch (error) {
+            Alert.alert(
+                'Virhe',
+                error.response?.data?.message ||
+                    error.message ||
+                    'Säilytyspaikan poisto epäonnistui'
+            )
+        }
+    }
+
+    const handleRemoveSuggestedItems = async (suggestions) => {
+        if (!suggestions?.length) return
+        setSuggestionsSubmitting(true)
+        try {
+            await Promise.all(
+                suggestions.map((suggestion) =>
+                    deletePantryItem(suggestion.itemId)
+                )
+            )
+            await fetchPantryItems()
+            setSuggestionsModalVisible(false)
+        } catch (error) {
+            Alert.alert(
+                'Virhe',
+                error.response?.data?.message ||
+                    error.message ||
+                    'Tuotteiden poisto epäonnistui'
+            )
+        } finally {
+            setSuggestionsSubmitting(false)
+        }
+    }
+
+    const handleKeepSuggestedItems = async (suggestions) => {
+        if (!suggestions?.length) {
+            setSuggestionsModalVisible(false)
+            return
+        }
+        setSuggestionsSubmitting(true)
+        try {
+            await dismissPantryRemovalSuggestions(
+                suggestions.map((suggestion) => suggestion.itemId)
+            )
+            await fetchPantryItems()
+            setSuggestionsModalVisible(false)
+        } catch (error) {
+            Alert.alert(
+                'Virhe',
+                error.response?.data?.message ||
+                    error.message ||
+                    'Ehdotusten hylkääminen epäonnistui'
+            )
+        } finally {
+            setSuggestionsSubmitting(false)
+        }
+    }
+
+    const handleCommitScanItems = async (payload) => {
+        const selectedItems = Array.isArray(payload)
+            ? payload
+            : payload?.adds || []
+        const removals = payload?.removals || []
+        const keptRemovals = payload?.keptRemovals || []
+        if (!selectedItems.length && !removals.length && !keptRemovals.length) {
+            return
+        }
         setScanSubmitting(true)
         const succeededKeys = []
         let lastError = null
@@ -723,6 +927,7 @@ const PantryScreen = ({}) => {
                         nutrition: item.nutrition,
                         barcode: item.barcode,
                         imageUrl: item.imageUrl,
+                        locationId: scanLocation?._id,
                         openFoodFactsData:
                             item.barcode || item.imageUrl
                                 ? {
@@ -740,13 +945,39 @@ const PantryScreen = ({}) => {
                 }
             }
 
-            if (succeededKeys.length === selectedItems.length) {
+            if (removals.length) {
+                await Promise.all(
+                    removals.map((item) => deletePantryItem(item.itemId))
+                )
+            }
+            if (keptRemovals.length) {
+                await dismissPantryRemovalSuggestions(
+                    keptRemovals.map((item) => item.itemId),
+                    'missing_from_photo'
+                )
+            }
+
+            const addsOk =
+                selectedItems.length === 0 ||
+                succeededKeys.length === selectedItems.length
+
+            if (addsOk) {
                 setScanReviewVisible(false)
                 setScanCandidates([])
+                setScanRemovals([])
                 await fetchPantryItems()
+                const parts = []
+                if (succeededKeys.length) {
+                    parts.push(`${succeededKeys.length} lisätty`)
+                }
+                if (removals.length) {
+                    parts.push(`${removals.length} poistettu`)
+                }
                 Alert.alert(
                     'Onnistui',
-                    `${selectedItems.length} tuotetta lisätty pentteriin`
+                    parts.length
+                        ? parts.join(', ')
+                        : 'Valinnat tallennettu'
                 )
                 return
             }
@@ -813,69 +1044,106 @@ const PantryScreen = ({}) => {
                             onSubmitNewItem={handleAddItem}
                             onCloseForm={() => setShowAddItemSearch(false)}
                             showFormBackButton={false}
+                            pantryLocationId={
+                                selectedLocationId !== ALL_LOCATIONS_ID &&
+                                selectedLocationId !== UNLOCATED_LOCATION_ID
+                                    ? selectedLocationId
+                                    : undefined
+                            }
                         />
                     </ResponsiveModal>
 
                     <StickyListLayout
                         sticky={
-                            <SearchSection
-                                searchQuery={searchQuery}
-                                onSearchChange={setSearchQuery}
-                                onClearSearch={() => setSearchQuery('')}
-                                placeholder="Etsi pentteristä..."
-                                resultsCount={filteredPantryItems.length}
-                                resultsText="Löytyi {count} tuotetta"
-                                noResultsText="Tuotteita ei löytynyt"
-                                showButtonSection={true}
-                                actionsLabel="Lisää tuotteita"
-                                buttonTitle="Skannaa pentteri"
-                                onButtonPress={handleOpenPantryScan}
-                                extraButtonTitle="Lisää yksi kerrallaan"
-                                extraButtonType="SECONDARY"
-                                onExtraButtonPress={handleOpenAddItemSearch}
-                            />
+                            <View style={styles.addSticky}>
+                                <AddActionSection
+                                    title="Lisää tuotteita"
+                                    hint="Skannaa jokin ruoan säilytyspaikoista — jääkaappi, pakastin tai kuivakaappi — tai lisää tuote manuaalisesti."
+                                    primaryTitle="Skannaa säilytyspaikka"
+                                    onPrimaryPress={handleOpenPantryScan}
+                                    secondaryTitle="Lisää manuaalisesti"
+                                    onSecondaryPress={handleOpenAddItemSearch}
+                                />
+                            </View>
                         }
                     >
                         <View style={styles.productListContainer}>
-                            <ListStatsRow
-                                actions={
-                                    <>
-                                        <ListSortControl
-                                            options={PANTRY_SORT_OPTIONS}
-                                            value={sortId}
-                                            onChange={setSortId}
-                                        />
-                                        <GenericFilter
-                                            selectedFilters={
-                                                selectedCategoryFilters
-                                            }
-                                            showFilters={showFilters}
-                                            onToggleShowFilters={() =>
-                                                setShowFilters(!showFilters)
-                                            }
-                                        />
-                                    </>
-                                }
-                            >
-                                <CustomText>Tuotteita:</CustomText>
-                                <CustomText>
-                                    {searchQuery.length > 0 ||
-                                    selectedCategoryFilters.length > 0
-                                        ? `${filteredPantryItems.length} / ${pantryItems?.length || 0}`
-                                        : `${pantryItems?.length || 0} kpl`}
+                            {removalSuggestions.length > 0 ? (
+                                <NoticeBanner
+                                    variant="warning"
+                                    icon
+                                    actionLabel="Tarkista ehdotukset"
+                                    onAction={() =>
+                                        setSuggestionsModalVisible(true)
+                                    }
+                                >
+                                    {`Pentterissä on ${removalSuggestions.length} poistoehdotusta.`}
+                                </NoticeBanner>
+                            ) : null}
+                            <View style={styles.findSection}>
+                                <CustomText style={styles.findHeading}>
+                                    Etsi tuotteita
                                 </CustomText>
-                            </ListStatsRow>
-                            <GenericFilterSection
-                                selectedFilters={selectedCategoryFilters}
-                                showFilters={showFilters}
-                                filterTitle="Suodata kategorioittain:"
-                                categories={ingredientCategories}
-                                onToggleFilter={toggleCategoryFilter}
-                                onClearFilters={() =>
-                                    setSelectedCategoryFilters([])
-                                }
-                                getItemCounts={getCategoryItemCounts}
-                            />
+                                <SearchSection
+                                    searchQuery={searchQuery}
+                                    onSearchChange={setSearchQuery}
+                                    onClearSearch={() => setSearchQuery('')}
+                                    placeholder="Etsi pentteristä..."
+                                    showResultsInfo={false}
+                                />
+                                <PantryLocationChips
+                                    locations={pantryLocations}
+                                    selectedLocationId={selectedLocationId}
+                                    onSelect={setSelectedLocationId}
+                                    onManage={() =>
+                                        setLocationsEditorVisible(true)
+                                    }
+                                    unlocatedCount={
+                                        pantryItems.filter(
+                                            (item) => !locationIdOf(item)
+                                        ).length
+                                    }
+                                />
+                                <ListStatsRow
+                                    actions={
+                                        <>
+                                            <ListSortControl
+                                                options={PANTRY_SORT_OPTIONS}
+                                                value={sortId}
+                                                onChange={setSortId}
+                                            />
+                                            <GenericFilter
+                                                selectedFilters={
+                                                    selectedCategoryFilters
+                                                }
+                                                showFilters={showFilters}
+                                                onToggleShowFilters={() =>
+                                                    setShowFilters(!showFilters)
+                                                }
+                                            />
+                                        </>
+                                    }
+                                >
+                                    <CustomText>Tuotteita:</CustomText>
+                                    <CustomText>
+                                        {searchQuery.length > 0 ||
+                                        selectedCategoryFilters.length > 0
+                                            ? `${filteredPantryItems.length} / ${pantryItems?.length || 0}`
+                                            : `${pantryItems?.length || 0} kpl`}
+                                    </CustomText>
+                                </ListStatsRow>
+                                <GenericFilterSection
+                                    selectedFilters={selectedCategoryFilters}
+                                    showFilters={showFilters}
+                                    filterTitle="Suodata kategorioittain:"
+                                    categories={ingredientCategories}
+                                    onToggleFilter={toggleCategoryFilter}
+                                    onClearFilters={() =>
+                                        setSelectedCategoryFilters([])
+                                    }
+                                    getItemCounts={getCategoryItemCounts}
+                                />
+                            </View>
                             <SectionList
                                 sections={pantryItemSections}
                                 renderItem={renderItem}
@@ -899,6 +1167,7 @@ const PantryScreen = ({}) => {
                                     pantryItems,
                                     searchQuery,
                                     filteredPantryItems,
+                                    selectedLocationId,
                                 ]}
                                 style={styles.productList}
                                 contentContainerStyle={styles.listContent}
@@ -909,7 +1178,7 @@ const PantryScreen = ({}) => {
                                         <CustomText style={styles.emptyText}>
                                             {searchQuery.length > 0
                                                 ? `Hakusanalla "${searchQuery}" ei löytynyt tuotteita.`
-                                                : 'Pentterissäsi ei ole vielä lisätty elintarvikkeita.'}
+                                                : 'Pentterissäsi ei ole vielä elintarvikkeita. Skannaa säilytyspaikka tai lisää tuote manuaalisesti.'}
                                         </CustomText>
                                     )
                                 }
@@ -929,9 +1198,33 @@ const PantryScreen = ({}) => {
                         visible={scanReviewVisible}
                         onClose={() => setScanReviewVisible(false)}
                         items={scanCandidates}
+                        suggestedRemovals={scanRemovals}
+                        locationName={scanLocation?.name}
                         usage={scanUsage}
                         submitting={scanSubmitting}
                         onSubmit={handleCommitScanItems}
+                    />
+                    <PantryScanLocationPicker
+                        visible={scanLocationPickerVisible}
+                        onClose={() => setScanLocationPickerVisible(false)}
+                        locations={pantryLocations}
+                        onSelect={startScanForLocation}
+                    />
+                    <PantryLocationsEditor
+                        visible={locationsEditorVisible}
+                        onClose={() => setLocationsEditorVisible(false)}
+                        locations={pantryLocations}
+                        onAdd={handleAddLocation}
+                        onRename={handleRenameLocation}
+                        onDelete={handleDeleteLocation}
+                    />
+                    <PantryRemovalSuggestionsModal
+                        visible={suggestionsModalVisible}
+                        onClose={() => setSuggestionsModalVisible(false)}
+                        suggestions={removalSuggestions}
+                        submitting={suggestionsSubmitting}
+                        onRemove={handleRemoveSuggestedItems}
+                        onKeep={handleKeepSuggestedItems}
                     />
                     <ResponsiveModal
                         visible={scanLoading}
@@ -950,6 +1243,7 @@ const PantryScreen = ({}) => {
                     <PantryItemDetails
                         item={selectedItem}
                         visible={detailsVisible}
+                        locations={pantryLocations}
                         onClose={() => {
                             setDetailsVisible(false)
                             setSelectedItem(null)
@@ -975,6 +1269,20 @@ const styles = StyleSheet.create({
     productListContainer: {
         flex: 1,
         minHeight: 400,
+    },
+    addSticky: {
+        backgroundColor: '#fff',
+        paddingBottom: 4,
+    },
+    findSection: {
+        backgroundColor: '#fff',
+        paddingTop: 4,
+    },
+    findHeading: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#555',
+        marginBottom: 8,
     },
     productList: {
         flex: 1,

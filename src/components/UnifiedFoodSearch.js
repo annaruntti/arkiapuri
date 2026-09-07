@@ -84,9 +84,12 @@ const UnifiedFoodSearch = ({
     location = 'shopping-list',
     shoppingListId = null,
     mealId = null,
+    pantryLocationId = null,
     allowDuplicates = false,
     onMealQuantityPromptChange,
     servings = DEFAULT_SERVINGS,
+    autoOpenScanner = false,
+    showBarcodeButton = true,
 }) => {
     const { isDesktop } = useResponsiveDimensions()
     const showNutrition = useShowNutrition()
@@ -104,10 +107,19 @@ const UnifiedFoodSearch = ({
     const searchTimeoutRef = useRef(null)
     const renderTimestampRef = useRef(Date.now())
 
+    const onMealQuantityPromptChangeRef = useRef(onMealQuantityPromptChange)
+    onMealQuantityPromptChangeRef.current = onMealQuantityPromptChange
+
     useEffect(() => {
-        onMealQuantityPromptChange?.(Boolean(pendingMealPick))
-        return () => onMealQuantityPromptChange?.(false)
-    }, [pendingMealPick, onMealQuantityPromptChange])
+        onMealQuantityPromptChangeRef.current?.(Boolean(pendingMealPick))
+        return () => onMealQuantityPromptChangeRef.current?.(false)
+    }, [pendingMealPick])
+
+    useEffect(() => {
+        if (autoOpenScanner) {
+            setShowScanner(true)
+        }
+    }, [autoOpenScanner])
 
     // Fetch local food items when component mounts
     useEffect(() => {
@@ -366,12 +378,12 @@ const UnifiedFoodSearch = ({
                 name: foodItem.name,
                 quantity: collectionData.quantity || 1,
                 unit: collectionData.unit || 'kpl',
-                expirationDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
                 foodId: foodItem._id,
                 category: foodItem.category || [],
                 calories: foodItem.calories || 0,
                 price: 0,
                 addedFrom: 'pantry',
+                locationId: collectionData.locationId || undefined,
             })
         } catch (error) {
             console.error('Error adding to pantry:', error)
@@ -464,7 +476,10 @@ const UnifiedFoodSearch = ({
                     data.collectionData &&
                     data.collectionData.location === 'pantry'
                 ) {
-                    await addToPantry(data.foodItem, data.collectionData)
+                    await addToPantry(data.foodItem, {
+                        ...data.collectionData,
+                        locationId: pantryLocationId,
+                    })
                 } else if (
                     data.collectionData &&
                     data.collectionData.location === 'shopping-list' &&
@@ -793,7 +808,7 @@ const UnifiedFoodSearch = ({
                         />
                     )}
                 </View>
-                {!isDesktop ? (
+                {showBarcodeButton && !isDesktop ? (
                     <TouchableOpacity
                         style={styles.scanButton}
                         onPress={() => setShowScanner(true)}

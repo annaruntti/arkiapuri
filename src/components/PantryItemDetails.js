@@ -24,6 +24,11 @@ import CategorySelect from './CategorySelect'
 import CustomText from './CustomText'
 import FormDateField from './FormDateField'
 import ResponsiveModal from './ResponsiveModal'
+import {
+    inferLocationIdFromCategories,
+    locationIdOf,
+    syncStorageCategoryForLocation,
+} from '../utils/pantryLocations'
 
 const NUTRITION_ROWS = [
     { key: 'calories', label: 'Kalorit', unit: 'kcal' },
@@ -60,6 +65,7 @@ const PantryItemDetails = ({
     onUpdate,
     embedded = false,
     showInventoryFields = true,
+    locations = [],
 }) => {
     const [editableFields, setEditableFields] = useState({})
     const [editedValues, setEditedValues] = useState({})
@@ -95,9 +101,15 @@ const PantryItemDetails = ({
             setEditedValues({
                 ...item,
                 category: categoryNames,
+                locationId:
+                    locationIdOf(item) ||
+                    inferLocationIdFromCategories(categoryNames, locations),
+                expirationDate: item.expirationDateSetByUser
+                    ? item.expirationDate
+                    : null,
             })
         }
-    }, [item])
+    }, [item, locations])
 
     if (!item) return null
 
@@ -141,9 +153,27 @@ const PantryItemDetails = ({
     const handleCategoryChange = (selectedItems) => {
         // selectedItems are IDs, convert them to names for display
         const categoryNames = selectedItems.map((id) => getCategoryName(id))
+        const inferredLocationId = inferLocationIdFromCategories(
+            categoryNames,
+            locations
+        )
         setEditedValues((prev) => ({
             ...prev,
             category: categoryNames,
+            ...(inferredLocationId ? { locationId: inferredLocationId } : {}),
+        }))
+    }
+
+    const handleLocationChange = (locationId) => {
+        const location = locations.find(
+            (entry) => String(entry._id) === String(locationId)
+        )
+        setEditedValues((prev) => ({
+            ...prev,
+            locationId: locationId || null,
+            category: location
+                ? syncStorageCategoryForLocation(prev.category, location.type)
+                : prev.category,
         }))
     }
 
@@ -157,6 +187,9 @@ const PantryItemDetails = ({
             const updatedValues = {
                 ...editedValues,
                 category: categoryIds,
+                locationId: editedValues.locationId || null,
+                expirationDate: editedValues.expirationDate || null,
+                expirationDateSetByUser: Boolean(editedValues.expirationDate),
             }
 
             await onUpdate(item._id, updatedValues)
@@ -508,6 +541,54 @@ const PantryItemDetails = ({
                 {showInventoryFields
                     ? renderEditableField('unit', 'Yksikkö', item.unit)
                     : null}
+
+                {showInventoryFields && locations.length > 0 ? (
+                    <View style={styles.categoryRow}>
+                        <CustomText style={styles.label}>
+                            Säilytyspaikka:
+                        </CustomText>
+                        <View style={styles.locationChips}>
+                            <TouchableOpacity
+                                style={[
+                                    styles.locationChip,
+                                    !editedValues.locationId &&
+                                        styles.locationChipActive,
+                                ]}
+                                onPress={() => handleLocationChange(null)}
+                            >
+                                <CustomText style={styles.locationChipText}>
+                                    Ei sijaintia
+                                </CustomText>
+                            </TouchableOpacity>
+                            {locations.map((location) => {
+                                const selected =
+                                    String(editedValues.locationId || '') ===
+                                    String(location._id)
+                                return (
+                                    <TouchableOpacity
+                                        key={String(location._id)}
+                                        style={[
+                                            styles.locationChip,
+                                            selected &&
+                                                styles.locationChipActive,
+                                        ]}
+                                        onPress={() =>
+                                            handleLocationChange(
+                                                String(location._id)
+                                            )
+                                        }
+                                    >
+                                        <CustomText
+                                            style={styles.locationChipText}
+                                        >
+                                            {location.name}
+                                        </CustomText>
+                                    </TouchableOpacity>
+                                )
+                            })}
+                        </View>
+                    </View>
+                ) : null}
                 {showNutrition &&
                     renderEditableField(
                         'calories',
@@ -621,15 +702,12 @@ const PantryItemDetails = ({
                 {showInventoryFields ? (
                     <FormDateField
                         label="Viimeinen käyttöpäivä"
-                        value={
-                            new Date(
-                                editedValues.expirationDate ||
-                                    item.expirationDate
-                            )
-                        }
+                        value={editedValues.expirationDate || null}
                         onChange={(selectedDate) =>
                             handleChange('expirationDate', selectedDate)
                         }
+                        onRemove={() => handleChange('expirationDate', null)}
+                        placeholder="Ei asetettu"
                         style={styles.expirationDateField}
                         testID="pantryExpirationDate"
                     />
@@ -742,6 +820,24 @@ const styles = StyleSheet.create({
     expirationDateField: {
         marginTop: 4,
         marginBottom: 8,
+    },
+    locationChips: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+    },
+    locationChip: {
+        paddingHorizontal: 12,
+        paddingVertical: 7,
+        borderRadius: 16,
+        backgroundColor: '#eee',
+    },
+    locationChipActive: {
+        backgroundColor: '#AE9CFC',
+    },
+    locationChipText: {
+        fontSize: 13,
+        fontWeight: '600',
     },
     label: {
         fontWeight: 'bold',

@@ -1,5 +1,5 @@
 import { MaterialIcons } from '@expo/vector-icons'
-import { StyleSheet, View } from 'react-native'
+import { StyleSheet, TouchableOpacity, View } from 'react-native'
 import CustomText from './CustomText'
 
 const VARIANT_STYLES = {
@@ -67,7 +67,7 @@ const hasRawText = (node) => {
  *
  *   <NoticeBanner variant="info">AI:n ehdotus…</NoticeBanner>
  *   <NoticeBanner variant="warning">Kirjaudu sisään…</NoticeBanner>
- *   <NoticeBanner variant="info" icon="info-outline">…</NoticeBanner>
+ *   <NoticeBanner variant="warning" actionLabel="Tarkista" onAction={open}>…</NoticeBanner>
  */
 const NoticeBanner = ({
     children,
@@ -75,6 +75,8 @@ const NoticeBanner = ({
     icon,
     style,
     textStyle,
+    actionLabel,
+    onAction,
 }) => {
     const variantStyle = VARIANT_STYLES[variant] || VARIANT_STYLES.info
     const iconName = resolveIconName(icon, variantStyle)
@@ -101,11 +103,26 @@ const NoticeBanner = ({
                     color={variantStyle.iconColor}
                 />
             ) : null}
-            {hasRawText(children) ? (
-                <CustomText style={textStyles}>{children}</CustomText>
-            ) : (
-                <View style={iconName && styles.textWithIcon}>{children}</View>
-            )}
+            <View style={iconName ? styles.textWithIcon : undefined}>
+                {hasRawText(children) ? (
+                    <CustomText style={textStyles}>{children}</CustomText>
+                ) : (
+                    children
+                )}
+                {actionLabel && onAction ? (
+                    <TouchableOpacity
+                        onPress={onAction}
+                        style={styles.action}
+                        accessibilityRole="button"
+                    >
+                        <CustomText
+                            style={[styles.actionText, variantStyle.text]}
+                        >
+                            {actionLabel}
+                        </CustomText>
+                    </TouchableOpacity>
+                ) : null}
+            </View>
         </View>
     )
 }
@@ -128,6 +145,15 @@ const styles = StyleSheet.create({
     },
     textWithIcon: {
         flex: 1,
+    },
+    action: {
+        marginTop: 8,
+        alignSelf: 'flex-start',
+    },
+    actionText: {
+        fontSize: 14,
+        fontWeight: '700',
+        textDecorationLine: 'underline',
     },
 })
 

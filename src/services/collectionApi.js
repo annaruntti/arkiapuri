@@ -6,7 +6,7 @@ const authConfig = async () => ({
     headers: await getAuthHeaders(),
 })
 
-export const getPantryItems = async () => {
+export const getPantry = async () => {
     const response = await axios.get(getServerUrl('/pantry'), await authConfig())
     const data = response.data
 
@@ -14,7 +14,63 @@ export const getPantryItems = async () => {
         throw new Error(data.message || 'Failed to fetch pantry')
     }
 
-    return data.pantry?.items || data.items || []
+    return data.pantry || { items: [] }
+}
+
+export const getPantryItems = async () => {
+    const pantry = await getPantry()
+    return pantry.items || []
+}
+
+export const addPantryLocation = async (location) => {
+    const response = await axios.post(
+        getServerUrl('/pantry/locations'),
+        location,
+        await authConfig()
+    )
+    const data = response.data
+    if (!data.success) {
+        throw new Error(data.message || 'Säilytyspaikan lisääminen epäonnistui')
+    }
+    return data
+}
+
+export const updatePantryLocation = async (locationId, updates) => {
+    const response = await axios.put(
+        getServerUrl(`/pantry/locations/${locationId}`),
+        updates,
+        await authConfig()
+    )
+    const data = response.data
+    if (!data.success) {
+        throw new Error(data.message || 'Säilytyspaikan päivitys epäonnistui')
+    }
+    return data
+}
+
+export const deletePantryLocation = async (locationId) => {
+    const response = await axios.delete(
+        getServerUrl(`/pantry/locations/${locationId}`),
+        await authConfig()
+    )
+    const data = response.data
+    if (!data.success) {
+        throw new Error(data.message || 'Säilytyspaikan poisto epäonnistui')
+    }
+    return data
+}
+
+export const dismissPantryRemovalSuggestions = async (itemIds, reason) => {
+    const response = await axios.post(
+        getServerUrl('/pantry/removal-suggestions/dismiss'),
+        { itemIds, reason },
+        await authConfig()
+    )
+    const data = response.data
+    if (!data.success) {
+        throw new Error(data.message || 'Ehdotusten hylkääminen epäonnistui')
+    }
+    return data
 }
 
 export const addPantryItem = async (pantryItemData) => {
