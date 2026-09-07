@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Pressable, StyleSheet, TouchableOpacity, View } from 'react-native'
+import { StyleSheet, TouchableOpacity, View } from 'react-native'
 import { Feather, MaterialIcons } from '@expo/vector-icons'
 import Button from './Button'
 import CustomText from './CustomText'
 import FoodItemRow from './FoodItemRow'
 import RecipeStepsEditor from './RecipeStepsEditor'
-import { normalizeRecipeSteps } from '../utils/recipeSteps'
+import { normalizeRecipeSteps, resolveRecipeSteps } from '../utils/recipeSteps'
 
 const TABS = [
     { id: 'ingredients', label: 'Raaka-aineet' },
@@ -33,7 +33,7 @@ const MealTabs = ({
 }) => {
     const [activeTab, setActiveTab] = useState('ingredients')
     const [doneSteps, setDoneSteps] = useState({})
-    const steps = normalizeRecipeSteps(recipeSteps)
+    const steps = normalizeRecipeSteps(resolveRecipeSteps(recipeSteps, recipe))
 
     useEffect(() => {
         setDoneSteps({})
@@ -181,16 +181,23 @@ const MealTabs = ({
                     ) : steps.length ? (
                         steps.map((step, index) => {
                             const done = Boolean(doneSteps[index])
+                            const toggleStep = () =>
+                                setDoneSteps((prev) => ({
+                                    ...prev,
+                                    [index]: !prev[index],
+                                }))
                             return (
-                                <Pressable
+                                <TouchableOpacity
                                     key={`step-${index}`}
-                                    style={styles.stepRow}
-                                    onPress={() =>
-                                        setDoneSteps((prev) => ({
-                                            ...prev,
-                                            [index]: !prev[index],
-                                        }))
-                                    }
+                                    style={[
+                                        styles.stepCard,
+                                        done && styles.stepCardDone,
+                                    ]}
+                                    onPress={toggleStep}
+                                    accessibilityRole="checkbox"
+                                    accessibilityState={{ checked: done }}
+                                    accessibilityLabel={`Vaihe ${index + 1}${done ? ', tehty' : ''}`}
+                                    activeOpacity={0.75}
                                 >
                                     <MaterialIcons
                                         name={
@@ -198,31 +205,34 @@ const MealTabs = ({
                                                 ? 'check-box'
                                                 : 'check-box-outline-blank'
                                         }
-                                        size={22}
+                                        size={26}
                                         color={done ? '#5844BB' : '#9CA3AF'}
+                                        style={styles.stepCheckbox}
                                     />
-                                    <CustomText
-                                        style={[
-                                            styles.stepNumber,
-                                            done && styles.stepDone,
-                                        ]}
-                                    >
-                                        {index + 1}.
-                                    </CustomText>
-                                    <CustomText
-                                        style={[
-                                            styles.stepText,
-                                            done && styles.stepDone,
-                                        ]}
-                                    >
-                                        {step}
-                                    </CustomText>
-                                </Pressable>
+                                    <View style={styles.stepBody}>
+                                        <CustomText
+                                            style={[
+                                                styles.stepNumber,
+                                                done && styles.stepDone,
+                                            ]}
+                                        >
+                                            Vaihe {index + 1}
+                                        </CustomText>
+                                        <CustomText
+                                            style={[
+                                                styles.stepText,
+                                                done && styles.stepDone,
+                                            ]}
+                                        >
+                                            {step}
+                                        </CustomText>
+                                    </View>
+                                </TouchableOpacity>
                             )
                         })
                     ) : (
                         <CustomText style={styles.recipeText}>
-                            {recipe || 'Ei valmistusohjetta'}
+                            Ei valmistusohjetta
                         </CustomText>
                     )}
                 </View>
@@ -327,21 +337,38 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
         wordBreak: 'break-word',
     },
-    stepRow: {
+    stepCard: {
         flexDirection: 'row',
         alignItems: 'flex-start',
-        gap: 8,
-        paddingVertical: 8,
+        gap: 12,
+        paddingVertical: 14,
+        paddingHorizontal: 14,
+        marginBottom: 10,
+        backgroundColor: '#F9FAFB',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    stepCardDone: {
+        backgroundColor: '#F5F3FF',
+        borderColor: '#DDD6FE',
+    },
+    stepCheckbox: {
+        marginTop: 1,
+    },
+    stepBody: {
+        flex: 1,
+        minWidth: 0,
     },
     stepNumber: {
-        fontSize: 16,
-        fontWeight: '600',
+        fontSize: 12,
+        fontWeight: '700',
         color: '#5844BB',
-        width: 24,
-        lineHeight: 24,
+        letterSpacing: 0.3,
+        textTransform: 'uppercase',
+        marginBottom: 4,
     },
     stepText: {
-        flex: 1,
         fontSize: 16,
         lineHeight: 24,
         color: '#111827',

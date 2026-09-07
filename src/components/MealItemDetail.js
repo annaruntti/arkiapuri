@@ -118,6 +118,7 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
             ...meal,
             servings: normalizeServings(meal.servings),
             foodItems,
+            recipeSteps: resolveRecipeSteps(meal.recipeSteps, meal.recipe),
         })
         refreshAvailability(foodItems)
         fetchShoppingLists()
