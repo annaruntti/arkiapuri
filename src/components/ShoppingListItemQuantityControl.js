@@ -1,59 +1,146 @@
 import { useEffect, useRef, useState } from 'react'
 import {
     Modal,
+    Platform,
     Pressable,
     StyleSheet,
+    TextInput,
     TouchableOpacity,
     View,
 } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
 import CustomText from './CustomText'
+import UnitSelect from './UnitSelect'
+import { resolveAppUnit } from '../utils/units'
+
+const formatQuantity = (value) => {
+    const num = Number(value)
+    if (!Number.isFinite(num)) return '0'
+    return String(num).replace('.', ',')
+}
+
+const parseQuantity = (value) =>
+    parseFloat(String(value).trim().replace(',', '.'))
 
 /**
- * K-Ruoka-style quantity chip: tap to open + / − / delete controls.
+ * Quantity chip: tap to open + / − / typed amount / unit / delete controls.
  */
 const ShoppingListItemQuantityControl = ({
     quantity = 1,
     unit = 'kpl',
     disabled = false,
-    onIncrease,
-    onDecrease,
+    onChange,
     onDelete,
 }) => {
+    const displayQty = Number(quantity) || 0
+    const displayUnit = resolveAppUnit(unit)
     const [open, setOpen] = useState(false)
+    const [editing, setEditing] = useState(false)
+    const [draft, setDraft] = useState(formatQuantity(quantity))
+    const [draftUnit, setDraftUnit] = useState(displayUnit)
     const [anchor, setAnchor] = useState({ x: 0, y: 0, width: 0, height: 0 })
     const buttonRef = useRef(null)
-    const displayQty = Number(quantity) || 0
+    const inputRef = useRef(null)
 
     useEffect(() => {
-        if (disabled) setOpen(false)
+        if (!disabled) return
+        setOpen(false)
     }, [disabled])
+
+    useEffect(() => {
+        if (editing) return
+        const next = formatQuantity(displayQty)
+        setDraft((prev) => (prev === next ? prev : next))
+    }, [displayQty, editing])
+
+    useEffect(() => {
+        if (open) return
+        setDraftUnit((prev) => (prev === displayUnit ? prev : displayUnit))
+    }, [displayUnit, open])
 
     const openMenu = () => {
         if (disabled) return
+        setEditing(false)
+        setDraft(formatQuantity(displayQty))
+        setDraftUnit(displayUnit)
         buttonRef.current?.measureInWindow((x, y, width, height) => {
             setAnchor({ x, y, width, height })
             setOpen(true)
         })
     }
 
-    const closeMenu = () => setOpen(false)
-
-    const handleIncrease = () => {
-        onIncrease?.()
+    const emitChange = (nextQuantity, nextUnit) => {
+        const quantityChanged =
+            nextQuantity !== undefined && nextQuantity !== displayQty
+        const unitChanged =
+            nextUnit !== undefined && nextUnit !== displayUnit
+        if (!quantityChanged && !unitChanged) return
+        onChange?.({
+            quantity: quantityChanged ? nextQuantity : undefined,
+            unit: unitChanged ? nextUnit : undefined,
+        })
     }
 
-    const handleDecrease = () => {
-        if (displayQty <= 1) {
-            closeMenu()
+    const closeMenu = () => {
+        commitDraft({ close: true })
+    }
+
+    const commitDraft = ({ close = false } = {}) => {
+        const parsed = parseQuantity(draft)
+        setEditing(false)
+        if (!Number.isFinite(parsed)) {
+            setDraft(formatQuantity(displayQty))
+        } else if (parsed <= 0) {
+            setOpen(false)
+            onDelete?.()
+            return
+        } else {
+            emitChange(parsed, draftUnit)
+            setDraft(formatQuantity(parsed))
+        }
+        if (close) {
+            setOpen(false)
+        }
+    }
+
+    const applyQuantity = (next) => {
+        setEditing(false)
+        if (!Number.isFinite(next) || next <= 0) {
+            setOpen(false)
             onDelete?.()
             return
         }
-        onDecrease?.()
+        setDraft(formatQuantity(next))
+        emitChange(next, draftUnit)
+    }
+
+    const handleIncrease = () => {
+        const base = editing ? parseQuantity(draft) : displayQty
+        const current = Number.isFinite(base) ? base : displayQty
+        applyQuantity(current + 1)
+    }
+
+    const handleDecrease = () => {
+        const base = editing ? parseQuantity(draft) : displayQty
+        const current = Number.isFinite(base) ? base : displayQty
+        if (current <= 1) {
+            setOpen(false)
+            onDelete?.()
+            return
+        }
+        applyQuantity(current - 1)
+    }
+
+    const handleSelectUnit = (nextUnit) => {
+        setDraftUnit(nextUnit)
+        const parsed = editing ? parseQuantity(draft) : displayQty
+        const current = Number.isFinite(parsed) && parsed > 0 ? parsed : displayQty
+        emitChange(current, nextUnit)
     }
 
     const handleDelete = () => {
-        closeMenu()
+        setEditing(false)
+        setOpen(false)
         onDelete?.()
     }
 
@@ -68,10 +155,10 @@ const ShoppingListItemQuantityControl = ({
                 onPress={openMenu}
                 disabled={disabled}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                accessibilityLabel={`Määrä ${displayQty} ${unit}. Avaa määrän muokkaus.`}
+                accessibilityLabel={`Määrä ${displayQty} ${displayUnit}. Avaa määrän muokkaus.`}
             >
                 <CustomText style={styles.qtyButtonText}>
-                    {displayQty} {unit}
+                    {formatQuantity(displayQty)} {displayUnit}
                 </CustomText>
             </TouchableOpacity>
 
@@ -81,7 +168,12 @@ const ShoppingListItemQuantityControl = ({
                 animationType="fade"
                 onRequestClose={closeMenu}
             >
-                <Pressable style={styles.backdrop} onPress={closeMenu}>
+                <View style={styles.overlay} pointerEvents="box-none">
+                    <Pressable
+                        style={styles.backdrop}
+                        onPress={closeMenu}
+                        accessibilityLabel="Sulje määrän muokkaus"
+                    />
                     <View
                         style={[
                             styles.menu,
@@ -90,11 +182,9 @@ const ShoppingListItemQuantityControl = ({
                                 right: menuRight,
                             },
                         ]}
-                        // Prevent backdrop press when tapping the menu
-                        onStartShouldSetResponder={() => true}
                     >
                         <CustomText style={styles.menuTitle}>
-                            {displayQty} {unit}
+                            Muokkaa määrää ja yksikköä
                         </CustomText>
                         <View style={styles.menuRow}>
                             <TouchableOpacity
@@ -117,9 +207,30 @@ const ShoppingListItemQuantityControl = ({
                                 />
                             </TouchableOpacity>
 
-                            <CustomText style={styles.menuQty}>
-                                {displayQty}
-                            </CustomText>
+                            <TextInput
+                                ref={inputRef}
+                                style={styles.menuQtyInput}
+                                value={draft}
+                                onChangeText={(text) => {
+                                    setEditing(true)
+                                    setDraft(text)
+                                }}
+                                onFocus={() => setEditing(true)}
+                                onSubmitEditing={() =>
+                                    commitDraft({ close: true })
+                                }
+                                keyboardType="decimal-pad"
+                                selectTextOnFocus
+                                returnKeyType="done"
+                                accessibilityLabel="Muokkaa määrää"
+                            />
+
+                            <View style={styles.unitSelectSlot}>
+                                <UnitSelect
+                                    value={draftUnit}
+                                    onChange={handleSelectUnit}
+                                />
+                            </View>
 
                             <TouchableOpacity
                                 style={styles.menuIconButton}
@@ -148,7 +259,7 @@ const ShoppingListItemQuantityControl = ({
                             </CustomText>
                         </TouchableOpacity>
                     </View>
-                </Pressable>
+                </View>
             </Modal>
         </>
     )
@@ -173,22 +284,28 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         fontSize: 13,
     },
-    backdrop: {
+    overlay: {
         flex: 1,
+    },
+    backdrop: {
+        ...StyleSheet.absoluteFillObject,
         backgroundColor: 'rgba(0,0,0,0.15)',
     },
     menu: {
         position: 'absolute',
+        zIndex: 2,
         backgroundColor: '#fff',
         borderRadius: 12,
         paddingVertical: 10,
         paddingHorizontal: 12,
-        minWidth: 160,
+        minWidth: 250,
+        overflow: 'visible',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
         shadowRadius: 6,
         elevation: 6,
+        ...(Platform.OS === 'web' && { overflow: 'visible' }),
     },
     menuTitle: {
         fontSize: 13,
@@ -200,7 +317,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        gap: 8,
+        gap: 6,
+        zIndex: 2,
+        ...(Platform.OS === 'web' && { overflow: 'visible' }),
     },
     menuIconButton: {
         width: 40,
@@ -210,12 +329,29 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-    menuQty: {
+    menuQtyInput: {
+        minWidth: 52,
+        maxWidth: 72,
+        height: 40,
+        borderWidth: 1,
+        borderColor: '#5844BB',
+        borderRadius: 8,
+        paddingHorizontal: 8,
         fontSize: 18,
         fontWeight: '700',
-        minWidth: 28,
         textAlign: 'center',
         color: '#333',
+        backgroundColor: '#fff',
+        ...(Platform.OS === 'web' && {
+            outlineStyle: 'none',
+            outlineWidth: 0,
+        }),
+    },
+    unitSelectSlot: {
+        width: 48,
+        height: 40,
+        zIndex: 3,
+        ...(Platform.OS === 'web' && { overflow: 'visible' }),
     },
     deleteRow: {
         flexDirection: 'row',

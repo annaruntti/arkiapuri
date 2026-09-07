@@ -27,9 +27,9 @@ import InlineCategorySelect from './InlineCategorySelect'
 import CollapsibleFormSection from './CollapsibleFormSection'
 import ToggleButton from './ToggleButton'
 import UnifiedFoodSearch from './UnifiedFoodSearch'
+import UnitSelect from './UnitSelect'
 import categories from '../data/categories'
 import { formStyles } from '../styles/formStyles'
-import { APP_UNITS } from '../utils/units'
 
 const NUTRITION_FIELDS = [
     { name: 'calories', label: 'Kalorit', unit: 'kcal' },
@@ -87,7 +87,11 @@ const FormFoodItem = forwardRef(
             hasInitialNutrition
         )
         const [unitMenuOpen, setUnitMenuOpen] = useState(false)
-        const [date, setDate] = useState(new Date())
+        const [date, setDate] = useState(
+            initialValues.expirationDate
+                ? new Date(initialValues.expirationDate)
+                : null
+        )
         const [selectedLocations, setSelectedLocations] = useState(['meal'])
         const [quantities, setQuantities] = useState({
             meal: '',
@@ -118,7 +122,7 @@ const FormFoodItem = forwardRef(
                 price: initialValues.price || '0',
                 expirationDate: initialValues.expirationDate
                     ? new Date(initialValues.expirationDate)
-                    : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                    : undefined,
                 location: location,
                 unit: initialValues.unit || 'kpl',
                 calories: String(
@@ -151,12 +155,6 @@ const FormFoodItem = forwardRef(
         const currentUnit = watch('unit')
         const isFood = watch('isFood') !== false
         const showFoodFields = isFood
-
-        const unitOptions = APP_UNITS
-
-        const openUnitMenu = () => {
-            setUnitMenuOpen((open) => !open)
-        }
 
         const closeUnitMenu = () => {
             setUnitMenuOpen(false)
@@ -442,9 +440,10 @@ const FormFoodItem = forwardRef(
                             : parseFloat(data.calories) || 0,
                     nutrition,
                     expirationDate:
-                        data.isFood === false
-                            ? undefined
-                            : data.expirationDate,
+                        data.isFood === false ? undefined : date || undefined,
+                    expirationDateSetByUser: Boolean(
+                        data.isFood !== false && date
+                    ),
                     location: location,
                     locations: showLocationSelector
                         ? selectedLocations
@@ -555,6 +554,8 @@ const FormFoodItem = forwardRef(
                             quantity: formData.quantity,
                             unit: formData.unit,
                             expirationDate: formData.expirationDate,
+                            expirationDateSetByUser:
+                                formData.expirationDateSetByUser,
                         })
                         reset()
                         // Reset quantities and locations except 'meal'
@@ -885,81 +886,13 @@ const FormFoodItem = forwardRef(
                                 name="unit"
                                 rules={{ required: true }}
                                 render={({ field: { onChange, value } }) => (
-                                    <View
-                                        style={[
-                                            formStyles.inputTrailing,
-                                            styles.unitSelectWrap,
-                                            unitMenuOpen &&
-                                                styles.unitSelectWrapOpen,
-                                        ]}
-                                    >
-                                        <TouchableOpacity
-                                            style={styles.unitSelectButton}
-                                            onPress={openUnitMenu}
-                                            activeOpacity={0.7}
-                                        >
-                                            <CustomText
-                                                style={styles.unitSelectText}
-                                                numberOfLines={1}
-                                            >
-                                                {value || 'kpl'}
-                                            </CustomText>
-                                            <MaterialIcons
-                                                name={
-                                                    unitMenuOpen
-                                                        ? 'expand-less'
-                                                        : 'expand-more'
-                                                }
-                                                size={14}
-                                                color="#666"
-                                            />
-                                        </TouchableOpacity>
-                                        {unitMenuOpen && (
-                                            <View style={styles.unitDropdown}>
-                                                <ScrollView
-                                                    style={
-                                                        styles.unitDropdownScroll
-                                                    }
-                                                    nestedScrollEnabled
-                                                    keyboardShouldPersistTaps="handled"
-                                                    bounces={false}
-                                                >
-                                                    {unitOptions.map((unit) => {
-                                                        const selected =
-                                                            value === unit
-                                                        return (
-                                                            <TouchableOpacity
-                                                                key={unit}
-                                                                style={[
-                                                                    styles.unitOption,
-                                                                    selected &&
-                                                                        styles.unitOptionSelected,
-                                                                ]}
-                                                                onPress={() => {
-                                                                    onChange(
-                                                                        unit
-                                                                    )
-                                                                    closeUnitMenu()
-                                                                }}
-                                                                activeOpacity={
-                                                                    0.7
-                                                                }
-                                                            >
-                                                                <CustomText
-                                                                    style={[
-                                                                        styles.unitOptionText,
-                                                                        selected &&
-                                                                            styles.unitOptionTextSelected,
-                                                                    ]}
-                                                                >
-                                                                    {unit}
-                                                                </CustomText>
-                                                            </TouchableOpacity>
-                                                        )
-                                                    })}
-                                                </ScrollView>
-                                            </View>
-                                        )}
+                                    <View style={formStyles.inputTrailing}>
+                                        <UnitSelect
+                                            value={value}
+                                            onChange={onChange}
+                                            open={unitMenuOpen}
+                                            onOpenChange={setUnitMenuOpen}
+                                        />
                                     </View>
                                 )}
                             />
@@ -983,7 +916,8 @@ const FormFoodItem = forwardRef(
                             label="Viimeinen käyttöpäivä"
                             value={date}
                             onChange={setDate}
-                            minimumDate={new Date()}
+                            onRemove={() => setDate(null)}
+                            placeholder="Ei asetettu"
                             style={
                                 unitMenuOpen
                                     ? styles.unitColumnBehind
@@ -1329,6 +1263,12 @@ const styles = StyleSheet.create({
         elevation: 100,
         ...(Platform.OS === 'web' && { overflow: 'visible' }),
     },
+    unitFieldElevated: {
+        position: 'relative',
+        zIndex: 100,
+        elevation: 100,
+        ...(Platform.OS === 'web' && { overflow: 'visible' }),
+    },
     unitColumnBehind: {
         zIndex: 0,
         elevation: 0,
@@ -1547,81 +1487,6 @@ const styles = StyleSheet.create({
     shoppingListOptionTextSelected: {
         color: '#333',
         fontWeight: '500',
-    },
-    // Unit select in the same 48px trailing slot as € / kcal / calendar
-    unitSelectWrap: {
-        position: 'relative',
-        zIndex: 1,
-    },
-    unitSelectWrapOpen: {
-        zIndex: 200,
-        elevation: 200,
-    },
-    unitFieldElevated: {
-        position: 'relative',
-        zIndex: 100,
-        elevation: 100,
-        ...(Platform.OS === 'web' && { overflow: 'visible' }),
-    },
-    unitSelectButton: {
-        width: '100%',
-        height: 40,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'white',
-        borderColor: '#bbb',
-        borderWidth: 1,
-        borderRadius: 4,
-        paddingHorizontal: 2,
-    },
-    unitSelectText: {
-        fontSize: 14,
-        color: '#666',
-        fontWeight: '500',
-        lineHeight: 16,
-        textAlign: 'center',
-    },
-    unitDropdown: {
-        position: 'absolute',
-        top: 44,
-        right: 0,
-        width: 88,
-        zIndex: 300,
-        elevation: 300,
-        backgroundColor: 'white',
-        borderColor: '#bbb',
-        borderWidth: 1,
-        borderRadius: 4,
-        overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
-        ...(Platform.OS === 'web' && {
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-        }),
-    },
-    unitDropdownScroll: {
-        maxHeight: 220,
-    },
-    unitOption: {
-        paddingVertical: 10,
-        paddingHorizontal: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
-    },
-    unitOptionSelected: {
-        backgroundColor: '#f3f0ff',
-    },
-    unitOptionText: {
-        fontSize: 15,
-        color: '#4b5563',
-        textAlign: 'center',
-    },
-    unitOptionTextSelected: {
-        color: '#5844BB',
-        fontWeight: '600',
     },
     imagePicker: {
         borderWidth: 2,
