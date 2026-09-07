@@ -17,12 +17,14 @@ const AddFoodItemPanel = ({
     mealId = null,
     shoppingListId = null,
     allowDuplicates = false,
+    pantryLocationId = null,
     showGuestWarning = false,
     guestWarningMessage,
     searchTitle = 'Etsi tuote tietokannasta',
     formTitle = 'Luo uusi tuote manuaalisesti',
     showFormBackButton = false,
     servings = DEFAULT_SERVINGS,
+    autoOpenScanner = false,
 }) => {
     const [askingMealQuantity, setAskingMealQuantity] = useState(false)
 
@@ -52,9 +54,12 @@ const AddFoodItemPanel = ({
                     location={location}
                     mealId={mealId}
                     shoppingListId={shoppingListId}
+                    pantryLocationId={pantryLocationId}
                     allowDuplicates={allowDuplicates}
                     onMealQuantityPromptChange={setAskingMealQuantity}
                     servings={servings}
+                    autoOpenScanner={autoOpenScanner}
+                    showBarcodeButton={location !== 'shopping-list'}
                 />
             </View>
 

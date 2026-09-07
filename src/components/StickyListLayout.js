@@ -1,8 +1,8 @@
 import { ScrollView, StyleSheet, View } from 'react-native'
 
 /**
- * Intro/header scrolls away; search and action buttons stay pinned
- * while the list below continues to scroll.
+ * Optional intro/header scrolls away. When `sticky` is provided it stays
+ * pinned while the list below continues to scroll.
  */
 const StickyListLayout = ({
     header,
@@ -15,20 +15,25 @@ const StickyListLayout = ({
     keyboardShouldPersistTaps = 'handled',
 }) => {
     const hasHeader = header != null
+    const hasSticky = sticky != null
 
     return (
-    <ScrollView
-        style={[styles.scrollView, style]}
-        contentContainerStyle={contentContainerStyle}
-        stickyHeaderIndices={[hasHeader ? 1 : 0]}
-        showsVerticalScrollIndicator={showsVerticalScrollIndicator}
-        refreshControl={refreshControl}
-        keyboardShouldPersistTaps={keyboardShouldPersistTaps}
-    >
-        {hasHeader ? <View style={styles.headerSection}>{header}</View> : null}
-        <View style={styles.stickySection}>{sticky}</View>
-        <View style={styles.body}>{children}</View>
-    </ScrollView>
+        <ScrollView
+            style={[styles.scrollView, style]}
+            contentContainerStyle={contentContainerStyle}
+            stickyHeaderIndices={hasSticky ? [hasHeader ? 1 : 0] : []}
+            showsVerticalScrollIndicator={showsVerticalScrollIndicator}
+            refreshControl={refreshControl}
+            keyboardShouldPersistTaps={keyboardShouldPersistTaps}
+        >
+            {hasHeader ? (
+                <View style={styles.headerSection}>{header}</View>
+            ) : null}
+            {hasSticky ? (
+                <View style={styles.stickySection}>{sticky}</View>
+            ) : null}
+            <View style={styles.body}>{children}</View>
+        </ScrollView>
     )
 }
 

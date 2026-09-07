@@ -10,6 +10,7 @@ import {
 } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
 
+import AddActionSection from './AddActionSection'
 import AddFoodItemPanel from './AddFoodItemPanel'
 import Button from './Button'
 import CategorySectionHeader from './CategorySectionHeader'
@@ -38,6 +39,7 @@ import {
     SORT_OPTION_IDS,
 } from '../utils/listSort'
 import { useResponsiveDimensions } from '../utils/responsive'
+import { resolveAppUnit } from '../utils/units'
 import storage from '../utils/storage'
 
 const getListItemId = (item) => {
@@ -78,6 +80,7 @@ const ShoppingListDetail = ({
     const checkedItemsRef = useRef(checkedItems)
     checkedItemsRef.current = checkedItems
     const [modalView, setModalView] = useState(MODAL_VIEWS.LIST)
+    const [autoOpenScanner, setAutoOpenScanner] = useState(false)
     const [loading, setLoading] = useState(false)
     const [selectedItem, setSelectedItem] = useState(null)
     const { isDesktop } = useResponsiveDimensions()
@@ -98,6 +101,7 @@ const ShoppingListDetail = ({
             setModalView(MODAL_VIEWS.LIST)
             setSelectedItem(null)
             setCheckedItems([])
+            setAutoOpenScanner(false)
         }
     }, [visible])
 
@@ -123,16 +127,19 @@ const ShoppingListDetail = ({
     const goToListView = () => {
         setModalView(MODAL_VIEWS.LIST)
         setSelectedItem(null)
+        setAutoOpenScanner(false)
     }
 
-    const openAddItemView = async () => {
+    const openAddItemView = async ({ openScanner = false } = {}) => {
         const token = await storage.getItem('userToken')
         if (!token && onRequireLogin) {
-            onRequireLogin('shopping_list', () =>
+            onRequireLogin('shopping_list', () => {
+                setAutoOpenScanner(openScanner)
                 setModalView(MODAL_VIEWS.ADD_ITEM)
-            )
+            })
             return
         }
+        setAutoOpenScanner(openScanner)
         setModalView(MODAL_VIEWS.ADD_ITEM)
     }
 
@@ -401,19 +408,28 @@ const ShoppingListDetail = ({
         }
     }
 
-    const adjustItemQuantity = async (item, delta) => {
+    const setItemQuantity = async (item, nextQuantity, nextUnit) => {
         const itemId = getListItemId(item)
         if (!itemId) return
-        const current = Number(item.quantity) || 0
-        const next = Math.max(0, current + delta)
-        if (next <= 0) {
-            await removeItem(item)
-            return
+        const updates = {}
+        if (nextQuantity !== undefined) {
+            const next = Number(nextQuantity)
+            if (!Number.isFinite(next) || next <= 0) {
+                await removeItem(item)
+                return
+            }
+            updates.quantity = next
         }
+        if (nextUnit !== undefined) {
+            updates.unit = resolveAppUnit(nextUnit)
+        }
+        if (Object.keys(updates).length === 0) return
         try {
-            const data = await updateShoppingListItem(shoppingList._id, itemId, {
-                quantity: next,
-            })
+            const data = await updateShoppingListItem(
+                shoppingList._id,
+                itemId,
+                updates
+            )
             await applyListUpdate(data)
         } catch (error) {
             console.error('Error adjusting quantity:', error)
@@ -641,8 +657,9 @@ const ShoppingListDetail = ({
                     <ShoppingListItemQuantityControl
                         quantity={item.quantity}
                         unit={item.unit}
-                        onIncrease={() => adjustItemQuantity(item, 1)}
-                        onDecrease={() => adjustItemQuantity(item, -1)}
+                        onChange={({ quantity, unit }) =>
+                            setItemQuantity(item, quantity, unit)
+                        }
                         onDelete={() => removeItem(item)}
                     />
                 </View>
@@ -666,6 +683,7 @@ const ShoppingListDetail = ({
                     onSubmitNewItem={handleAddItem}
                     onCloseForm={goToListView}
                     showFormBackButton={false}
+                    autoOpenScanner={autoOpenScanner}
                 />
             ) : modalView === MODAL_VIEWS.ITEM_DETAILS && selectedItem ? (
                 <PantryItemDetails
@@ -698,37 +716,37 @@ const ShoppingListDetail = ({
                                         {shoppingList.description}
                                     </CustomText>
                                 </View>
-
-                                <CustomText style={styles.infoTitle}>
-                                    Hae ja lisää tuotteita
-                                </CustomText>
-                                <CustomText style={styles.infoText}>
-                                    Hae tuotteita nimellä tai skannaa
-                                    viivakoodi. Tulokset sisältävät sekä omat
-                                    tuotteesi että Open Food Facts
-                                    -tietokannan.
-                                </CustomText>
+                                <AddActionSection
+                                    title="Lisää tuotteita"
+                                    hint="Skannaa tuotteen viivakoodi, tai lisää tuote manuaalisesti."
+                                    primaryTitle="Skannaa viivakoodi"
+                                    primaryIcon="qr-code-scanner"
+                                    onPrimaryPress={() =>
+                                        openAddItemView({
+                                            openScanner: true,
+                                        })
+                                    }
+                                    secondaryTitle="Lisää manuaalisesti"
+                                    onSecondaryPress={() =>
+                                        openAddItemView()
+                                    }
+                                />
                             </>
-                        }
-                        sticky={
-                            <SearchSection
-                                searchQuery={searchQuery}
-                                onSearchChange={setSearchQuery}
-                                onClearSearch={() => setSearchQuery('')}
-                                onBarcodeScanned={setSearchQuery}
-                                placeholder="Hae ostoslistasta..."
-                                resultsCount={filteredItems.length}
-                                resultsText="Löytyi {count} tuotetta"
-                                noResultsText="Tuotteita ei löytynyt"
-                                showButtonSection={true}
-                                buttonTitle="+ Luo uusi tuote"
-                                onButtonPress={openAddItemView}
-                                buttonStyle={styles.smallPrimaryButton}
-                                buttonTextStyle={styles.buttonText}
-                            />
                         }
                     >
                         <View style={styles.itemsListContainer}>
+                            <View style={styles.findSection}>
+                                <CustomText style={styles.findHeading}>
+                                    Etsi tuotteita
+                                </CustomText>
+                                <SearchSection
+                                    searchQuery={searchQuery}
+                                    onSearchChange={setSearchQuery}
+                                    onClearSearch={() => setSearchQuery('')}
+                                    placeholder="Hae ostoslistasta..."
+                                    showResultsInfo={false}
+                                />
+                            </View>
                             <ListStatsRow
                                 actions={
                                     <>
@@ -927,6 +945,16 @@ const styles = StyleSheet.create({
     itemsListContainer: {
         flex: 1,
         minHeight: 400,
+    },
+    findSection: {
+        backgroundColor: '#fff',
+        paddingTop: 4,
+    },
+    findHeading: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#555',
+        marginBottom: 8,
     },
     itemsList: {
         width: '100%',
