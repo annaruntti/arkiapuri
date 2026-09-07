@@ -17,20 +17,90 @@ import { getMealRoles } from '../utils/mealFilters'
 const PLACEHOLDER_IMAGE_URL =
     'https://images.ctfassets.net/2pij69ehhf4n/3b9imD6TDC4i68V4uHVgL1/1ac1194dccb086bb52ebd674c59983e3/undraw_breakfast_rgx5.png'
 
+const emptyPantryIndex = { ids: new Set(), names: new Set() }
+
+const mergeKey = (name) =>
+    String(name || '')
+        .normalize('NFKC')
+        .toLowerCase()
+        .replace(/[\u200B-\u200D\uFEFF]/g, '')
+        .replace(/[^a-zåäö0-9]+/gi, '')
+        .trim()
+
+const catalogIdOf = (item) => {
+    const raw = item?.foodId
+    if (raw && typeof raw === 'object') {
+        return String(raw._id || raw.id || '')
+    }
+    if (raw) return String(raw)
+    return item?._id ? String(item._id) : ''
+}
+
+const itemNameOf = (item) =>
+    item?.name || item?.foodId?.name || ''
+
+const indexPantryItems = (items = []) => {
+    const ids = new Set()
+    const names = new Set()
+    for (const item of items) {
+        const id = catalogIdOf(item)
+        if (id) ids.add(id)
+        const name = mergeKey(itemNameOf(item))
+        if (name) names.add(name)
+    }
+    return { ids, names }
+}
+
+const ingredientIsInPantry = (item, pantry) => {
+    const id = catalogIdOf(item)
+    if (id && pantry.ids.has(id)) return true
+    const name = mergeKey(itemNameOf(item))
+    return Boolean(name && pantry.names.has(name))
+}
+
+const hasIngredientsInPantry = (meal, pantry) => {
+    const ingredients = (meal.foodItems || []).filter(
+        (item) => catalogIdOf(item) || mergeKey(itemNameOf(item))
+    )
+    if (!ingredients.length) return false
+    if (!pantry.ids.size && !pantry.names.size) return false
+    const matched = ingredients.filter((item) =>
+        ingredientIsInPantry(item, pantry)
+    ).length
+    return matched / ingredients.length >= 0.8
+}
+
+const isLunchOrDinner = (meal) => {
+    const roles = getMealRoles(meal, [])
+    return roles.includes('lunch') || roles.includes('dinner')
+}
+
+const pickOtherMeal = (meals, currentMeal) => {
+    if (!meals.length) return null
+    if (meals.length === 1 || !currentMeal) {
+        return meals[Math.floor(Math.random() * meals.length)]
+    }
+    const currentId = String(currentMeal._id || currentMeal.id || '')
+    const others = meals.filter(
+        (meal) => String(meal._id || meal.id || '') !== currentId
+    )
+    const pool = others.length ? others : meals
+    return pool[Math.floor(Math.random() * pool.length)]
+}
+
 const RandomMealCard = ({ onMealPress, iconImage, filterByPantry = false }) => {
     const { isTablet, isDesktop } = useResponsiveDimensions()
     const [randomMeal, setRandomMeal] = useState(null)
     const [loading, setLoading] = useState(true)
     const [allMeals, setAllMeals] = useState([])
-    const [pantryFoodIds, setPantryFoodIds] = useState([])
+    const heading = filterByPantry
+        ? 'Mitä varastosta valmistaisi?'
+        : 'Mitä syötäisiin tänään?'
 
-    // Fetch pantry items to get available food IDs
-    const fetchPantry = async () => {
+    const fetchPantryIndex = async () => {
         try {
             const token = await storage.getItem('userToken')
-            if (!token) {
-                return []
-            }
+            if (!token) return emptyPantryIndex
 
             const response = await axios.get(getServerUrl('/pantry'), {
                 headers: {
@@ -38,47 +108,15 @@ const RandomMealCard = ({ onMealPress, iconImage, filterByPantry = false }) => {
                 },
             })
             if (response.data.success && response.data.pantry) {
-                // Extract foodId values from pantry items
-                const foodIds = response.data.pantry.items
-                    .map((item) => item.foodId?._id || item.foodId)
-                    .filter((id) => id != null)
-                    .map((id) => String(id)) // Convert to strings for comparison
-                setPantryFoodIds(foodIds)
-                return foodIds
+                return indexPantryItems(response.data.pantry.items)
             }
-            return []
+            return emptyPantryIndex
         } catch (error) {
             if (error?.response?.status !== 401) {
                 console.error('Error fetching pantry:', error)
             }
-            return []
+            return emptyPantryIndex
         }
-    }
-
-    // Check if meal has ingredients in pantry
-    const hasIngredientsInPantry = (meal, pantryFoodIds) => {
-        if (!meal.foodItems || meal.foodItems.length === 0) {
-            return false
-        }
-        if (pantryFoodIds.length === 0) {
-            return false
-        }
-
-        // Convert meal foodItems to string IDs for comparison
-        const mealFoodIds = meal.foodItems.map((item) => {
-            // Handle both populated and non-populated foodItems
-            return String(item._id || item)
-        })
-
-        // Check if all ingredients are in pantry (or at least 80% for flexibility)
-        const ingredientsInPantry = mealFoodIds.filter((id) =>
-            pantryFoodIds.includes(id)
-        )
-        const matchPercentage =
-            ingredientsInPantry.length / mealFoodIds.length
-
-        // Return true if at least 80% of ingredients are in pantry
-        return matchPercentage >= 0.8
     }
 
     // Fetch all meals on component mount
@@ -92,11 +130,9 @@ const RandomMealCard = ({ onMealPress, iconImage, filterByPantry = false }) => {
                 return
             }
 
-            // Fetch pantry first if filtering by pantry
-            let availableFoodIds = []
-            if (filterByPantry) {
-                availableFoodIds = await fetchPantry()
-            }
+            const pantry = filterByPantry
+                ? await fetchPantryIndex()
+                : emptyPantryIndex
 
             const response = await axios.get(getServerUrl('/meals'), {
                 headers: {
@@ -104,30 +140,16 @@ const RandomMealCard = ({ onMealPress, iconImage, filterByPantry = false }) => {
                 },
             })
             if (response.data.success) {
-                let meals = response.data.meals || []
+                let meals = (response.data.meals || []).filter(isLunchOrDinner)
 
-                // Filter meals that have 'lunch' or 'dinner' in their defaultRoles
-                meals = meals.filter((meal) => {
-                    const roles = getMealRoles(meal, [])
-                    return roles.includes('lunch') || roles.includes('dinner')
-                })
-
-                // Filter by pantry if enabled
-                if (filterByPantry && availableFoodIds.length > 0) {
+                if (filterByPantry) {
                     meals = meals.filter((meal) =>
-                        hasIngredientsInPantry(meal, availableFoodIds)
+                        hasIngredientsInPantry(meal, pantry)
                     )
                 }
 
                 setAllMeals(meals)
-
-                // Set initial random meal
-                if (meals.length > 0) {
-                    const randomIndex = Math.floor(
-                        Math.random() * meals.length
-                    )
-                    setRandomMeal(meals[randomIndex])
-                }
+                setRandomMeal(pickOtherMeal(meals, null))
             }
         } catch (error) {
             if (error?.response?.status !== 401) {
@@ -142,10 +164,8 @@ const RandomMealCard = ({ onMealPress, iconImage, filterByPantry = false }) => {
         fetchMeals()
     }, [filterByPantry])
 
-    // Function to get a new random meal
     const raffleNewMeal = async () => {
         if (filterByPantry) {
-            // Re-fetch pantry and meals to get latest data
             try {
                 setLoading(true)
                 const token = await storage.getItem('userToken')
@@ -153,55 +173,18 @@ const RandomMealCard = ({ onMealPress, iconImage, filterByPantry = false }) => {
                     return
                 }
 
-                const availableFoodIds = await fetchPantry()
-
+                const pantry = await fetchPantryIndex()
                 const response = await axios.get(getServerUrl('/meals'), {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
                 })
                 if (response.data.success) {
-                    let meals = response.data.meals || []
-
-                    // Filter meals that have 'lunch' or 'dinner' in their defaultRoles
-                    meals = meals.filter((meal) => {
-                        const roles = getMealRoles(meal, [])
-                        return (
-                            roles.includes('lunch') || roles.includes('dinner')
-                        )
-                    })
-
-                    // Filter by pantry if enabled
-                    if (availableFoodIds.length > 0) {
-                        meals = meals.filter((meal) =>
-                            hasIngredientsInPantry(meal, availableFoodIds)
-                        )
-                    }
-
+                    const meals = (response.data.meals || [])
+                        .filter(isLunchOrDinner)
+                        .filter((meal) => hasIngredientsInPantry(meal, pantry))
                     setAllMeals(meals)
-
-                    // Pick a different random meal if available
-                    if (meals.length > 0) {
-                        // If there's more than one meal, avoid selecting the same one
-                        let randomIndex = Math.floor(Math.random() * meals.length)
-                        if (meals.length > 1 && randomMeal) {
-                            const currentMealId = String(randomMeal._id || randomMeal.id)
-                            // Try to pick a different meal
-                            const otherMeals = meals.filter(
-                                (meal) => String(meal._id || meal.id) !== currentMealId
-                            )
-                            if (otherMeals.length > 0) {
-                                randomIndex = Math.floor(
-                                    Math.random() * otherMeals.length
-                                )
-                                setRandomMeal(otherMeals[randomIndex])
-                            } else {
-                                setRandomMeal(meals[randomIndex])
-                            }
-                        } else {
-                            setRandomMeal(meals[randomIndex])
-                        }
-                    }
+                    setRandomMeal(pickOtherMeal(meals, randomMeal))
                 }
             } catch (error) {
                 if (error?.response?.status !== 401) {
@@ -210,28 +193,10 @@ const RandomMealCard = ({ onMealPress, iconImage, filterByPantry = false }) => {
             } finally {
                 setLoading(false)
             }
-        } else {
-            // Just pick a random meal from existing list
-            if (allMeals.length > 0) {
-                // If there's more than one meal, avoid selecting the same one
-                let randomIndex = Math.floor(Math.random() * allMeals.length)
-                if (allMeals.length > 1 && randomMeal) {
-                    const currentMealId = String(randomMeal._id || randomMeal.id)
-                    // Try to pick a different meal
-                    const otherMeals = allMeals.filter(
-                        (meal) => String(meal._id || meal.id) !== currentMealId
-                    )
-                    if (otherMeals.length > 0) {
-                        randomIndex = Math.floor(Math.random() * otherMeals.length)
-                        setRandomMeal(otherMeals[randomIndex])
-                    } else {
-                        setRandomMeal(allMeals[randomIndex])
-                    }
-                } else {
-                    setRandomMeal(allMeals[randomIndex])
-                }
-            }
+            return
         }
+
+        setRandomMeal(pickOtherMeal(allMeals, randomMeal))
     }
 
     if (loading) {
@@ -256,29 +221,31 @@ const RandomMealCard = ({ onMealPress, iconImage, filterByPantry = false }) => {
                     styles.card,
                     isTablet && styles.tabletCard,
                     isDesktop && styles.desktopCard,
-                    styles.emptyCard,
                 ]}
             >
-                <CustomText
-                    style={[styles.title, isDesktop && styles.desktopTitle]}
-                >
-                    Mitä syötäisiin tänään?
-                </CustomText>
-                <CustomText
-                    style={[
-                        styles.subtitle,
-                        isDesktop && styles.desktopSubtitle,
-                    ]}
-                >
-                    {filterByPantry
-                        ? 'Ei aterioita saatavilla ruokavarastosta'
-                        : 'Ei lounas- tai päivällisaterioita'}
-                </CustomText>
+                <Image
+                    source={iconImage || { uri: PLACEHOLDER_IMAGE_URL }}
+                    style={[styles.image, isDesktop && styles.desktopImage]}
+                    resizeMode="contain"
+                />
+                <View style={styles.content}>
+                    <CustomText
+                        style={[styles.label, isDesktop && styles.desktopLabel]}
+                    >
+                        {heading}
+                    </CustomText>
+                    <CustomText
+                        style={[styles.title, isDesktop && styles.desktopTitle]}
+                    >
+                        {filterByPantry
+                            ? 'Ei aterioita saatavilla ruokavarastosta'
+                            : 'Ei lounas- tai päivällisaterioita'}
+                    </CustomText>
+                </View>
             </View>
         )
     }
 
-    // Use meal's image if available, otherwise use iconImage or placeholder
     const displayImage =
         randomMeal.imageUrl
             ? { uri: randomMeal.imageUrl }
@@ -305,9 +272,7 @@ const RandomMealCard = ({ onMealPress, iconImage, filterByPantry = false }) => {
                     <CustomText
                         style={[styles.label, isDesktop && styles.desktopLabel]}
                     >
-                        {filterByPantry
-                            ? 'Ateria ruokavarastosta'
-                            : 'Mitä syötäisiin tänään?'}
+                        {heading}
                     </CustomText>
                     {filterByPantry && (
                         <View style={styles.badge}>
@@ -464,12 +429,6 @@ const styles = StyleSheet.create({
     desktopSubtitle: {
         fontSize: 16,
         marginLeft: 10,
-    },
-    emptyCard: {
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 24,
     },
     raffleButton: {
         marginLeft: 8,
