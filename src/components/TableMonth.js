@@ -160,24 +160,24 @@ const TableMonth = ({ onRequireLogin }) => {
         const isToday = format(new Date(), 'yyyy-MM-dd') === dateStr
 
         return (
-            <View
+            <TouchableOpacity
                 key={dateStr}
                 style={[styles.dayContainer, isToday && styles.todayContainer]}
+                onPress={() => handleDatePress(date)}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={`Lisää ateria päivälle ${dayNumber}`}
             >
-                <TouchableOpacity
-                    style={styles.dayHeader}
-                    onPress={() => handleDatePress(date)}
-                    activeOpacity={0.7}
-                >
+                <View style={styles.dayHeader}>
                     <CustomText
                         style={[styles.dayNumber, isToday && styles.todayText]}
                     >
                         {dayNumber}
                     </CustomText>
-                </TouchableOpacity>
-                <View style={styles.mealsContainer}>
+                </View>
+                <View style={styles.mealsContainer} pointerEvents="box-none">
                     {meals.slice(0, 2).map((meal) => (
-                        <View key={meal._id}>
+                        <View key={meal._id} pointerEvents="box-none">
                             {renderMealItemWithRemove(meal, date)}
                         </View>
                     ))}
@@ -192,7 +192,7 @@ const TableMonth = ({ onRequireLogin }) => {
                         </TouchableOpacity>
                     )}
                 </View>
-            </View>
+            </TouchableOpacity>
         )
     }
 

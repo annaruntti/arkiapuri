@@ -719,6 +719,7 @@ const linking = {
         const params = new URLSearchParams(query)
         params.delete('shoppingList')
         params.delete('updatedShoppingList')
+        params.delete('resetView')
         const search = params.toString()
         return search ? `${pathname}?${search}` : pathname
     },

@@ -108,6 +108,7 @@ const ShoppingListsScreen = ({ route }) => {
         navigation.navigate('Ostoslistan tiedot', {
             listId: String(list._id),
             shoppingList: list,
+            resetView: Date.now(),
         })
     }
 

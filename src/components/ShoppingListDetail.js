@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { CommonActions, useNavigation } from '@react-navigation/native'
 import {
     Alert,
@@ -22,6 +22,7 @@ import GenericFilterSection from './GenericFilterSection'
 import ListSortControl from './ListSortControl'
 import ListStatsRow from './ListStatsRow'
 import PantryItemDetails from './PantryItemDetails'
+import ResponsiveModal from './ResponsiveModal'
 import SearchSection from './SearchSection'
 import StickyListLayout from './StickyListLayout'
 import ShoppingListItemQuantityControl from './ShoppingListItemQuantityControl'
@@ -62,12 +63,12 @@ const getListItemId = (item) => {
 
 const MODAL_VIEWS = {
     LIST: 'list',
-    ADD_ITEM: 'addItem',
     ITEM_DETAILS: 'itemDetails',
 }
 
 const ShoppingListDetail = ({
     shoppingList,
+    resetView,
     onClose,
     onUpdate,
     fetchShoppingLists,
@@ -79,6 +80,8 @@ const ShoppingListDetail = ({
     const checkedItemsRef = useRef(checkedItems)
     checkedItemsRef.current = checkedItems
     const [modalView, setModalView] = useState(MODAL_VIEWS.LIST)
+    const [showAddItem, setShowAddItem] = useState(false)
+    const [addItemSession, setAddItemSession] = useState(0)
     const [autoOpenScanner, setAutoOpenScanner] = useState(false)
     const [loading, setLoading] = useState(false)
     const [selectedItem, setSelectedItem] = useState(null)
@@ -94,12 +97,17 @@ const ShoppingListDetail = ({
         .map((item) => getListItemId(item))
         .filter(Boolean)
 
-    useEffect(() => {
+    const resetAddAndDetails = useCallback(() => {
         setModalView(MODAL_VIEWS.LIST)
+        setShowAddItem(false)
         setSelectedItem(null)
-        setCheckedItems([])
         setAutoOpenScanner(false)
-    }, [shoppingList?._id])
+    }, [])
+
+    useEffect(() => {
+        resetAddAndDetails()
+        setCheckedItems([])
+    }, [shoppingList?._id, resetView, resetAddAndDetails])
 
     const {
         searchQuery,
@@ -121,9 +129,7 @@ const ShoppingListDetail = ({
     })
 
     const goToListView = () => {
-        setModalView(MODAL_VIEWS.LIST)
-        setSelectedItem(null)
-        setAutoOpenScanner(false)
+        resetAddAndDetails()
     }
 
     const syncUpdatedListToPicker = () => {
@@ -144,13 +150,17 @@ const ShoppingListDetail = ({
         const unsubscribe = navigation.addListener('beforeRemove', (e) => {
             const isNavigate = e.data.action.type === 'NAVIGATE'
 
-            if (modalView !== MODAL_VIEWS.LIST && !isNavigate) {
+            if (
+                (showAddItem || modalView !== MODAL_VIEWS.LIST) &&
+                !isNavigate
+            ) {
                 e.preventDefault()
-                goToListView()
+                resetAddAndDetails()
                 return
             }
 
             if (isNavigate) {
+                resetAddAndDetails()
                 syncUpdatedListToPicker()
                 return
             }
@@ -159,19 +169,21 @@ const ShoppingListDetail = ({
             onClose?.()
         })
         return unsubscribe
-    }, [navigation, modalView, onClose, shoppingList])
+    }, [navigation, modalView, showAddItem, onClose, shoppingList, resetAddAndDetails])
 
     const openAddItemView = async ({ openScanner = false } = {}) => {
         const token = await storage.getItem('userToken')
         if (!token && onRequireLogin) {
             onRequireLogin('shopping_list', () => {
                 setAutoOpenScanner(openScanner)
-                setModalView(MODAL_VIEWS.ADD_ITEM)
+                setAddItemSession((value) => value + 1)
+                setShowAddItem(true)
             })
             return
         }
         setAutoOpenScanner(openScanner)
-        setModalView(MODAL_VIEWS.ADD_ITEM)
+        setAddItemSession((value) => value + 1)
+        setShowAddItem(true)
     }
 
     const handleCheckItem = (item) => {
@@ -687,17 +699,7 @@ const ShoppingListDetail = ({
 
     return (
         <View style={styles.container}>
-            {!shoppingList ? null : modalView === MODAL_VIEWS.ADD_ITEM ? (
-                <AddFoodItemPanel
-                    location="shopping-list"
-                    shoppingListId={shoppingList._id}
-                    onSelectItem={handleSearchItemSelect}
-                    onSubmitNewItem={handleAddItem}
-                    onCloseForm={goToListView}
-                    showFormBackButton={false}
-                    autoOpenScanner={autoOpenScanner}
-                />
-            ) : modalView === MODAL_VIEWS.ITEM_DETAILS && selectedItem ? (
+            {!shoppingList ? null : modalView === MODAL_VIEWS.ITEM_DETAILS && selectedItem ? (
                 <PantryItemDetails
                     item={selectedItem}
                     embedded
@@ -894,6 +896,24 @@ const ShoppingListDetail = ({
                     )}
                 </View>
             )}
+
+            <ResponsiveModal
+                visible={showAddItem}
+                onClose={goToListView}
+                title="Lisää tuote"
+                maxWidth={640}
+            >
+                <AddFoodItemPanel
+                    key={addItemSession}
+                    location="shopping-list"
+                    shoppingListId={shoppingList?._id}
+                    onSelectItem={handleSearchItemSelect}
+                    onSubmitNewItem={handleAddItem}
+                    onCloseForm={goToListView}
+                    showFormBackButton={false}
+                    autoOpenScanner={autoOpenScanner}
+                />
+            </ResponsiveModal>
         </View>
     )
 }

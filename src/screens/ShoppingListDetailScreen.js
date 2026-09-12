@@ -170,6 +170,7 @@ const ShoppingListDetailScreen = ({ route, navigation }) => {
                 <View style={styles.container}>
                     <ShoppingListDetail
                         shoppingList={shoppingList}
+                        resetView={route.params?.resetView}
                         onUpdate={setShoppingList}
                         onClose={handleClose}
                         fetchShoppingLists={fetchShoppingLists}
