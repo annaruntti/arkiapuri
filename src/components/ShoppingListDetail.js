@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigation } from '@react-navigation/native'
+import { CommonActions, useNavigation } from '@react-navigation/native'
 import {
     Alert,
     Platform,
@@ -126,21 +126,40 @@ const ShoppingListDetail = ({
         setAutoOpenScanner(false)
     }
 
+    const syncUpdatedListToPicker = () => {
+        if (!shoppingList) return
+        const picker = navigation
+            .getState()
+            ?.routes?.find((route) => route.name === 'Ostoslista')
+        if (!picker?.key) return
+        navigation.dispatch({
+            ...CommonActions.setParams({
+                updatedShoppingList: shoppingList,
+            }),
+            source: picker.key,
+        })
+    }
+
     useEffect(() => {
         const unsubscribe = navigation.addListener('beforeRemove', (e) => {
-            if (modalView !== MODAL_VIEWS.LIST) {
+            const isNavigate = e.data.action.type === 'NAVIGATE'
+
+            if (modalView !== MODAL_VIEWS.LIST && !isNavigate) {
                 e.preventDefault()
                 goToListView()
                 return
             }
-            if (e.data.action.type === 'NAVIGATE') {
+
+            if (isNavigate) {
+                syncUpdatedListToPicker()
                 return
             }
+
             e.preventDefault()
             onClose?.()
         })
         return unsubscribe
-    }, [navigation, modalView, onClose])
+    }, [navigation, modalView, onClose, shoppingList])
 
     const openAddItemView = async ({ openScanner = false } = {}) => {
         const token = await storage.getItem('userToken')

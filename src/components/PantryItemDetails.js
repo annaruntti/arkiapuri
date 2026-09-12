@@ -60,6 +60,24 @@ const getItemNutrition = (item) =>
 
 const EMPTY_LOCATIONS = []
 
+const resolveItemKey = (value) => {
+    if (!value) return ''
+    const candidate = value._id ?? value.id
+    if (candidate == null) return ''
+    if (typeof candidate === 'object') {
+        if (candidate.$oid) return String(candidate.$oid)
+        if (typeof candidate.toHexString === 'function') {
+            return candidate.toHexString()
+        }
+        if (typeof candidate.toString === 'function') {
+            const asString = candidate.toString()
+            if (asString && asString !== '[object Object]') return asString
+        }
+        return ''
+    }
+    return String(candidate)
+}
+
 const PantryItemDetails = ({
     item,
     visible,
@@ -104,12 +122,7 @@ const PantryItemDetails = ({
         return getCategoryName(entry)
     }
 
-    const itemKey =
-        item?._id != null
-            ? String(item._id)
-            : item?.id != null
-              ? String(item.id)
-              : ''
+    const itemKey = resolveItemKey(item)
 
     useEffect(() => {
         if (!item) return
@@ -119,12 +132,7 @@ const PantryItemDetails = ({
             .filter(Boolean)
 
         setEditedValues((prev) => {
-            const prevKey =
-                prev?._id != null
-                    ? String(prev._id)
-                    : prev?.id != null
-                      ? String(prev.id)
-                      : ''
+            const prevKey = resolveItemKey(prev)
             if (itemKey && prevKey === itemKey) {
                 const inferredLocationId = inferLocationIdFromCategories(
                     prev.category,

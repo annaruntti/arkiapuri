@@ -30,8 +30,14 @@ const ShoppingListDetailScreen = ({ route, navigation }) => {
         if (isValidShoppingList(route.params?.shoppingList)) return
 
         const listId = route.params?.listId
+        const currentId =
+            shoppingList?._id != null ? String(shoppingList._id) : ''
+        if (currentId && (!listId || currentId === String(listId))) {
+            return
+        }
+
         if (!listId || listId === 'details') {
-            navigation.navigate('Ostoslista')
+            if (!currentId) navigation.navigate('Ostoslista')
             return
         }
 
@@ -40,7 +46,9 @@ const ShoppingListDetailScreen = ({ route, navigation }) => {
             try {
                 const token = await storage.getItem('userToken')
                 if (!token) {
-                    if (!cancelled) navigation.navigate('Ostoslista')
+                    if (!cancelled && !currentId) {
+                        navigation.navigate('Ostoslista')
+                    }
                     return
                 }
 
@@ -76,7 +84,12 @@ const ShoppingListDetailScreen = ({ route, navigation }) => {
         return () => {
             cancelled = true
         }
-    }, [route.params?.listId, route.params?.shoppingList, navigation])
+    }, [
+        route.params?.listId,
+        route.params?.shoppingList,
+        navigation,
+        shoppingList,
+    ])
 
     const fetchShoppingLists = useCallback(async () => {
         try {

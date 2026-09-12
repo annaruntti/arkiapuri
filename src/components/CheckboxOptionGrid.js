@@ -1,4 +1,3 @@
-import { useRef } from 'react'
 import { StyleSheet, TouchableOpacity, View } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
 import CustomText from './CustomText'
@@ -27,19 +26,13 @@ const sortShortThenLong = (items) => {
 
 const CheckboxOptionGrid = ({ options = [], groups = [], value = [], onSelect }) => {
     const selected = Array.isArray(value) ? value.map(String) : []
-    const toggleLock = useRef(false)
 
     const toggle = (optionValue) => {
-        if (toggleLock.current) return
-        toggleLock.current = true
         const key = String(optionValue)
         const next = selected.includes(key)
             ? selected.filter((item) => item !== key)
             : [...selected, key]
         onSelect?.(next)
-        setTimeout(() => {
-            toggleLock.current = false
-        }, 200)
     }
 
     const renderGrid = (items) => (
