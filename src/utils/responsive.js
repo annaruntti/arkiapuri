@@ -62,8 +62,8 @@ export const createResponsiveStyles = (styles) => {
 export const getContainerMaxWidth = () => {
     const { width } = getScreenDimensions()
 
-    if (width >= BREAKPOINTS.large) return 960
-    if (width >= BREAKPOINTS.desktop) return 960
+    if (width >= BREAKPOINTS.large) return 800
+    if (width >= BREAKPOINTS.desktop) return 800
     if (width >= BREAKPOINTS.tablet) return 640
     return 400 // Mobile max width (current)
 }

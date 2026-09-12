@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { StyleSheet, TouchableOpacity, View } from 'react-native'
 import CustomText from '../components/CustomText'
+import ContentContainer from '../components/ContentContainer'
 import LoginPromptModal from '../components/LoginPromptModal'
 import ResponsiveLayout from '../components/ResponsiveLayout'
 import TableMonth from '../components/TableMonth'
@@ -43,11 +44,13 @@ const ReadingOrderScreen = ({}) => {
             <View style={styles.container}>
                 {/* Content */}
                 <View style={styles.contentContainer}>
-                    {activeTab === 'week' ? (
-                        <TableWeek onRequireLogin={handleRequireLogin} />
-                    ) : (
-                        <TableMonth onRequireLogin={handleRequireLogin} />
-                    )}
+                    <ContentContainer>
+                        {activeTab === 'week' ? (
+                            <TableWeek onRequireLogin={handleRequireLogin} />
+                        ) : (
+                            <TableMonth onRequireLogin={handleRequireLogin} />
+                        )}
+                    </ContentContainer>
                 </View>
 
                 <LoginPromptModal {...loginPromptProps} />
@@ -110,18 +113,5 @@ const styles = StyleSheet.create({
     contentContainer: {
         flex: 1,
         paddingTop: 53,
-    },
-    desktopContentWrapper: {
-        flex: 1,
-        width: '100%',
-        maxWidth: 960,
-        alignSelf: 'center',
-        position: 'relative',
-        paddingHorizontal: 40,
-    },
-    fullWidth: {
-        flex: 1,
-        width: '100%',
-        position: 'relative',
     },
 })

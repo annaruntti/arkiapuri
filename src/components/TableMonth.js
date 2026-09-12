@@ -410,7 +410,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#ffffff',
     },
     todayContainer: {
-        backgroundColor: '#f0f8ff',
+        backgroundColor: '#F4F0FF',
         borderColor: '#5844BB',
     },
     emptyDay: {

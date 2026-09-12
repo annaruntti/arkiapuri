@@ -1057,7 +1057,6 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#f9fafb',
         width: '100%',
-        maxWidth: 960,
     },
     list: {
         width: '100%',
@@ -1145,7 +1144,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     dateSection: {
-        backgroundColor: '#ffffff',
+        backgroundColor: '#F4F0FF',
         padding: 15,
         borderRadius: 10,
         marginBottom: 10,
@@ -1324,7 +1323,7 @@ const styles = StyleSheet.create({
         borderStyle: 'dashed',
     },
     dateSectionDropTarget: {
-        backgroundColor: '#f0f8ff',
+        backgroundColor: '#E8E0FF',
         borderWidth: 2,
         borderColor: '#5844BB',
         borderStyle: 'dashed',

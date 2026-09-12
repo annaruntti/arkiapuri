@@ -26,8 +26,7 @@ const getRefId = (value) => {
 
 const FamilySection = ({ household, onManagePress }) => {
     const { isDesktop } = useResponsiveDimensions()
-
-    if (!household) return null
+    const members = household?.members || []
 
     return (
         <View style={styles.familySection}>
@@ -38,28 +37,34 @@ const FamilySection = ({ household, onManagePress }) => {
                         isDesktop && styles.desktopFamilyTitle,
                     ]}
                 >
-                    {household.name}
+                    {household?.name || 'Perhe'}
                 </CustomText>
             </View>
 
             <View style={styles.familyMembers}>
-                {household.members.map((member) => (
-                    <ListItem
-                        key={member._id}
-                        image={getProfileImageSource(member.userId)}
-                        imageShape="circle"
-                        imageSize={48}
-                        title={member.userId?.username}
-                        subtitle={member.userId?.email}
-                        details={
-                            getRefId(household.owner) ===
-                            getRefId(member.userId)
-                                ? 'Omistaja'
-                                : undefined
-                        }
-                        style={styles.memberItem}
-                    />
-                ))}
+                {members.length === 0 ? (
+                    <CustomText style={styles.emptyText}>
+                        Ei perheenjäseniä vielä.
+                    </CustomText>
+                ) : (
+                    members.map((member) => (
+                        <ListItem
+                            key={member._id}
+                            image={getProfileImageSource(member.userId)}
+                            imageShape="circle"
+                            imageSize={48}
+                            title={member.userId?.username}
+                            subtitle={member.userId?.email}
+                            details={
+                                getRefId(household.owner) ===
+                                getRefId(member.userId)
+                                    ? 'Omistaja'
+                                    : undefined
+                            }
+                            style={styles.memberItem}
+                        />
+                    ))
+                )}
                 <Button
                     title="Hallinnoi perhettä"
                     type="SECONDARY"
@@ -78,11 +83,13 @@ const styles = StyleSheet.create({
         width: '100%',
         backgroundColor: 'transparent',
     },
+    emptyText: {
+        color: '#6b7280',
+        fontSize: 15,
+        marginBottom: 8,
+    },
     familyHeader: {
-        marginBottom: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#e5e7eb',
-        paddingBottom: 12,
+        marginBottom: 12,
     },
     familyTitle: {
         fontSize: 18,
@@ -97,8 +104,6 @@ const styles = StyleSheet.create({
     },
     memberItem: {
         backgroundColor: '#ffffff',
-        borderWidth: 1,
-        borderColor: '#e5e7eb',
     },
     manageFamilyButton: {
         width: '100%',

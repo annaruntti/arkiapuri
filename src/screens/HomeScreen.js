@@ -684,7 +684,7 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-start',
         paddingBottom: 40,
         paddingHorizontal: 40,
-        maxWidth: 960,
+        maxWidth: 800,
         gap: 30,
     },
     desktopCard: {

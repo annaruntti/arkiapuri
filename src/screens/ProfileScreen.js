@@ -326,7 +326,7 @@ const ProfileScreen = () => {
                                 </View>
 
                                 <View style={styles.actions}>
-                                    {!loadingHousehold && (
+                                    {!loadingHousehold ? (
                                         <FamilySection
                                             household={household}
                                             onManagePress={() =>
@@ -335,7 +335,7 @@ const ProfileScreen = () => {
                                                 )
                                             }
                                         />
-                                    )}
+                                    ) : null}
 
                                     <View style={styles.lastActions}>
                                         <Button
@@ -367,30 +367,29 @@ const styles = StyleSheet.create({
         flexGrow: 1,
     },
     container: {
-        flex: 1,
-        justifyContent: 'center',
+        width: '100%',
+        justifyContent: 'flex-start',
         alignItems: 'center',
         paddingHorizontal: 20,
-        paddingVertical: 40,
-        minHeight: '100%',
+        paddingTop: 24,
+        paddingBottom: 40,
         backgroundColor: '#f9fafb',
     },
     desktopContainer: {
         paddingHorizontal: 24,
-        paddingVertical: 48,
+        paddingTop: 32,
+        paddingBottom: 48,
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         backgroundColor: '#f9fafb',
         width: '100%',
-        ...(Platform.OS === 'web' && {
-            minHeight: '100vh',
-        }),
     },
     tabletContainer: {
         paddingHorizontal: 24,
-        paddingVertical: 48,
+        paddingTop: 32,
+        paddingBottom: 48,
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         backgroundColor: '#f9fafb',
         width: '100%',
     },

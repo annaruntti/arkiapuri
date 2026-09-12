@@ -2,14 +2,7 @@ import { MaterialIcons } from '@expo/vector-icons'
 import { useFocusEffect } from '@react-navigation/native'
 import axios from 'axios'
 import React, { useState } from 'react'
-import {
-    Alert,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    TextInput,
-    View,
-} from 'react-native'
+import { Alert, ScrollView, StyleSheet, TextInput, View } from 'react-native'
 import { AUTH_FORM_MAX_WIDTH } from '../components/AuthLayout'
 import Button from '../components/Button'
 import CustomText from '../components/CustomText'
@@ -329,7 +322,10 @@ const FamilyManagementScreen = ({ navigation }) => {
 
     if (loading) {
         return (
-            <ResponsiveLayout activeRoute="ProfileStack">
+            <ResponsiveLayout
+                activeRoute="ProfileStack"
+                contentBackgroundColor="#f9fafb"
+            >
                 <View style={styles.loadingContainer}>
                     <CustomText>Ladataan...</CustomText>
                 </View>
@@ -339,7 +335,10 @@ const FamilyManagementScreen = ({ navigation }) => {
 
     if (!household) {
         return (
-            <ResponsiveLayout activeRoute="ProfileStack">
+            <ResponsiveLayout
+                activeRoute="ProfileStack"
+                contentBackgroundColor="#f9fafb"
+            >
                 <ScrollView
                     style={styles.scrollView}
                     contentContainerStyle={styles.scrollContent}
@@ -378,7 +377,10 @@ const FamilyManagementScreen = ({ navigation }) => {
     }
 
     return (
-        <ResponsiveLayout activeRoute="ProfileStack">
+        <ResponsiveLayout
+            activeRoute="ProfileStack"
+            contentBackgroundColor="#f9fafb"
+        >
             <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
@@ -463,6 +465,7 @@ const FamilyManagementScreen = ({ navigation }) => {
                                                 : undefined
                                         }
                                         deleteAccessibilityLabel={`Poista ${displayName}`}
+                                        style={styles.listCard}
                                     />
                                 )
                             })}
@@ -501,6 +504,7 @@ const FamilyManagementScreen = ({ navigation }) => {
                                                 : undefined
                                         }
                                         deleteAccessibilityLabel={`Peru kutsu osoitteeseen ${invitation.email}`}
+                                        style={styles.listCard}
                                     />
                                 ))}
                             </View>
@@ -529,37 +533,36 @@ const FamilyManagementScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
     scrollView: {
         flex: 1,
-        backgroundColor: '#ffffff',
+        backgroundColor: '#f9fafb',
     },
     scrollContent: {
         flexGrow: 1,
     },
     container: {
-        flex: 1,
-        justifyContent: 'center',
+        width: '100%',
+        justifyContent: 'flex-start',
         alignItems: 'center',
         paddingHorizontal: 20,
-        paddingVertical: 40,
-        minHeight: '100%',
-        backgroundColor: '#ffffff',
+        paddingTop: 24,
+        paddingBottom: 40,
+        backgroundColor: '#f9fafb',
     },
     desktopContainer: {
         paddingHorizontal: 24,
-        paddingVertical: 48,
+        paddingTop: 32,
+        paddingBottom: 48,
         alignItems: 'center',
         justifyContent: 'flex-start',
-        backgroundColor: '#ffffff',
+        backgroundColor: '#f9fafb',
         width: '100%',
-        ...(Platform.OS === 'web' && {
-            minHeight: '100vh',
-        }),
     },
     tabletContainer: {
         paddingHorizontal: 24,
-        paddingVertical: 48,
+        paddingTop: 32,
+        paddingBottom: 48,
         alignItems: 'center',
         justifyContent: 'flex-start',
-        backgroundColor: '#ffffff',
+        backgroundColor: '#f9fafb',
         width: '100%',
     },
     content: {
@@ -577,6 +580,10 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: '#f9fafb',
+    },
+    listCard: {
+        backgroundColor: '#ffffff',
     },
     emptyState: {
         width: '100%',
