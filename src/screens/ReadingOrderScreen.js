@@ -36,7 +36,10 @@ const ReadingOrderScreen = ({}) => {
     )
 
     return (
-        <ResponsiveLayout activeRoute="ReadingOrderStack">
+        <ResponsiveLayout
+            activeRoute="ReadingOrderStack"
+            contentBackgroundColor="#f9fafb"
+        >
             <View style={styles.container}>
                 {/* Content */}
                 <View style={styles.contentContainer}>
@@ -64,7 +67,7 @@ export default ReadingOrderScreen
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#f9fafb',
         position: 'relative',
     },
     tabContainer: {
@@ -73,7 +76,7 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         flexDirection: 'row',
-        backgroundColor: '#f8f9fa',
+        backgroundColor: '#f9fafb',
         borderBottomWidth: 1,
         borderBottomColor: '#dee2e6',
         zIndex: 10000000,

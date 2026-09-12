@@ -41,20 +41,22 @@ const AddActionSection = ({
                         />
                     }
                 />
-                <Button
-                    title={secondaryTitle}
-                    type="SECONDARY"
-                    fullWidth={!isDesktop}
-                    onPress={onSecondaryPress}
-                    style={isDesktop ? styles.desktopButton : undefined}
-                    icon={
-                        <MaterialIcons
-                            name={secondaryIcon}
-                            size={22}
-                            color="#1f2937"
-                        />
-                    }
-                />
+                {secondaryTitle && onSecondaryPress ? (
+                    <Button
+                        title={secondaryTitle}
+                        type="SECONDARY"
+                        fullWidth={!isDesktop}
+                        onPress={onSecondaryPress}
+                        style={isDesktop ? styles.desktopButton : undefined}
+                        icon={
+                            <MaterialIcons
+                                name={secondaryIcon}
+                                size={22}
+                                color="#1f2937"
+                            />
+                        }
+                    />
+                ) : null}
             </View>
         </PrimaryActionFade>
     )

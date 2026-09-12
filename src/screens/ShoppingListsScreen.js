@@ -1,14 +1,14 @@
 import axios from 'axios'
-import { useEffect, useState } from 'react'
+import { useFocusEffect, useNavigation } from '@react-navigation/native'
+import { useCallback, useEffect, useState } from 'react'
 import { Alert, StyleSheet, View } from 'react-native'
+import AddActionSection from '../components/AddActionSection'
 import Button from '../components/Button'
 import CustomText from '../components/CustomText'
-import PrimaryActionFade from '../components/PrimaryActionFade'
 import ListItem from '../components/ListItem'
 import FormAddShoppingList from '../components/FormAddShoppingList'
 import LoginPromptModal from '../components/LoginPromptModal'
 import useLoginPrompt from '../hooks/useLoginPrompt'
-import ShoppingListDetail from '../components/ShoppingListDetail'
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
 
@@ -18,11 +18,11 @@ import ContentContainer from '../components/ContentContainer'
 import StickyListLayout from '../components/StickyListLayout'
 import { useResponsiveDimensions } from '../utils/responsive'
 
-const ShoppingListsScreen = () => {
+const ShoppingListsScreen = ({ route }) => {
+    const navigation = useNavigation()
     const [modalVisible, setModalVisible] = useState(false)
     const { showLoginPrompt, loginPromptProps } = useLoginPrompt()
     const [shoppingLists, setShoppingLists] = useState([])
-    const [selectedList, setSelectedList] = useState(null)
     const { isDesktop } = useResponsiveDimensions()
 
     const fetchShoppingLists = async () => {
@@ -44,13 +44,6 @@ const ShoppingListsScreen = () => {
             if (response.data.success) {
                 const lists = response.data.shoppingLists
                 setShoppingLists(lists)
-                setSelectedList((prev) => {
-                    if (!prev) return prev
-                    const refreshed = lists.find(
-                        (list) => String(list._id) === String(prev._id)
-                    )
-                    return refreshed ?? prev
-                })
                 return lists
             } else {
                 console.error(
@@ -70,39 +63,22 @@ const ShoppingListsScreen = () => {
         }
     }
 
-    const fetchPantryItems = async () => {
-        try {
-            const token = await storage.getItem('userToken')
-
-            if (!token) {
-                return []
-            }
-
-            const response = await axios.get(getServerUrl('/pantry'), {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            })
-
-            if (response.data.success) {
-                return response.data.pantry.items
-            } else {
-                console.error('Failed to fetch pantry items:', response.data)
-                Alert.alert('Virhe', 'Pentterin sisältöä ei voitu hakea')
-                return []
-            }
-        } catch (error) {
-            console.error('Error fetching pantry items:', error)
-            if (error?.response?.status !== 401) {
-                Alert.alert('Virhe', 'Pentterin tietojen haku epäonnistui')
-            }
-            return []
-        }
-    }
+    useFocusEffect(
+        useCallback(() => {
+            fetchShoppingLists()
+        }, [])
+    )
 
     useEffect(() => {
-        fetchShoppingLists()
-    }, [])
+        const updated = route.params?.updatedShoppingList
+        if (!updated?._id) return
+        setShoppingLists((prev) =>
+            prev.map((list) =>
+                String(list._id) === String(updated._id) ? updated : list
+            )
+        )
+        navigation.setParams({ updatedShoppingList: undefined })
+    }, [route.params?.updatedShoppingList])
 
     const handleCreateList = async (data) => {
         try {
@@ -129,18 +105,10 @@ const ShoppingListsScreen = () => {
     }
 
     const handleViewList = (list) => {
-        setSelectedList(list)
-    }
-
-    const handleListUpdate = (updatedList) => {
-        setShoppingLists((prev) =>
-            prev.map((list) =>
-                String(list._id) === String(updatedList._id)
-                    ? updatedList
-                    : list
-            )
-        )
-        setSelectedList(updatedList)
+        navigation.navigate('Ostoslistan tiedot', {
+            listId: String(list._id),
+            shoppingList: list,
+        })
     }
 
     const renderShoppingList = (item) => (
@@ -148,6 +116,7 @@ const ShoppingListsScreen = () => {
             key={item._id}
             title={item.name}
             subtitle={item.description}
+            style={styles.listCard}
             trailing={
                 <Button
                     style={[
@@ -185,7 +154,7 @@ const ShoppingListsScreen = () => {
     )
 
     return (
-        <ResponsiveLayout>
+        <ResponsiveLayout contentBackgroundColor="#f9fafb">
             <ContentContainer>
                 <View style={styles.container}>
                     <ResponsiveModal
@@ -202,33 +171,20 @@ const ShoppingListsScreen = () => {
 
                     <LoginPromptModal {...loginPromptProps} />
 
-                    <ShoppingListDetail
-                        shoppingList={selectedList}
-                        visible={!!selectedList}
-                        onClose={() => setSelectedList(null)}
-                        onUpdate={handleListUpdate}
-                        fetchShoppingLists={fetchShoppingLists}
-                        fetchPantryItems={fetchPantryItems}
-                        onRequireLogin={(trigger, action) =>
-                            showLoginPrompt(trigger || 'shopping_list', action)
-                        }
-                    />
-
                     <View style={styles.content}>
                         <StickyListLayout
+                            chromeBackgroundColor="#f9fafb"
+                            style={styles.listLayout}
                             sticky={
-                                <PrimaryActionFade
-                                    style={[
-                                        styles.buttonContainer,
-                                        isDesktop &&
-                                            styles.desktopButtonContainer,
-                                    ]}
-                                >
-                                    <Button
-                                        title="Luo uusi ostoslista"
-                                        onPress={handleOpenCreateList}
+                                <View style={styles.addSticky}>
+                                    <AddActionSection
+                                        title="Lisää ostoslista"
+                                        hint="Luo ostoslista ostettaville tuotteille. Voit täydentää listaa myöhemmin."
+                                        primaryTitle="Luo uusi ostoslista"
+                                        primaryIcon="add"
+                                        onPrimaryPress={handleOpenCreateList}
                                     />
-                                </PrimaryActionFade>
+                                </View>
                             }
                             contentContainerStyle={{ paddingBottom: 20 }}
                         >
@@ -253,8 +209,18 @@ export default ShoppingListsScreen
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#f9fafb',
         padding: 10,
+    },
+    listLayout: {
+        backgroundColor: '#f9fafb',
+    },
+    addSticky: {
+        backgroundColor: '#f9fafb',
+        paddingBottom: 4,
+    },
+    listCard: {
+        backgroundColor: '#ffffff',
     },
     introText: {
         fontSize: 17,
@@ -362,18 +328,6 @@ const styles = StyleSheet.create({
         width: '100%',
         padding: 5,
     },
-    buttonContainer: {
-        flexDirection: 'row',
-        gap: 10,
-        marginBottom: 10,
-        paddingHorizontal: 5,
-        paddingTop: 10,
-        alignItems: 'flex-start',
-    },
-    desktopButtonContainer: {
-        justifyContent: 'flex-start',
-        alignItems: 'flex-start',
-    },
     listItemButton: {
         width: 100,
         flexShrink: 0,
@@ -384,21 +338,5 @@ const styles = StyleSheet.create({
         maxWidth: 120,
         paddingHorizontal: 12,
         marginTop: 0,
-    },
-    detailModalView: {
-        backgroundColor: 'white',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        height: '90%',
-        width: '100%',
-        paddingTop: 45,
-    },
-    detailContentContainer: {
-        flex: 1,
-        paddingHorizontal: 20,
-    },
-    modalBody: {
-        flex: 1,
-        padding: 15,
     },
 })

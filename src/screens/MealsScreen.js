@@ -692,6 +692,8 @@ const MealsScreen = ({ route, navigation }) => {
             <LoginPromptModal {...loginPromptProps} />
 
             <StickyListLayout
+                chromeBackgroundColor="#f9fafb"
+                style={styles.listLayout}
                 sticky={
                     <View style={styles.addSticky}>
                         <AddActionSection
@@ -714,10 +716,8 @@ const MealsScreen = ({ route, navigation }) => {
             >
                 <>
                     <View style={styles.findSection}>
-                        <CustomText style={styles.findHeading}>
-                            Etsi aterioita
-                        </CustomText>
                         <SearchSection
+                            heading="Etsi aterioita"
                             searchQuery={searchQuery}
                             onSearchChange={setSearchQuery}
                             onClearSearch={() => setSearchQuery('')}
@@ -891,7 +891,10 @@ const MealsScreen = ({ route, navigation }) => {
     )
 
     return (
-        <ResponsiveLayout activeRoute="MealsStack">
+        <ResponsiveLayout
+            activeRoute="MealsStack"
+            contentBackgroundColor="#f9fafb"
+        >
             <ContentContainer>{content}</ContentContainer>
         </ResponsiveLayout>
     )
@@ -900,7 +903,7 @@ const MealsScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#f9fafb',
         padding: 15,
         // todo: add these styles only to tablet
         // marginVertical: 15,
@@ -919,12 +922,15 @@ const styles = StyleSheet.create({
     listContent: {
         paddingBottom: 20,
     },
+    listLayout: {
+        backgroundColor: '#f9fafb',
+    },
     addSticky: {
-        backgroundColor: '#fff',
+        backgroundColor: '#f9fafb',
         paddingBottom: 4,
     },
     findSection: {
-        backgroundColor: '#fff',
+        backgroundColor: '#f9fafb',
         paddingTop: 4,
     },
     findHeading: {

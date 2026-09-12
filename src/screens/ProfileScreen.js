@@ -180,7 +180,10 @@ const ProfileScreen = () => {
     ]
 
     return (
-        <ResponsiveLayout activeRoute="ProfileStack">
+        <ResponsiveLayout
+            activeRoute="ProfileStack"
+            contentBackgroundColor="#f9fafb"
+        >
             <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
@@ -189,7 +192,7 @@ const ProfileScreen = () => {
                 <View style={getContainerStyle()}>
                     <View style={getContentStyle()}>
                         {!isLoggedIn ? (
-                            <>
+                            <View style={styles.profileCard}>
                                 <View style={styles.header}>
                                     <View
                                         style={[
@@ -232,6 +235,7 @@ const ProfileScreen = () => {
                                 <View style={styles.lastActions}>
                                     <Button
                                         title="Kirjaudu sisään"
+                                        fullWidth
                                         style={styles.lastActionButton}
                                         onPress={() =>
                                             openAuthScreen(
@@ -243,6 +247,7 @@ const ProfileScreen = () => {
                                     <Button
                                         title="Luo käyttäjätunnus"
                                         type="TERTIARY"
+                                        fullWidth
                                         style={styles.lastActionButton}
                                         onPress={() =>
                                             openAuthScreen(
@@ -252,62 +257,64 @@ const ProfileScreen = () => {
                                         }
                                     />
                                 </View>
-                            </>
+                            </View>
                         ) : (
                             <>
-                                <View style={styles.header}>
-                                    <TouchableOpacity onPress={pickImage}>
-                                        <View
-                                            style={[
-                                                styles.profileImageContainer,
-                                                isDesktop &&
-                                                    styles.desktopProfileImage,
-                                                isTablet &&
-                                                    styles.tabletProfileImage,
-                                            ]}
-                                        >
-                                            <Image
-                                                source={getProfileImageSource(
-                                                    profile
-                                                )}
-                                                style={styles.profileImage}
-                                                resizeMode="cover"
-                                            />
-                                            <View style={styles.editOverlay}>
-                                                <CustomText
-                                                    style={styles.editText}
-                                                >
-                                                    Muokkaa
-                                                </CustomText>
+                                <View style={styles.profileCard}>
+                                    <View style={styles.header}>
+                                        <TouchableOpacity onPress={pickImage}>
+                                            <View
+                                                style={[
+                                                    styles.profileImageContainer,
+                                                    isDesktop &&
+                                                        styles.desktopProfileImage,
+                                                    isTablet &&
+                                                        styles.tabletProfileImage,
+                                                ]}
+                                            >
+                                                <Image
+                                                    source={getProfileImageSource(
+                                                        profile
+                                                    )}
+                                                    style={styles.profileImage}
+                                                    resizeMode="cover"
+                                                />
+                                                <View style={styles.editOverlay}>
+                                                    <CustomText
+                                                        style={styles.editText}
+                                                    >
+                                                        Muokkaa
+                                                    </CustomText>
+                                                </View>
                                             </View>
+                                        </TouchableOpacity>
+
+                                        <View style={styles.userInfo}>
+                                            <CustomText
+                                                style={[
+                                                    styles.username,
+                                                    isDesktop &&
+                                                        styles.desktopUsername,
+                                                ]}
+                                            >
+                                                {profile?.username}
+                                            </CustomText>
+                                            <CustomText
+                                                style={[
+                                                    styles.email,
+                                                    isDesktop &&
+                                                        styles.desktopEmail,
+                                                ]}
+                                            >
+                                                {profile?.email}
+                                            </CustomText>
                                         </View>
-                                    </TouchableOpacity>
-
-                                    <View style={styles.userInfo}>
-                                        <CustomText
-                                            style={[
-                                                styles.username,
-                                                isDesktop &&
-                                                    styles.desktopUsername,
-                                            ]}
-                                        >
-                                            {profile?.username}
-                                        </CustomText>
-                                        <CustomText
-                                            style={[
-                                                styles.email,
-                                                isDesktop && styles.desktopEmail,
-                                            ]}
-                                        >
-                                            {profile?.email}
-                                        </CustomText>
                                     </View>
-                                </View>
 
-                                <View style={styles.actions}>
                                     <View style={styles.lastActions}>
                                         <Button
                                             title="Muokkaa tietoja"
+                                            fullWidth
                                             style={styles.lastActionButton}
                                             onPress={() =>
                                                 navigation.navigate(
@@ -316,7 +323,9 @@ const ProfileScreen = () => {
                                             }
                                         />
                                     </View>
+                                </View>
 
+                                <View style={styles.actions}>
                                     {!loadingHousehold && (
                                         <FamilySection
                                             household={household}
@@ -332,6 +341,7 @@ const ProfileScreen = () => {
                                         <Button
                                             title="Kirjaudu ulos"
                                             type="TERTIARY"
+                                            fullWidth
                                             style={styles.lastActionButton}
                                             onPress={handleLogout}
                                         />
@@ -351,7 +361,7 @@ export default ProfileScreen
 const styles = StyleSheet.create({
     scrollView: {
         flex: 1,
-        backgroundColor: '#ffffff',
+        backgroundColor: '#f9fafb',
     },
     scrollContent: {
         flexGrow: 1,
@@ -363,14 +373,14 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingVertical: 40,
         minHeight: '100%',
-        backgroundColor: '#ffffff',
+        backgroundColor: '#f9fafb',
     },
     desktopContainer: {
         paddingHorizontal: 24,
         paddingVertical: 48,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#ffffff',
+        backgroundColor: '#f9fafb',
         width: '100%',
         ...(Platform.OS === 'web' && {
             minHeight: '100vh',
@@ -381,7 +391,7 @@ const styles = StyleSheet.create({
         paddingVertical: 48,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#ffffff',
+        backgroundColor: '#f9fafb',
         width: '100%',
     },
     content: {
@@ -401,9 +411,18 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 0,
     },
+    profileCard: {
+        width: '100%',
+        backgroundColor: '#F4F0FF',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#D8CEF8',
+        padding: 16,
+        marginBottom: 20,
+    },
     header: {
         alignItems: 'center',
-        marginBottom: 28,
+        marginBottom: 16,
         width: '100%',
     },
     profileImageContainer: {
@@ -486,15 +505,16 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     lastActions: {
-        alignSelf: 'center',
+        width: '100%',
+        alignSelf: 'stretch',
         alignItems: 'stretch',
         gap: 12,
     },
     lastActionButton: {
+        width: '100%',
         alignSelf: 'stretch',
-        minWidth: 240,
-        minHeight: 48,
-        paddingHorizontal: 36,
-        paddingVertical: 12,
+        minHeight: 45,
+        paddingHorizontal: 14,
+        paddingVertical: 7,
     },
 })

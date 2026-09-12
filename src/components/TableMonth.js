@@ -352,7 +352,7 @@ const TableMonth = ({ onRequireLogin }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#f9fafb',
     },
     monthHeader: {
         flexDirection: 'row',
@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
     },
     weekDaysContainer: {
         flexDirection: 'row',
-        backgroundColor: '#f8f9fa',
+        backgroundColor: '#f9fafb',
         paddingVertical: 10,
     },
     weekDayHeader: {
@@ -407,6 +407,7 @@ const styles = StyleSheet.create({
         borderColor: '#eee',
         padding: 5,
         minHeight: 100,
+        backgroundColor: '#ffffff',
     },
     todayContainer: {
         backgroundColor: '#f0f8ff',
@@ -416,7 +417,7 @@ const styles = StyleSheet.create({
         flex: 1,
         borderWidth: 0.5,
         borderColor: '#eee',
-        backgroundColor: '#f8f9fa',
+        backgroundColor: '#f3f4f6',
     },
     dayHeader: {
         marginBottom: 5,

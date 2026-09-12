@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         paddingHorizontal: 14,
         paddingVertical: 14,
-        minHeight: 48,
+        minHeight: 45,
     },
     optionButtonSelected: {
         borderColor: '#5844BB',

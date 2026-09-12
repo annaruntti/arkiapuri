@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useNavigation } from '@react-navigation/native'
 import {
     Alert,
     Platform,
@@ -21,7 +22,6 @@ import GenericFilterSection from './GenericFilterSection'
 import ListSortControl from './ListSortControl'
 import ListStatsRow from './ListStatsRow'
 import PantryItemDetails from './PantryItemDetails'
-import ResponsiveModal from './ResponsiveModal'
 import SearchSection from './SearchSection'
 import StickyListLayout from './StickyListLayout'
 import ShoppingListItemQuantityControl from './ShoppingListItemQuantityControl'
@@ -38,7 +38,6 @@ import {
     SHOPPING_SORT_OPTIONS,
     SORT_OPTION_IDS,
 } from '../utils/listSort'
-import { useResponsiveDimensions } from '../utils/responsive'
 import { resolveAppUnit } from '../utils/units'
 import storage from '../utils/storage'
 
@@ -69,13 +68,13 @@ const MODAL_VIEWS = {
 
 const ShoppingListDetail = ({
     shoppingList,
-    visible,
     onClose,
     onUpdate,
     fetchShoppingLists,
     fetchPantryItems,
     onRequireLogin,
 }) => {
+    const navigation = useNavigation()
     const [checkedItems, setCheckedItems] = useState([])
     const checkedItemsRef = useRef(checkedItems)
     checkedItemsRef.current = checkedItems
@@ -83,7 +82,6 @@ const ShoppingListDetail = ({
     const [autoOpenScanner, setAutoOpenScanner] = useState(false)
     const [loading, setLoading] = useState(false)
     const [selectedItem, setSelectedItem] = useState(null)
-    const { isDesktop } = useResponsiveDimensions()
     const boughtItemCount = (shoppingList?.items || []).filter(
         (item) => item.bought
     ).length
@@ -97,13 +95,11 @@ const ShoppingListDetail = ({
         .filter(Boolean)
 
     useEffect(() => {
-        if (!visible) {
-            setModalView(MODAL_VIEWS.LIST)
-            setSelectedItem(null)
-            setCheckedItems([])
-            setAutoOpenScanner(false)
-        }
-    }, [visible])
+        setModalView(MODAL_VIEWS.LIST)
+        setSelectedItem(null)
+        setCheckedItems([])
+        setAutoOpenScanner(false)
+    }, [shoppingList?._id])
 
     const {
         searchQuery,
@@ -130,6 +126,22 @@ const ShoppingListDetail = ({
         setAutoOpenScanner(false)
     }
 
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+            if (modalView !== MODAL_VIEWS.LIST) {
+                e.preventDefault()
+                goToListView()
+                return
+            }
+            if (e.data.action.type === 'NAVIGATE') {
+                return
+            }
+            e.preventDefault()
+            onClose?.()
+        })
+        return unsubscribe
+    }, [navigation, modalView, onClose])
+
     const openAddItemView = async ({ openScanner = false } = {}) => {
         const token = await storage.getItem('userToken')
         if (!token && onRequireLogin) {
@@ -143,20 +155,6 @@ const ShoppingListDetail = ({
         setModalView(MODAL_VIEWS.ADD_ITEM)
     }
 
-    const handleModalClose = () => {
-        if (modalView !== MODAL_VIEWS.LIST) {
-            goToListView()
-            return
-        }
-        onClose?.()
-    }
-
-    const modalTitle =
-        modalView === MODAL_VIEWS.ADD_ITEM
-            ? 'Lisää tuote ostoslistaan'
-            : modalView === MODAL_VIEWS.ITEM_DETAILS
-              ? 'Tuotteen tiedot'
-              : 'Ostoslistan tiedot'
     const handleCheckItem = (item) => {
         const itemId = getListItemId(item)
         if (!itemId) return
@@ -631,6 +629,7 @@ const ShoppingListDetail = ({
         <FoodListItemRow
             variant="card"
             item={item}
+            style={styles.listCard}
             bought={Boolean(item.bought)}
             showImageInfoIcon
             hideQuantityInDetails
@@ -668,13 +667,7 @@ const ShoppingListDetail = ({
     )
 
     return (
-        <ResponsiveModal
-            visible={visible}
-            onClose={handleModalClose}
-            title={modalTitle}
-            showBackButton={modalView !== MODAL_VIEWS.LIST}
-            maxWidth={640}
-        >
+        <View style={styles.container}>
             {!shoppingList ? null : modalView === MODAL_VIEWS.ADD_ITEM ? (
                 <AddFoodItemPanel
                     location="shopping-list"
@@ -701,8 +694,10 @@ const ShoppingListDetail = ({
                     )}
 
                     <StickyListLayout
+                        chromeBackgroundColor="#f9fafb"
+                        style={styles.listLayout}
                         contentContainerStyle={
-                            checkedItems.length > 0 || boughtItemCount > 0
+                            checkedItems.length > 0
                                 ? styles.scrollContentWithFloatingBar
                                 : undefined
                         }
@@ -736,10 +731,8 @@ const ShoppingListDetail = ({
                     >
                         <View style={styles.itemsListContainer}>
                             <View style={styles.findSection}>
-                                <CustomText style={styles.findHeading}>
-                                    Etsi tuotteita
-                                </CustomText>
                                 <SearchSection
+                                    heading="Etsi tuotteita"
                                     searchQuery={searchQuery}
                                     onSearchChange={setSearchQuery}
                                     onClearSearch={() => setSearchQuery('')}
@@ -823,108 +816,84 @@ const ShoppingListDetail = ({
                                 nestedScrollEnabled={true}
                                 stickySectionHeadersEnabled={false}
                             />
+                            {boughtItemCount > 0 && (
+                                <View style={styles.listEndActions}>
+                                    <Button
+                                        title={`Palauta kerätyt (${boughtItemCount})`}
+                                        type="SECONDARY"
+                                        fullWidth
+                                        onPress={restoreBoughtItemsToList}
+                                        style={styles.listEndActionButton}
+                                    />
+                                    <Button
+                                        title={`Poista kerätyt (${boughtItemCount})`}
+                                        type="TERTIARY"
+                                        fullWidth
+                                        onPress={deleteBoughtItemsFromList}
+                                        style={styles.listEndActionButton}
+                                    />
+                                </View>
+                            )}
                         </View>
                     </StickyListLayout>
 
-                    {(checkedItems.length > 0 || boughtItemCount > 0) && (
+                    {checkedItems.length > 0 && (
                         <View
                             style={[
                                 styles.floatingActionBar,
-                                isDesktop && styles.desktopFloatingActionBar,
                                 { pointerEvents: 'box-none' },
                             ]}
                         >
-                            <View
-                                style={[
-                                    styles.floatingActionBarInner,
-                                    isDesktop &&
-                                        styles.desktopFloatingActionBarInner,
-                                ]}
-                            >
-                                {checkedItems.length > 0 && (
-                                    <>
-                                        {checkedFoodItemIds.length > 0 && (
-                                            <Button
-                                                title={`Siirrä pentteriin (${checkedFoodItemIds.length})`}
-                                                type="PRIMARY"
-                                                size="small"
-                                                onPress={() =>
-                                                    moveCheckedToPantry(
-                                                        checkedFoodItemIds
-                                                    )
-                                                }
-                                                style={
-                                                    styles.floatingActionButton
-                                                }
-                                                textStyle={
-                                                    styles.floatingActionButtonText
-                                                }
-                                            />
-                                        )}
-                                        <Button
-                                            title={`Poista valitut (${checkedItems.length})`}
-                                            type="TERTIARY"
-                                            size="small"
-                                            onPress={() =>
-                                                deleteCheckedItems(checkedItems)
-                                            }
-                                            style={[
-                                                styles.floatingActionButton,
-                                                styles.floatingTertiaryButton,
-                                            ]}
-                                            textStyle={
-                                                styles.floatingActionButtonText
-                                            }
-                                        />
-                                    </>
+                            <View style={styles.floatingActionBarInner}>
+                                {checkedFoodItemIds.length > 0 && (
+                                    <Button
+                                        title={`Siirrä pentteriin (${checkedFoodItemIds.length})`}
+                                        type="PRIMARY"
+                                        fullWidth
+                                        onPress={() =>
+                                            moveCheckedToPantry(
+                                                checkedFoodItemIds
+                                            )
+                                        }
+                                        style={styles.floatingActionButton}
+                                    />
                                 )}
-                                {boughtItemCount > 0 && (
-                                    <>
-                                        <Button
-                                            title={`Palauta kerätyt (${boughtItemCount})`}
-                                            type="SECONDARY"
-                                            size="small"
-                                            onPress={restoreBoughtItemsToList}
-                                            style={[
-                                                styles.floatingActionButton,
-                                                styles.floatingSecondaryButton,
-                                            ]}
-                                            textStyle={
-                                                styles.floatingActionButtonText
-                                            }
-                                        />
-                                        <Button
-                                            title={`Poista kerätyt (${boughtItemCount})`}
-                                            type="TERTIARY"
-                                            size="small"
-                                            onPress={deleteBoughtItemsFromList}
-                                            style={[
-                                                styles.floatingActionButton,
-                                                styles.floatingTertiaryButton,
-                                            ]}
-                                            textStyle={
-                                                styles.floatingActionButtonText
-                                            }
-                                        />
-                                    </>
-                                )}
+                                <Button
+                                    title={`Poista valitut (${checkedItems.length})`}
+                                    type="TERTIARY"
+                                    fullWidth
+                                    onPress={() =>
+                                        deleteCheckedItems(checkedItems)
+                                    }
+                                    style={[
+                                        styles.floatingActionButton,
+                                        styles.floatingTertiaryButton,
+                                    ]}
+                                />
                             </View>
                         </View>
                     )}
                 </View>
             )}
-        </ResponsiveModal>
+        </View>
     )
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#f9fafb',
+    },
+    listLayout: {
+        flex: 1,
+        backgroundColor: '#f9fafb',
     },
     formWrapper: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#f9fafb',
+    },
+    listCard: {
+        backgroundColor: '#ffffff',
     },
     formHeader: {
         flexDirection: 'row',
@@ -942,12 +911,24 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#333',
     },
+    listEndActions: {
+        width: '100%',
+        gap: 10,
+        marginTop: 16,
+        marginBottom: 8,
+    },
+    listEndActionButton: {
+        width: '100%',
+        minHeight: 45,
+        paddingVertical: 7,
+        paddingHorizontal: 14,
+    },
     itemsListContainer: {
         flex: 1,
         minHeight: 400,
     },
     findSection: {
-        backgroundColor: '#fff',
+        backgroundColor: '#f9fafb',
         paddingTop: 4,
     },
     findHeading: {
@@ -1036,32 +1017,24 @@ const styles = StyleSheet.create({
         right: 0,
         bottom: 0,
         zIndex: 50,
-        paddingHorizontal: 12,
+        paddingHorizontal: 0,
         paddingTop: 8,
         paddingBottom: Platform.OS === 'ios' ? 16 : 10,
         backgroundColor: 'transparent',
     },
-    desktopFloatingActionBar: {
-        paddingHorizontal: 24,
-        paddingBottom: 14,
-    },
     floatingActionBarInner: {
         width: '100%',
-        gap: 6,
+        gap: 10,
         alignItems: 'stretch',
-    },
-    desktopFloatingActionBarInner: {
-        maxWidth: 280,
-        alignSelf: 'center',
-        width: '100%',
     },
     floatingActionButton: {
         width: '100%',
+        alignSelf: 'stretch',
         marginTop: 0,
         marginBottom: 0,
-        minHeight: 34,
-        paddingVertical: 6,
-        paddingHorizontal: 12,
+        minHeight: 45,
+        paddingVertical: 7,
+        paddingHorizontal: 14,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.18,
@@ -1071,33 +1044,11 @@ const styles = StyleSheet.create({
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.18)',
         }),
     },
-    floatingSecondaryButton: {
-        backgroundColor: '#38E4D9',
-        borderWidth: 0,
-    },
     floatingTertiaryButton: {
         backgroundColor: '#fff',
     },
-    floatingActionButtonText: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: '#000000',
-        textAlign: 'center',
-    },
     scrollContentWithFloatingBar: {
-        paddingBottom: 160,
-    },
-    fullWidthActionButton: {
-        width: '100%',
-        marginTop: 0,
-        marginBottom: 0,
-    },
-    desktopActionButton: {
-        width: '100%',
-        maxWidth: 300,
-        alignSelf: 'center',
-        marginTop: 0,
-        marginBottom: 0,
+        paddingBottom: 120,
     },
     addItemButtonsContainer: {
         flexDirection: 'row',
@@ -1134,7 +1085,7 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         gap: 10,
         marginBottom: 15,
-        backgroundColor: 'rgb(248, 248, 248)',
+        backgroundColor: '#ffffff',
         borderRadius: 10,
         padding: 15,
         boxShadow: 'rgba(0, 0, 0, 0.1) 0px 1px 2px',
@@ -1147,7 +1098,7 @@ const styles = StyleSheet.create({
         alignItems: 'stretch',
         gap: 15,
         marginBottom: 15,
-        backgroundColor: 'rgb(248, 248, 248)',
+        backgroundColor: '#ffffff',
         borderRadius: 10,
         padding: 15,
         boxShadow: 'rgba(0, 0, 0, 0.1) 0px 1px 2px',

@@ -432,11 +432,7 @@ const PantryScanReview = ({
                                                     : 'check-box-outline-blank'
                                             }
                                             size={24}
-                                            color={
-                                                row.selected
-                                                    ? '#5844BB'
-                                                    : '#888'
-                                            }
+                                            color="#000000"
                                         />
                                     </TouchableOpacity>
                                     <Image
@@ -616,11 +612,7 @@ const PantryScanReview = ({
                                                             : 'check-box-outline-blank'
                                                     }
                                                     size={24}
-                                                    color={
-                                                        row.selected
-                                                            ? '#5844BB'
-                                                            : '#888'
-                                                    }
+                                                    color="#000000"
                                                 />
                                             </View>
                                             <View style={styles.fields}>
@@ -824,7 +816,7 @@ const styles = StyleSheet.create({
     },
     submitButton: {
         minWidth: 240,
-        minHeight: 48,
+        minHeight: 45,
         paddingHorizontal: 36,
         paddingVertical: 12,
         borderRadius: 25,

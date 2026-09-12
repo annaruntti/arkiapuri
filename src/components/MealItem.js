@@ -12,6 +12,7 @@ const MealItem = ({ item, onPress, onDelete }) => (
         onPress={() => onPress(item)}
         onDelete={() => onDelete(item._id)}
         deleteAccessibilityLabel={`Poista ${item.name}`}
+        style={{ backgroundColor: '#ffffff' }}
     />
 )
 

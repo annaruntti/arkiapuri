@@ -16,6 +16,7 @@ import CustomInput from '../components/CustomInput'
 import CustomRadioButton from '../components/CustomRadioButton'
 import CustomText from '../components/CustomText'
 import ResponsiveLayout from '../components/ResponsiveLayout'
+import { AUTH_FORM_MAX_WIDTH } from '../components/AuthLayout'
 import { useLogin } from '../context/LoginProvider'
 import { getServerUrl } from '../utils/getServerUrl'
 import { passwordLengthRules } from '../utils/passwordRules'
@@ -258,7 +259,10 @@ const EditProfileScreen = () => {
     ]
 
     return (
-        <ResponsiveLayout activeRoute="ProfileStack">
+        <ResponsiveLayout
+            activeRoute="ProfileStack"
+            contentBackgroundColor="#f9fafb"
+        >
             <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
@@ -266,6 +270,7 @@ const EditProfileScreen = () => {
             >
                 <View style={getContainerStyle()}>
                     <View style={getContentStyle()}>
+                        <View style={styles.profileCard}>
                         <View style={styles.header}>
                             <CustomText
                                 style={[
@@ -364,19 +369,19 @@ const EditProfileScreen = () => {
                                 </TouchableOpacity>
                             </View>
 
-                            {/* Password Change Section */}
-                            <TouchableOpacity
-                                style={styles.passwordToggle}
+                            <Button
+                                title={
+                                    showPasswordFields
+                                        ? 'Sulje salasanan vaihto'
+                                        : 'Vaihda salasana'
+                                }
+                                type="SECONDARY"
+                                fullWidth
+                                style={styles.actionButton}
                                 onPress={() =>
                                     setShowPasswordFields(!showPasswordFields)
                                 }
-                            >
-                                <CustomText style={styles.passwordToggleText}>
-                                    {showPasswordFields
-                                        ? '− Sulje salasanan vaihto'
-                                        : '+ Vaihda salasana'}
-                                </CustomText>
-                            </TouchableOpacity>
+                            />
 
                             {showPasswordFields && (
                                 <View style={styles.passwordSection}>
@@ -434,25 +439,23 @@ const EditProfileScreen = () => {
                                         : 'Tallenna muutokset'
                                 }
                                 type="PRIMARY"
-                                style={styles.primaryButton}
+                                fullWidth
+                                style={styles.actionButton}
                                 onPress={handleSubmit(onSavePressed)}
                                 disabled={loading}
                             />
                             <Button
                                 title="Peruuta"
-                                style={styles.tertiaryButton}
                                 type="TERTIARY"
+                                fullWidth
+                                style={[styles.actionButton, styles.cancelButton]}
                                 onPress={() => navigation.goBack()}
                                 disabled={loading}
                             />
                         </View>
+                        </View>
 
-                        <View
-                            style={[
-                                styles.accountSection,
-                                { borderTopColor: '#e5e7eb' },
-                            ]}
-                        >
+                        <View style={styles.accountSection}>
                             <View style={styles.accountSectionHeader}>
                                 <CustomText
                                     style={[
@@ -470,7 +473,7 @@ const EditProfileScreen = () => {
                                 title="Poista tili pysyvästi"
                                 type="TERTIARY"
                                 fullWidth
-                                style={styles.tertiaryButton}
+                                style={styles.actionButton}
                                 onPress={onDeleteAccountPressed}
                                 disabled={loading}
                                 icon={
@@ -494,57 +497,70 @@ export default EditProfileScreen
 const styles = StyleSheet.create({
     scrollView: {
         flex: 1,
-        backgroundColor: '#ffffff',
+        backgroundColor: '#f9fafb',
     },
     scrollContent: {
         flexGrow: 1,
     },
     container: {
         flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
         paddingHorizontal: 20,
-        paddingVertical: 20,
+        paddingVertical: 40,
         minHeight: '100%',
+        backgroundColor: '#f9fafb',
     },
     desktopContainer: {
-        paddingHorizontal: 40,
-        paddingVertical: 24,
-        alignItems: 'flex-start',
-        backgroundColor: '#ffffff',
+        paddingHorizontal: 24,
+        paddingVertical: 48,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f9fafb',
         width: '100%',
-        maxWidth: 960,
-        alignSelf: 'flex-start',
-        minHeight: '100%',
+        ...(Platform.OS === 'web' && {
+            minHeight: '100vh',
+        }),
     },
     tabletContainer: {
-        paddingHorizontal: 32,
-        paddingVertical: 24,
-        alignItems: 'flex-start',
-        backgroundColor: '#ffffff',
+        paddingHorizontal: 24,
+        paddingVertical: 48,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f9fafb',
         width: '100%',
-        maxWidth: 960,
-        alignSelf: 'flex-start',
     },
     content: {
         width: '100%',
-        maxWidth: 500,
-        marginHorizontal: 'auto',
+        maxWidth: AUTH_FORM_MAX_WIDTH,
+        alignItems: 'center',
     },
     desktopContent: {
-        maxWidth: 640,
+        maxWidth: AUTH_FORM_MAX_WIDTH,
         width: '100%',
-        alignSelf: 'flex-start',
+        alignItems: 'center',
         padding: 0,
-        marginVertical: 0,
     },
     tabletContent: {
-        maxWidth: 640,
+        maxWidth: AUTH_FORM_MAX_WIDTH,
         width: '100%',
-        alignSelf: 'flex-start',
+        alignItems: 'center',
         padding: 0,
-        marginVertical: 0,
+    },
+    profileCard: {
+        width: '100%',
+        backgroundColor: '#F4F0FF',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#D8CEF8',
+        padding: 16,
+        marginBottom: 20,
     },
     header: {
-        marginBottom: 20,
+        alignItems: 'center',
+        paddingTop: 12,
+        marginBottom: 16,
+        width: '100%',
     },
     title: {
         fontSize: 24,
@@ -558,7 +574,7 @@ const styles = StyleSheet.create({
     form: {
         width: '100%',
         gap: 10,
-        marginBottom: 32,
+        marginBottom: 12,
     },
     fieldContainer: {
         marginBottom: 16,
@@ -570,7 +586,7 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     readOnlyField: {
-        backgroundColor: '#f3f4f6',
+        backgroundColor: '#ffffff',
         borderRadius: 8,
         padding: 14,
         borderWidth: 1,
@@ -591,7 +607,7 @@ const styles = StyleSheet.create({
         gap: 12,
         borderWidth: 1,
         borderColor: '#e5e7eb',
-        backgroundColor: '#f9fafb',
+        backgroundColor: '#ffffff',
         borderRadius: 8,
         paddingHorizontal: 14,
         paddingVertical: 12,
@@ -599,33 +615,12 @@ const styles = StyleSheet.create({
     },
     preferenceOptionSelected: {
         borderColor: '#5844BB',
-        backgroundColor: '#f3f0ff',
+        backgroundColor: '#ffffff',
     },
     preferenceLabel: {
         fontSize: 15,
         color: '#1f2937',
         flex: 1,
-    },
-    passwordToggle: {
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        backgroundColor: '#f3f4f6',
-        borderRadius: 8,
-        marginTop: 8,
-        ...(Platform.OS === 'web' && {
-            cursor: 'pointer',
-            transition: 'background-color 0.2s',
-            '&:hover': {
-                backgroundColor: '#e5e7eb',
-            },
-        }),
-        marginBottom: 10,
-    },
-    passwordToggleText: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#5844BB',
-        textAlign: 'center',
     },
     passwordSection: {
         gap: 5,
@@ -633,25 +628,20 @@ const styles = StyleSheet.create({
     },
     buttonSection: {
         width: '100%',
-        gap: 15,
-        alignItems: 'center',
+        gap: 12,
+        alignItems: 'stretch',
     },
-    primaryButton: {
-        borderRadius: 25,
-        paddingVertical: 8,
-        paddingHorizontal: 16,
-        backgroundColor: '#AE9CFC',
-        elevation: 2,
+    actionButton: {
         width: '100%',
+        alignSelf: 'stretch',
+        minHeight: 45,
+        paddingHorizontal: 14,
+        paddingVertical: 7,
     },
-    tertiaryButton: {
-        width: '100%',
+    cancelButton: {
+        backgroundColor: '#ffffff',
     },
     accountSection: {
-        marginTop: 40,
-        paddingTop: 24,
-        borderTopWidth: 1,
-        borderTopColor: '#e5e7eb',
         width: '100%',
     },
     accountSectionHeader: {

@@ -20,8 +20,8 @@ import { getFoodItemImageUrl } from '../utils/openFoodFactsMapper'
 import storage from '../utils/storage'
 
 import Button from './Button'
-import CategorySelect from './CategorySelect'
 import CustomText from './CustomText'
+import InlineCategorySelect from './InlineCategorySelect'
 import FormDateField from './FormDateField'
 import ResponsiveModal from './ResponsiveModal'
 import {
@@ -58,6 +58,8 @@ const formatTagList = (value) => {
 const getItemNutrition = (item) =>
     item?.nutrition || item?.openFoodFactsData?.nutrition || {}
 
+const EMPTY_LOCATIONS = []
+
 const PantryItemDetails = ({
     item,
     visible,
@@ -65,7 +67,7 @@ const PantryItemDetails = ({
     onUpdate,
     embedded = false,
     showInventoryFields = true,
-    locations = [],
+    locations = EMPTY_LOCATIONS,
 }) => {
     const [editableFields, setEditableFields] = useState({})
     const [editedValues, setEditedValues] = useState({})
@@ -92,13 +94,49 @@ const PantryItemDetails = ({
         return name // Fallback to name if ID not found
     }
 
-    useEffect(() => {
-        if (item) {
-            // Convert category IDs to names when loading
-            const categoryNames = (item.category || []).map((id) =>
-                getCategoryName(id)
+    const toCategoryName = (entry) => {
+        if (entry && typeof entry === 'object') {
+            return (
+                entry.name ||
+                getCategoryName(entry.subcategoryId ?? entry.id ?? entry._id)
             )
-            setEditedValues({
+        }
+        return getCategoryName(entry)
+    }
+
+    const itemKey =
+        item?._id != null
+            ? String(item._id)
+            : item?.id != null
+              ? String(item.id)
+              : ''
+
+    useEffect(() => {
+        if (!item) return
+
+        const categoryNames = (item.category || [])
+            .map(toCategoryName)
+            .filter(Boolean)
+
+        setEditedValues((prev) => {
+            const prevKey =
+                prev?._id != null
+                    ? String(prev._id)
+                    : prev?.id != null
+                      ? String(prev.id)
+                      : ''
+            if (itemKey && prevKey === itemKey) {
+                const inferredLocationId = inferLocationIdFromCategories(
+                    prev.category,
+                    locations
+                )
+                if (!prev.locationId && inferredLocationId) {
+                    return { ...prev, locationId: inferredLocationId }
+                }
+                return prev
+            }
+
+            return {
                 ...item,
                 category: categoryNames,
                 locationId:
@@ -107,9 +145,9 @@ const PantryItemDetails = ({
                 expirationDate: item.expirationDateSetByUser
                     ? item.expirationDate
                     : null,
-            })
-        }
-    }, [item, locations])
+            }
+        })
+    }, [item, itemKey, locations])
 
     if (!item) return null
 
@@ -151,8 +189,9 @@ const PantryItemDetails = ({
     }
 
     const handleCategoryChange = (selectedItems) => {
-        // selectedItems are IDs, convert them to names for display
-        const categoryNames = selectedItems.map((id) => getCategoryName(id))
+        const categoryNames = (selectedItems || [])
+            .map(toCategoryName)
+            .filter(Boolean)
         const inferredLocationId = inferLocationIdFromCategories(
             categoryNames,
             locations
@@ -471,7 +510,10 @@ const PantryItemDetails = ({
     }
 
     const content = (
-        <ScrollView style={styles.detailScroll}>
+        <ScrollView
+            style={styles.detailScroll}
+            keyboardShouldPersistTaps="handled"
+        >
             <View style={styles.itemDetails}>
                 {imageUrl ? (
                     <View style={styles.imageContainer}>
@@ -692,10 +734,11 @@ const PantryItemDetails = ({
 
                 <View style={styles.categoryRow}>
                     <CustomText style={styles.label}>Kategoriat:</CustomText>
-                    <CategorySelect
+                    <InlineCategorySelect
                         value={editedValues.category || []}
                         onChange={handleCategoryChange}
                         categories={categories}
+                        placeholder="Valitse kategoriat"
                     />
                 </View>
 

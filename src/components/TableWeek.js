@@ -1055,7 +1055,7 @@ const Table = ({ onRequireLogin }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#f9fafb',
         width: '100%',
         maxWidth: 960,
     },
@@ -1101,7 +1101,7 @@ const styles = StyleSheet.create({
         marginBottom: 20,
         paddingVertical: 15,
         paddingHorizontal: 10,
-        backgroundColor: '#f0f0f0',
+        backgroundColor: '#ffffff',
         borderRadius: 12,
         shadowColor: '#000',
         shadowOffset: {
@@ -1145,7 +1145,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     dateSection: {
-        backgroundColor: '#f8f8f8',
+        backgroundColor: '#ffffff',
         padding: 15,
         borderRadius: 10,
         marginBottom: 10,
@@ -1463,7 +1463,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 8,
         paddingHorizontal: 15,
-        backgroundColor: '#f8f8f8',
+        backgroundColor: '#ffffff',
         borderTopWidth: 1,
         borderTopColor: '#e0e0e0',
         shadowColor: '#000',

@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
 
     // Type variants - TERTIARY
     tertiaryButton: {
-        backgroundColor: 'transparent',
+        backgroundColor: '#ffffff',
         borderWidth: 2,
         borderColor: '#5844BB',
         borderRadius: 25,
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
         elevation: 0,
     },
     desktopTertiaryButton: {
-        backgroundColor: 'transparent',
+        backgroundColor: '#ffffff',
         borderColor: '#5844BB',
         borderRadius: 25,
         paddingVertical: 6,
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
         }),
     },
     tabletTertiaryButton: {
-        backgroundColor: 'transparent',
+        backgroundColor: '#ffffff',
         borderColor: '#5844BB',
         borderRadius: 25,
         paddingVertical: 6,

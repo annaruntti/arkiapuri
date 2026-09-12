@@ -10,12 +10,16 @@ const StickyListLayout = ({
     children,
     style,
     contentContainerStyle,
+    chromeBackgroundColor,
     refreshControl,
     showsVerticalScrollIndicator = false,
     keyboardShouldPersistTaps = 'handled',
 }) => {
     const hasHeader = header != null
     const hasSticky = sticky != null
+    const chromeStyle = chromeBackgroundColor && {
+        backgroundColor: chromeBackgroundColor,
+    }
 
     return (
         <ScrollView
@@ -27,10 +31,10 @@ const StickyListLayout = ({
             keyboardShouldPersistTaps={keyboardShouldPersistTaps}
         >
             {hasHeader ? (
-                <View style={styles.headerSection}>{header}</View>
+                <View style={[styles.headerSection, chromeStyle]}>{header}</View>
             ) : null}
             {hasSticky ? (
-                <View style={styles.stickySection}>{sticky}</View>
+                <View style={[styles.stickySection, chromeStyle]}>{sticky}</View>
             ) : null}
             <View style={styles.body}>{children}</View>
         </ScrollView>

@@ -9,6 +9,7 @@ import {
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import {
     NavigationContainer,
+    getPathFromState as getPathFromStateDefault,
     useFocusEffect,
     useNavigation,
 } from '@react-navigation/native'
@@ -38,6 +39,7 @@ import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen'
 import ProfileScreen from '../screens/ProfileScreen'
 import ReadingOrderScreen from '../screens/ReadingOrderScreen'
 import ResetPasswordScreen from '../screens/ResetPasswordScreen'
+import ShoppingListDetailScreen from '../screens/ShoppingListDetailScreen'
 import ShoppingListScreen from '../screens/ShoppingListsScreen'
 import SignInScreen from '../screens/SignInScreen'
 import SignUpScreen from '../screens/SignUpScreen'
@@ -383,6 +385,14 @@ function ShoppingListStackScreen() {
                     </>
                 )}
             </ShoppingListStack.Screen>
+            <ShoppingListStack.Screen name="Ostoslistan tiedot">
+                {(props) => (
+                    <>
+                        <NavigationTracker screenName="ShoppingListStack" />
+                        <ShoppingListDetailScreen {...props} />
+                    </>
+                )}
+            </ShoppingListStack.Screen>
         </ShoppingListStack.Navigator>
     )
 }
@@ -569,6 +579,14 @@ function TabNavigator() {
             <Tab.Screen
                 name="ShoppingListStack"
                 component={ShoppingListStackScreen}
+                listeners={({ navigation }) => ({
+                    tabPress: (e) => {
+                        e.preventDefault()
+                        navigation.navigate('ShoppingListStack', {
+                            screen: 'Ostoslista',
+                        })
+                    },
+                })}
             />
             <Tab.Screen
                 name="ReadingOrderStack"
@@ -673,6 +691,7 @@ const linking = {
                     ShoppingListStack: {
                         screens: {
                             Ostoslista: 'shopping-list',
+                            'Ostoslistan tiedot': 'shopping-list/:listId',
                         },
                     },
                     ReadingOrderStack: {
@@ -691,6 +710,17 @@ const linking = {
             },
             AcceptInvite: 'accept-invite/:token',
         },
+    },
+    getPathFromState(state, options) {
+        const path = getPathFromStateDefault(state, options)
+        if (!path || !path.includes('?')) return path
+
+        const [pathname, query] = path.split('?')
+        const params = new URLSearchParams(query)
+        params.delete('shoppingList')
+        params.delete('updatedShoppingList')
+        const search = params.toString()
+        return search ? `${pathname}?${search}` : pathname
     },
 }
 

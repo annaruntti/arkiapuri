@@ -614,6 +614,7 @@ const PantryScreen = ({}) => {
         <FoodListItemRow
             variant="card"
             item={item}
+            style={styles.listCard}
             onPress={() => {
                 setSelectedItem(item)
                 setDetailsVisible(true)
@@ -1025,7 +1026,10 @@ const PantryScreen = ({}) => {
     }
 
     return (
-        <ResponsiveLayout>
+        <ResponsiveLayout
+            activeRoute="PantryStack"
+            contentBackgroundColor="#f9fafb"
+        >
             <ContentContainer>
                 <View style={styles.container}>
                     <LoginPromptModal {...loginPromptProps} />
@@ -1054,6 +1058,8 @@ const PantryScreen = ({}) => {
                     </ResponsiveModal>
 
                     <StickyListLayout
+                        chromeBackgroundColor="#f9fafb"
+                        style={styles.listLayout}
                         sticky={
                             <View style={styles.addSticky}>
                                 <AddActionSection
@@ -1081,10 +1087,8 @@ const PantryScreen = ({}) => {
                                 </NoticeBanner>
                             ) : null}
                             <View style={styles.findSection}>
-                                <CustomText style={styles.findHeading}>
-                                    Etsi tuotteita
-                                </CustomText>
                                 <SearchSection
+                                    heading="Etsi tuotteita"
                                     searchQuery={searchQuery}
                                     onSearchChange={setSearchQuery}
                                     onClearSearch={() => setSearchQuery('')}
@@ -1263,19 +1267,25 @@ export default PantryScreen
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#f9fafb',
         padding: 15,
     },
     productListContainer: {
         flex: 1,
         minHeight: 400,
     },
+    listLayout: {
+        backgroundColor: '#f9fafb',
+    },
+    listCard: {
+        backgroundColor: '#ffffff',
+    },
     addSticky: {
-        backgroundColor: '#fff',
+        backgroundColor: '#f9fafb',
         paddingBottom: 4,
     },
     findSection: {
-        backgroundColor: '#fff',
+        backgroundColor: '#f9fafb',
         paddingTop: 4,
     },
     findHeading: {

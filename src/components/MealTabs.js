@@ -206,7 +206,7 @@ const MealTabs = ({
                                                 : 'check-box-outline-blank'
                                         }
                                         size={26}
-                                        color={done ? '#5844BB' : '#9CA3AF'}
+                                        color="#000000"
                                         style={styles.stepCheckbox}
                                     />
                                     <View style={styles.stepBody}>

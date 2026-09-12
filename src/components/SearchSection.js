@@ -12,6 +12,7 @@ const SearchSection = ({
     onSearchChange,
     onClearSearch,
     placeholder = 'Etsi...',
+    heading,
     showResultsInfo = true,
     resultsCount = 0,
     resultsText = 'Löytyi {count} tuotetta',
@@ -37,6 +38,9 @@ const SearchSection = ({
 
     return (
         <View style={styles.searchSection}>
+            {heading ? (
+                <CustomText style={styles.heading}>{heading}</CustomText>
+            ) : null}
             <View style={styles.searchRow}>
                 <View
                     style={[
@@ -140,11 +144,17 @@ const styles = {
     searchSection: {
         marginBottom: 15,
         paddingHorizontal: 15,
-        backgroundColor: 'rgb(248, 248, 248)',
+        backgroundColor: '#ffffff',
         paddingVertical: 15,
         borderRadius: 10,
         boxShadow: 'rgba(0, 0, 0, 0.1) 0px 1px 2px',
         width: '100%',
+    },
+    heading: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#555',
+        marginBottom: 8,
     },
     searchRow: {
         flexDirection: 'row',

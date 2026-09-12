@@ -59,7 +59,7 @@ const styles = {
     },
     container: {
         padding: 15,
-        backgroundColor: 'rgb(248, 248, 248)',
+        backgroundColor: '#ffffff',
         boxShadow: 'rgba(0, 0, 0, 0.1) 0px 1px 2px',
         borderRadius: 10,
         maxWidth: '100%',

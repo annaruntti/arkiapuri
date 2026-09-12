@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
     actionButton: {
         alignSelf: 'center',
         minWidth: 200,
-        minHeight: 48,
+        minHeight: 45,
         paddingHorizontal: 36,
         paddingVertical: 12,
     },
@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
     },
     lastActionButton: {
         alignSelf: 'stretch',
-        minHeight: 48,
+        minHeight: 45,
         paddingHorizontal: 36,
         paddingVertical: 12,
     },

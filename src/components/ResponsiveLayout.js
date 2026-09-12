@@ -13,8 +13,13 @@ const ResponsiveLayout = ({
     activeRoute,
     showMobileTabs = false,
     showDesktopNav = true,
+    contentBackgroundColor,
 }) => {
     const { isDesktop } = useResponsiveDimensions()
+    const contentAreaStyle = [
+        styles.contentArea,
+        contentBackgroundColor && { backgroundColor: contentBackgroundColor },
+    ]
 
     if (isDesktop) {
         if (!showDesktopNav) {
@@ -24,7 +29,7 @@ const ResponsiveLayout = ({
         return (
             <View style={styles.desktopContainer}>
                 <DesktopNavigation activeRoute={activeRoute} />
-                <View style={styles.contentArea}>{children}</View>
+                <View style={contentAreaStyle}>{children}</View>
             </View>
         )
     }
@@ -32,7 +37,7 @@ const ResponsiveLayout = ({
     if (showMobileTabs) {
         return (
             <View style={styles.mobileContainer}>
-                <View style={styles.contentArea}>{children}</View>
+                <View style={contentAreaStyle}>{children}</View>
                 <MainTabBar activeRoute={activeRoute} />
             </View>
         )

@@ -66,7 +66,7 @@ const PantryRemovalSuggestionsModal = ({
                                         : 'check-box-outline-blank'
                                 }
                                 size={24}
-                                color={selected ? '#5844BB' : '#888'}
+                                color="#000000"
                             />
                             <View style={styles.rowText}>
                                 <CustomText style={styles.name}>

@@ -62,6 +62,8 @@ const FamilySection = ({ household, onManagePress }) => {
                 ))}
                 <Button
                     title="Hallinnoi perhettä"
+                    type="SECONDARY"
+                    fullWidth
                     style={styles.manageFamilyButton}
                     textStyle={styles.buttonText}
                     onPress={onManagePress}
@@ -74,13 +76,7 @@ const FamilySection = ({ household, onManagePress }) => {
 const styles = StyleSheet.create({
     familySection: {
         width: '100%',
-        marginTop: 8,
-        marginBottom: 8,
-        padding: 16,
-        backgroundColor: '#f9fafb',
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#e5e7eb',
+        backgroundColor: 'transparent',
     },
     familyHeader: {
         marginBottom: 16,
@@ -101,17 +97,16 @@ const styles = StyleSheet.create({
     },
     memberItem: {
         backgroundColor: '#ffffff',
+        borderWidth: 1,
+        borderColor: '#e5e7eb',
     },
     manageFamilyButton: {
-        borderRadius: 25,
-        paddingTop: 7,
-        paddingBottom: 7,
-        paddingLeft: 10,
-        paddingRight: 10,
-        elevation: 2,
-        backgroundColor: '#38E4D9',
         width: '100%',
-        marginTop: 4,
+        alignSelf: 'stretch',
+        minHeight: 45,
+        marginTop: 12,
+        paddingHorizontal: 14,
+        paddingVertical: 7,
     },
     buttonText: {
         color: '#000000',

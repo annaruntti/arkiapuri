@@ -34,9 +34,23 @@ export const MAIN_NAV_ITEMS = [
     },
 ]
 
+const TAB_ROOT_SCREENS = {
+    ShoppingListStack: 'Ostoslista',
+}
+
 /**
  * Navigate to a Main tab from anywhere (Main stacks or Auth modal).
+ * Shopping lists always open the list picker, not a previously opened list.
  */
 export const navigateToMainTab = (navigation, routeName) => {
+    const rootScreen = TAB_ROOT_SCREENS[routeName]
+    if (rootScreen) {
+        navigation.navigate('Main', {
+            screen: routeName,
+            params: { screen: rootScreen },
+        })
+        return
+    }
+
     navigation.navigate('Main', { screen: routeName })
 }
