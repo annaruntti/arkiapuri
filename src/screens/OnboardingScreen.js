@@ -19,6 +19,7 @@ import Button from '../components/Button'
 import CustomText from '../components/CustomText'
 import { useLogin } from '../context/LoginProvider'
 import { useResponsiveDimensions } from '../utils/responsive'
+import { authFormStyles } from '../styles/authFormStyles'
 
 const SWIPE_DISTANCE = 56
 const SWIPE_VELOCITY = 650
@@ -227,19 +228,25 @@ const OnboardingScreen = ({ navigation, route }) => {
                         <Button
                             title="Jatka ilman kirjautumista"
                             onPress={handleContinueAsGuest}
-                            style={styles.lastActionButton}
+                            fullWidth
+                            style={authFormStyles.primaryButton}
+                            textStyle={authFormStyles.buttonText}
                         />
                         <Button
                             title="Kirjaudu sisään"
                             type="SECONDARY"
                             onPress={handleSignIn}
-                            style={styles.lastActionButton}
+                            fullWidth
+                            style={authFormStyles.fullWidthButton}
+                            textStyle={authFormStyles.buttonText}
                         />
                         <Button
                             title="Takaisin"
                             type="TERTIARY"
                             onPress={handleBack}
-                            style={styles.lastActionButton}
+                            fullWidth
+                            style={authFormStyles.tertiaryButton}
+                            textStyle={authFormStyles.buttonText}
                         />
                     </View>
                 ) : (
@@ -247,13 +254,17 @@ const OnboardingScreen = ({ navigation, route }) => {
                         <Button
                             title="Seuraava"
                             onPress={() => goToStep(stepIndex + 1)}
-                            style={styles.actionButton}
+                            fullWidth
+                            style={authFormStyles.primaryButton}
+                            textStyle={authFormStyles.buttonText}
                         />
                         <Button
                             title="Takaisin"
                             type="TERTIARY"
                             onPress={handleBack}
-                            style={styles.actionButton}
+                            fullWidth
+                            style={authFormStyles.tertiaryButton}
+                            textStyle={authFormStyles.buttonText}
                         />
                     </>
                 )}
@@ -326,26 +337,17 @@ const styles = StyleSheet.create({
     },
     actions: {
         width: '100%',
-        alignItems: 'center',
-        gap: 12,
-        paddingBottom: 8,
-    },
-    actionButton: {
-        alignSelf: 'center',
-        minWidth: 200,
-        minHeight: 45,
-        paddingHorizontal: 36,
-        paddingVertical: 12,
-    },
-    lastActions: {
+        maxWidth: 320,
         alignSelf: 'center',
         alignItems: 'stretch',
         gap: 12,
+        paddingBottom: 8,
     },
-    lastActionButton: {
-        alignSelf: 'stretch',
-        minHeight: 45,
-        paddingHorizontal: 36,
-        paddingVertical: 12,
+    lastActions: {
+        width: '100%',
+        maxWidth: 320,
+        alignSelf: 'center',
+        alignItems: 'stretch',
+        gap: 12,
     },
 })

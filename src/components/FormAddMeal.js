@@ -1,7 +1,6 @@
 import axios from 'axios'
 import {
     Alert,
-    FlatList,
     Image,
     Platform,
     ScrollView,
@@ -1592,24 +1591,16 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
                                 <CustomText style={styles.selectedItemsTitle}>
                                     Valitut raaka-aineet:
                                 </CustomText>
-                                <FlatList
-                                    data={foodItems}
-                                    renderItem={renderSelectedItem}
-                                    keyExtractor={(item, index) =>
-                                        item.tempId ||
-                                        `${item._id || item.name}-${index}`
-                                    }
-                                    style={styles.selectedItemsList}
-                                    showsVerticalScrollIndicator={true}
-                                    nestedScrollEnabled={true}
-                                    scrollEnabled={true}
-                                    removeClippedSubviews={false}
-                                    getItemLayout={(data, index) => ({
-                                        length: 100,
-                                        offset: 100 * index,
-                                        index,
-                                    })}
-                                />
+                                {foodItems.map((item, index) => (
+                                    <View
+                                        key={
+                                            item.tempId ||
+                                            `${item._id || item.name}-${index}`
+                                        }
+                                    >
+                                        {renderSelectedItem({ item, index })}
+                                    </View>
+                                ))}
                             </View>
                         )}
                     </View>
@@ -1950,11 +1941,6 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         marginBottom: 10,
         color: '#333',
-    },
-    selectedItemsList: {
-        maxHeight: 400,
-        minHeight: 100,
-        flexGrow: 0,
     },
     selectedItem: {
         backgroundColor: '#f8f8f8',

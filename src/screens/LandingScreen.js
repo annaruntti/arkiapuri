@@ -12,8 +12,10 @@ import Animated, {
 import Button from '../components/Button'
 import CustomText from '../components/CustomText'
 import FullWidthLayout from '../components/FullWidthLayout'
+import { AUTH_FORM_MAX_WIDTH } from '../components/AuthLayout'
 import { useLogin } from '../context/LoginProvider'
 import { useResponsiveDimensions } from '../utils/responsive'
+import { authFormStyles } from '../styles/authFormStyles'
 
 const image = {
     uri: 'https://images.ctfassets.net/hef5a6s5axrs/4GwuSgvoXA0VX6cv5ix521/8545dbed4f7a510976eb78f8dcf4b91e/pexels-katerina-holmes-5907832.jpg',
@@ -73,18 +75,22 @@ const LandingScreen = ({ navigation }) => {
                             ]}
                         >
                             {!isDesktop && !isTablet && (
-                                <Svg
-                                    height={110}
-                                    width="100%"
-                                    viewBox="0 0 1440 320"
-                                    preserveAspectRatio="none"
+                                <View
+                                    pointerEvents="none"
                                     style={styles.bottomWavy}
                                 >
-                                    <Path
-                                        fill="#fff"
-                                        d="M0,320L40,288C80,256,160,192,240,165.3C320,139,400,149,480,165.3C560,181,640,203,720,213.3C800,224,880,224,960,192C1040,160,1120,96,1200,64C1280,32,1360,32,1400,32L1440,32L1440,320L1400,320C1360,320,1280,320,1200,320C1120,320,1040,320,960,320C880,320,800,320,720,320C640,320,560,320,480,320C400,320,320,320,240,320C160,320,80,320,40,320L0,320Z"
-                                    />
-                                </Svg>
+                                    <Svg
+                                        height="100%"
+                                        width="100%"
+                                        viewBox="0 0 1440 320"
+                                        preserveAspectRatio="none"
+                                    >
+                                        <Path
+                                            fill="#fff"
+                                            d="M0,320L40,288C80,256,160,192,240,165.3C320,139,400,149,480,165.3C560,181,640,203,720,213.3C800,224,880,224,960,192C1040,160,1120,96,1200,64C1280,32,1360,32,1400,32L1440,32L1440,320L1400,320C1360,320,1280,320,1200,320C1120,320,1040,320,960,320C880,320,800,320,720,320C640,320,560,320,480,320C400,320,320,320,240,320C160,320,80,320,40,320L0,320Z"
+                                        />
+                                    </Svg>
+                                </View>
                             )}
                             <View style={styles.contentPadding}>
                                 <CustomText
@@ -113,7 +119,9 @@ const LandingScreen = ({ navigation }) => {
                                         onPress={() =>
                                             navigation.navigate('Tutustu')
                                         }
-                                        style={styles.actionButton}
+                                        fullWidth
+                                        style={authFormStyles.primaryButton}
+                                        textStyle={authFormStyles.buttonText}
                                     />
                                     <Button
                                         title="Minulla on jo tili"
@@ -123,7 +131,9 @@ const LandingScreen = ({ navigation }) => {
                                                 'Kirjaudu sisään'
                                             )
                                         }
-                                        style={styles.actionButton}
+                                        fullWidth
+                                        style={authFormStyles.tertiaryButton}
+                                        textStyle={authFormStyles.buttonText}
                                     />
                                 </View>
                             </View>
@@ -184,16 +194,11 @@ const styles = StyleSheet.create({
     },
     actions: {
         width: '100%',
-        alignItems: 'center',
+        maxWidth: 320,
+        alignSelf: 'center',
+        alignItems: 'stretch',
         gap: 12,
         marginBottom: 8,
-    },
-    actionButton: {
-        alignSelf: 'center',
-        minWidth: 200,
-        minHeight: 45,
-        paddingHorizontal: 36,
-        paddingVertical: 12,
     },
     bottomWavy: {
         position: 'absolute',
@@ -201,12 +206,14 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         width: '100%',
+        height: 110,
         zIndex: 1,
     },
     contentPadding: {
-        paddingHorizontal: 20,
         width: '100%',
-        alignItems: 'center',
+        maxWidth: AUTH_FORM_MAX_WIDTH,
+        alignSelf: 'center',
+        alignItems: 'stretch',
     },
     tabletBottomBox: {
         flex: 1,
@@ -227,7 +234,7 @@ const styles = StyleSheet.create({
         shadowRadius: 12,
         elevation: 8,
         width: '100%',
-        maxWidth: 560,
+        maxWidth: 440,
     },
     tabletIntroTextTitle: {
         fontSize: 30,
@@ -253,7 +260,7 @@ const styles = StyleSheet.create({
     desktopBottomBoxContent: {
         backgroundColor: 'rgba(255, 255, 255, 0.95)',
         borderRadius: 16,
-        paddingHorizontal: 60,
+        paddingHorizontal: 40,
         paddingVertical: 40,
         shadowColor: '#000',
         shadowOffset: {
@@ -266,7 +273,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: 'rgba(255, 255, 255, 0.2)',
         width: '100%',
-        maxWidth: 640,
+        maxWidth: 480,
     },
     desktopIntroTextTitle: {
         fontSize: 36,

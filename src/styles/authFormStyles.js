@@ -13,6 +13,16 @@ export const authFormStyles = StyleSheet.create({
         gap: 12,
         width: '100%',
     },
+    fullWidthButton: {
+        width: '100%',
+        alignSelf: 'stretch',
+        minWidth: 0,
+        minHeight: 45,
+        paddingVertical: 7,
+        paddingHorizontal: 14,
+        borderRadius: 25,
+        elevation: 0,
+    },
     primaryButton: {
         width: '100%',
         alignSelf: 'stretch',

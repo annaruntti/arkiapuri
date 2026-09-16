@@ -4,10 +4,11 @@ import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { useFonts } from 'expo-font'
 import { requireOptionalNativeModule } from 'expo'
 import * as SplashScreen from 'expo-splash-screen'
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Platform, StyleSheet, View } from 'react-native'
 import AnimatedSplashScreen from './src/components/AnimatedSplashScreen'
 import LoginProvider from './src/context/LoginProvider'
+import { BarcodeScannerProvider } from './src/context/BarcodeScannerProvider'
 import Navigation from './src/navigation'
 import { useResponsiveDimensions } from './src/utils/responsive'
 
@@ -109,7 +110,9 @@ const App = () => {
                             <AnimatedSplashScreen />
                         ) : (
                             <LoginProvider>
-                                <Navigation />
+                                <BarcodeScannerProvider>
+                                    <Navigation />
+                                </BarcodeScannerProvider>
                             </LoginProvider>
                         )}
                     </View>

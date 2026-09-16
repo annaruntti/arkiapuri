@@ -176,7 +176,7 @@ const ShoppingListsScreen = ({ route }) => {
                         <StickyListLayout
                             chromeBackgroundColor="#f9fafb"
                             style={styles.listLayout}
-                            sticky={
+                            header={
                                 <View style={styles.addSticky}>
                                     <AddActionSection
                                         title="Lisää ostoslista"

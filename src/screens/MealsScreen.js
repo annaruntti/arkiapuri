@@ -694,7 +694,7 @@ const MealsScreen = ({ route, navigation }) => {
             <StickyListLayout
                 chromeBackgroundColor="#f9fafb"
                 style={styles.listLayout}
-                sticky={
+                header={
                     <View style={styles.addSticky}>
                         <AddActionSection
                             title="Lisää ateria"
@@ -703,6 +703,18 @@ const MealsScreen = ({ route, navigation }) => {
                             onPrimaryPress={handleOpenDishScan}
                             secondaryTitle="Lisää manuaalisesti"
                             onSecondaryPress={handleOpenAddMeal}
+                        />
+                    </View>
+                }
+                sticky={
+                    <View style={styles.findSection}>
+                        <SearchSection
+                            heading="Etsi aterioita"
+                            searchQuery={searchQuery}
+                            onSearchChange={setSearchQuery}
+                            onClearSearch={() => setSearchQuery('')}
+                            placeholder="Hae aterioita nimellä..."
+                            showResultsInfo={false}
                         />
                     </View>
                 }
@@ -716,14 +728,6 @@ const MealsScreen = ({ route, navigation }) => {
             >
                 <>
                     <View style={styles.findSection}>
-                        <SearchSection
-                            heading="Etsi aterioita"
-                            searchQuery={searchQuery}
-                            onSearchChange={setSearchQuery}
-                            onClearSearch={() => setSearchQuery('')}
-                            placeholder="Hae aterioita nimellä..."
-                            showResultsInfo={false}
-                        />
                         <ActiveFilterBanner
                             filterDifficulty={filterDifficulty}
                             selectedDifficultyFilter={

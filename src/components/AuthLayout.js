@@ -4,7 +4,7 @@ import CustomText from './CustomText'
 import FullWidthLayout from './FullWidthLayout'
 
 /** Typical desktop auth form column width (inputs + actions share this). */
-export const AUTH_FORM_MAX_WIDTH = 400
+export const AUTH_FORM_MAX_WIDTH = 360
 
 const AuthLayout = ({
     children,

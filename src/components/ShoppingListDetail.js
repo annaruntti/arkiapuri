@@ -3,7 +3,6 @@ import { CommonActions, useNavigation } from '@react-navigation/native'
 import {
     Alert,
     Platform,
-    SectionList,
     StyleSheet,
     TouchableOpacity,
     View,
@@ -749,8 +748,7 @@ const ShoppingListDetail = ({
                                 />
                             </>
                         }
-                    >
-                        <View style={styles.itemsListContainer}>
+                        sticky={
                             <View style={styles.findSection}>
                                 <SearchSection
                                     heading="Etsi tuotteita"
@@ -761,6 +759,9 @@ const ShoppingListDetail = ({
                                     showResultsInfo={false}
                                 />
                             </View>
+                        }
+                    >
+                        <View style={styles.itemsListContainer}>
                             <ListStatsRow
                                 actions={
                                     <>
@@ -818,25 +819,31 @@ const ShoppingListDetail = ({
                                 }
                                 getItemCounts={getCategoryItemCounts}
                             />
-                            <SectionList
-                                sections={itemSections}
-                                renderItem={renderItem}
-                                renderSectionHeader={({
-                                    section: { title, data },
-                                }) => (
-                                    <CategorySectionHeader
-                                        title={title}
-                                        count={data.length}
-                                    />
-                                )}
-                                keyExtractor={(item) => item._id}
-                                style={styles.itemsList}
-                                contentContainerStyle={styles.listContent}
-                                showsVerticalScrollIndicator={true}
-                                scrollEnabled={false}
-                                nestedScrollEnabled={true}
-                                stickySectionHeadersEnabled={false}
-                            />
+                            <View
+                                style={[
+                                    styles.itemsList,
+                                    styles.listContent,
+                                ]}
+                            >
+                                {itemSections.map((section) => (
+                                    <View
+                                        key={
+                                            section.title ||
+                                            'shopping-section'
+                                        }
+                                    >
+                                        <CategorySectionHeader
+                                            title={section.title}
+                                            count={section.data.length}
+                                        />
+                                        {section.data.map((item) => (
+                                            <View key={item._id}>
+                                                {renderItem({ item })}
+                                            </View>
+                                        ))}
+                                    </View>
+                                ))}
+                            </View>
                             {boughtItemCount > 0 && (
                                 <View style={styles.listEndActions}>
                                     <Button

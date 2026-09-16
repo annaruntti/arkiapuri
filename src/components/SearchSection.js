@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Platform, TextInput, TouchableOpacity, View } from 'react-native'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
-import BarcodeScanner from './BarcodeScanner'
+import { useBarcodeScanner } from '../context/BarcodeScannerProvider'
 import Button from './Button'
 import CustomText from './CustomText'
 import PrimaryActionFade from './PrimaryActionFade'
@@ -32,8 +32,8 @@ const SearchSection = ({
     onBarcodeScanned,
 }) => {
     const { isDesktop } = useResponsiveDimensions()
+    const { openBarcodeScanner } = useBarcodeScanner()
     const [isSearchFocused, setIsSearchFocused] = useState(false)
-    const [showScanner, setShowScanner] = useState(false)
     const showBarcodeScan = Boolean(onBarcodeScanned) && !isDesktop
 
     return (
@@ -78,7 +78,11 @@ const SearchSection = ({
                 {showBarcodeScan ? (
                     <TouchableOpacity
                         style={styles.scanButton}
-                        onPress={() => setShowScanner(true)}
+                        onPress={() =>
+                            openBarcodeScanner({
+                                onSuccess: onBarcodeScanned,
+                            })
+                        }
                         accessibilityRole="button"
                         accessibilityLabel="Skannaa viivakoodi"
                     >
@@ -126,16 +130,6 @@ const SearchSection = ({
                 </PrimaryActionFade>
             )}
 
-            {showBarcodeScan ? (
-                <BarcodeScanner
-                    isVisible={showScanner}
-                    onCancel={() => setShowScanner(false)}
-                    onScanSuccess={(barcode) => {
-                        setShowScanner(false)
-                        onBarcodeScanned(barcode)
-                    }}
-                />
-            ) : null}
         </View>
     )
 }

@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useContext, useEffect } from 'react'
 import {
     Dimensions,
     Modal,
@@ -9,11 +9,18 @@ import {
 } from 'react-native'
 import { AntDesign, MaterialIcons } from '@expo/vector-icons'
 import {
+    getDefaultHeaderHeight,
+    HeaderHeightContext,
+} from '@react-navigation/elements'
+import {
     Gesture,
     GestureDetector,
     GestureHandlerRootView,
 } from 'react-native-gesture-handler'
-import { SafeAreaProvider } from 'react-native-safe-area-context'
+import {
+    SafeAreaProvider,
+    useSafeAreaInsets,
+} from 'react-native-safe-area-context'
 import Animated, {
     runOnJS,
     useAnimatedStyle,
@@ -22,10 +29,13 @@ import Animated, {
     withTiming,
 } from 'react-native-reanimated'
 import { useResponsiveDimensions } from '../utils/responsive'
+import { useBarcodeScanner } from '../context/BarcodeScannerProvider'
+import BarcodeScanner from './BarcodeScanner'
 import CustomText from './CustomText'
 
 const DISMISS_DISTANCE = 120
 const DISMISS_VELOCITY = 900
+const SHEET_BELOW_HEADER_GAP = 10
 
 const ResponsiveModal = ({
     visible,
@@ -42,10 +52,28 @@ const ResponsiveModal = ({
     maxWidth = 640,
 }) => {
     const { isDesktop, isTablet } = useResponsiveDimensions()
+    const {
+        isScannerOpen,
+        registerScannerHost,
+        completeScan,
+        cancelScan,
+    } = useBarcodeScanner()
     const isMobileSheet = !isDesktop && !isTablet
+    const insets = useSafeAreaInsets()
+    const navigationHeaderHeight = useContext(HeaderHeightContext)
+    const windowSize = Dimensions.get('window')
+    const fallbackHeaderHeight = getDefaultHeaderHeight(
+        { width: windowSize.width, height: windowSize.height },
+        false,
+        insets.top
+    )
+    const topGap = isMobileSheet
+        ? (navigationHeaderHeight ?? fallbackHeaderHeight) +
+          SHEET_BELOW_HEADER_GAP
+        : 0
     const translateY = useSharedValue(0)
     const dragStartY = useSharedValue(0)
-    const screenHeight = Dimensions.get('window').height
+    const screenHeight = windowSize.height
 
     useEffect(() => {
         if (visible) {
@@ -55,11 +83,19 @@ const ResponsiveModal = ({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [visible])
 
+    useEffect(() => {
+        if (!visible) {
+            return undefined
+        }
+        return registerScannerHost()
+    }, [visible, registerScannerHost])
+
     const closeSheet = () => {
         onClose?.()
     }
 
     const panGesture = Gesture.Pan()
+        .enabled(!isScannerOpen)
         .onStart(() => {
             dragStartY.value = translateY.value
         })
@@ -251,33 +287,43 @@ const ResponsiveModal = ({
             transparent={true}
             visible={visible}
             onRequestClose={onClose}
+            presentationStyle="overFullScreen"
+            statusBarTranslucent
         >
             <GestureHandlerRootView style={styles.gestureRoot}>
-                <SafeAreaProvider>
+                <SafeAreaProvider style={styles.safeArea}>
                     <View style={getModalViewStyle()}>
                     {isMobileSheet ? (
                         <>
-                            <Animated.View
-                                style={[
-                                    styles.backdropFill,
-                                    backdropAnimatedStyle,
-                                ]}
-                            >
-                                <Pressable
-                                    style={StyleSheet.absoluteFillObject}
-                                    onPress={onClose}
-                                    accessibilityRole="button"
-                                    accessibilityLabel="Sulje"
-                                />
-                            </Animated.View>
-                            <Animated.View
-                                style={[
-                                    getModalContentStyle(),
-                                    sheetAnimatedStyle,
-                                ]}
-                            >
-                                {sheetBody}
-                            </Animated.View>
+                            <Pressable
+                                style={{ height: topGap }}
+                                onPress={onClose}
+                                accessibilityRole="button"
+                                accessibilityLabel="Sulje"
+                            />
+                            <View style={styles.mobileSheetStage}>
+                                <Animated.View
+                                    style={[
+                                        styles.backdropFill,
+                                        backdropAnimatedStyle,
+                                    ]}
+                                >
+                                    <Pressable
+                                        style={StyleSheet.absoluteFillObject}
+                                        onPress={onClose}
+                                        accessibilityRole="button"
+                                        accessibilityLabel="Sulje"
+                                    />
+                                </Animated.View>
+                                <Animated.View
+                                    style={[
+                                        getModalContentStyle(),
+                                        sheetAnimatedStyle,
+                                    ]}
+                                >
+                                    {sheetBody}
+                                </Animated.View>
+                            </View>
                         </>
                     ) : (
                         <View style={getModalContentStyle()}>{sheetBody}</View>
@@ -285,12 +331,23 @@ const ResponsiveModal = ({
                 </View>
                 </SafeAreaProvider>
             </GestureHandlerRootView>
+            {isScannerOpen ? (
+                <BarcodeScanner
+                    isVisible
+                    onScanSuccess={completeScan}
+                    onCancel={cancelScan}
+                />
+            ) : null}
         </Modal>
     )
 }
 
 const styles = StyleSheet.create({
     gestureRoot: {
+        flex: 1,
+        overflow: 'visible',
+    },
+    safeArea: {
         flex: 1,
     },
     backdropFill: {
@@ -304,17 +361,29 @@ const styles = StyleSheet.create({
     },
     mobileModalView: {
         backgroundColor: 'transparent',
+        justifyContent: 'flex-start',
+        overflow: 'visible',
+    },
+    mobileSheetStage: {
+        flex: 1,
+        overflow: 'visible',
     },
     modalContent: {
         backgroundColor: 'white',
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
-        height: '90%',
         width: '100%',
         paddingTop: 35,
     },
     mobileSheetContent: {
+        flex: 1,
         paddingTop: 4,
+        backgroundColor: '#fff',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
     dragZone: {
         width: '100%',

@@ -3,9 +3,9 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
     ActivityIndicator,
     Alert,
-    FlatList,
-    Modal,
+
     Platform,
+    ScrollView,
     StyleSheet,
     TextInput,
     TouchableOpacity,
@@ -13,12 +13,12 @@ import {
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useShowNutrition } from '../hooks/useShowNutrition'
+import { useBarcodeScanner } from '../context/BarcodeScannerProvider'
 import { getServerUrl } from '../utils/getServerUrl'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 import openFoodFactsApi from '../services/openFoodFactsApi'
 import { addPantryItem, addShoppingListItems } from '../services/collectionApi'
-import BarcodeScanner from './BarcodeScanner'
 import CustomText from './CustomText'
 import ListItem from './ListItem'
 import MealIngredientQuantityModal from './MealIngredientQuantityModal'
@@ -92,6 +92,7 @@ const UnifiedFoodSearch = ({
     showBarcodeButton = true,
 }) => {
     const { isDesktop } = useResponsiveDimensions()
+    const { openBarcodeScanner } = useBarcodeScanner()
     const showNutrition = useShowNutrition()
     const [searchQuery, setSearchQuery] = useState('')
     const [localFoodItems, setLocalFoodItems] = useState([])
@@ -99,7 +100,6 @@ const UnifiedFoodSearch = ({
     const [filteredLocalItems, setFilteredLocalItems] = useState([])
     const [loading, setLoading] = useState(false)
     const [isListVisible, setIsListVisible] = useState(false)
-    const [showScanner, setShowScanner] = useState(false)
     const [addedItems, setAddedItems] = useState(new Set())
     const [activeTab, setActiveTab] = useState('all') // 'all', 'local', 'openfoodfacts'
     const [pendingMealPick, setPendingMealPick] = useState(null)
@@ -115,10 +115,19 @@ const UnifiedFoodSearch = ({
         return () => onMealQuantityPromptChangeRef.current?.(false)
     }, [pendingMealPick])
 
+    const handleBarcodeScannedRef = useRef(null)
+
+    const openScanner = () => {
+        openBarcodeScanner({
+            onSuccess: (barcode) => handleBarcodeScannedRef.current?.(barcode),
+        })
+    }
+
     useEffect(() => {
         if (autoOpenScanner) {
-            setShowScanner(true)
+            openScanner()
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [autoOpenScanner])
 
     // Fetch local food items when component mounts
@@ -307,7 +316,6 @@ const UnifiedFoodSearch = ({
     }
 
     const handleBarcodeScanned = async (barcode) => {
-        setShowScanner(false)
         setLoading(true)
 
         try {
@@ -337,7 +345,7 @@ const UnifiedFoodSearch = ({
                     [
                         {
                             text: 'Skannaa uudelleen',
-                            onPress: () => setShowScanner(true),
+                            onPress: openScanner,
                         },
                         {
                             text: 'Lisää manuaalisesti',
@@ -366,6 +374,7 @@ const UnifiedFoodSearch = ({
             setLoading(false)
         }
     }
+    handleBarcodeScannedRef.current = handleBarcodeScanned
 
     const addToPantry = async (foodItem, collectionData) => {
         try {
@@ -811,7 +820,7 @@ const UnifiedFoodSearch = ({
                 {showBarcodeButton && !isDesktop ? (
                     <TouchableOpacity
                         style={styles.scanButton}
-                        onPress={() => setShowScanner(true)}
+                        onPress={openScanner}
                         accessibilityRole="button"
                         accessibilityLabel="Skannaa viivakoodi"
                     >
@@ -891,34 +900,20 @@ const UnifiedFoodSearch = ({
                             </CustomText>
                         </View>
                     ) : (
-                        <FlatList
-                            key={`flatlist-${renderTimestampRef.current}`} // Force complete re-render
-                            data={memoizedData}
-                            renderItem={memoizedRenderItem}
-                            keyExtractor={(item, index) => {
-                                // Use the stable internal key we added in memoizedData
-                                return (
-                                    item.__searchKey ||
-                                    `fallback-${renderTimestampRef.current}-${index}`
-                                )
-                            }}
+                        <ScrollView
+                            key={`results-${renderTimestampRef.current}`}
                             style={styles.resultsList}
                             keyboardShouldPersistTaps="handled"
-                            removeClippedSubviews={false} // Disable for better compatibility
-                            maxToRenderPerBatch={20}
-                            initialNumToRender={20}
-                            windowSize={8}
-                            getItemLayout={null} // Let FlatList calculate dynamically
-                        />
+                            nestedScrollEnabled
+                        >
+                            {memoizedData.map((item, index) =>
+                                memoizedRenderItem({ item, index })
+                            )}
+                        </ScrollView>
                     )}
                 </View>
             )}
 
-            <BarcodeScanner
-                onScanSuccess={handleBarcodeScanned}
-                onCancel={() => setShowScanner(false)}
-                isVisible={showScanner}
-            />
             </>
             )}
         </View>

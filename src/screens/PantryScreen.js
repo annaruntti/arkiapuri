@@ -3,7 +3,6 @@ import {
     ActivityIndicator,
     Alert,
     Platform,
-    SectionList,
     StyleSheet,
     View,
 } from 'react-native'
@@ -861,9 +860,14 @@ const PantryScreen = ({}) => {
         setSuggestionsSubmitting(true)
         try {
             await Promise.all(
-                suggestions.map((suggestion) =>
-                    deletePantryItem(suggestion.itemId)
-                )
+                [
+                    ...new Set(
+                        suggestions
+                            .map((suggestion) => suggestion.itemId)
+                            .filter(Boolean)
+                            .map(String)
+                    ),
+                ].map((itemId) => deletePantryItem(itemId))
             )
             await fetchPantryItems()
             setSuggestionsModalVisible(false)
@@ -947,9 +951,22 @@ const PantryScreen = ({}) => {
             }
 
             if (removals.length) {
-                await Promise.all(
-                    removals.map((item) => deletePantryItem(item.itemId))
-                )
+                const uniqueRemovalIds = [
+                    ...new Set(
+                        removals
+                            .map((item) => item.itemId)
+                            .filter(Boolean)
+                            .map(String)
+                    ),
+                ]
+                for (const itemId of uniqueRemovalIds) {
+                    try {
+                        await deletePantryItem(itemId)
+                    } catch (error) {
+                        lastError = error
+                        console.error('Error removing scanned pantry item:', error)
+                    }
+                }
             }
             if (keptRemovals.length) {
                 await dismissPantryRemovalSuggestions(
@@ -1018,7 +1035,18 @@ const PantryScreen = ({}) => {
                 succeededKeys.length > 0
                     ? `${succeededKeys.length} tuotetta lisättiin, mutta kaikkia ei voitu lisätä. Yritä uudelleen jäljellä oleville.`
                     : lastError?.response?.data?.message ||
+                          lastError?.response?.data?.error ||
+                          lastError?.message ||
                           'Tuotteiden lisääminen epäonnistui. Voit lisätä ne manuaalisesti.'
+            )
+        } catch (error) {
+            console.error('Error committing pantry scan:', error)
+            Alert.alert(
+                'Virhe',
+                error.response?.data?.message ||
+                    error.response?.data?.error ||
+                    error.message ||
+                    'Valintojen tallennus epäonnistui.'
             )
         } finally {
             setScanSubmitting(false)
@@ -1060,7 +1088,7 @@ const PantryScreen = ({}) => {
                     <StickyListLayout
                         chromeBackgroundColor="#f9fafb"
                         style={styles.listLayout}
-                        sticky={
+                        header={
                             <View style={styles.addSticky}>
                                 <AddActionSection
                                     title="Lisää tuotteita"
@@ -1069,6 +1097,18 @@ const PantryScreen = ({}) => {
                                     onPrimaryPress={handleOpenPantryScan}
                                     secondaryTitle="Lisää manuaalisesti"
                                     onSecondaryPress={handleOpenAddItemSearch}
+                                />
+                            </View>
+                        }
+                        sticky={
+                            <View style={styles.findSection}>
+                                <SearchSection
+                                    heading="Etsi tuotteita"
+                                    searchQuery={searchQuery}
+                                    onSearchChange={setSearchQuery}
+                                    onClearSearch={() => setSearchQuery('')}
+                                    placeholder="Etsi pentteristä..."
+                                    showResultsInfo={false}
                                 />
                             </View>
                         }
@@ -1087,14 +1127,6 @@ const PantryScreen = ({}) => {
                                 </NoticeBanner>
                             ) : null}
                             <View style={styles.findSection}>
-                                <SearchSection
-                                    heading="Etsi tuotteita"
-                                    searchQuery={searchQuery}
-                                    onSearchChange={setSearchQuery}
-                                    onClearSearch={() => setSearchQuery('')}
-                                    placeholder="Etsi pentteristä..."
-                                    showResultsInfo={false}
-                                />
                                 <PantryLocationChips
                                     locations={pantryLocations}
                                     selectedLocationId={selectedLocationId}
@@ -1148,45 +1180,55 @@ const PantryScreen = ({}) => {
                                     getItemCounts={getCategoryItemCounts}
                                 />
                             </View>
-                            <SectionList
-                                sections={pantryItemSections}
-                                renderItem={renderItem}
-                                renderSectionHeader={({
-                                    section: { title, data },
-                                }) => (
-                                    <CategorySectionHeader
-                                        title={title}
-                                        count={data.length}
-                                    />
-                                )}
-                                keyExtractor={(item, index) =>
-                                    String(
-                                        item._id ||
-                                            item.foodId?._id ||
-                                            item.foodId ||
-                                            `${item.name}-${index}`
-                                    )
-                                }
-                                extraData={[
-                                    pantryItems,
-                                    searchQuery,
-                                    filteredPantryItems,
-                                    selectedLocationId,
+                            <View
+                                style={[
+                                    styles.productList,
+                                    styles.listContent,
                                 ]}
-                                style={styles.productList}
-                                contentContainerStyle={styles.listContent}
-                                scrollEnabled={false}
-                                stickySectionHeadersEnabled={false}
-                                ListEmptyComponent={
-                                    !loading && (
-                                        <CustomText style={styles.emptyText}>
-                                            {searchQuery.length > 0
-                                                ? `Hakusanalla "${searchQuery}" ei löytynyt tuotteita.`
-                                                : 'Pentterissäsi ei ole vielä elintarvikkeita. Skannaa säilytyspaikka tai lisää tuote manuaalisesti.'}
-                                        </CustomText>
-                                    )
-                                }
-                            />
+                            >
+                                {pantryItemSections.some(
+                                    (section) => section.data?.length
+                                )
+                                    ? pantryItemSections.map((section) => (
+                                          <View
+                                              key={
+                                                  section.title ||
+                                                  'pantry-section'
+                                              }
+                                          >
+                                              <CategorySectionHeader
+                                                  title={section.title}
+                                                  count={section.data.length}
+                                              />
+                                              {section.data.map(
+                                                  (item, index) => (
+                                                      <View
+                                                          key={String(
+                                                              item._id ||
+                                                                  item.foodId
+                                                                      ?._id ||
+                                                                  item.foodId ||
+                                                                  `${item.name}-${index}`
+                                                          )}
+                                                      >
+                                                          {renderItem({
+                                                              item,
+                                                          })}
+                                                      </View>
+                                                  )
+                                              )}
+                                          </View>
+                                      ))
+                                    : !loading && (
+                                          <CustomText
+                                              style={styles.emptyText}
+                                          >
+                                              {searchQuery.length > 0
+                                                  ? `Hakusanalla "${searchQuery}" ei löytynyt tuotteita.`
+                                                  : 'Pentterissäsi ei ole vielä elintarvikkeita. Skannaa säilytyspaikka tai lisää tuote manuaalisesti.'}
+                                          </CustomText>
+                                      )}
+                            </View>
                         </View>
                     </StickyListLayout>
                     <PantryScanLockedModal

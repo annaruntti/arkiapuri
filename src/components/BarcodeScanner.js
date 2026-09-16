@@ -9,28 +9,27 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Button from './Button'
 import CustomText from './CustomText'
 import openFoodFactsApi from '../services/openFoodFactsApi'
 
 const PRODUCT_BARCODE_TYPES = ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128']
 
-const BarcodeScanner = ({ onScanSuccess, onCancel, isVisible }) => {
-    const [permission, requestPermission] = useCameraPermissions()
-    const [scanned, setScanned] = useState(false)
-    const [flashEnabled, setFlashEnabled] = useState(false)
-
-    useEffect(() => {
-        if (!isVisible) {
-            setScanned(false)
-            setFlashEnabled(false)
-            return
-        }
-
-        if (permission && !permission.granted && permission.canAskAgain) {
-            requestPermission()
-        }
-    }, [isVisible, permission, requestPermission])
+const ScannerBody = ({
+    permission,
+    requestPermission,
+    scanned,
+    setScanned,
+    flashEnabled,
+    setFlashEnabled,
+    cameraReady,
+    onScanSuccess,
+    onCancel,
+}) => {
+    const insets = useSafeAreaInsets()
+    const topPad = Math.max(insets.top, 12) + 8
+    const bottomPad = Math.max(insets.bottom, 8) + 12
 
     const handleBarCodeScanned = ({ data }) => {
         if (scanned) return
@@ -53,45 +52,43 @@ const BarcodeScanner = ({ onScanSuccess, onCancel, isVisible }) => {
         )
     }
 
-    if (!isVisible) {
-        return null
+    if (!permission) {
+        return (
+            <View style={styles.centered}>
+                <CustomText style={styles.text}>
+                    Pyydetään kamera-oikeuksia...
+                </CustomText>
+            </View>
+        )
     }
 
-    const renderBody = () => {
-        if (!permission) {
-            return (
-                <View style={styles.centered}>
-                    <CustomText style={styles.text}>
-                        Pyydetään kamera-oikeuksia...
-                    </CustomText>
-                </View>
-            )
-        }
-
-        if (!permission.granted) {
-            return (
-                <View style={styles.centered}>
-                    <TouchableOpacity
-                        style={styles.closeButton}
-                        onPress={onCancel}
-                    >
-                        <Ionicons name="close" size={30} color="#fff" />
-                    </TouchableOpacity>
-                    <CustomText style={styles.text}>
-                        Kamera-oikeudet tarvitaan viivakoodin skannaamiseen
-                    </CustomText>
-                    <Button
-                        title="Salli kamera"
-                        onPress={requestPermission}
-                        style={styles.permissionButton}
-                    />
-                    <Button title="Sulje" onPress={onCancel} />
-                </View>
-            )
-        }
-
+    if (!permission.granted) {
         return (
-            <View style={styles.container}>
+            <View style={[styles.centered, { paddingTop: topPad }]}>
+                <TouchableOpacity
+                    style={[styles.iconButton, styles.permissionClose]}
+                    onPress={onCancel}
+                    accessibilityRole="button"
+                    accessibilityLabel="Sulje"
+                >
+                    <Ionicons name="close" size={30} color="#fff" />
+                </TouchableOpacity>
+                <CustomText style={styles.text}>
+                    Kamera-oikeudet tarvitaan viivakoodin skannaamiseen
+                </CustomText>
+                <Button
+                    title="Salli kamera"
+                    onPress={requestPermission}
+                    style={styles.permissionButton}
+                />
+                <Button title="Sulje" onPress={onCancel} />
+            </View>
+        )
+    }
+
+    return (
+        <View style={styles.container}>
+            {cameraReady ? (
                 <CameraView
                     facing="back"
                     enableTorch={flashEnabled}
@@ -101,68 +98,123 @@ const BarcodeScanner = ({ onScanSuccess, onCancel, isVisible }) => {
                     onBarcodeScanned={
                         scanned ? undefined : handleBarCodeScanned
                     }
-                    style={StyleSheet.absoluteFillObject}
+                    style={styles.camera}
                 />
+            ) : (
+                <View style={styles.camera} />
+            )}
 
-                <View style={styles.overlay}>
-                    <View style={styles.overlayTop}>
-                        <TouchableOpacity
-                            style={styles.iconButton}
-                            onPress={onCancel}
-                        >
-                            <Ionicons name="close" size={30} color="#fff" />
-                        </TouchableOpacity>
-                        {Platform.OS !== 'web' ? (
-                            <TouchableOpacity
-                                style={styles.iconButton}
-                                onPress={() =>
-                                    setFlashEnabled((enabled) => !enabled)
-                                }
-                            >
-                                <Ionicons
-                                    name={flashEnabled ? 'flash' : 'flash-off'}
-                                    size={30}
-                                    color="#fff"
-                                />
-                            </TouchableOpacity>
-                        ) : (
-                            <View style={styles.iconButton} />
-                        )}
-                    </View>
+            <View
+                pointerEvents="box-none"
+                style={[styles.topBar, { paddingTop: topPad }]}
+            >
+                <TouchableOpacity
+                    style={styles.iconButton}
+                    onPress={onCancel}
+                    accessibilityRole="button"
+                    accessibilityLabel="Sulje"
+                >
+                    <Ionicons name="close" size={30} color="#fff" />
+                </TouchableOpacity>
+                {Platform.OS !== 'web' ? (
+                    <TouchableOpacity
+                        style={styles.iconButton}
+                        onPress={() => setFlashEnabled((enabled) => !enabled)}
+                        accessibilityRole="button"
+                        accessibilityLabel={
+                            flashEnabled ? 'Sammuta salama' : 'Sytytä salama'
+                        }
+                    >
+                        <Ionicons
+                            name={flashEnabled ? 'flash' : 'flash-off'}
+                            size={30}
+                            color="#fff"
+                        />
+                    </TouchableOpacity>
+                ) : (
+                    <View style={styles.iconButton} />
+                )}
+            </View>
 
-                    <View style={styles.scanArea}>
-                        <View style={styles.scanFrame}>
-                            <View style={[styles.corner, styles.topLeft]} />
-                            <View style={[styles.corner, styles.topRight]} />
-                            <View style={[styles.corner, styles.bottomLeft]} />
-                            <View style={[styles.corner, styles.bottomRight]} />
-                        </View>
-                        <CustomText style={styles.instructionText}>
-                            Kohdista viivakoodi ruudun keskelle
-                        </CustomText>
-                    </View>
-
-                    <View style={styles.overlayBottom}>
-                        {scanned ? (
-                            <Button
-                                title="Skannaa uudelleen"
-                                onPress={() => setScanned(false)}
-                                style={styles.rescanButton}
-                            />
-                        ) : null}
-                    </View>
+            <View pointerEvents="none" style={styles.frameWrap}>
+                <CustomText style={styles.instructionText}>
+                    Kohdista viivakoodi ruudun keskelle
+                </CustomText>
+                <View style={styles.scanFrame}>
+                    <View style={[styles.corner, styles.topLeft]} />
+                    <View style={[styles.corner, styles.topRight]} />
+                    <View style={[styles.corner, styles.bottomLeft]} />
+                    <View style={[styles.corner, styles.bottomRight]} />
                 </View>
             </View>
-        )
+
+            <View
+                pointerEvents="box-none"
+                style={[styles.bottomBar, { paddingBottom: bottomPad }]}
+            >
+                {scanned ? (
+                    <Button
+                        title="Skannaa uudelleen"
+                        onPress={() => setScanned(false)}
+                        style={styles.rescanButton}
+                    />
+                ) : null}
+                <Button
+                    title="Peruuta"
+                    type="SECONDARY"
+                    onPress={onCancel}
+                    style={styles.cancelButton}
+                />
+            </View>
+        </View>
+    )
+}
+
+const BarcodeScanner = ({ onScanSuccess, onCancel, isVisible }) => {
+    const [permission, requestPermission] = useCameraPermissions()
+    const [scanned, setScanned] = useState(false)
+    const [flashEnabled, setFlashEnabled] = useState(false)
+    const [cameraReady, setCameraReady] = useState(false)
+
+    useEffect(() => {
+        if (!isVisible) {
+            setScanned(false)
+            setFlashEnabled(false)
+            setCameraReady(false)
+            return undefined
+        }
+
+        if (permission && !permission.granted && permission.canAskAgain) {
+            requestPermission()
+        }
+
+        const timer = setTimeout(() => setCameraReady(true), 50)
+        return () => clearTimeout(timer)
+    }, [isVisible, permission, requestPermission])
+
+    if (!isVisible) {
+        return null
     }
 
     return (
         <Modal
-            visible={isVisible}
-            animationType="slide"
+            visible
+            animationType="fade"
+            presentationStyle="fullScreen"
+            statusBarTranslucent
             onRequestClose={onCancel}
         >
-            {renderBody()}
+            <ScannerBody
+                permission={permission}
+                requestPermission={requestPermission}
+                scanned={scanned}
+                setScanned={setScanned}
+                flashEnabled={flashEnabled}
+                setFlashEnabled={setFlashEnabled}
+                cameraReady={cameraReady}
+                onScanSuccess={onScanSuccess}
+                onCancel={onCancel}
+            />
         </Modal>
     )
 }
@@ -171,6 +223,9 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#000',
+    },
+    camera: {
+        flex: 1,
     },
     centered: {
         flex: 1,
@@ -188,45 +243,56 @@ const styles = StyleSheet.create({
     permissionButton: {
         marginBottom: 12,
     },
-    overlay: {
-        ...StyleSheet.absoluteFillObject,
-        justifyContent: 'space-between',
+    permissionClose: {
+        position: 'absolute',
+        top: 8,
+        right: 12,
     },
-    overlayTop: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    topBar: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 2,
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        paddingTop: 50,
-        paddingHorizontal: 20,
-    },
-    overlayBottom: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'flex-end',
         alignItems: 'center',
-        paddingBottom: 50,
+        paddingHorizontal: 12,
+        paddingBottom: 8,
+        backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    },
+    bottomBar: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 2,
+        paddingHorizontal: 24,
+        paddingTop: 16,
+        gap: 10,
+        backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    },
+    frameWrap: {
+        position: 'absolute',
+        top: '38%',
+        left: 0,
+        right: 0,
+        zIndex: 1,
+        alignItems: 'center',
+        paddingHorizontal: 20,
     },
     iconButton: {
         padding: 10,
         minWidth: 50,
-    },
-    closeButton: {
-        position: 'absolute',
-        top: 50,
-        right: 20,
-        padding: 10,
-    },
-    scanArea: {
-        flex: 1,
-        justifyContent: 'center',
+        minHeight: 44,
         alignItems: 'center',
+        justifyContent: 'center',
     },
     scanFrame: {
         width: 250,
         height: 150,
         position: 'relative',
+        marginTop: 16,
     },
     corner: {
         position: 'absolute',
@@ -262,15 +328,18 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         textAlign: 'center',
-        marginTop: 30,
         backgroundColor: 'rgba(0, 0, 0, 0.7)',
         paddingHorizontal: 20,
         paddingVertical: 10,
         borderRadius: 5,
+        overflow: 'hidden',
     },
     rescanButton: {
         backgroundColor: '#9C86FC',
-        marginBottom: 20,
+        width: '100%',
+    },
+    cancelButton: {
+        width: '100%',
     },
 })
 
