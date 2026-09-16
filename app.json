@@ -6,12 +6,6 @@
         "orientation": "portrait",
         "icon": "./assets/arkiapuri-logo.png",
         "userInterfaceStyle": "light",
-        "newArchEnabled": true,
-        "splash": {
-            "image": "./assets/arkiapuri-logo.png",
-            "resizeMode": "contain",
-            "backgroundColor": "#DCD4FC"
-        },
         "assetBundlePatterns": ["**/*"],
         "plugins": [
             [
@@ -26,6 +20,15 @@
                 {
                     "cameraPermission": "Arkiapuri käyttää kameraa viivakoodien lukemiseen.",
                     "recordAudioAndroid": false
+                }
+            ],
+            [
+                "expo-splash-screen",
+                {
+                    "image": "./assets/arkiapuri-logo.png",
+                    "resizeMode": "contain",
+                    "backgroundColor": "#DCD4FC",
+                    "imageWidth": 200
                 }
             ]
         ],

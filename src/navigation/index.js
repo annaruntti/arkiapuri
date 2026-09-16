@@ -168,12 +168,12 @@ const BackButton = () => {
     }
 
     return (
-        <TouchableOpacity
+        <HeaderIconButton
             onPress={handleBackPress}
-            style={[styles.iconButton, styles.backButton]}
+            accessibilityLabel="Takaisin"
         >
-            <Feather name="chevron-left" size={24} color="black" />
-        </TouchableOpacity>
+            <BackChevron />
+        </HeaderIconButton>
     )
 }
 
@@ -231,12 +231,12 @@ const AuthBackButton = ({ route, navigation }) => {
     }
 
     return (
-        <TouchableOpacity
+        <HeaderIconButton
             onPress={handleBackPress}
-            style={[styles.iconButton, styles.backButton]}
+            accessibilityLabel="Takaisin"
         >
-            <Feather name="chevron-left" size={24} color="black" />
-        </TouchableOpacity>
+            <BackChevron />
+        </HeaderIconButton>
     )
 }
 
@@ -259,26 +259,68 @@ const UserProfile = ({ isActive = false }) => {
     }
 
     return (
-        <TouchableOpacity onPress={handlePress} style={styles.iconButton}>
+        <HeaderIconButton
+            onPress={handlePress}
+            accessibilityLabel="Profiili"
+            style={styles.profileButton}
+        >
             <FontAwesome6
                 name="circle-user"
-                size={24}
+                size={22}
                 color={isActive ? '#5844BB' : 'black'}
             />
-        </TouchableOpacity>
+        </HeaderIconButton>
     )
 }
 
+const HEADER_ICON_BUTTON_SIZE = 36
+
+const BackChevron = () => (
+    <Feather
+        name="chevron-left"
+        size={22}
+        color="black"
+        style={styles.backIcon}
+    />
+)
+
+const HeaderIconButton = ({
+    onPress,
+    children,
+    accessibilityLabel,
+    style,
+}) => (
+    <TouchableOpacity
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+        hitSlop={
+            Platform.OS === 'web'
+                ? undefined
+                : { top: 6, bottom: 6, left: 6, right: 6 }
+        }
+        style={[styles.iconButton, style]}
+    >
+        {children}
+    </TouchableOpacity>
+)
+
 const styles = StyleSheet.create({
     iconButton: {
-        paddingRight: Platform.OS === 'web' ? 8 : 0,
-        marginRight: Platform.OS === 'web' ? 16 : -48,
-        marginLeft: Platform.OS === 'web' ? 0 : -10,
+        width: HEADER_ICON_BUTTON_SIZE,
+        height: HEADER_ICON_BUTTON_SIZE,
+        minWidth: HEADER_ICON_BUTTON_SIZE,
+        minHeight: HEADER_ICON_BUTTON_SIZE,
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+        borderRadius: HEADER_ICON_BUTTON_SIZE / 2,
     },
-    backButton: {
-        marginLeft: Platform.OS === 'web' ? 8 : 5,
-        paddingRight: Platform.OS === 'web' ? 8 : 0,
-        marginRight: Platform.OS === 'web' ? 0 : 0,
+    profileButton: {
+        marginRight: Platform.OS === 'web' ? 16 : 0,
+    },
+    backIcon: {
+        marginLeft: Platform.OS === 'ios' ? 1 : 0,
     },
 })
 
@@ -434,7 +476,7 @@ function ProfileStackScreen() {
                 },
                 headerTitle: (props) => <LogoTitle {...props} />,
                 headerLeft: () => (
-                    <TouchableOpacity
+                    <HeaderIconButton
                         onPress={() => {
                             if (route.name !== 'Omat tiedot') {
                                 navigation.navigate('Omat tiedot')
@@ -450,10 +492,10 @@ function ProfileStackScreen() {
                             }
                             navigation.navigate(fromScreen)
                         }}
-                        style={[styles.iconButton, styles.backButton]}
+                        accessibilityLabel="Takaisin"
                     >
-                        <Feather name="chevron-left" size={24} color="black" />
-                    </TouchableOpacity>
+                        <BackChevron />
+                    </HeaderIconButton>
                 ),
                 headerRight: () => <UserProfile isActive={true} />,
             })}

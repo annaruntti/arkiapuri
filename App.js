@@ -2,6 +2,7 @@ import 'react-native-gesture-handler'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { useFonts } from 'expo-font'
+import { requireOptionalNativeModule } from 'expo'
 import * as SplashScreen from 'expo-splash-screen'
 import React, { useEffect, useState } from 'react'
 import { Platform, StyleSheet, View } from 'react-native'
@@ -12,6 +13,13 @@ import { useResponsiveDimensions } from './src/utils/responsive'
 
 // Splash screen is keep visible while we fetch resources
 SplashScreen.preventAutoHideAsync()
+
+if (__DEV__ && Platform.OS !== 'web') {
+    const DevMenuPreferences = requireOptionalNativeModule('DevMenuPreferences')
+    DevMenuPreferences?.setPreferencesAsync?.({
+        showFloatingActionButton: false,
+    })
+}
 
 // Check if splash has been shown in this session (for web)
 const hasShownSplash = () => {
