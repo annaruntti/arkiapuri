@@ -172,7 +172,7 @@ const BackButton = () => {
             onPress={handleBackPress}
             style={[styles.iconButton, styles.backButton]}
         >
-            <Feather name="arrow-left" size={24} color="black" />
+            <Feather name="chevron-left" size={24} color="black" />
         </TouchableOpacity>
     )
 }
@@ -235,7 +235,7 @@ const AuthBackButton = ({ route, navigation }) => {
             onPress={handleBackPress}
             style={[styles.iconButton, styles.backButton]}
         >
-            <Feather name="arrow-left" size={24} color="black" />
+            <Feather name="chevron-left" size={24} color="black" />
         </TouchableOpacity>
     )
 }
@@ -452,7 +452,7 @@ function ProfileStackScreen() {
                         }}
                         style={[styles.iconButton, styles.backButton]}
                     >
-                        <Feather name="arrow-left" size={24} color="black" />
+                        <Feather name="chevron-left" size={24} color="black" />
                     </TouchableOpacity>
                 ),
                 headerRight: () => <UserProfile isActive={true} />,

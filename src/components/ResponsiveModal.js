@@ -165,7 +165,7 @@ const ResponsiveModal = ({
                             accessibilityLabel={backButtonLabel}
                         >
                             <MaterialIcons
-                                name="arrow-back"
+                                name="chevron-left"
                                 size={isDesktop ? 22 : 20}
                                 color="#5844BB"
                             />

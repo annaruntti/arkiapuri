@@ -736,7 +736,7 @@ const FormFoodItem = forwardRef(
                         accessibilityRole="button"
                         accessibilityLabel="Takaisin"
                     >
-                        <MaterialIcons name="arrow-back" size={22} color="#5844BB" />
+                        <MaterialIcons name="chevron-left" size={22} color="#5844BB" />
                     </TouchableOpacity>
                 )}
 
