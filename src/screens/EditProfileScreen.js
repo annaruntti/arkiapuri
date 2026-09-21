@@ -270,7 +270,12 @@ const EditProfileScreen = () => {
             >
                 <View style={getContainerStyle()}>
                     <View style={getContentStyle()}>
-                        <View style={styles.profileCard}>
+                        <View
+                            style={[
+                                styles.profileCard,
+                                isDesktop && styles.desktopProfileCard,
+                            ]}
+                        >
                         <View style={styles.header}>
                             <CustomText
                                 style={[
@@ -555,6 +560,10 @@ const styles = StyleSheet.create({
         borderColor: '#D8CEF8',
         padding: 16,
         marginBottom: 20,
+    },
+    desktopProfileCard: {
+        paddingHorizontal: 32,
+        paddingVertical: 28,
     },
     header: {
         alignItems: 'center',

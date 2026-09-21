@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native'
 import { LinearGradient } from 'expo-linear-gradient'
-import React, { useState } from 'react'
+import { useState } from 'react'
 import {
     Image,
     ScrollView,
@@ -14,9 +14,9 @@ import FilteredMealsCard from '../components/FilteredMealsCard'
 import MealItemDetail from '../components/MealItemDetail'
 import RandomMealCard from '../components/RandomMealCard'
 import Info from '../components/Info'
+import ContentContainer from '../components/ContentContainer'
 import ResponsiveLayout from '../components/ResponsiveLayout'
 import { useResponsiveDimensions } from '../utils/responsive'
-import { te } from 'date-fns/locale'
 
 const mealImage = {
     uri: 'https://images.ctfassets.net/hef5a6s5axrs/1fvToRJqesGgl6dJCFyyJl/0f484ccfe293cca2a0a4ab57d3324c34/undraw_breakfast_rgx5.png',
@@ -48,6 +48,10 @@ const staticWavePathData =
 // Desktop-specific wave path with higher curves and smooth flow
 const desktopWavePathData =
     'M0,80L48,85C96,90,192,100,288,125C384,150,480,190,576,210C672,230,768,210,864,185C960,160,1056,120,1152,135C1248,150,1344,210,1392,225L1440,240L1440,320L0,320Z'
+
+const DESKTOP_CARD_MAX_WIDTH = 350
+const DESKTOP_CARD_GAP = 30
+const DESKTOP_CONTENT_WIDTH = DESKTOP_CARD_MAX_WIDTH * 2 + DESKTOP_CARD_GAP
 
 const HomeScreen = () => {
     const navigation = useNavigation()
@@ -131,26 +135,28 @@ const HomeScreen = () => {
                     contentContainerStyle={styles.scrollContentContainer}
                 >
                     <View style={styles.desktopHeaderSection}>
-                        <View style={styles.desktopHeaderCard}>
-                            <CustomText
-                                style={[
-                                    styles.introTitle,
-                                    styles.desktopIntroTitle,
-                                ]}
-                            >
-                                Tervetuloa käyttämään Arkiapuria!
-                            </CustomText>
-                            <CustomText
-                                style={[
-                                    styles.introText,
-                                    styles.desktopIntroText,
-                                ]}
-                            >
-                                Suunnittele ateriat, pidä pentteri ajan tasalla
-                                ja tee ostoslistat ja lukujärjestys samassa
-                                paikassa.
-                            </CustomText>
-                        </View>
+                        <ContentContainer maxWidth={DESKTOP_CONTENT_WIDTH}>
+                            <View style={styles.desktopHeaderCard}>
+                                <CustomText
+                                    style={[
+                                        styles.introTitle,
+                                        styles.desktopIntroTitle,
+                                    ]}
+                                >
+                                    Tervetuloa käyttämään Arkiapuria!
+                                </CustomText>
+                                <CustomText
+                                    style={[
+                                        styles.introText,
+                                        styles.desktopIntroText,
+                                    ]}
+                                >
+                                    Suunnittele ateriat, pidä pentteri ajan
+                                    tasalla ja tee ostoslistat ja lukujärjestys
+                                    samassa paikassa.
+                                </CustomText>
+                            </View>
+                        </ContentContainer>
                     </View>
 
                     {/* Desktop SVG Wave */}
@@ -180,6 +186,7 @@ const HomeScreen = () => {
                                 styles.desktopNavigationWithWave,
                             ]}
                         >
+                            <ContentContainer maxWidth={DESKTOP_CONTENT_WIDTH}>
                             {renderDesktopGrid()}
 
                             {/* Filtered Meals Cards */}
@@ -239,6 +246,7 @@ const HomeScreen = () => {
                                 iconImage={pantryImage}
                                 filterByPantry={true}
                             />
+                            </ContentContainer>
                         </LinearGradient>
                     </View>
                 </ScrollView>
@@ -645,21 +653,22 @@ const styles = StyleSheet.create({
     },
     // Desktop-specific styles
     desktopHeaderSection: {
-        paddingHorizontal: 30,
+        paddingHorizontal: 20,
         paddingTop: 20,
+        width: '100%',
     },
     desktopHeaderCard: {
         backgroundColor: '#fff',
         borderRadius: 12,
         paddingTop: 20,
-        paddingHorizontal: 30,
-        alignItems: 'left',
+        paddingHorizontal: 0,
+        alignItems: 'center',
     },
     desktopNavigationWrapper: {
         flex: 1,
     },
     desktopNavigationGradient: {
-        paddingHorizontal: 40,
+        paddingHorizontal: 20,
         flex: 1,
     },
     desktopNavigationWithWave: {
@@ -667,14 +676,14 @@ const styles = StyleSheet.create({
     },
     desktopIntroTitle: {
         fontSize: 32,
-        textAlign: 'left',
+        textAlign: 'center',
         marginBottom: 8,
     },
     desktopIntroText: {
         fontSize: 21,
-        textAlign: 'left',
+        textAlign: 'center',
         lineHeight: 26,
-        maxWidth: 800,
+        maxWidth: '100%',
         paddingLeft: 0,
         paddingVertical: 16,
     },
@@ -682,10 +691,10 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         flexWrap: 'wrap',
         justifyContent: 'flex-start',
+        alignSelf: 'stretch',
+        width: '100%',
         paddingBottom: 40,
-        paddingHorizontal: 40,
-        maxWidth: 800,
-        gap: 30,
+        gap: DESKTOP_CARD_GAP,
     },
     desktopCard: {
         backgroundColor: '#fff',
@@ -701,7 +710,7 @@ const styles = StyleSheet.create({
         elevation: 5,
         overflow: 'hidden',
         minWidth: 280,
-        maxWidth: 350,
+        maxWidth: DESKTOP_CARD_MAX_WIDTH,
         flex: 1,
     },
     desktopCardImage: {

@@ -225,19 +225,22 @@ const OnboardingScreen = ({ navigation, route }) => {
             <View style={styles.actions}>
                 {isLast ? (
                     <View style={styles.lastActions}>
-                        <Button
-                            title="Jatka ilman kirjautumista"
-                            onPress={handleContinueAsGuest}
+                         <Button
+                            title="Kirjaudu sisään"
+                            type="PRIMARY"
+                            onPress={handleSignIn}
                             fullWidth
-                            style={authFormStyles.primaryButton}
+                            style={[
+                                authFormStyles.primaryButton,
+                                authFormStyles.fullWidthButton,
+                            ]}
                             textStyle={authFormStyles.buttonText}
                         />
                         <Button
-                            title="Kirjaudu sisään"
+                            title="Jatka ilman kirjautumista"
                             type="SECONDARY"
-                            onPress={handleSignIn}
+                            onPress={handleContinueAsGuest}
                             fullWidth
-                            style={authFormStyles.fullWidthButton}
                             textStyle={authFormStyles.buttonText}
                         />
                         <Button

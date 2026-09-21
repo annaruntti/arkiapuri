@@ -13,6 +13,7 @@ import axios from 'axios'
 import * as ImagePicker from 'expo-image-picker'
 import Button from '../components/Button'
 import CustomText from '../components/CustomText'
+import ContentContainer from '../components/ContentContainer'
 import FamilySection from '../components/FamilySection'
 import ResponsiveLayout from '../components/ResponsiveLayout'
 import { useLogin } from '../context/LoginProvider'
@@ -20,7 +21,6 @@ import { getServerUrl } from '../utils/getServerUrl'
 import { useResponsiveDimensions } from '../utils/responsive'
 import { openAuthScreen } from '../utils/authNavigation'
 import storage from '../utils/storage'
-import { AUTH_FORM_MAX_WIDTH } from '../components/AuthLayout'
 import { getProfileImageSource } from '../utils/profileImage'
 
 const ProfileScreen = () => {
@@ -190,9 +190,15 @@ const ProfileScreen = () => {
                 showsVerticalScrollIndicator={false}
             >
                 <View style={getContainerStyle()}>
+                    <ContentContainer maxWidth={760}>
                     <View style={getContentStyle()}>
                         {!isLoggedIn ? (
-                            <View style={styles.profileCard}>
+                            <View
+                                style={[
+                                    styles.profileCard,
+                                    isDesktop && styles.desktopProfileCard,
+                                ]}
+                            >
                                 <View style={styles.header}>
                                     <View
                                         style={[
@@ -232,11 +238,20 @@ const ProfileScreen = () => {
                                     </View>
                                 </View>
 
-                                <View style={styles.lastActions}>
+                                <View
+                                    style={[
+                                        styles.lastActions,
+                                        isDesktop && styles.desktopGuestActions,
+                                    ]}
+                                >
                                     <Button
                                         title="Kirjaudu sisään"
-                                        fullWidth
-                                        style={styles.lastActionButton}
+                                        fullWidth={!isDesktop}
+                                        style={[
+                                            styles.lastActionButton,
+                                            isDesktop &&
+                                                styles.desktopGuestButton,
+                                        ]}
                                         onPress={() =>
                                             openAuthScreen(
                                                 navigation,
@@ -247,8 +262,12 @@ const ProfileScreen = () => {
                                     <Button
                                         title="Luo käyttäjätunnus"
                                         type="TERTIARY"
-                                        fullWidth
-                                        style={styles.lastActionButton}
+                                        fullWidth={!isDesktop}
+                                        style={[
+                                            styles.lastActionButton,
+                                            isDesktop &&
+                                                styles.desktopGuestButton,
+                                        ]}
                                         onPress={() =>
                                             openAuthScreen(
                                                 navigation,
@@ -260,7 +279,12 @@ const ProfileScreen = () => {
                             </View>
                         ) : (
                             <>
-                                <View style={styles.profileCard}>
+                                <View
+                                    style={[
+                                        styles.profileCard,
+                                        isDesktop && styles.desktopProfileCard,
+                                    ]}
+                                >
                                     <View style={styles.header}>
                                         <TouchableOpacity onPress={pickImage}>
                                             <View
@@ -350,6 +374,7 @@ const ProfileScreen = () => {
                             </>
                         )}
                     </View>
+                    </ContentContainer>
                 </View>
             </ScrollView>
         </ResponsiveLayout>
@@ -395,17 +420,14 @@ const styles = StyleSheet.create({
     },
     content: {
         width: '100%',
-        maxWidth: AUTH_FORM_MAX_WIDTH,
         alignItems: 'center',
     },
     desktopContent: {
-        maxWidth: AUTH_FORM_MAX_WIDTH,
         width: '100%',
         alignItems: 'center',
         padding: 0,
     },
     tabletContent: {
-        maxWidth: AUTH_FORM_MAX_WIDTH,
         width: '100%',
         alignItems: 'center',
         padding: 0,
@@ -418,6 +440,10 @@ const styles = StyleSheet.create({
         borderColor: '#D8CEF8',
         padding: 16,
         marginBottom: 20,
+    },
+    desktopProfileCard: {
+        paddingHorizontal: 32,
+        paddingVertical: 28,
     },
     header: {
         alignItems: 'center',
@@ -512,8 +538,21 @@ const styles = StyleSheet.create({
     lastActionButton: {
         width: '100%',
         alignSelf: 'stretch',
-        minHeight: 45,
+        minHeight: 40,
         paddingHorizontal: 14,
+        paddingVertical: 7,
+    },
+    desktopGuestActions: {
+        flexDirection: 'row',
+        alignItems: 'stretch',
+        gap: 12,
+    },
+    desktopGuestButton: {
+        flex: 1,
+        width: 'auto',
+        alignSelf: 'stretch',
+        minHeight: 40,
+        minWidth: 0,
         paddingVertical: 7,
     },
 })

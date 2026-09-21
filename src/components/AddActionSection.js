@@ -18,7 +18,9 @@ const AddActionSection = ({
     const { isDesktop } = useResponsiveDimensions()
 
     return (
-        <PrimaryActionFade style={styles.section}>
+        <PrimaryActionFade
+            style={[styles.section, isDesktop && styles.desktopSection]}
+        >
             <CustomText style={styles.title}>{title}</CustomText>
             <CustomText style={styles.hint}>{hint}</CustomText>
             <View
@@ -72,6 +74,10 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#D8CEF8',
         width: '100%',
+    },
+    desktopSection: {
+        paddingHorizontal: 32,
+        paddingVertical: 28,
     },
     title: {
         fontSize: 17,
