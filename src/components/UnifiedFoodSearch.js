@@ -18,10 +18,14 @@ import { getServerUrl } from '../utils/getServerUrl'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 import openFoodFactsApi from '../services/openFoodFactsApi'
-import { addPantryItem, addShoppingListItems } from '../services/collectionApi'
+import {
+    addPantryItem,
+    previewShoppingListPrices,
+} from '../services/collectionApi'
 import CustomText from './CustomText'
 import ListItem from './ListItem'
 import MealIngredientQuantityModal from './MealIngredientQuantityModal'
+import BarcodeProductReview from './BarcodeProductReview'
 import {
     applyIngredientQuantity,
     stripCatalogLocationQuantity,
@@ -30,6 +34,7 @@ import { DEFAULT_SERVINGS } from '../utils/mealServings'
 import {
     buildGuestFoodItemFromOpenFoodFacts,
     mapOpenFoodFactsToFoodItemFields,
+    shoppingListLineFromMappedPackage,
 } from '../utils/openFoodFactsMapper'
 
 const normalizeItemName = (name) =>
@@ -103,6 +108,7 @@ const UnifiedFoodSearch = ({
     const [addedItems, setAddedItems] = useState(new Set())
     const [activeTab, setActiveTab] = useState('all') // 'all', 'local', 'openfoodfacts'
     const [pendingMealPick, setPendingMealPick] = useState(null)
+    const [pendingBarcodeReview, setPendingBarcodeReview] = useState(null)
     const searchContainerRef = useRef(null)
     const searchTimeoutRef = useRef(null)
     const renderTimestampRef = useRef(Date.now())
@@ -111,9 +117,11 @@ const UnifiedFoodSearch = ({
     onMealQuantityPromptChangeRef.current = onMealQuantityPromptChange
 
     useEffect(() => {
-        onMealQuantityPromptChangeRef.current?.(Boolean(pendingMealPick))
+        onMealQuantityPromptChangeRef.current?.(
+            Boolean(pendingMealPick || pendingBarcodeReview)
+        )
         return () => onMealQuantityPromptChangeRef.current?.(false)
-    }, [pendingMealPick])
+    }, [pendingMealPick, pendingBarcodeReview])
 
     const handleBarcodeScannedRef = useRef(null)
 
@@ -322,22 +330,101 @@ const UnifiedFoodSearch = ({
             const data = await openFoodFactsApi.searchByBarcode(barcode)
 
             if (data.success && data.product) {
-                // Show product details and option to add
-                Alert.alert(
-                    'Tuote löytyi!',
-                    `${data.product.name}\n${data.product.brands || ''}`,
-                    [
-                        {
-                            text: 'Peruuta',
-                            style: 'cancel',
-                        },
-                        {
-                            text: 'Lisää listaan',
-                            onPress: () =>
-                                addOpenFoodFactsProduct(data.product),
-                        },
-                    ]
-                )
+                if (location === 'shopping-list') {
+                    const mapped = mapOpenFoodFactsToFoodItemFields(
+                        data.product
+                    )
+                    const reviewBarcode =
+                        data.product.barcode ||
+                        mapped.openFoodFactsData?.barcode ||
+                        barcode
+                    const line = shoppingListLineFromMappedPackage(mapped)
+                    setPendingBarcodeReview({
+                        product: data.product,
+                        name: mapped.name,
+                        brands: data.product.brands || '',
+                        barcode: reviewBarcode,
+                        imageUrl:
+                            mapped.image?.url || data.product.imageUrl || null,
+                        quantityLabel:
+                            mapped.openFoodFactsData?.quantityLabel ||
+                            data.product.quantity ||
+                            '',
+                        category: mapped.category || [],
+                        calories: mapped.calories || 0,
+                        nutritionGrade:
+                            mapped.openFoodFactsData?.nutritionGrade || '',
+                        quantity: line.quantity,
+                        unit: line.unit,
+                        packageQuantity: line.packageQuantity,
+                        packageUnit: line.packageUnit,
+                        price: 0,
+                        priceIsEstimate: false,
+                    })
+                    setSearchQuery('')
+                    setIsListVisible(false)
+                    const token = await storage.getItem('userToken')
+                    if (token) {
+                        try {
+                            const [estimated] = await previewShoppingListPrices(
+                                [
+                                    {
+                                        name: mapped.name,
+                                        quantity: line.quantity,
+                                        unit: line.unit,
+                                        category: mapped.category || [],
+                                        isFood: true,
+                                        price: 0,
+                                        barcode: reviewBarcode,
+                                        packageQuantity: line.packageQuantity,
+                                        packageUnit: line.packageUnit,
+                                    },
+                                ]
+                            )
+                            const amount =
+                                parseFloat(estimated?.priceEstimate) || 0
+                            if (amount > 0) {
+                                setPendingBarcodeReview((current) => {
+                                    if (
+                                        !current ||
+                                        current.barcode !== reviewBarcode ||
+                                        current.price
+                                    ) {
+                                        return current
+                                    }
+                                    return {
+                                        ...current,
+                                        price: amount,
+                                        priceIsEstimate: true,
+                                    }
+                                })
+                            }
+                        } catch (estimateError) {
+                            console.warn(
+                                'Scanned product price estimate unavailable:',
+                                estimateError?.response?.status ||
+                                    estimateError?.message ||
+                                    estimateError
+                            )
+                        }
+                    }
+                } else {
+                    Alert.alert(
+                        'Tuote löytyi!',
+                        `${data.product.name}\n${data.product.brands || ''}`,
+                        [
+                            {
+                                text: 'Peruuta',
+                                style: 'cancel',
+                            },
+                            {
+                                text: 'Lisää listaan',
+                                onPress: () =>
+                                    addOpenFoodFactsProduct(data.product),
+                            },
+                        ]
+                    )
+                }
             } else {
                 Alert.alert(
                     'Tuotetta ei löytynyt',
@@ -400,26 +487,7 @@ const UnifiedFoodSearch = ({
         }
     }
 
-    const addToShoppingList = async (foodItem, collectionData) => {
-        try {
-            await addShoppingListItems(collectionData.shoppingListId, [
-                {
-                    name: foodItem.name,
-                    quantity: collectionData.quantity,
-                    unit: collectionData.unit,
-                    foodId: foodItem._id,
-                    category: foodItem.category || [],
-                    calories: foodItem.calories || 0,
-                    price: 0,
-                },
-            ])
-        } catch (error) {
-            console.error('Error adding to shopping list:', error)
-            throw error
-        }
-    }
-
-    const addOpenFoodFactsProduct = async (product) => {
+    const addOpenFoodFactsProduct = async (product, overrides = {}) => {
         try {
             const token = await storage.getItem('userToken')
 
@@ -429,7 +497,21 @@ const UnifiedFoodSearch = ({
                     product,
                     location
                 )
-                emitSelectedItem(foodItem, { alreadyAdded: false })
+                emitSelectedItem(
+                    {
+                        ...foodItem,
+                        name: overrides.name || foodItem.name,
+                        quantity: overrides.quantity || foodItem.quantity,
+                        unit: overrides.unit || foodItem.unit,
+                        price: overrides.price || 0,
+                        calories:
+                            overrides.calories != null
+                                ? overrides.calories
+                                : foodItem.calories,
+                        category: overrides.category || foodItem.category,
+                    },
+                    { alreadyAdded: false }
+                )
                 setSearchQuery('')
                 setIsListVisible(false)
                 return
@@ -471,10 +553,21 @@ const UnifiedFoodSearch = ({
 
             // For other locations (shopping-list, pantry), use the API
             const mapped = mapOpenFoodFactsToFoodItemFields(product)
+            const shoppingLine =
+                location === 'shopping-list'
+                    ? shoppingListLineFromMappedPackage(mapped, {
+                          quantity: overrides.quantity,
+                          unit: overrides.unit,
+                      })
+                    : null
             const data = await openFoodFactsApi.addToFoodItems(product.barcode, {
                 location,
-                quantity: mapped.packageQuantity || 1,
-                unit: mapped.unit || 'kpl',
+                quantity: shoppingLine
+                    ? shoppingLine.quantity
+                    : overrides.quantity || mapped.packageQuantity || 1,
+                unit: shoppingLine
+                    ? shoppingLine.unit
+                    : overrides.unit || mapped.unit || 'kpl',
                 shoppingListId,
                 mealId,
             })
@@ -494,7 +587,62 @@ const UnifiedFoodSearch = ({
                     data.collectionData.location === 'shopping-list' &&
                     data.collectionData.shoppingListId
                 ) {
-                    await addToShoppingList(data.foodItem, data.collectionData)
+                    // Parent (ShoppingListDetail) adds the row so it can
+                    // detect duplicates and offer to increase quantity.
+                    const line =
+                        shoppingLine ||
+                        shoppingListLineFromMappedPackage(mapped, {
+                            quantity: overrides.quantity,
+                            unit: overrides.unit,
+                        })
+                    const foodPrice = parseFloat(data.foodItem.price) || 0
+                    const overridePrice = Number(overrides.price) || 0
+                    const overrideEstimate =
+                        Number(overrides.priceEstimate) || 0
+                    const priceEstimate =
+                        overrideEstimate > 0
+                            ? overrideEstimate
+                            : overridePrice > 0
+                              ? 0
+                              : foodPrice > 0
+                                ? foodPrice
+                                : 0
+                    const {
+                        _id: foodCatalogId,
+                        ...foodFields
+                    } = data.foodItem || {}
+                    emitSelectedItem(
+                        {
+                            ...foodFields,
+                            foodId: foodCatalogId,
+                            name: overrides.name || data.foodItem.name,
+                            quantity: line.quantity,
+                            unit: line.unit,
+                            price: overridePrice,
+                            priceEstimate,
+                            priceEstimateSource:
+                                overrides.priceEstimateSource ||
+                                (priceEstimate > 0 ? 'history' : undefined),
+                            calories:
+                                overrides.calories != null
+                                    ? overrides.calories
+                                    : data.foodItem.calories || 0,
+                            category:
+                                overrides.category ||
+                                data.foodItem.category ||
+                                [],
+                            barcode:
+                                product.barcode ||
+                                data.foodItem.openFoodFactsData?.barcode,
+                            packageQuantity:
+                                line.packageQuantity ||
+                                data.foodItem.packageQuantity,
+                        },
+                        { alreadyAdded: false }
+                    )
+                    setSearchQuery('')
+                    setIsListVisible(false)
+                    return
                 } else {
                     console.error(
                         'Invalid collectionData:',
@@ -505,9 +653,7 @@ const UnifiedFoodSearch = ({
                     )
                 }
                 // The FoodItem was already created AND already added to the
-                // collection (pantry/shopping list) above — the caller must
-                // NOT add it again (that would create a duplicate entry with
-                // the wrong default quantity of 1).
+                // collection (pantry) above — the caller must NOT add it again.
                 emitSelectedItem(data.foodItem, { alreadyAdded: true })
                 setSearchQuery('')
                 setIsListVisible(false)
@@ -525,6 +671,64 @@ const UnifiedFoodSearch = ({
                     'Tuotteen lisääminen epäonnistui. Yritä uudelleen.'
             )
         }
+    }
+
+    const confirmBarcodeReview = async ({
+        name,
+        quantity,
+        unit,
+        price,
+        priceIsEstimate,
+        calories,
+        category,
+    }) => {
+        const review = pendingBarcodeReview
+        if (!review?.product) return
+        const foundName = normalizeItemName(review.name)
+        const chosenName = normalizeItemName(name)
+        // Estimates are not user prices — keep them as priceEstimate so the
+        // list row still shows the amount after add.
+        const parsedPrice = parseFloat(String(price ?? '').replace(',', '.'))
+        const hasPositivePrice =
+            Number.isFinite(parsedPrice) && parsedPrice > 0
+        const userPrice =
+            priceIsEstimate || !hasPositivePrice ? 0 : parsedPrice
+        const details = {
+            name,
+            quantity,
+            unit,
+            price: userPrice,
+            priceEstimate:
+                priceIsEstimate && hasPositivePrice ? parsedPrice : 0,
+            priceEstimateSource:
+                priceIsEstimate && hasPositivePrice ? 'history' : undefined,
+            calories,
+            category,
+        }
+        setPendingBarcodeReview(null)
+
+        if (chosenName && chosenName !== foundName) {
+            emitSelectedItem(
+                {
+                    name,
+                    barcode: review.barcode,
+                    quantity,
+                    unit,
+                    price: userPrice,
+                    priceEstimate: details.priceEstimate,
+                    priceEstimateSource: details.priceEstimateSource,
+                    calories: calories || 0,
+                    category: category || [],
+                    source: 'manual',
+                },
+                { alreadyAdded: false }
+            )
+            setSearchQuery('')
+            setIsListVisible(false)
+            return
+        }
+
+        await addOpenFoodFactsProduct(review.product, details)
     }
 
     const handleSelectLocalItem = (item) => {
@@ -796,7 +1000,18 @@ const UnifiedFoodSearch = ({
                     }}
                 />
             ) : null}
-            {!pendingMealPick && (
+            {pendingBarcodeReview ? (
+                <BarcodeProductReview
+                    product={pendingBarcodeReview}
+                    onCancel={() => setPendingBarcodeReview(null)}
+                    onRescan={() => {
+                        setPendingBarcodeReview(null)
+                        openScanner()
+                    }}
+                    onConfirm={confirmBarcodeReview}
+                />
+            ) : null}
+            {!pendingMealPick && !pendingBarcodeReview && (
             <>
             <View style={styles.searchRow}>
                 <View style={styles.searchInputContainer}>

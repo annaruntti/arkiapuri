@@ -361,14 +361,59 @@ export const getFoodItemImageUrl = (item) =>
     null
 
 /**
+ * Shopping-list lines count packages (kpl), not package weight/volume.
+ * FoodItem still stores packageQuantity + package unit (e.g. 400 g).
+ */
+export const shoppingListLineFromMappedPackage = (mapped = {}, overrides = {}) => {
+    const packageUnit = mapped.unit || 'kpl'
+    const packageQuantity = Number(mapped.packageQuantity) > 0
+        ? Number(mapped.packageQuantity)
+        : 1
+    const packaged = packageUnit !== 'kpl' && packageQuantity > 0
+    const overrideQty = Number(overrides.quantity)
+    const hasOverrideQty = Number.isFinite(overrideQty) && overrideQty > 0
+    const overrideUnit = overrides.unit
+
+    if (packaged) {
+        // User explicitly chose mass/volume on the review screen.
+        if (overrideUnit && overrideUnit !== 'kpl') {
+            return {
+                quantity: hasOverrideQty ? overrideQty : packageQuantity,
+                unit: overrideUnit,
+                packageQuantity,
+                packageUnit,
+            }
+        }
+        return {
+            quantity: hasOverrideQty ? overrideQty : 1,
+            unit: 'kpl',
+            packageQuantity,
+            packageUnit,
+        }
+    }
+
+    return {
+        quantity: hasOverrideQty ? overrideQty : packageQuantity,
+        unit: overrideUnit || packageUnit,
+        packageQuantity,
+        packageUnit,
+    }
+}
+
+/**
  * Build a local (non-persisted) food item from an OFF product for guest mode.
  */
 export const buildGuestFoodItemFromOpenFoodFacts = (product, location = 'pantry') => {
     const mapped = mapOpenFoodFactsToFoodItemFields(product)
     const barcode =
         product.barcode || product.code || mapped.openFoodFactsData?.barcode
-    const quantity = mapped.packageQuantity || 1
-    const unit = mapped.unit || 'kpl'
+    const line =
+        location === 'shopping-list'
+            ? shoppingListLineFromMappedPackage(mapped)
+            : {
+                  quantity: mapped.packageQuantity || 1,
+                  unit: mapped.unit || 'kpl',
+              }
     const id = `guest-off-${barcode || Date.now()}-${Math.random()
         .toString(36)
         .slice(2, 8)}`
@@ -376,7 +421,7 @@ export const buildGuestFoodItemFromOpenFoodFacts = (product, location = 'pantry'
     return {
         _id: id,
         ...mapped,
-        quantity,
-        unit,
+        quantity: line.quantity,
+        unit: line.unit,
     }
 }

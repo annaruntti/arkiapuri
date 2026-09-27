@@ -78,10 +78,15 @@ const ScannerBody = ({
                 </CustomText>
                 <Button
                     title="Salli kamera"
+                    type="PRIMARY"
                     onPress={requestPermission}
                     style={styles.permissionButton}
                 />
-                <Button title="Sulje" onPress={onCancel} />
+                <Button
+                    title="Sulje"
+                    type="TERTIARY"
+                    onPress={onCancel}
+                />
             </View>
         )
     }
@@ -155,15 +160,16 @@ const ScannerBody = ({
                 {scanned ? (
                     <Button
                         title="Skannaa uudelleen"
+                        type="SECONDARY"
                         onPress={() => setScanned(false)}
-                        style={styles.rescanButton}
+                        style={styles.actionButton}
                     />
                 ) : null}
                 <Button
                     title="Peruuta"
-                    type="SECONDARY"
+                    type="TERTIARY"
                     onPress={onCancel}
-                    style={styles.cancelButton}
+                    style={styles.actionButton}
                 />
             </View>
         </View>
@@ -334,11 +340,7 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         overflow: 'hidden',
     },
-    rescanButton: {
-        backgroundColor: '#9C86FC',
-        width: '100%',
-    },
-    cancelButton: {
+    actionButton: {
         width: '100%',
     },
 })
