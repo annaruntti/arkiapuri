@@ -15,6 +15,7 @@ const FoodListItemRow = ({
     bought = false,
     showImageInfoIcon = false,
     hideQuantityInDetails = false,
+    detail = '',
     placeholderImageUrl = FOOD_PLACEHOLDER_IMAGE_URL,
     variant = 'row',
     style,
@@ -25,9 +26,10 @@ const FoodListItemRow = ({
                 : ''
             : `${item.quantity} ${item.unit || ''}`.trim()
         const locationBit = item.locationName ? ` · ${item.locationName}` : ''
-        const subtitle = hideQuantityInDetails
+        const subtitleBase = hideQuantityInDetails
             ? quantityText
             : `${quantityText}${locationBit}${item.isFood === false ? ' · Muu tuote' : ''}`
+        const subtitle = [subtitleBase, detail].filter(Boolean).join(' · ')
 
     return (
         <ListItem

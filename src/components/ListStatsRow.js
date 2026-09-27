@@ -36,7 +36,6 @@ const styles = StyleSheet.create({
         width: '100%',
         maxWidth: '100%',
         minWidth: 0,
-        marginBottom: 8,
         zIndex: 0,
         elevation: 0,
     },

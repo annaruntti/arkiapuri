@@ -20,6 +20,8 @@ import GenericFilter from './GenericFilter'
 import GenericFilterSection from './GenericFilterSection'
 import ListSortControl from './ListSortControl'
 import ListStatsRow from './ListStatsRow'
+import MissingPriceItemsPanel from './MissingPriceItemsPanel'
+import DuplicateShoppingItemModal from './DuplicateShoppingItemModal'
 import PantryItemDetails from './PantryItemDetails'
 import ResponsiveModal from './ResponsiveModal'
 import SearchSection from './SearchSection'
@@ -31,6 +33,7 @@ import {
     deleteShoppingListItem,
     moveShoppingListItemsToPantry,
     setShoppingListItemBought,
+    updateShoppingList,
     updateShoppingListItem,
 } from '../services/collectionApi'
 import { findOrCreateFoodItem } from '../services/foodItemApi'
@@ -38,7 +41,19 @@ import {
     SHOPPING_SORT_OPTIONS,
     SORT_OPTION_IDS,
 } from '../utils/listSort'
+import {
+    formatEuro,
+    formatLinePrice,
+    lineAmount,
+    sumLineAmounts,
+} from '../utils/shoppingListPrice'
+import {
+    buildDuplicateMergeUpdates,
+    collapseDuplicateShoppingListItems,
+    findMatchingShoppingListItem,
+} from '../utils/shoppingListDuplicate'
 import { resolveAppUnit } from '../utils/units'
+import { shoppingListLineFromMappedPackage } from '../utils/openFoodFactsMapper'
 import storage from '../utils/storage'
 
 const getListItemId = (item) => {
@@ -80,6 +95,10 @@ const ShoppingListDetail = ({
     checkedItemsRef.current = checkedItems
     const [modalView, setModalView] = useState(MODAL_VIEWS.LIST)
     const [showAddItem, setShowAddItem] = useState(false)
+    const [showMissingPrices, setShowMissingPrices] = useState(false)
+    const [duplicateMerge, setDuplicateMerge] = useState(null)
+    const duplicateMergeRef = useRef(null)
+    duplicateMergeRef.current = duplicateMerge
     const [addItemSession, setAddItemSession] = useState(0)
     const [autoOpenScanner, setAutoOpenScanner] = useState(false)
     const [loading, setLoading] = useState(false)
@@ -99,6 +118,11 @@ const ShoppingListDetail = ({
     const resetAddAndDetails = useCallback(() => {
         setModalView(MODAL_VIEWS.LIST)
         setShowAddItem(false)
+        setShowMissingPrices(false)
+        if (duplicateMergeRef.current?.resolve) {
+            duplicateMergeRef.current.resolve(false)
+        }
+        setDuplicateMerge(null)
         setSelectedItem(null)
         setAutoOpenScanner(false)
     }, [])
@@ -107,6 +131,86 @@ const ShoppingListDetail = ({
         resetAddAndDetails()
         setCheckedItems([])
     }, [shoppingList?._id, resetView, resetAddAndDetails])
+
+    // Drop stale checkbox ids after list rows are rebuilt (merge / refresh).
+    useEffect(() => {
+        const validIds = new Set(
+            (shoppingList?.items || []).map(getListItemId).filter(Boolean)
+        )
+        setCheckedItems((prev) => prev.filter((id) => validIds.has(String(id))))
+    }, [shoppingList?.items])
+
+    const collapsingDuplicatesRef = useRef(false)
+
+    useEffect(() => {
+        let cancelled = false
+
+        const mergeExistingDuplicates = async () => {
+            const items = shoppingList?.items || []
+            if (!shoppingList?._id || items.length < 2) return
+            if (collapsingDuplicatesRef.current) return
+
+            const { items: collapsed, didMerge } =
+                collapseDuplicateShoppingListItems(items)
+            if (!didMerge) return
+
+            collapsingDuplicatesRef.current = true
+            try {
+                const token = await storage.getItem('userToken')
+                if (!token) {
+                    if (cancelled) return
+                    onUpdate({ ...shoppingList, items: collapsed })
+                    return
+                }
+
+                const payload = collapsed.map((item) => ({
+                    _id: getListItemId(item) || undefined,
+                    name: item.name,
+                    quantity: item.quantity,
+                    unit: item.unit,
+                    category: item.category || [],
+                    calories: item.calories || 0,
+                    price: item.price || 0,
+                    priceEstimate:
+                        Number(item.priceEstimate) > 0
+                            ? Number(item.priceEstimate)
+                            : undefined,
+                    priceEstimateSource:
+                        Number(item.priceEstimate) > 0
+                            ? item.priceEstimateSource || 'history'
+                            : undefined,
+                    foodId: item.foodId?._id || item.foodId,
+                    isFood: item.isFood !== false,
+                    bought: Boolean(item.bought),
+                }))
+
+                const data = await updateShoppingList(shoppingList._id, {
+                    items: payload,
+                })
+                if (cancelled) return
+                onUpdate(data.shoppingList)
+            } catch (error) {
+                console.warn(
+                    'Failed to merge duplicate shopping list items:',
+                    error?.message || error
+                )
+            } finally {
+                collapsingDuplicatesRef.current = false
+            }
+        }
+
+        mergeExistingDuplicates()
+        return () => {
+            cancelled = true
+        }
+        // Re-check when the item set changes (ids / count), not on every
+        // object identity change from parent re-renders.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [
+        shoppingList?._id,
+        (shoppingList?.items || []).map(getListItemId).join(','),
+        onUpdate,
+    ])
 
     const {
         searchQuery,
@@ -150,7 +254,9 @@ const ShoppingListDetail = ({
             const isNavigate = e.data.action.type === 'NAVIGATE'
 
             if (
-                (showAddItem || modalView !== MODAL_VIEWS.LIST) &&
+                (showAddItem ||
+                    showMissingPrices ||
+                    modalView !== MODAL_VIEWS.LIST) &&
                 !isNavigate
             ) {
                 e.preventDefault()
@@ -168,7 +274,7 @@ const ShoppingListDetail = ({
             onClose?.()
         })
         return unsubscribe
-    }, [navigation, modalView, showAddItem, onClose, shoppingList, resetAddAndDetails])
+    }, [navigation, modalView, showAddItem, showMissingPrices, onClose, shoppingList, resetAddAndDetails])
 
     const openAddItemView = async ({ openScanner = false } = {}) => {
         const token = await storage.getItem('userToken')
@@ -389,8 +495,25 @@ const ShoppingListDetail = ({
         let firstError = null
         const deletedIds = []
 
-        for (const rawItemId of checkedItemIds) {
-            const itemId = String(rawItemId)
+        // Resolve against current list so we never call delete with a stale
+        // FoodItem id left over from barcode add / merge.
+        const selectedIds = new Set(
+            (checkedItemIds || []).map((id) => String(id).trim()).filter(Boolean)
+        )
+        const selectedItems = (shoppingList.items || []).filter((item) =>
+            selectedIds.has(getListItemId(item))
+        )
+        const itemIds = [
+            ...new Set(selectedItems.map((item) => getListItemId(item))),
+        ]
+        if (itemIds.length === 0) {
+            setCheckedItems([])
+            setLoading(false)
+            Alert.alert('Huomio', 'Valittuja tuotteita ei löytynyt listalta')
+            return
+        }
+
+        for (const itemId of itemIds) {
             try {
                 const data = await deleteShoppingListItem(
                     shoppingList._id,
@@ -480,22 +603,117 @@ const ShoppingListDetail = ({
 
     const handleAddItem = async (itemData) => {
         try {
+            // Food catalog / barcode payloads use FoodItem._id — never treat it
+            // as the shopping-list row id.
+            const { _id: _ignoredCatalogId, ...itemWithoutRowId } =
+                itemData || {}
+            const incoming = {
+                ...itemWithoutRowId,
+                isFood: itemData.isFood !== false,
+                quantity: itemData.quantity || 1,
+                unit: itemData.unit || 'kpl',
+            }
+
+            const existing = findMatchingShoppingListItem(
+                shoppingList?.items,
+                incoming
+            )
+            if (existing) {
+                // Close the add-product sheet first so the confirm dialog is
+                // visible (it was previously covered by "Lisää tuote").
+                setShowAddItem(false)
+                setAutoOpenScanner(false)
+                const shouldIncrease = await new Promise((resolve) => {
+                    setDuplicateMerge({ existing, incoming, resolve })
+                })
+                if (!shouldIncrease) return
+
+                const { updates, priceEstimate, priceEstimateSource } =
+                    buildDuplicateMergeUpdates(existing, incoming)
+                const itemId = getListItemId(existing)
+                const token = await storage.getItem('userToken')
+
+                if (!token) {
+                    const updatedList = {
+                        ...shoppingList,
+                        items: (shoppingList.items || []).map((item) =>
+                            getListItemId(item) === itemId
+                                ? {
+                                      ...item,
+                                      ...updates,
+                                      ...(updates.price > 0
+                                          ? {
+                                                priceEstimate: undefined,
+                                                priceEstimateSource: undefined,
+                                            }
+                                          : priceEstimate > 0
+                                            ? {
+                                                  price: 0,
+                                                  priceEstimate,
+                                                  priceEstimateSource,
+                                              }
+                                            : {}),
+                                  }
+                                : item
+                        ),
+                    }
+                    onUpdate(updatedList)
+                    goToListView()
+                    return
+                }
+
+                const data = await updateShoppingListItem(
+                    shoppingList._id,
+                    itemId,
+                    updates
+                )
+                // Ensure the visible line total matches the merged quantity even
+                // if the API response still has a stale single-item estimate.
+                if (
+                    data?.shoppingList &&
+                    !(updates.price > 0) &&
+                    priceEstimate > 0
+                ) {
+                    const patchedItems = (data.shoppingList.items || []).map(
+                        (item) =>
+                            getListItemId(item) === itemId
+                                ? {
+                                      ...item,
+                                      quantity:
+                                          updates.quantity ?? item.quantity,
+                                      unit: updates.unit || item.unit,
+                                      priceEstimate,
+                                      priceEstimateSource:
+                                          priceEstimateSource ||
+                                          item.priceEstimateSource ||
+                                          'history',
+                                  }
+                                : item
+                    )
+                    onUpdate({
+                        ...data.shoppingList,
+                        items: patchedItems,
+                    })
+                } else {
+                    onUpdate(data.shoppingList)
+                }
+                goToListView()
+                return
+            }
+
             const token = await storage.getItem('userToken')
 
             // Guest mode: keep items on the local shopping list only
             if (!token) {
                 const guestItem = {
-                    ...itemData,
+                    ...incoming,
                     _id:
                         itemData._id ||
                         `guest-item-${Date.now()}-${Math.random()
                             .toString(36)
                             .slice(2, 8)}`,
-                    isFood: itemData.isFood !== false,
                     foodId: itemData.foodId || itemData._id,
                     location: 'shopping-list',
-                    quantity: itemData.quantity || 1,
-                    unit: itemData.unit || 'kpl',
                     bought: false,
                 }
                 const updatedList = {
@@ -531,8 +749,7 @@ const ShoppingListDetail = ({
             }
 
             const newItem = {
-                ...itemData,
-                isFood: itemData.isFood !== false,
+                ...incoming,
                 foodId: foodItemId,
                 location: 'shopping-list',
             }
@@ -550,38 +767,42 @@ const ShoppingListDetail = ({
 
     const handleSearchItemSelect = async (selectedItem, meta = {}) => {
         try {
-            // Open Food Facts products (and any other item UnifiedFoodSearch
-            // already persisted) are fully added — FoodItem created AND
-            // attached to this shopping list — before this callback fires.
-            // Adding it again here would create a duplicate shopping list
-            // entry (and a duplicate/incorrect quantity, defaulting to 1).
-            // We only need to refresh so the new item shows up.
-            if (meta.alreadyAdded) {
-                await fetchShoppingLists()
-                goToListView()
-                return
-            }
-
-            // Transform the selected food item to shopping list item format
+            // Transform the selected food item to shopping list item format.
+            // Barcode / OFF products may already have a FoodItem id but are
+            // not yet on this list — handleAddItem checks for duplicates.
+            // Packaged goods are counted in kpl (packages), not grams/ml.
+            const line = shoppingListLineFromMappedPackage(
+                {
+                    unit: selectedItem.unit,
+                    packageQuantity: selectedItem.packageQuantity,
+                },
+                resolveAppUnit(selectedItem.unit) === 'kpl'
+                    ? {
+                          quantity: selectedItem.quantity,
+                          unit: selectedItem.unit,
+                      }
+                    : {}
+            )
             const itemData = {
                 name: selectedItem.name,
-                unit: selectedItem.unit || 'kpl',
+                unit: line.unit,
                 price: selectedItem.price || 0,
+                priceEstimate: selectedItem.priceEstimate || 0,
+                priceEstimateSource: selectedItem.priceEstimateSource,
                 calories: selectedItem.calories || 0,
                 category: selectedItem.category || [],
-                quantity:
-                    selectedItem.quantity ||
-                    selectedItem.packageQuantity ||
-                    1,
+                quantity: line.quantity,
                 location: 'shopping-list',
-                foodId: selectedItem._id,
+                foodId: selectedItem.foodId || selectedItem._id,
+                barcode:
+                    selectedItem.barcode ||
+                    selectedItem.openFoodFactsData?.barcode,
                 image: selectedItem.image,
                 openFoodFactsData: selectedItem.openFoodFactsData,
                 source: selectedItem.source,
-                _id: selectedItem._id,
+                packageQuantity: selectedItem.packageQuantity,
             }
 
-            // Add the item to the shopping list
             await handleAddItem(itemData)
         } catch (error) {
             console.error('Error adding searched item:', error)
@@ -598,7 +819,7 @@ const ShoppingListDetail = ({
         setModalView(MODAL_VIEWS.ITEM_DETAILS)
     }
 
-    const handleUpdateItem = async (itemId, updatedData) => {
+    const handleUpdateItem = async (itemId, updatedData, options = {}) => {
         try {
             // Find the item in the shopping list (read-only, just to fill in
             // gaps for FoodItem creation below — we never resend the whole
@@ -609,6 +830,16 @@ const ShoppingListDetail = ({
             if (!currentItem) {
                 Alert.alert('Virhe', 'Tuotetta ei löytynyt')
                 return
+            }
+
+            if (updatedData.price !== undefined) {
+                const parsedPrice = parseFloat(
+                    String(updatedData.price).replace(',', '.')
+                )
+                updatedData.price =
+                    Number.isFinite(parsedPrice) && parsedPrice > 0
+                        ? parsedPrice
+                        : 0
             }
 
             let foodItemId = currentItem.foodId?._id || currentItem.foodId
@@ -647,7 +878,9 @@ const ShoppingListDetail = ({
                 updatedData
             )
             onUpdate(data.shoppingList)
-            goToListView()
+            if (!options.keepView) {
+                goToListView()
+            }
         } catch (error) {
             console.error('Error updating item:', error)
             console.error('Error response:', error.response?.data)
@@ -662,6 +895,7 @@ const ShoppingListDetail = ({
             style={styles.listCard}
             bought={Boolean(item.bought)}
             showImageInfoIcon
+            detail={formatLinePrice(item)}
             hideQuantityInDetails
             onPress={() => handleItemPress(item)}
             onImagePress={() => handleItemDetailsPress(item)}
@@ -762,52 +996,108 @@ const ShoppingListDetail = ({
                         }
                     >
                         <View style={styles.itemsListContainer}>
-                            <ListStatsRow
-                                actions={
+                            {(() => {
+                                const listItems = shoppingList.items || []
+                                const missingPriceItems = listItems.filter(
+                                    (item) => lineAmount(item).missing
+                                )
+                                const showsOpenPrices = listItems.some(
+                                    (item) => lineAmount(item).openPrices
+                                )
+                                const totalPrice = (() => {
+                                    const visibleSum =
+                                        sumLineAmounts(filteredItems)
+                                    const isFiltered =
+                                        searchQuery.length > 0 ||
+                                        selectedCategoryFilters.length > 0
+                                    if (isFiltered) return visibleSum
+                                    return (
+                                        visibleSum ||
+                                        shoppingList.totalEstimatedPrice ||
+                                        0
+                                    )
+                                })()
+                                const hasMissingPrices =
+                                    missingPriceItems.length > 0
+
+                                return (
                                     <>
-                                        <ListSortControl
-                                            options={SHOPPING_SORT_OPTIONS}
-                                            value={sortId}
-                                            onChange={setSortId}
-                                        />
-                                        <GenericFilter
-                                            selectedFilters={
-                                                selectedCategoryFilters
+                                        <View style={styles.totalPriceRow}>
+                                            <CustomText
+                                                style={styles.totalPriceText}
+                                            >
+                                                Kokonaishinta:{' '}
+                                                {formatEuro(totalPrice)}
+                                            </CustomText>
+                                            {hasMissingPrices ? (
+                                                <Button
+                                                    title={`Lisää puuttuvia hintoja (${missingPriceItems.length})`}
+                                                    type="SECONDARY"
+                                                    size="small"
+                                                    onPress={() =>
+                                                        setShowMissingPrices(
+                                                            true
+                                                        )
+                                                    }
+                                                    style={
+                                                        styles.missingPricesButton
+                                                    }
+                                                    textStyle={
+                                                        styles.missingPricesButtonText
+                                                    }
+                                                />
+                                            ) : null}
+                                        </View>
+                                        <ListStatsRow
+                                            actions={
+                                                <>
+                                                    <ListSortControl
+                                                        options={
+                                                            SHOPPING_SORT_OPTIONS
+                                                        }
+                                                        value={sortId}
+                                                        onChange={setSortId}
+                                                    />
+                                                    <GenericFilter
+                                                        selectedFilters={
+                                                            selectedCategoryFilters
+                                                        }
+                                                        showFilters={
+                                                            showFilters
+                                                        }
+                                                        onToggleShowFilters={() =>
+                                                            setShowFilters(
+                                                                !showFilters
+                                                            )
+                                                        }
+                                                    />
+                                                </>
                                             }
-                                            showFilters={showFilters}
-                                            onToggleShowFilters={() =>
-                                                setShowFilters(!showFilters)
-                                            }
-                                        />
+                                        >
+                                            <CustomText>Tuotteita:</CustomText>
+                                            <CustomText>
+                                                {searchQuery.length > 0 ||
+                                                selectedCategoryFilters.length >
+                                                    0
+                                                    ? `${filteredItems.length} / ${shoppingList.items?.length || 0}`
+                                                    : `${shoppingList.items?.length || 0} kpl`}
+                                            </CustomText>
+                                        </ListStatsRow>
+                                        {showsOpenPrices ? (
+                                            <View style={styles.priceNotice}>
+                                                <CustomText
+                                                    style={
+                                                        styles.priceNoticeText
+                                                    }
+                                                >
+                                                    Osa hinta-arvioista on Open
+                                                    Prices -aineistosta (ODbL).
+                                                </CustomText>
+                                            </View>
+                                        ) : null}
                                     </>
-                                }
-                            >
-                                <CustomText>Tuotteita:</CustomText>
-                                <CustomText>
-                                    {searchQuery.length > 0 ||
-                                    selectedCategoryFilters.length > 0
-                                        ? `${filteredItems.length} / ${shoppingList.items?.length || 0}`
-                                        : `${shoppingList.items?.length || 0} kpl`}
-                                </CustomText>
-                                <CustomText>
-                                    Kokonaishinta:{' '}
-                                    {filteredItems &&
-                                    filteredItems.length > 0
-                                        ? filteredItems
-                                              .reduce(
-                                                  (sum, item) =>
-                                                      sum +
-                                                      (parseFloat(
-                                                          item.price
-                                                      ) || 0),
-                                                  0
-                                              )
-                                              .toFixed(2)
-                                        : shoppingList.totalEstimatedPrice ||
-                                          0}
-                                    €
-                                </CustomText>
-                            </ListStatsRow>
+                                )
+                            })()}
                             <GenericFilterSection
                                 selectedFilters={selectedCategoryFilters}
                                 showFilters={showFilters}
@@ -921,6 +1211,43 @@ const ShoppingListDetail = ({
                     autoOpenScanner={autoOpenScanner}
                 />
             </ResponsiveModal>
+
+            <ResponsiveModal
+                visible={showMissingPrices}
+                onClose={() => setShowMissingPrices(false)}
+                title="Puuttuvat hinnat"
+                maxWidth={640}
+            >
+                <MissingPriceItemsPanel
+                    items={(shoppingList?.items || []).filter(
+                        (item) => lineAmount(item).missing
+                    )}
+                    onSavePrice={async (item, price) => {
+                        await handleUpdateItem(getListItemId(item), { price }, {
+                            keepView: true,
+                        })
+                    }}
+                    onOpenDetails={(item) => {
+                        setShowMissingPrices(false)
+                        handleItemDetailsPress(item)
+                    }}
+                    onClose={() => setShowMissingPrices(false)}
+                />
+            </ResponsiveModal>
+
+            <DuplicateShoppingItemModal
+                visible={Boolean(duplicateMerge)}
+                existing={duplicateMerge?.existing}
+                incoming={duplicateMerge?.incoming}
+                onConfirm={() => {
+                    duplicateMerge?.resolve?.(true)
+                    setDuplicateMerge(null)
+                }}
+                onCancel={() => {
+                    duplicateMerge?.resolve?.(false)
+                    setDuplicateMerge(null)
+                }}
+            />
         </View>
     )
 }
@@ -1168,6 +1495,43 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
 
+    priceNotice: {
+        marginTop: 0,
+        marginBottom: 8,
+        gap: 8,
+    },
+    priceNoticeText: {
+        fontSize: 14,
+        textAlign: 'left',
+        color: '#333',
+    },
+    totalPriceRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 8,
+        width: '100%',
+        marginBottom: 14,
+    },
+    totalPriceText: {
+        flex: 1,
+        flexShrink: 1,
+        minWidth: 0,
+        textAlign: 'left',
+    },
+    missingPricesButton: {
+        flexGrow: 0,
+        flexShrink: 1,
+        maxWidth: '58%',
+        minHeight: 40,
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        borderRadius: 999,
+    },
+    missingPricesButtonText: {
+        fontSize: 14,
+        fontWeight: '600',
+    },
     loadingOverlay: {
         ...StyleSheet.absoluteFillObject,
         backgroundColor: 'rgba(255,255,255,0.7)',

@@ -18,6 +18,8 @@ import CustomInput from './CustomInput'
 import CustomText from './CustomText'
 import FormFoodItem from './FormFoodItem'
 import { findOrCreateFoodItem } from '../services/foodItemApi'
+import { previewShoppingListPrices } from '../services/collectionApi'
+import { formatLinePrice } from '../utils/shoppingListPrice'
 
 const FormAddShoppingList = ({ onSubmit, onClose }) => {
     const { isDesktop } = useResponsiveDimensions()
@@ -36,7 +38,7 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
         },
     })
 
-    const handleAddItem = (itemData) => {
+    const handleAddItem = async (itemData) => {
         // Transform categories into an array of strings
         // FormFoodItem sends 'category' (singular), so we need to handle both cases
         const categoryData = itemData.category || itemData.categories || []
@@ -47,7 +49,7 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
             : []
 
         const isFood = itemData.isFood !== false
-        const newItem = {
+        let newItem = {
             ...itemData,
             isFood,
             location: 'shopping-list',
@@ -56,6 +58,23 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
             categories: isFood ? transformedCategories : [],
             category: isFood ? transformedCategories : [],
             calories: isFood ? itemData.calories || 0 : 0,
+        }
+        const token = await storage.getItem('userToken')
+        const hasUserPrice = parseFloat(newItem.price) > 0
+        if (token && !hasUserPrice) {
+            try {
+                const [estimated] = await previewShoppingListPrices([newItem])
+                if (estimated?.priceEstimate) {
+                    newItem = {
+                        ...newItem,
+                        priceEstimate: estimated.priceEstimate,
+                        priceEstimateSource: estimated.priceEstimateSource,
+                        priceFromOpenPrices: estimated.priceFromOpenPrices,
+                    }
+                }
+            } catch (error) {
+                console.error('Error estimating item price:', error)
+            }
         }
         setItems([...items, newItem])
         setShowInlineFoodForm(false)
@@ -131,7 +150,8 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
 
             const itemsWithCatalog = await Promise.all(
                 processedItems.map(async (item) => {
-                    if (item.foodId) return item
+                    const { _id: catalogOrRowId, ...rest } = item
+                    if (rest.foodId) return rest
                     try {
                         const result = await findOrCreateFoodItem({
                             name: item.name,
@@ -142,15 +162,18 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
                             calories: item.calories || 0,
                         })
                         return {
-                            ...item,
-                            foodId: result.foodItem?._id,
+                            ...rest,
+                            foodId: result.foodItem?._id || catalogOrRowId,
                         }
                     } catch (error) {
                         console.error(
                             'Error linking shopping list item to catalog:',
                             error
                         )
-                        return item
+                        return {
+                            ...rest,
+                            foodId: catalogOrRowId || item.foodId,
+                        }
                     }
                 })
             )
@@ -352,8 +375,10 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
                                         >
                                             <CustomText>
                                                 {item.name} - {item.quantity}{' '}
-                                                {item.unit} -{' '}
-                                                {item.estimatedPrice}€
+                                                {item.unit}
+                                                {formatLinePrice(item)
+                                                    ? ` - ${formatLinePrice(item)}`
+                                                    : ''}
                                             </CustomText>
                                         </View>
                                     ))}

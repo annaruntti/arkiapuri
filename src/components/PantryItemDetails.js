@@ -176,11 +176,26 @@ const PantryItemDetails = ({
         }
     }).filter((row) => row.value != null)
 
+    const parsePriceInput = (value) => {
+        const parsed = parseFloat(String(value ?? '').replace(',', '.'))
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : 0
+    }
+
     const toggleEdit = (field) => {
+        const opening = !editableFields[field]
         setEditableFields((prev) => ({
             ...prev,
             [field]: !prev[field],
         }))
+        if (!opening) return
+        if (field === 'price') {
+            const current = parsePriceInput(editedValues.price ?? item.price)
+            setEditedValues((prev) => ({
+                ...prev,
+                price: current > 0 ? String(current) : '',
+            }))
+            return
+        }
         if (!editedValues[field]) {
             setEditedValues((prev) => ({
                 ...prev,
@@ -231,8 +246,10 @@ const PantryItemDetails = ({
                 getCategoryId(name)
             )
 
+            const parsedPrice = parsePriceInput(editedValues.price)
             const updatedValues = {
                 ...editedValues,
+                price: parsedPrice,
                 category: categoryIds,
                 locationId: editedValues.locationId || null,
                 expirationDate: editedValues.expirationDate || null,
@@ -494,7 +511,11 @@ const PantryItemDetails = ({
                             value={String(editedValues[field])}
                             onChangeText={(text) => handleChange(field, text)}
                             keyboardType={
-                                type === 'number' ? 'numeric' : 'default'
+                                type === 'decimal'
+                                    ? 'decimal-pad'
+                                    : type === 'number'
+                                      ? 'numeric'
+                                      : 'default'
                             }
                             autoFocus
                             selectTextOnFocus
@@ -591,6 +612,27 @@ const PantryItemDetails = ({
                 {showInventoryFields
                     ? renderEditableField('unit', 'Yksikkö', item.unit)
                     : null}
+                {!(parseFloat(item.price) > 0) &&
+                parseFloat(item.priceEstimate) > 0 ? (
+                    <CustomText style={styles.priceEstimateHint}>
+                        Hinta-arvio: {Number(item.priceEstimate).toFixed(2)} €
+                        {item.priceEstimateSource === 'history' &&
+                        item.foodId?.priceSource === 'open-prices'
+                            ? ' · Open Prices'
+                            : ''}
+                    </CustomText>
+                ) : null}
+                {renderEditableField(
+                    'price',
+                    'Hinta',
+                    (() => {
+                        const draft = parsePriceInput(editedValues.price)
+                        const saved = parsePriceInput(item.price)
+                        const visible = draft || saved
+                        return visible > 0 ? `${visible} €` : 'Ei hintaa'
+                    })(),
+                    'decimal'
+                )}
 
                 {showInventoryFields && locations.length > 0 ? (
                     <View style={styles.categoryRow}>
@@ -794,6 +836,12 @@ const PantryItemDetails = ({
 }
 
 const styles = StyleSheet.create({
+    priceEstimateHint: {
+        textAlign: 'left',
+        fontSize: 14,
+        color: '#5844BB',
+        marginBottom: 8,
+    },
     detailScroll: {
         paddingTop: 20,
         paddingHorizontal: 20,

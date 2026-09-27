@@ -17,6 +17,7 @@ import ResponsiveModal from '../components/ResponsiveModal'
 import ContentContainer from '../components/ContentContainer'
 import StickyListLayout from '../components/StickyListLayout'
 import { useResponsiveDimensions } from '../utils/responsive'
+import { formatEuro, sumLineAmounts } from '../utils/shoppingListPrice'
 
 const ShoppingListsScreen = ({ route }) => {
     const navigation = useNavigation()
@@ -137,17 +138,14 @@ const ShoppingListsScreen = ({ route }) => {
                     </CustomText>
                     <CustomText>
                         Arvioitu hinta:{' '}
-                        {item.items && item.items.length > 0
-                            ? item.items
-                                  .reduce(
-                                      (sum, listItem) =>
-                                          sum +
-                                          (parseFloat(listItem.price) || 0),
-                                      0
-                                  )
-                                  .toFixed(2)
-                            : item.totalEstimatedPrice || 0}
-                        €
+                        {formatEuro(
+                            (() => {
+                                const summed = sumLineAmounts(item.items)
+                                return item.items?.length && summed > 0
+                                    ? summed
+                                    : item.totalEstimatedPrice || 0
+                            })()
+                        )}
                     </CustomText>
                 </>
             }

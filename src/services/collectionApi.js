@@ -6,6 +6,25 @@ const authConfig = async () => ({
     headers: await getAuthHeaders(),
 })
 
+/** Normalize Mongo ids from string | ObjectId | { $oid } | { _id }. */
+export const entityId = (value) => {
+    if (value == null || value === '') return ''
+    if (typeof value === 'object') {
+        if (value.$oid) return String(value.$oid)
+        if (value._id != null && value._id !== value) return entityId(value._id)
+        if (value.id != null && value.id !== value) return entityId(value.id)
+        if (typeof value.toHexString === 'function') {
+            return value.toHexString()
+        }
+        if (typeof value.toString === 'function') {
+            const asString = value.toString()
+            if (asString && asString !== '[object Object]') return asString
+        }
+        return ''
+    }
+    return String(value).trim()
+}
+
 export const getPantry = async () => {
     const response = await axios.get(getServerUrl('/pantry'), await authConfig())
     const data = response.data
@@ -119,7 +138,9 @@ export const deletePantryItem = async (itemId) => {
 
 export const markShoppingListItemBought = async (listId, itemId) => {
     const response = await axios.post(
-        getServerUrl(`/shopping-lists/${listId}/items/${itemId}/move-to-pantry`),
+        getServerUrl(
+            `/shopping-lists/${entityId(listId)}/items/${entityId(itemId)}/move-to-pantry`
+        ),
         {},
         await authConfig()
     )
@@ -135,10 +156,14 @@ export const markShoppingListItemBought = async (listId, itemId) => {
 export const moveShoppingListItemToPantry = markShoppingListItemBought
 
 export const moveShoppingListItemsToPantry = async (listId, itemIds) => {
+    const normalizedListId = entityId(listId)
+    const normalizedItemIds = (itemIds || []).map(entityId).filter(Boolean)
     try {
         const response = await axios.post(
-            getServerUrl(`/shopping-lists/${listId}/items/move-to-pantry`),
-            { itemIds },
+            getServerUrl(
+                `/shopping-lists/${normalizedListId}/items/move-to-pantry`
+            ),
+            { itemIds: normalizedItemIds },
             await authConfig()
         )
 
@@ -160,9 +185,12 @@ export const moveShoppingListItemsToPantry = async (listId, itemIds) => {
         const notFound = []
         let shoppingList = null
 
-        for (const itemId of itemIds) {
+        for (const itemId of normalizedItemIds) {
             try {
-                const data = await moveShoppingListItemToPantry(listId, itemId)
+                const data = await moveShoppingListItemToPantry(
+                    normalizedListId,
+                    itemId
+                )
                 shoppingList = data.shoppingList || shoppingList
                 moved.push({
                     id: String(itemId),
@@ -198,7 +226,9 @@ export const moveShoppingListItemsToPantry = async (listId, itemIds) => {
 
 export const setShoppingListItemBought = async (listId, itemId, bought) => {
     const response = await axios.patch(
-        getServerUrl(`/shopping-lists/${listId}/items/${itemId}/bought`),
+        getServerUrl(
+            `/shopping-lists/${entityId(listId)}/items/${entityId(itemId)}/bought`
+        ),
         { bought: Boolean(bought) },
         await authConfig()
     )
@@ -213,7 +243,9 @@ export const setShoppingListItemBought = async (listId, itemId, bought) => {
 
 export const deleteShoppingListItem = async (listId, itemId) => {
     const response = await axios.delete(
-        getServerUrl(`/shopping-lists/${listId}/items/${itemId}`),
+        getServerUrl(
+            `/shopping-lists/${entityId(listId)}/items/${entityId(itemId)}`
+        ),
         await authConfig()
     )
 
@@ -227,7 +259,9 @@ export const deleteShoppingListItem = async (listId, itemId) => {
 
 export const updateShoppingListItem = async (listId, itemId, updates) => {
     const response = await axios.put(
-        getServerUrl(`/shopping-lists/${listId}/items/${itemId}`),
+        getServerUrl(
+            `/shopping-lists/${entityId(listId)}/items/${entityId(itemId)}`
+        ),
         updates,
         await authConfig()
     )
@@ -240,10 +274,45 @@ export const updateShoppingListItem = async (listId, itemId, updates) => {
     return data
 }
 
-export const addShoppingListItems = async (shoppingListId, items) => {
+export const updateShoppingList = async (listId, updates) => {
+    const response = await axios.put(
+        getServerUrl(`/shopping-lists/${entityId(listId)}`),
+        updates,
+        await authConfig()
+    )
+
+    const data = response.data
+    if (!data.success) {
+        throw new Error(data.message || 'Failed to update shopping list')
+    }
+
+    return data
+}
+
+export const previewShoppingListPrices = async (items) => {
     const response = await axios.post(
-        getServerUrl(`/shopping-lists/${shoppingListId}/items`),
+        getServerUrl('/shopping-lists/price-estimates'),
         { items },
+        await authConfig()
+    )
+    const data = response.data
+    if (!data.success) {
+        throw new Error(data.message || 'Failed to estimate prices')
+    }
+    return data.items || []
+}
+
+export const addShoppingListItems = async (shoppingListId, items) => {
+    // Never send a client _id — it may be a FoodItem id from barcode add and
+    // would collide with / overwrite shopping-list row identity.
+    const sanitizedItems = (items || []).map((item) => {
+        if (!item || typeof item !== 'object') return item
+        const { _id, id, ...rest } = item
+        return rest
+    })
+    const response = await axios.post(
+        getServerUrl(`/shopping-lists/${entityId(shoppingListId)}/items`),
+        { items: sanitizedItems },
         await authConfig()
     )
 
