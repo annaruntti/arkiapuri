@@ -800,9 +800,21 @@ export default function Navigation() {
         }
     }, [isReady, isLoading, startInApp])
 
-    // Wait for auth loading to complete before rendering navigation
+    // Wait for auth loading to complete before rendering navigation.
+    // Never return a bare null on web — that looks like a blank/white screen.
     if (!isReady || isLoading) {
-        return null
+        return (
+            <View
+                style={{
+                    flex: 1,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: '#fff',
+                }}
+            >
+                <CustomText>Ladataan…</CustomText>
+            </View>
+        )
     }
 
     return (

@@ -1,21 +1,29 @@
+import { Platform } from 'react-native'
+
 const ENV = {
     development: {
-        // For mobile device testing with Expo Go, use your computer's IP
-        apiUrl: 'http://<your-ip-address>:3000',
-        // For web testing, use:
-        // apiUrl: 'http://localhost:3000',
+        // Expo Go on a physical device: use your computer's LAN IP.
+        // Web / simulator: localhost.
+        lanApiUrl: 'http://192.168.50.162:3000',
+        localApiUrl: 'http://localhost:3000',
     },
     production: {
-        apiUrl: 'https://arkiapuri-api-production.up.railway.app', // Railway backend domain
+        apiUrl: 'https://arkiapuri-api-production.up.railway.app',
     },
 }
 
 const getEnvVars = (env = process.env.NODE_ENV || 'development') => {
-    // Temporarily force production environment (uncomment if needed)
-    // return ENV['production']
+    if (env === 'production') {
+        return ENV.production
+    }
 
-    // Use this when want testing with local backend:
-    return ENV[env]
+    // Prefer localhost on web so a stale LAN IP cannot hang auth/bootstrap.
+    const apiUrl =
+        Platform.OS === 'web'
+            ? ENV.development.localApiUrl
+            : ENV.development.lanApiUrl
+
+    return { apiUrl }
 }
 
 export default getEnvVars

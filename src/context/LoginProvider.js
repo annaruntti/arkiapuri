@@ -31,6 +31,7 @@ const LoginProvider = ({ children }) => {
                         headers: {
                             Authorization: `Bearer ${token}`,
                         },
+                        timeout: 8000,
                     })
 
 
