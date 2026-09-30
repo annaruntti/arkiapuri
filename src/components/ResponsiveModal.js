@@ -46,6 +46,7 @@ const ResponsiveModal = ({
     showBackButton = false,
     backButtonLabel = 'Takaisin',
     contentStyle,
+    bodyStyle,
     headerStyle,
     titleStyle,
     modalStyle,
@@ -274,6 +275,7 @@ const ResponsiveModal = ({
                     styles.modalBody,
                     isTablet && styles.tabletModalBody,
                     isDesktop && styles.desktopModalBody,
+                    bodyStyle,
                 ]}
             >
                 {children}
@@ -295,6 +297,19 @@ const ResponsiveModal = ({
                     <View style={getModalViewStyle()}>
                     {isMobileSheet ? (
                         <>
+                            <Animated.View
+                                style={[
+                                    styles.backdropFill,
+                                    backdropAnimatedStyle,
+                                ]}
+                            >
+                                <Pressable
+                                    style={StyleSheet.absoluteFillObject}
+                                    onPress={onClose}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Sulje"
+                                />
+                            </Animated.View>
                             <Pressable
                                 style={{ height: topGap }}
                                 onPress={onClose}
@@ -302,19 +317,6 @@ const ResponsiveModal = ({
                                 accessibilityLabel="Sulje"
                             />
                             <View style={styles.mobileSheetStage}>
-                                <Animated.View
-                                    style={[
-                                        styles.backdropFill,
-                                        backdropAnimatedStyle,
-                                    ]}
-                                >
-                                    <Pressable
-                                        style={StyleSheet.absoluteFillObject}
-                                        onPress={onClose}
-                                        accessibilityRole="button"
-                                        accessibilityLabel="Sulje"
-                                    />
-                                </Animated.View>
                                 <Animated.View
                                     style={[
                                         getModalContentStyle(),
@@ -367,6 +369,7 @@ const styles = StyleSheet.create({
     mobileSheetStage: {
         flex: 1,
         overflow: 'visible',
+        zIndex: 1,
     },
     modalContent: {
         backgroundColor: 'white',
