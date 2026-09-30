@@ -932,14 +932,7 @@ const ShoppingListDetail = ({
 
     return (
         <View style={styles.container}>
-            {!shoppingList ? null : modalView === MODAL_VIEWS.ITEM_DETAILS && selectedItem ? (
-                <PantryItemDetails
-                    item={selectedItem}
-                    embedded
-                    onClose={goToListView}
-                    onUpdate={handleUpdateItem}
-                />
-            ) : (
+            {!shoppingList ? null : (
                 <View style={styles.container}>
                     {loading && (
                         <View style={styles.loadingOverlay}>
@@ -1193,6 +1186,25 @@ const ShoppingListDetail = ({
                     )}
                 </View>
             )}
+
+            <ResponsiveModal
+                visible={
+                    modalView === MODAL_VIEWS.ITEM_DETAILS &&
+                    Boolean(selectedItem)
+                }
+                onClose={goToListView}
+                title={selectedItem?.name || 'Tuotteen tiedot'}
+                maxWidth={640}
+            >
+                {selectedItem ? (
+                    <PantryItemDetails
+                        item={selectedItem}
+                        embedded
+                        onClose={goToListView}
+                        onUpdate={handleUpdateItem}
+                    />
+                ) : null}
+            </ResponsiveModal>
 
             <ResponsiveModal
                 visible={showAddItem}

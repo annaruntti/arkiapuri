@@ -540,7 +540,11 @@ const PantryItemDetails = ({
 
     const content = (
         <ScrollView
-            style={styles.detailScroll}
+            style={[
+                styles.detailScroll,
+                embedded && styles.detailScrollEmbedded,
+            ]}
+            showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
         >
             <View style={styles.itemDetails}>
@@ -845,6 +849,15 @@ const styles = StyleSheet.create({
     detailScroll: {
         paddingTop: 20,
         paddingHorizontal: 20,
+        ...(Platform.OS === 'web' && {
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+            '::-webkit-scrollbar': { display: 'none' },
+        }),
+    },
+    // Parent ResponsiveModal already pads the body; avoid stacking.
+    detailScrollEmbedded: {
+        paddingHorizontal: 0,
     },
     itemDetails: {
         paddingTop: 10,
