@@ -32,7 +32,9 @@ const ListItem = ({
     const isCard = variant === 'card'
     const size = imageSize || (isCard ? 56 : 50)
     const imageSource = image || (placeholderImageUrl ? { uri: placeholderImageUrl } : null)
-    const imagePress = !disabled && (onImagePress || onPress)
+    // Image details stay tappable even when the row action is disabled
+    // (e.g. meal select before any dates are chosen).
+    const imagePressHandler = onImagePress || (!disabled ? onPress : undefined)
 
     let leadingNode = leading
     if (!leadingNode && imageSource) {
@@ -54,10 +56,14 @@ const ListItem = ({
                 {leadingBadge}
             </View>
         )
-        leadingNode = imagePress ? (
+        leadingNode = imagePressHandler ? (
             <TouchableOpacity
-                onPress={imagePress}
+                onPress={imagePressHandler}
                 hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                accessibilityRole="button"
+                accessibilityLabel={
+                    onImagePress ? 'Avaa tiedot' : undefined
+                }
             >
                 {imageEl}
             </TouchableOpacity>

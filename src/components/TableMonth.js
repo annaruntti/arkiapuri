@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
     Image,
     ScrollView,
@@ -34,7 +34,10 @@ import {
 const TableMonth = ({ onRequireLogin }) => {
     const [currentMonth, setCurrentMonth] = useState(new Date())
     const [monthDates, setMonthDates] = useState([])
-    const [mealSelectView, setMealSelectView] = useState('select') // 'select' | 'create'
+    const [mealSelectView, setMealSelectView] = useState('select') // 'select' | 'create' | 'details'
+    const [selectDetailMeal, setSelectDetailMeal] = useState(null)
+    const [selectDetailsTitle, setSelectDetailsTitle] = useState('')
+    const mealDetailBackRef = useRef(null)
 
     const {
         mealsByDate,
@@ -54,6 +57,22 @@ const TableMonth = ({ onRequireLogin }) => {
         updateMealDates: updateMealDatesBase,
         handleMealUpdate: handleMealUpdateBase,
     } = useMealCalendar({ onRequireLogin })
+
+    const handleSelectDetailsHeaderChange = useCallback(({ title }) => {
+        setSelectDetailsTitle(title || '')
+    }, [])
+
+    const openSelectMealDetails = (meal) => {
+        setSelectDetailMeal(meal)
+        setSelectDetailsTitle(meal?.name || '')
+        setMealSelectView('details')
+    }
+
+    const closeSelectMealDetails = () => {
+        setMealSelectView('select')
+        setSelectDetailMeal(null)
+        setSelectDetailsTitle('')
+    }
 
     // Generate calendar dates for the current month
     useEffect(() => {
@@ -291,10 +310,14 @@ const TableMonth = ({ onRequireLogin }) => {
                 <View style={styles.calendarGrid}>{renderCalendarGrid()}</View>
             </ScrollView>
 
-            {/* Meal select / create modal */}
+            {/* Meal select / create / details modal */}
             <ResponsiveModal
                 visible={isModalVisible}
                 onClose={() => {
+                    if (mealSelectView === 'details') {
+                        mealDetailBackRef.current?.()
+                        return
+                    }
                     if (mealSelectView === 'create') {
                         setMealSelectView('select')
                         return
@@ -302,14 +325,28 @@ const TableMonth = ({ onRequireLogin }) => {
                     setIsModalVisible(false)
                     setSelectedDates([])
                     setMealSelectView('select')
+                    setSelectDetailMeal(null)
+                    setSelectDetailsTitle('')
                 }}
                 title={
-                    mealSelectView === 'create'
-                        ? 'Luo uusi ateria'
-                        : 'Valitse ateria ja päivät'
+                    mealSelectView === 'details'
+                        ? selectDetailsTitle ||
+                          selectDetailMeal?.name ||
+                          'Ateria'
+                        : mealSelectView === 'create'
+                          ? 'Luo uusi ateria'
+                          : 'Valitse ateria ja päivät'
                 }
-                showBackButton={mealSelectView === 'create'}
+                showBackButton={
+                    mealSelectView === 'create' || mealSelectView === 'details'
+                }
                 maxWidth={640}
+                contentStyle={styles.mealSelectModalContent}
+                bodyStyle={
+                    mealSelectView === 'select'
+                        ? styles.mealSelectModalBody
+                        : styles.mealCreateModalBody
+                }
             >
                 {mealSelectView === 'create' ? (
                     <FormAddMeal
@@ -318,23 +355,33 @@ const TableMonth = ({ onRequireLogin }) => {
                             generateMonthDates(currentMonth)
                         }}
                     />
+                ) : mealSelectView === 'details' ? (
+                    <MealItemDetail
+                        embedded
+                        meal={selectDetailMeal}
+                        visible
+                        onClose={closeSelectMealDetails}
+                        onUpdate={handleMealUpdate}
+                        backHandlerRef={mealDetailBackRef}
+                        onHeaderStateChange={handleSelectDetailsHeaderChange}
+                    />
                 ) : (
-                    <>
-                        <DateSelector
-                            dates={monthDates}
-                            selectedDates={selectedDates}
-                            onToggleDateSelection={toggleDateSelection}
-                            onClearSelection={clearDateSelection}
-                        />
-
-                        <MealSelectionList
-                            availableMeals={availableMeals}
-                            selectedDates={selectedDates}
-                            onMealSelect={handleMealSelection}
-                            onCreateMeal={() => setMealSelectView('create')}
-                            showAllRoles={true}
-                        />
-                    </>
+                    <MealSelectionList
+                        header={
+                            <DateSelector
+                                dates={monthDates}
+                                selectedDates={selectedDates}
+                                onToggleDateSelection={toggleDateSelection}
+                                onClearSelection={clearDateSelection}
+                            />
+                        }
+                        availableMeals={availableMeals}
+                        selectedDates={selectedDates}
+                        onMealSelect={handleMealSelection}
+                        onMealDetails={openSelectMealDetails}
+                        onCreateMeal={() => setMealSelectView('create')}
+                        showAllRoles={true}
+                    />
                 )}
             </ResponsiveModal>
 
@@ -512,6 +559,16 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 100,
+    },
+    mealSelectModalContent: {
+        flex: 1,
+        backgroundColor: '#f9fafb',
+    },
+    mealSelectModalBody: {
+        paddingHorizontal: 0,
+    },
+    mealCreateModalBody: {
+        paddingHorizontal: 20,
     },
 })
 

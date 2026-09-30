@@ -1,13 +1,11 @@
-import {
-    SectionList,
-    StyleSheet,
-    View,
-} from 'react-native'
+import { StyleSheet, View } from 'react-native'
+import { MaterialIcons } from '@expo/vector-icons'
 import Button from './Button'
 import CustomText from './CustomText'
 import GuestWarningBanner from './GuestWarningBanner'
 import ListItem from './ListItem'
 import CategorySectionHeader from './CategorySectionHeader'
+import StickyListLayout from './StickyListLayout'
 import { getMealRoles } from '../utils/mealFilters'
 
 const PLACEHOLDER_IMAGE_URL =
@@ -62,28 +60,11 @@ const MealSelectionList = ({
     availableMeals,
     selectedDates,
     onMealSelect,
+    onMealDetails,
     onCreateMeal,
     showAllRoles = false,
+    header = null,
 }) => {
-    if (availableMeals.length === 0) {
-        return (
-            <View style={styles.noMealsContainer}>
-                <GuestWarningBanner />
-                <CustomText style={styles.noMealsText}>
-                    Ei tallennettuja aterioita
-                </CustomText>
-                {onCreateMeal ? (
-                    <Button
-                        title="+ Luo ateria"
-                        onPress={onCreateMeal}
-                        style={styles.createButton}
-                        textStyle={styles.createButtonText}
-                    />
-                ) : null}
-            </View>
-        )
-    }
-
     const groupedMeals = groupMealsByCategory(availableMeals)
     const sections = Object.entries(groupedMeals).map(([category, meals]) => ({
         title: mealTypeTranslations[category] || category,
@@ -91,50 +72,133 @@ const MealSelectionList = ({
     }))
 
     return (
-        <SectionList
-            sections={sections}
-            stickySectionHeadersEnabled={false}
-            renderItem={({ item }) => {
-                const roles = getMealRoles(item, [])
-                const roleLabel =
-                    roles.length === 0
-                        ? 'Ateria'
-                        : showAllRoles
-                          ? roles
-                                .map(
-                                    (role) =>
-                                        mealTypeTranslations[role] || role
-                                )
-                                .join(', ')
-                          : mealTypeTranslations[roles[0]] || roles[0]
+        <StickyListLayout
+            chromeBackgroundColor="#f9fafb"
+            style={styles.layout}
+            contentContainerStyle={styles.content}
+        >
+            {header ? <View style={styles.headerBlock}>{header}</View> : null}
+            <GuestWarningBanner style={styles.banner} />
+            {availableMeals.length === 0 ? (
+                <View style={styles.noMealsContainer}>
+                    <CustomText style={styles.noMealsText}>
+                        Ei tallennettuja aterioita
+                    </CustomText>
+                    {onCreateMeal ? (
+                        <Button
+                            title="+ Luo ateria"
+                            type="PRIMARY"
+                            onPress={onCreateMeal}
+                            style={styles.createButton}
+                        />
+                    ) : null}
+                </View>
+            ) : (
+                sections.map((section) => (
+                    <View key={section.title} style={styles.categorySection}>
+                        <CategorySectionHeader
+                            title={section.title}
+                            showCount={false}
+                        />
+                        {section.data.map((item) => {
+                            const roles = getMealRoles(item, [])
+                            const roleLabel =
+                                roles.length === 0
+                                    ? 'Ateria'
+                                    : showAllRoles
+                                      ? roles
+                                            .map(
+                                                (role) =>
+                                                    mealTypeTranslations[
+                                                        role
+                                                    ] || role
+                                            )
+                                            .join(', ')
+                                      : mealTypeTranslations[roles[0]] ||
+                                        roles[0]
 
-                return (
-                    <ListItem
-                        image={{
-                            uri: item.image?.url || PLACEHOLDER_IMAGE_URL,
-                        }}
-                        imageSize={50}
-                        title={item.name}
-                        subtitle={roleLabel}
-                        onPress={() => onMealSelect(item)}
-                        disabled={selectedDates.length === 0}
-                    />
-                )
-            }}
-            renderSectionHeader={({ section: { title } }) => (
-                <CategorySectionHeader title={title} showCount={false} />
+                            return (
+                                <ListItem
+                                    key={item._id}
+                                    image={{
+                                        uri:
+                                            item.image?.url ||
+                                            PLACEHOLDER_IMAGE_URL,
+                                    }}
+                                    imageSize={50}
+                                    title={item.name}
+                                    subtitle={roleLabel}
+                                    onPress={() => onMealSelect(item)}
+                                    onImagePress={
+                                        onMealDetails
+                                            ? () => onMealDetails(item)
+                                            : undefined
+                                    }
+                                    disabled={selectedDates.length === 0}
+                                    leadingBadge={
+                                        onMealDetails ? (
+                                            <View style={styles.imageInfoBadge}>
+                                                <MaterialIcons
+                                                    name="info-outline"
+                                                    size={14}
+                                                    color="#000000"
+                                                />
+                                            </View>
+                                        ) : null
+                                    }
+                                    style={styles.mealItem}
+                                />
+                            )
+                        })}
+                    </View>
+                ))
             )}
-            keyExtractor={(item) => item._id}
-            contentContainerStyle={styles.listContent}
-        />
+        </StickyListLayout>
     )
 }
 
 const styles = StyleSheet.create({
+    layout: {
+        flex: 1,
+        backgroundColor: '#f9fafb',
+    },
+    content: {
+        flexGrow: 1,
+        paddingHorizontal: 15,
+        paddingTop: 4,
+        paddingBottom: 24,
+    },
+    headerBlock: {
+        width: '100%',
+        marginBottom: 12,
+    },
+    banner: {
+        width: '100%',
+        alignSelf: 'stretch',
+    },
+    categorySection: {
+        marginBottom: 8,
+    },
+    mealItem: {
+        backgroundColor: '#ffffff',
+    },
+    imageInfoBadge: {
+        position: 'absolute',
+        right: -2,
+        bottom: -2,
+        backgroundColor: '#AE9CFC',
+        borderRadius: 10,
+        width: 20,
+        height: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1.5,
+        borderColor: '#fff',
+    },
     noMealsContainer: {
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 20,
+        paddingVertical: 20,
         minHeight: 60,
     },
     noMealsText: {
@@ -146,17 +210,7 @@ const styles = StyleSheet.create({
         borderRadius: 25,
         paddingVertical: 9,
         paddingHorizontal: 20,
-        backgroundColor: '#AE9CFC',
-        marginTop: 4,
-    },
-    createButtonText: {
-        color: '#000',
-        fontWeight: 'bold',
-        textAlign: 'center',
-    },
-    listContent: {
-        padding: 15,
-        flexGrow: 1,
+        minWidth: 160,
     },
 })
 

@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { useEffect, useState } from 'react'
-import { Alert, Platform, ScrollView, StyleSheet } from 'react-native'
+import { Alert, Platform, ScrollView, StyleSheet, View } from 'react-native'
 import useMealFoodItemActions from '../hooks/useMealFoodItemActions'
 import { getServerUrl } from '../utils/getServerUrl'
 import { clampDatesToMin, toStoredMealDate, toStoredMealDates } from '../utils/mealDates'
@@ -76,7 +76,15 @@ const toFoodItemDetails = (item) => {
     }
 }
 
-const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
+const MealItemDetail = ({
+    meal,
+    visible,
+    onClose,
+    onUpdate,
+    embedded = false,
+    backHandlerRef,
+    onHeaderStateChange,
+}) => {
     const [editableFields, setEditableFields] = useState({})
     const [editedValues, setEditedValues] = useState({})
     const [showFoodItemForm, setShowFoodItemForm] = useState(false)
@@ -352,107 +360,131 @@ const MealItemDetail = ({ meal, visible, onClose, onUpdate }) => {
         }
     }
 
+    const modalTitle = showShoppingListPicker
+        ? 'Valitse ostoslista'
+        : selectedFoodItem
+          ? selectedFoodItem.name || 'Raaka-aine'
+          : showFoodItemForm
+            ? 'Lisää raaka-aine'
+            : meal?.name
+
+    const hasNestedView =
+        showFoodItemForm ||
+        showShoppingListPicker ||
+        Boolean(selectedFoodItem)
+
+    const handleBack = () => {
+        if (showShoppingListPicker) {
+            closeShoppingListPicker()
+            return
+        }
+        if (selectedFoodItem) {
+            setSelectedFoodItem(null)
+            return
+        }
+        if (showFoodItemForm) {
+            setShowFoodItemForm(false)
+            return
+        }
+        onClose?.()
+    }
+
+    if (embedded && backHandlerRef) {
+        backHandlerRef.current = handleBack
+    }
+
+    useEffect(() => {
+        if (!embedded) return
+        onHeaderStateChange?.({
+            title: modalTitle,
+            isNested: hasNestedView,
+        })
+    }, [embedded, modalTitle, hasNestedView, onHeaderStateChange])
+
+    const content = !meal ? null : showShoppingListPicker ? (
+        <ShoppingListPickerModal
+            embedded
+            shoppingLists={shoppingLists}
+            selectedShoppingListId={selectedShoppingListId}
+            pendingItemName={pendingShoppingListItem?.name}
+            loading={isAddingToShoppingList}
+            onClose={closeShoppingListPicker}
+            onSelect={(listId) =>
+                addItemToShoppingList(pendingShoppingListItem, listId)
+            }
+        />
+    ) : selectedFoodItem ? (
+        <PantryItemDetails
+            item={selectedFoodItem}
+            embedded
+            showInventoryFields={false}
+            onClose={() => setSelectedFoodItem(null)}
+            onUpdate={handleUpdateFoodItem}
+        />
+    ) : showFoodItemForm ? (
+        <AddFoodItemPanel
+            location="meal"
+            mealId={meal._id}
+            allowDuplicates={true}
+            onSelectItem={addFoodItemToMeal}
+            onSubmitNewItem={addFoodItemToMeal}
+            onCloseForm={() => setShowFoodItemForm(false)}
+            showFormBackButton={false}
+            servings={normalizeServings(editedValues.servings)}
+        />
+    ) : (
+        <ScrollView
+            style={styles.detailScroll}
+            showsVerticalScrollIndicator={false}
+        >
+            <MealDetailsForm
+                meal={meal}
+                visible={visible}
+                editedValues={editedValues}
+                editableFields={editableFields}
+                foodItemsWithAvailability={foodItemsWithAvailability}
+                onToggleEdit={toggleEdit}
+                onChange={handleChange}
+                onFoodItemChange={handleFoodItemChange}
+                onPlannedEatingDatesChange={(dates) =>
+                    handleChange('plannedEatingDates', dates)
+                }
+                onAddFoodItem={() => setShowFoodItemForm(true)}
+                onOpenFoodItem={handleOpenFoodItem}
+                onRemoveFoodItem={handleRemoveFoodItem}
+                onToggleRecipeEdit={() => toggleEdit('recipe')}
+                onAddToShoppingList={requestAddToShoppingList}
+                onAddToPantry={addItemToPantry}
+                onImageUpdate={(updatedMeal) =>
+                    onUpdate(meal._id, updatedMeal)
+                }
+                onServingsChange={handleServingsChange}
+                onSave={handleSave}
+            />
+        </ScrollView>
+    )
+
+    if (embedded) {
+        return content ? <View style={styles.embedded}>{content}</View> : null
+    }
+
     return (
         <ResponsiveModal
             visible={Boolean(visible && meal)}
-            onClose={() => {
-                if (showShoppingListPicker) {
-                    closeShoppingListPicker()
-                    return
-                }
-                if (selectedFoodItem) {
-                    setSelectedFoodItem(null)
-                    return
-                }
-                if (showFoodItemForm) {
-                    setShowFoodItemForm(false)
-                    return
-                }
-                onClose()
-            }}
-            title={
-                showShoppingListPicker
-                    ? 'Valitse ostoslista'
-                    : selectedFoodItem
-                      ? selectedFoodItem.name || 'Raaka-aine'
-                      : showFoodItemForm
-                        ? 'Lisää raaka-aine'
-                        : meal?.name
-            }
-            showBackButton={
-                showFoodItemForm ||
-                showShoppingListPicker ||
-                Boolean(selectedFoodItem)
-            }
+            onClose={handleBack}
+            title={modalTitle}
+            showBackButton={hasNestedView}
             maxWidth={640}
         >
-            {!meal ? null : showShoppingListPicker ? (
-                <ShoppingListPickerModal
-                    embedded
-                    shoppingLists={shoppingLists}
-                    selectedShoppingListId={selectedShoppingListId}
-                    pendingItemName={pendingShoppingListItem?.name}
-                    loading={isAddingToShoppingList}
-                    onClose={closeShoppingListPicker}
-                    onSelect={(listId) =>
-                        addItemToShoppingList(pendingShoppingListItem, listId)
-                    }
-                />
-            ) : selectedFoodItem ? (
-                <PantryItemDetails
-                    item={selectedFoodItem}
-                    embedded
-                    showInventoryFields={false}
-                    onClose={() => setSelectedFoodItem(null)}
-                    onUpdate={handleUpdateFoodItem}
-                />
-            ) : showFoodItemForm ? (
-                <AddFoodItemPanel
-                    location="meal"
-                    mealId={meal._id}
-                    allowDuplicates={true}
-                    onSelectItem={addFoodItemToMeal}
-                    onSubmitNewItem={addFoodItemToMeal}
-                    onCloseForm={() => setShowFoodItemForm(false)}
-                    showFormBackButton={false}
-                    servings={normalizeServings(editedValues.servings)}
-                />
-            ) : (
-                <ScrollView
-                    style={styles.detailScroll}
-                    showsVerticalScrollIndicator={false}
-                >
-                    <MealDetailsForm
-                        meal={meal}
-                        visible={visible}
-                        editedValues={editedValues}
-                        editableFields={editableFields}
-                        foodItemsWithAvailability={foodItemsWithAvailability}
-                        onToggleEdit={toggleEdit}
-                        onChange={handleChange}
-                        onFoodItemChange={handleFoodItemChange}
-                        onPlannedEatingDatesChange={(dates) =>
-                            handleChange('plannedEatingDates', dates)
-                        }
-                        onAddFoodItem={() => setShowFoodItemForm(true)}
-                        onOpenFoodItem={handleOpenFoodItem}
-                        onRemoveFoodItem={handleRemoveFoodItem}
-                        onToggleRecipeEdit={() => toggleEdit('recipe')}
-                        onAddToShoppingList={requestAddToShoppingList}
-                        onAddToPantry={addItemToPantry}
-                        onImageUpdate={(updatedMeal) =>
-                            onUpdate(meal._id, updatedMeal)
-                        }
-                        onServingsChange={handleServingsChange}
-                        onSave={handleSave}
-                    />
-                </ScrollView>
-            )}
+            {content}
         </ResponsiveModal>
     )
 }
 
 const styles = StyleSheet.create({
+    embedded: {
+        flex: 1,
+    },
     detailScroll: {
         paddingTop: 20,
         ...(Platform.OS === 'web' && {

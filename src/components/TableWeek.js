@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
     Alert,
     FlatList,
@@ -156,7 +156,10 @@ const Table = ({ onRequireLogin }) => {
     const [moveMealModalVisible, setMoveMealModalVisible] = useState(false)
     const [mealToMove, setMealToMove] = useState(null)
     const [moveFromDate, setMoveFromDate] = useState(null)
-    const [mealSelectView, setMealSelectView] = useState('select') // 'select' | 'create'
+    const [mealSelectView, setMealSelectView] = useState('select') // 'select' | 'create' | 'details'
+    const [selectDetailMeal, setSelectDetailMeal] = useState(null)
+    const [selectDetailsTitle, setSelectDetailsTitle] = useState('')
+    const mealDetailBackRef = useRef(null)
 
     const {
         mealsByDate,
@@ -185,6 +188,22 @@ const Table = ({ onRequireLogin }) => {
     const draggingMealRef = useRef(null)
     const draggingFromDateRef = useRef(null)
     const scrollOffsetRef = useRef(0)
+
+    const handleSelectDetailsHeaderChange = useCallback(({ title }) => {
+        setSelectDetailsTitle(title || '')
+    }, [])
+
+    const openSelectMealDetails = (meal) => {
+        setSelectDetailMeal(meal)
+        setSelectDetailsTitle(meal?.name || '')
+        setMealSelectView('details')
+    }
+
+    const closeSelectMealDetails = () => {
+        setMealSelectView('select')
+        setSelectDetailMeal(null)
+        setSelectDetailsTitle('')
+    }
 
     // Wrapper functions that pass refresh callback to hook functions
     const fetchMealData = (datesToFetch) => {
@@ -644,8 +663,18 @@ const Table = ({ onRequireLogin }) => {
                 resizeMode="cover"
             />
             <View style={styles.mealTextContainer}>
-                <CustomText style={styles.mealName}>{item.name}</CustomText>
-                <CustomText style={styles.mealType}>
+                <CustomText
+                    style={styles.mealName}
+                    numberOfLines={2}
+                    ellipsizeMode="tail"
+                >
+                    {item.name}
+                </CustomText>
+                <CustomText
+                    style={styles.mealType}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                >
                     {getMealTypeText(item.defaultRoles)}
                 </CustomText>
             </View>
@@ -663,38 +692,36 @@ const Table = ({ onRequireLogin }) => {
                 onDragPosition={handleDragPosition}
             >
                 <View style={styles.mealItemContainer}>
-                    <View style={styles.mealItemInfo}>
-                        <TouchableOpacity
-                            onPress={() => handleMealPress(meal)}
-                            style={styles.mealContentTouchable}
-                            activeOpacity={0.7}
-                        >
-                            <Image
-                                source={{
-                                    uri:
-                                        meal.image?.url ||
-                                        PLACEHOLDER_IMAGE_URL,
-                                }}
-                                style={styles.mealImage}
-                                resizeMode="cover"
-                            />
-                            <View style={styles.mealTextContainer}>
-                                <CustomText style={styles.mealName}>
-                                    {meal.name}
-                                </CustomText>
-                                <CustomText style={styles.mealType}>
-                                    {getMealTypeText(meal.defaultRoles)}
-                                </CustomText>
-                            </View>
-                        </TouchableOpacity>
-                        <View style={styles.dragHandle}>
-                            <MaterialIcons
-                                name="drag-indicator"
-                                size={24}
-                                color="#999"
-                            />
+                    <TouchableOpacity
+                        onPress={() => handleMealPress(meal)}
+                        style={styles.mealContentTouchable}
+                        activeOpacity={0.7}
+                    >
+                        <Image
+                            source={{
+                                uri:
+                                    meal.image?.url || PLACEHOLDER_IMAGE_URL,
+                            }}
+                            style={styles.mealImage}
+                            resizeMode="cover"
+                        />
+                        <View style={styles.mealTextContainer}>
+                            <CustomText
+                                style={styles.mealName}
+                                numberOfLines={2}
+                                ellipsizeMode="tail"
+                            >
+                                {meal.name}
+                            </CustomText>
+                            <CustomText
+                                style={styles.mealType}
+                                numberOfLines={1}
+                                ellipsizeMode="tail"
+                            >
+                                {getMealTypeText(meal.defaultRoles)}
+                            </CustomText>
                         </View>
-                    </View>
+                    </TouchableOpacity>
                     <View style={styles.mealItemActions}>
                         <TouchableOpacity
                             style={styles.deleteButton}
@@ -709,6 +736,8 @@ const Table = ({ onRequireLogin }) => {
                                 left: 10,
                                 right: 10,
                             }}
+                            accessibilityRole="button"
+                            accessibilityLabel="Poista päivältä"
                         >
                             <MaterialIcons
                                 name="delete"
@@ -716,6 +745,16 @@ const Table = ({ onRequireLogin }) => {
                                 color="#666"
                             />
                         </TouchableOpacity>
+                        <View
+                            style={styles.dragHandle}
+                            accessibilityLabel="Raahaa toiseen päivään"
+                        >
+                            <MaterialIcons
+                                name="drag-indicator"
+                                size={24}
+                                color="#999"
+                            />
+                        </View>
                     </View>
                 </View>
             </DraggableMealItem>
@@ -804,6 +843,10 @@ const Table = ({ onRequireLogin }) => {
         <ResponsiveModal
             visible={isModalVisible}
             onClose={() => {
+                if (mealSelectView === 'details') {
+                    mealDetailBackRef.current?.()
+                    return
+                }
                 if (mealSelectView === 'create') {
                     setMealSelectView('select')
                     return
@@ -811,14 +854,26 @@ const Table = ({ onRequireLogin }) => {
                 setIsModalVisible(false)
                 setSelectedDates([])
                 setMealSelectView('select')
+                setSelectDetailMeal(null)
+                setSelectDetailsTitle('')
             }}
             title={
-                mealSelectView === 'create'
-                    ? 'Luo uusi ateria'
-                    : 'Valitse ateria ja päivät'
+                mealSelectView === 'details'
+                    ? selectDetailsTitle || selectDetailMeal?.name || 'Ateria'
+                    : mealSelectView === 'create'
+                      ? 'Luo uusi ateria'
+                      : 'Valitse ateria ja päivät'
             }
-            showBackButton={mealSelectView === 'create'}
+            showBackButton={
+                mealSelectView === 'create' || mealSelectView === 'details'
+            }
             maxWidth={640}
+            contentStyle={styles.mealSelectModalContent}
+            bodyStyle={
+                mealSelectView === 'select'
+                    ? styles.mealSelectModalBody
+                    : styles.mealCreateModalBody
+            }
         >
             {mealSelectView === 'create' ? (
                 <FormAddMeal
@@ -827,23 +882,33 @@ const Table = ({ onRequireLogin }) => {
                         fetchMealData(dates)
                     }}
                 />
+            ) : mealSelectView === 'details' ? (
+                <MealItemDetail
+                    embedded
+                    meal={selectDetailMeal}
+                    visible
+                    onClose={closeSelectMealDetails}
+                    onUpdate={handleMealUpdate}
+                    backHandlerRef={mealDetailBackRef}
+                    onHeaderStateChange={handleSelectDetailsHeaderChange}
+                />
             ) : (
-                <>
-                    <DateSelector
-                        dates={dates}
-                        selectedDates={selectedDates}
-                        onToggleDateSelection={toggleDateSelection}
-                        onClearSelection={clearDateSelection}
-                    />
-
-                    <MealSelectionList
-                        availableMeals={availableMeals}
-                        selectedDates={selectedDates}
-                        onMealSelect={handleSelectMeal}
-                        onCreateMeal={() => setMealSelectView('create')}
-                        showAllRoles={false}
-                    />
-                </>
+                <MealSelectionList
+                    header={
+                        <DateSelector
+                            dates={dates}
+                            selectedDates={selectedDates}
+                            onToggleDateSelection={toggleDateSelection}
+                            onClearSelection={clearDateSelection}
+                        />
+                    }
+                    availableMeals={availableMeals}
+                    selectedDates={selectedDates}
+                    onMealSelect={handleSelectMeal}
+                    onMealDetails={openSelectMealDetails}
+                    onCreateMeal={() => setMealSelectView('create')}
+                    showAllRoles={false}
+                />
             )}
         </ResponsiveModal>
     )
@@ -1037,10 +1102,18 @@ const Table = ({ onRequireLogin }) => {
                                 resizeMode="cover"
                             />
                             <View style={styles.mealTextContainer}>
-                                <CustomText style={styles.mealName}>
+                                <CustomText
+                                    style={styles.mealName}
+                                    numberOfLines={2}
+                                    ellipsizeMode="tail"
+                                >
                                     {draggingMeal.name}
                                 </CustomText>
-                                <CustomText style={styles.mealType}>
+                                <CustomText
+                                    style={styles.mealType}
+                                    numberOfLines={1}
+                                    ellipsizeMode="tail"
+                                >
                                     {getMealTypeText(draggingMeal.defaultRoles)}
                                 </CustomText>
                             </View>
@@ -1207,25 +1280,34 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
     mealImage: {
-        width: 50,
-        height: 50,
+        width: 44,
+        height: 44,
         borderRadius: 6,
-        marginRight: 12,
+        marginRight: 10,
+        flexShrink: 0,
     },
     mealTextContainer: {
         flex: 1,
+        flexShrink: 1,
+        minWidth: 0,
         flexDirection: 'column',
     },
     mealName: {
         fontSize: 16,
         fontWeight: '500',
-        flexWrap: 'wrap',
+        color: '#1f2937',
+        ...(Platform.OS === 'web'
+            ? {
+                  overflowWrap: 'anywhere',
+                  wordBreak: 'break-word',
+                  hyphens: 'auto',
+              }
+            : {}),
     },
     mealType: {
         fontSize: 14,
         color: '#666',
-        marginTop: 4,
-        flexWrap: 'wrap',
+        marginTop: 2,
     },
     modalView: {
         flex: 1,
@@ -1258,12 +1340,13 @@ const styles = StyleSheet.create({
     },
     mealItemContainer: {
         backgroundColor: '#fff',
-        padding: 15,
+        paddingVertical: 12,
+        paddingHorizontal: 12,
         borderRadius: 10,
         marginBottom: 10,
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
+        gap: 4,
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
@@ -1279,25 +1362,29 @@ const styles = StyleSheet.create({
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
+        minWidth: 0,
     },
     mealContentTouchable: {
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
+        minWidth: 0,
+        marginRight: 4,
     },
     dragHandle: {
-        padding: 10,
-        marginLeft: 4,
+        padding: 8,
         justifyContent: 'center',
         alignItems: 'center',
         borderRadius: 8,
         minWidth: 40,
         minHeight: 40,
+        flexShrink: 0,
     },
     mealItemActions: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginLeft: 10,
+        flexShrink: 0,
+        gap: 2,
     },
     deleteButton: {
         backgroundColor: '#e0e0e0',
@@ -1306,6 +1393,7 @@ const styles = StyleSheet.create({
         borderRadius: 18,
         justifyContent: 'center',
         alignItems: 'center',
+        flexShrink: 0,
         elevation: 2,
         shadowColor: '#000',
         shadowOffset: {
@@ -1506,6 +1594,16 @@ const styles = StyleSheet.create({
         marginTop: 2,
         textDecorationLine: 'underline',
         textAlign: 'center',
+    },
+    mealSelectModalContent: {
+        flex: 1,
+        backgroundColor: '#f9fafb',
+    },
+    mealSelectModalBody: {
+        paddingHorizontal: 0,
+    },
+    mealCreateModalBody: {
+        paddingHorizontal: 20,
     },
 })
 

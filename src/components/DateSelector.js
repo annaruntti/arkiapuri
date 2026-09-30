@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { StyleSheet, TouchableOpacity, View } from 'react-native'
 import ClearFiltersButton from './ClearFiltersButton'
 import CustomText from './CustomText'
+import PrimaryActionFade from './PrimaryActionFade'
 import ToggleButton from './ToggleButton'
 
 const DateSelector = ({
@@ -14,7 +15,7 @@ const DateSelector = ({
     const [isExpanded, setIsExpanded] = useState(true)
 
     return (
-        <View style={styles.dateSelectionContainer}>
+        <PrimaryActionFade style={styles.dateSelectionContainer}>
             <View style={isExpanded ? styles.headerRowExpanded : undefined}>
                 <ToggleButton
                     label={
@@ -65,15 +66,19 @@ const DateSelector = ({
                     )}
                 </>
             )}
-        </View>
+        </PrimaryActionFade>
     )
 }
 
 const styles = StyleSheet.create({
     dateSelectionContainer: {
-        padding: 15,
-        backgroundColor: '#f8f9fa',
-        borderRadius: 8,
+        paddingHorizontal: 16,
+        paddingVertical: 16,
+        backgroundColor: '#F4F0FF',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#D8CEF8',
+        width: '100%',
     },
     headerRowExpanded: {
         marginBottom: 10,
