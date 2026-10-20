@@ -31,13 +31,13 @@ import {
     updateShoppingList,
     updateShoppingListItem,
 } from '../services/collectionApi'
-import { findOrCreateFoodItem } from '../services/foodItemApi'
 import {
     SHOPPING_SORT_OPTIONS,
     SORT_OPTION_IDS,
 } from '../utils/listSort'
 import { lineAmount } from '../utils/shoppingListPrice'
 import { addOrMergeShoppingListItem } from '../utils/shoppingListAddItem'
+import { updateShoppingListItemWithCatalog } from '../utils/shoppingListUpdateItem'
 import { collapseDuplicateShoppingListItems } from '../utils/shoppingListDuplicate'
 import { resolveAppUnit } from '../utils/units'
 import { shoppingListLineFromMappedPackage } from '../utils/openFoodFactsMapper'
@@ -654,9 +654,6 @@ const ShoppingListDetail = ({
 
     const handleUpdateItem = async (itemId, updatedData, options = {}) => {
         try {
-            // Find the item in the shopping list (read-only, just to fill in
-            // gaps for FoodItem creation below — we never resend the whole
-            // items array, only the single-item update endpoint).
             const currentItem = shoppingList.items.find(
                 (item) => getListItemId(item) === String(itemId)
             )
@@ -665,51 +662,12 @@ const ShoppingListDetail = ({
                 return
             }
 
-            if (updatedData.price !== undefined) {
-                const parsedPrice = parseFloat(
-                    String(updatedData.price).replace(',', '.')
-                )
-                updatedData.price =
-                    Number.isFinite(parsedPrice) && parsedPrice > 0
-                        ? parsedPrice
-                        : 0
-            }
-
-            let foodItemId = currentItem.foodId?._id || currentItem.foodId
-
-            // If foodId is being updated (from image upload), extract the ID
-            if (updatedData.foodId && typeof updatedData.foodId === 'object') {
-                foodItemId = updatedData.foodId._id || updatedData.foodId
-                updatedData.foodId = foodItemId
-            }
-
-            // If there's no foodId but we need one (e.g., for image upload), find or create a FoodItem
-            if (!foodItemId && (updatedData.image || updatedData.category)) {
-                try {
-                    const foodItemResult = await findOrCreateFoodItem({
-                        name: updatedData.name || currentItem.name,
-                        category:
-                            updatedData.category || currentItem.category || [],
-                        unit: updatedData.unit || currentItem.unit || 'kpl',
-                        price: updatedData.price || currentItem.price || 0,
-                        calories:
-                            updatedData.calories || currentItem.calories || 0,
-                    })
-                    foodItemId = foodItemResult.foodItem?._id
-                    if (foodItemId) {
-                        updatedData.foodId = foodItemId
-                    }
-                } catch (foodItemError) {
-                    console.error('Error creating food item:', foodItemError)
-                    // Continue with update even if food item creation fails
-                }
-            }
-
-            const data = await updateShoppingListItem(
-                shoppingList._id,
+            const data = await updateShoppingListItemWithCatalog({
+                shoppingListId: shoppingList._id,
                 itemId,
-                updatedData
-            )
+                currentItem,
+                updatedData,
+            })
             onUpdate(data.shoppingList)
             if (!options.keepView) {
                 goToListView()

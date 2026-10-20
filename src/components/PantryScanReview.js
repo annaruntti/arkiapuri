@@ -19,110 +19,16 @@ import { APP_UNITS } from '../utils/units'
 import { lookupFoodItemsByName } from '../services/foodItemApi'
 import { FOOD_PLACEHOLDER_IMAGE_URL } from '../constants/images'
 import { parseQuantityInput } from '../utils/parseQuantity'
-import { shouldAutoSelectScanItem } from '../utils/scanReviewSelect'
+import {
+    SOURCE_LABELS,
+    applyLookupResult,
+    formatNutritionLine,
+    isHttpUrl,
+    isSameCatalogProduct,
+    mapScanItemToRow,
+} from '../utils/pantryScanReview'
 
 const NAME_LOOKUP_DELAY_MS = 450
-
-const SOURCE_LABELS = {
-    catalog: 'Omasta tietokannasta',
-    openfoodfacts: 'Open Food Facts',
-    inferred: null,
-}
-
-const itemMergeKey = (name) =>
-    String(name || '')
-        .normalize('NFKC')
-        .toLowerCase()
-        .replace(/[\u200B-\u200D\uFEFF]/g, '')
-        .trim()
-        .replace(/\s+/g, ' ')
-        .replace(/[^\p{L}\p{N}]+/gu, '')
-
-const isSameCatalogProduct = (typedName, catalogName) => {
-    const typedKey = itemMergeKey(typedName)
-    const catalogKey = itemMergeKey(catalogName)
-    return Boolean(typedKey && catalogKey && typedKey === catalogKey)
-}
-
-const isHttpUrl = (value) => /^https?:\/\//i.test(String(value || '').trim())
-
-const formatNumber = (value) => {
-    const parsed = Number(value)
-    if (!Number.isFinite(parsed)) return ''
-    return String(Math.round(parsed * 10) / 10).replace('.', ',')
-}
-
-const formatNutritionLine = (nutrition, calories) => {
-    const kcal = nutrition?.calories ?? calories
-    if (!kcal) return null
-    const parts = [`${Math.round(kcal)} kcal / 100 g`]
-    if (nutrition?.proteins) {
-        parts.push(`P ${formatNumber(nutrition.proteins)} g`)
-    }
-    if (nutrition?.carbohydrates) {
-        parts.push(`H ${formatNumber(nutrition.carbohydrates)} g`)
-    }
-    if (nutrition?.fat) {
-        parts.push(`R ${formatNumber(nutrition.fat)} g`)
-    }
-    return parts.join(' · ')
-}
-
-const mapScanItemToRow = (item, index) => ({
-    key: `${item.foodId || item.name}-${index}`,
-    selected: shouldAutoSelectScanItem(item),
-    name: item.name || '',
-    quantity: String(item.quantity || 1),
-    unit: item.unit || 'kpl',
-    category: item.category || [],
-    foodId: item.foodId,
-    confidence: item.confidence,
-    alreadyInPantry: Boolean(item.alreadyInPantry),
-    notes: item.notes,
-    calories: item.calories,
-    nutrition: item.nutrition,
-    matchSource: item.matchSource,
-    matchName: item.matchName,
-    barcode: item.barcode,
-    imageUrl: item.imageUrl,
-    lookingUp:
-        String(item.name || '').trim().length >= 2 &&
-        !item.matchSource &&
-        !(item.calories || item.nutrition?.calories) &&
-        !item.imageUrl,
-})
-
-const applyLookupResult = (row, result) => {
-    if (!result) return { ...row, lookingUp: false }
-    const adoptedName = result.matchName || result.name
-    const fromKnownSource =
-        result.source === 'catalog' || result.source === 'openfoodfacts'
-    if (!fromKnownSource) {
-        return {
-            ...row,
-            lookingUp: false,
-            barcode: result.barcode || row.barcode,
-            imageUrl: result.imageUrl || row.imageUrl,
-        }
-    }
-    const next = {
-        ...row,
-        lookingUp: false,
-        name: adoptedName || row.name,
-        category: result.category?.length ? result.category : row.category,
-        calories: result.calories ?? row.calories,
-        nutrition: result.nutrition ?? row.nutrition,
-        foodId: result.source === 'catalog' ? result.foodId : null,
-        matchSource: result.source,
-        matchName: adoptedName,
-        barcode: result.barcode || row.barcode,
-        imageUrl: result.imageUrl || row.imageUrl,
-    }
-    return {
-        ...next,
-        selected: shouldAutoSelectScanItem(next),
-    }
-}
 
 const PantryScanReview = ({
     visible,
