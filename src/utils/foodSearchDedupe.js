@@ -1,9 +1,9 @@
-const normalizeItemName = (name) =>
+export const normalizeItemName = (name) =>
     String(name || '')
         .toLowerCase()
         .trim()
 
-const getItemIdentity = (item) => {
+export const getItemIdentity = (item) => {
     if (item?._id) return `id:${item._id}`
     if (item?.barcode) return `barcode:${item.barcode}`
     return null
@@ -43,4 +43,51 @@ export const dedupeFoodItems = (items = []) => {
     }
 
     return [...byName.values()]
+}
+
+/**
+ * Build the visible result list for a search tab.
+ * "all" prioritizes local catalog items, then OFF rows without name collisions.
+ */
+export const getFoodSearchTabResults = (
+    activeTab,
+    localItems = [],
+    openFoodFactsItems = []
+) => {
+    switch (activeTab) {
+        case 'local':
+            return dedupeFoodItems(localItems)
+        case 'openfoodfacts':
+            return dedupeFoodItems(openFoodFactsItems)
+        default: {
+            const seenNames = new Set()
+            const seenKeys = new Set()
+            const deduped = []
+
+            localItems.forEach((item) => {
+                const normalizedName = normalizeItemName(item.name)
+                const key =
+                    getItemIdentity(item) || `local-${normalizedName}`
+
+                if (!seenNames.has(normalizedName) && !seenKeys.has(key)) {
+                    seenNames.add(normalizedName)
+                    seenKeys.add(key)
+                    deduped.push(item)
+                }
+            })
+
+            openFoodFactsItems.forEach((item) => {
+                const normalizedName = normalizeItemName(item.name)
+                const key = getItemIdentity(item) || `off-${normalizedName}`
+
+                if (!seenNames.has(normalizedName) && !seenKeys.has(key)) {
+                    seenNames.add(normalizedName)
+                    seenKeys.add(key)
+                    deduped.push(item)
+                }
+            })
+
+            return deduped
+        }
+    }
 }

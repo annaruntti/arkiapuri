@@ -30,6 +30,11 @@ import StickyListLayout from '../components/StickyListLayout'
 import PantryScanLockedModal from '../components/PantryScanLockedModal'
 import { getServerUrl } from '../utils/getServerUrl'
 import { DEFAULT_SERVINGS } from '../utils/mealServings'
+import { processFormCategories } from '../utils/foodCategories'
+import {
+    isPersistedFoodItemId,
+    resolveCatalogFoodId,
+} from '../utils/foodItemId'
 import { getIngredientQuantity } from '../utils/mealFoodItem'
 import { mapDishScanToFormDraft } from '../utils/dishFromPhotoDraft'
 import {
@@ -313,31 +318,10 @@ const MealsScreen = ({ route, navigation }) => {
     const handleUpdateMeal = async (mealId, updatedMeal) => {
         try {
             const token = await storage.getItem('userToken')
-            const isPersistedFoodItemId = (id) =>
-                typeof id === 'string' && /^[a-fA-F0-9]{24}$/.test(id)
-
             // First, handle each food item
             const processedFoodItems = await Promise.all(
                 updatedMeal.foodItems.map(async (item) => {
-                    let categoryArray = item.category
-                    if (typeof item.category === 'string') {
-                        try {
-                            categoryArray = JSON.parse(item.category)
-                        } catch (e) {
-                            categoryArray = []
-                        }
-                    }
-
-                    const categoryIds = Array.isArray(categoryArray)
-                        ? categoryArray
-                              .map((cat) => {
-                                  if (typeof cat === 'object' && cat !== null) {
-                                      return cat.name || cat.id || String(cat)
-                                  }
-                                  return String(cat)
-                              })
-                              .filter((cat) => cat && cat.trim() !== '')
-                        : []
+                    const categoryIds = processFormCategories(item.category)
 
                     const quantity = getIngredientQuantity(item)
                     const unit = item.unit || 'kpl'
@@ -349,15 +333,7 @@ const MealsScreen = ({ route, navigation }) => {
                         calories: parseInt(item.calories) || 0,
                         price: parseFloat(item.price) || 0,
                     }
-                    const resolveId = (value) => {
-                        if (!value) return ''
-                        if (typeof value === 'object') {
-                            return String(value._id || value.id || '')
-                        }
-                        return String(value)
-                    }
-                    const catalogId =
-                        resolveId(item.foodId) || resolveId(item._id)
+                    const catalogId = resolveCatalogFoodId(item)
 
                     if (isPersistedFoodItemId(catalogId)) {
                         return { foodId: catalogId, quantity, unit }

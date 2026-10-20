@@ -23,7 +23,6 @@ import {
     previewShoppingListPrices,
 } from '../services/collectionApi'
 import CustomText from './CustomText'
-import ListItem from './ListItem'
 import MealIngredientQuantityModal from './MealIngredientQuantityModal'
 import BarcodeProductReview from './BarcodeProductReview'
 import FoodSearchSourceTabs, {
@@ -34,7 +33,15 @@ import {
     stripCatalogLocationQuantity,
 } from '../utils/mealFoodItem'
 import { DEFAULT_SERVINGS } from '../utils/mealServings'
-import { dedupeFoodItems } from '../utils/foodSearchDedupe'
+import {
+    dedupeFoodItems,
+    getFoodSearchTabResults,
+    normalizeItemName,
+} from '../utils/foodSearchDedupe'
+import {
+    FoodSearchLocalRow,
+    FoodSearchOpenFoodFactsRow,
+} from './FoodSearchResultRows'
 import {
     buildGuestFoodItemFromOpenFoodFacts,
     mapOpenFoodFactsToFoodItemFields,
@@ -715,177 +722,30 @@ const UnifiedFoodSearch = ({
         addOpenFoodFactsProduct(item)
     }
 
-    const getGradeColor = (grade) => {
-        const colors = {
-            a: '#00AA00',
-            b: '#85BB2F',
-            c: '#FFAA00',
-            d: '#FF6600',
-            e: '#FF0000',
-        }
-        return colors[grade?.toLowerCase()] || '#ccc'
-    }
+    const renderLocalItem = ({ item }) => (
+        <FoodSearchLocalRow
+            item={item}
+            showNutrition={showNutrition}
+            isAdded={addedItems.has(item._id)}
+            allowDuplicates={allowDuplicates}
+            onPress={() => handleSelectLocalItem(item)}
+        />
+    )
 
-    const renderLocalItem = ({ item }) => {
-        const categoryText = (() => {
-            if (Array.isArray(item.category)) {
-                const filtered = item.category.filter(Boolean)
-                const joined = filtered.join(', ')
-                return String(joined || 'Ei kategoriaa')
-            }
-            return String('Ei kategoriaa')
-        })()
+    const renderOpenFoodFactsItem = ({ item }) => (
+        <FoodSearchOpenFoodFactsRow
+            item={item}
+            showNutrition={showNutrition}
+            onPress={() => handleSelectOpenFoodFactsItem(item)}
+        />
+    )
 
-        const calorieText =
-            showNutrition && item.calories && item.calories > 0
-                ? String(`${item.calories} kcal`)
-                : null
-
-        return (
-            <ListItem
-                variant="row"
-                title={String(item.name || 'Nimetön tuote').trim()}
-                subtitle={
-                    calorieText
-                        ? `${categoryText} · ${calorieText}`
-                        : categoryText
-                }
-                onPress={
-                    !allowDuplicates && addedItems.has(item._id)
-                        ? undefined
-                        : () => handleSelectLocalItem(item)
-                }
-                style={[
-                    styles.searchItem,
-                    addedItems.has(item._id) && styles.addedItem,
-                ]}
-                trailing={
-                    <View style={styles.itemRight}>
-                        <CustomText style={styles.sourceLabel}>Oma</CustomText>
-                        {addedItems.has(item._id) ? (
-                            <Ionicons
-                                name="checkmark-circle"
-                                size={20}
-                                color="#00AA00"
-                            />
-                        ) : (
-                            <Ionicons
-                                name="add-circle-outline"
-                                size={20}
-                                color="#5844BB"
-                            />
-                        )}
-                    </View>
-                }
-            />
+    const getFilteredData = () =>
+        getFoodSearchTabResults(
+            activeTab,
+            filteredLocalItems,
+            openFoodFactsItems
         )
-    }
-
-    const renderOpenFoodFactsItem = ({ item }) => {
-        const imageUrl = item.image?.url || item.imageUrl
-        const caloriesText =
-            showNutrition && item.nutrition?.calories > 0
-                ? `${Math.round(item.nutrition.calories || 0)} kcal`
-                : null
-        const grade = showNutrition ? item.nutritionGrade?.trim() : ''
-
-        return (
-            <ListItem
-                variant="row"
-                image={imageUrl ? { uri: imageUrl } : undefined}
-                imageSize={40}
-                title={String(item.name || 'Nimetön tuote').trim()}
-                subtitle={
-                    item.brands && item.brands.trim().length > 0
-                        ? String(item.brands).trim()
-                        : undefined
-                }
-                details={
-                    grade || caloriesText ? (
-                        <View style={styles.productMeta}>
-                            {grade ? (
-                                <View
-                                    style={[
-                                        styles.gradeBox,
-                                        {
-                                            backgroundColor: getGradeColor(
-                                                item.nutritionGrade
-                                            ),
-                                        },
-                                    ]}
-                                >
-                                    <CustomText style={styles.gradeText}>
-                                        {String(item.nutritionGrade)
-                                            .trim()
-                                            .toUpperCase()}
-                                    </CustomText>
-                                </View>
-                            ) : null}
-                            {caloriesText ? (
-                                <CustomText style={styles.itemCalories}>
-                                    {caloriesText}
-                                </CustomText>
-                            ) : null}
-                        </View>
-                    ) : null
-                }
-                onPress={() => handleSelectOpenFoodFactsItem(item)}
-                style={styles.searchItem}
-                trailing={
-                    <View style={styles.itemRight}>
-                        <CustomText style={styles.sourceLabelOFF}>
-                            OFF
-                        </CustomText>
-                        <Ionicons
-                            name="add-circle-outline"
-                            size={20}
-                            color="#5844BB"
-                        />
-                    </View>
-                }
-            />
-        )
-    }
-
-    const getFilteredData = () => {
-        switch (activeTab) {
-            case 'local':
-                return dedupeFoodItems(filteredLocalItems)
-            case 'openfoodfacts':
-                return dedupeFoodItems(openFoodFactsItems)
-            default:
-                // Smart deduplication: prioritize local items, remove exact name duplicates
-                const seenNames = new Set()
-                const seenKeys = new Set()
-                const deduped = []
-
-                // First add local items (they have priority)
-                filteredLocalItems.forEach((item) => {
-                    const normalizedName = normalizeItemName(item.name)
-                    const key = getItemIdentity(item) || `local-${normalizedName}`
-
-                    if (!seenNames.has(normalizedName) && !seenKeys.has(key)) {
-                        seenNames.add(normalizedName)
-                        seenKeys.add(key)
-                        deduped.push(item)
-                    }
-                })
-
-                // Then add Open Food Facts items (only if name doesn't exist)
-                openFoodFactsItems.forEach((item) => {
-                    const normalizedName = normalizeItemName(item.name)
-                    const key = getItemIdentity(item) || `off-${normalizedName}`
-
-                    if (!seenNames.has(normalizedName) && !seenKeys.has(key)) {
-                        seenNames.add(normalizedName)
-                        seenKeys.add(key)
-                        deduped.push(item)
-                    }
-                })
-
-                return deduped
-        }
-    }
 
     // Memoize the filtered data to prevent unnecessary re-renders
     const memoizedData = useMemo(() => {
@@ -1098,57 +958,6 @@ const styles = StyleSheet.create({
     },
     resultsList: {
         maxHeight: 280,
-    },
-    searchItem: {
-        paddingLeft: 12,
-        paddingRight: 12,
-        paddingVertical: 10,
-        borderBottomColor: '#f0f0f0',
-    },
-    addedItem: {
-        backgroundColor: '#f0f8f0',
-        opacity: 1,
-    },
-    itemCalories: {
-        fontSize: 12,
-        color: '#666',
-        paddingRight: 10,
-    },
-    productMeta: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        marginTop: 4,
-    },
-    gradeBox: {
-        paddingHorizontal: 4,
-        paddingVertical: 1,
-        borderRadius: 3,
-    },
-    gradeText: {
-        color: '#fff',
-        fontSize: 10,
-        fontWeight: 'bold',
-    },
-    itemRight: {
-        alignItems: 'center',
-        gap: 4,
-    },
-    sourceLabel: {
-        fontSize: 10,
-        color: '#666',
-        backgroundColor: '#f0f0f0',
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 8,
-    },
-    sourceLabelOFF: {
-        fontSize: 10,
-        color: '#fff',
-        backgroundColor: '#FF6600',
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 8,
     },
     emptyContainer: {
         padding: 20,
