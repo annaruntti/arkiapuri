@@ -53,6 +53,7 @@ import {
 } from '../utils/recipeSteps'
 import MealFormBasicsSection from './MealFormBasicsSection'
 import MealFormIngredientsSection from './MealFormIngredientsSection'
+import { scrollMealFormToFirstError } from '../utils/mealFormScroll'
 
 const AddMealForm = ({
     onSubmit,
@@ -182,31 +183,18 @@ const AddMealForm = ({
         return Object.keys(errors).length === 0
     }
 
-    // Scrollaa ensimmäiseen virheeseen lomakkeella
     const scrollToFirstError = (rhfErrors, customErrors) => {
-        // Järjestys: name → recipe → roles → foodItems
-        let targetRef = null
-        if (rhfErrors?.name) {
-            targetRef = nameErrorRef
-        } else if (customErrors?.recipeSteps) {
-            targetRef = recipeErrorRef
-        } else if (customErrors?.roles) {
-            targetRef = rolesErrorRef
-        } else if (customErrors?.foodItems) {
-            targetRef = foodItemsErrorRef
-        }
-        if (targetRef?.current && scrollViewRef?.current) {
-            targetRef.current.measureLayout(
-                scrollViewRef.current,
-                (_x, y) => {
-                    scrollViewRef.current.scrollTo({
-                        y: Math.max(0, y - 24),
-                        animated: true,
-                    })
-                },
-                () => {}
-            )
-        }
+        scrollMealFormToFirstError({
+            rhfErrors,
+            customErrors,
+            refs: {
+                nameErrorRef,
+                recipeErrorRef,
+                rolesErrorRef,
+                foodItemsErrorRef,
+            },
+            scrollViewRef,
+        })
     }
 
     const handleFormSubmit = async (data) => {
