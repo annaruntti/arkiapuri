@@ -35,6 +35,7 @@ import { updateShoppingListItemWithCatalog } from '../utils/shoppingListUpdateIt
 import { collapseDuplicateShoppingListItems } from '../utils/shoppingListDuplicate'
 import {
     buildMoveToPantryAlert,
+    getBoughtShoppingItemIds,
     nameByShoppingItemId,
     parseMoveToPantryResponse,
     resolveCheckedShoppingItems,
@@ -386,19 +387,19 @@ const ShoppingListDetail = ({
     }
 
     const restoreBoughtItemsToList = async () => {
-        const boughtIds = (shoppingList.items || [])
-            .filter((item) => item.bought)
-            .map((item) => getListItemId(item))
-            .filter(Boolean)
+        const boughtIds = getBoughtShoppingItemIds(
+            shoppingList.items,
+            getListItemId
+        )
         if (boughtIds.length === 0) return
         await setCheckedBought(boughtIds, false)
     }
 
     const deleteBoughtItemsFromList = async () => {
-        const boughtIds = (shoppingList.items || [])
-            .filter((item) => item.bought)
-            .map((item) => getListItemId(item))
-            .filter(Boolean)
+        const boughtIds = getBoughtShoppingItemIds(
+            shoppingList.items,
+            getListItemId
+        )
         if (boughtIds.length === 0) return
         await deleteCheckedItems(boughtIds)
     }

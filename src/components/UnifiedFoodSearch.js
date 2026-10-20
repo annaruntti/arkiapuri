@@ -39,6 +39,7 @@ import {
 import {
     buildShoppingListBarcodeReview,
     fetchBarcodeReviewPriceEstimate,
+    mergeBarcodeReviewPriceEstimate,
 } from '../utils/foodSearchBarcode'
 import {
     FoodSearchLocalRow,
@@ -260,20 +261,13 @@ const UnifiedFoodSearch = ({
                     setIsListVisible(false)
                     const amount = await fetchBarcodeReviewPriceEstimate(review)
                     if (amount > 0) {
-                        setPendingBarcodeReview((current) => {
-                            if (
-                                !current ||
-                                current.barcode !== review.barcode ||
-                                current.price
-                            ) {
-                                return current
-                            }
-                            return {
-                                ...current,
-                                price: amount,
-                                priceIsEstimate: true,
-                            }
-                        })
+                        setPendingBarcodeReview((current) =>
+                            mergeBarcodeReviewPriceEstimate(
+                                current,
+                                review,
+                                amount
+                            )
+                        )
                     }
                 } else {
                     Alert.alert(

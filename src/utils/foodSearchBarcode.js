@@ -35,6 +35,25 @@ export const buildShoppingListBarcodeReview = (product, barcode) => {
 }
 
 /**
+ * Apply a price estimate onto the current barcode review draft, if still matching.
+ */
+export const mergeBarcodeReviewPriceEstimate = (current, review, amount) => {
+    if (
+        !current ||
+        current.barcode !== review.barcode ||
+        current.price ||
+        !(amount > 0)
+    ) {
+        return current
+    }
+    return {
+        ...current,
+        price: amount,
+        priceIsEstimate: true,
+    }
+}
+
+/**
  * Optionally enrich a barcode review draft with a server price estimate.
  * Returns the estimate amount, or 0 when unavailable.
  */

@@ -8,8 +8,8 @@ import {
 import axios from 'axios'
 import { useFocusEffect } from '@react-navigation/native'
 
-import CategorySectionHeader from '../components/CategorySectionHeader'
 import PantryFilterChrome from '../components/PantryFilterChrome'
+import PantryItemsBody from '../components/PantryItemsBody'
 import CustomText from '../components/CustomText'
 import AddFoodItemPanel from '../components/AddFoodItemPanel'
 import FoodListItemRow from '../components/FoodListItemRow'
@@ -800,55 +800,12 @@ const PantryScreen = ({}) => {
                                     }
                                 />
                             </View>
-                            <View
-                                style={[
-                                    styles.productList,
-                                    styles.listContent,
-                                ]}
-                            >
-                                {pantryItemSections.some(
-                                    (section) => section.data?.length
-                                )
-                                    ? pantryItemSections.map((section) => (
-                                          <View
-                                              key={
-                                                  section.title ||
-                                                  'pantry-section'
-                                              }
-                                          >
-                                              <CategorySectionHeader
-                                                  title={section.title}
-                                                  count={section.data.length}
-                                              />
-                                              {section.data.map(
-                                                  (item, index) => (
-                                                      <View
-                                                          key={String(
-                                                              item._id ||
-                                                                  item.foodId
-                                                                      ?._id ||
-                                                                  item.foodId ||
-                                                                  `${item.name}-${index}`
-                                                          )}
-                                                      >
-                                                          {renderItem({
-                                                              item,
-                                                          })}
-                                                      </View>
-                                                  )
-                                              )}
-                                          </View>
-                                      ))
-                                    : !loading && (
-                                          <CustomText
-                                              style={styles.emptyText}
-                                          >
-                                              {searchQuery.length > 0
-                                                  ? `Hakusanalla "${searchQuery}" ei löytynyt tuotteita.`
-                                                  : 'Pentterissäsi ei ole vielä elintarvikkeita. Skannaa säilytyspaikka tai lisää tuote manuaalisesti.'}
-                                          </CustomText>
-                                      )}
-                            </View>
+                            <PantryItemsBody
+                                sections={pantryItemSections}
+                                loading={loading}
+                                searchQuery={searchQuery}
+                                renderItem={renderItem}
+                            />
                         </View>
                     </StickyListLayout>
                     <PantryScanLockedModal

@@ -1,4 +1,13 @@
 /**
+ * Ids of items currently marked bought.
+ */
+export const getBoughtShoppingItemIds = (items, getId) =>
+    (items || [])
+        .filter((item) => item.bought)
+        .map((item) => getId(item))
+        .filter(Boolean)
+
+/**
  * Resolve checked ids against the current list items (avoids stale food ids).
  */
 export const resolveCheckedShoppingItems = (
