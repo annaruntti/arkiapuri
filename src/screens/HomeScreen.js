@@ -170,7 +170,10 @@ const HomeScreen = () => {
                                 styles.desktopNavigationWithWave,
                             ]}
                         >
-                            <ContentContainer maxWidth={DESKTOP_CONTENT_WIDTH}>
+                            <ContentContainer
+                                maxWidth={DESKTOP_CONTENT_WIDTH}
+                                insetTop={false}
+                            >
                             {renderDesktopGrid()}
 
                             {/* Filtered Meals Cards */}

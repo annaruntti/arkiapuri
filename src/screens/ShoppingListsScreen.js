@@ -175,7 +175,12 @@ const ShoppingListsScreen = ({ route }) => {
 
                     <LoginPromptModal {...loginPromptProps} />
 
-                    <View style={styles.content}>
+                    <View
+                        style={[
+                            styles.content,
+                            isDesktop && styles.desktopContent,
+                        ]}
+                    >
                         <StickyListLayout
                             chromeBackgroundColor="#f9fafb"
                             style={styles.listLayout}
@@ -334,6 +339,9 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         width: '100%',
         padding: 5,
+    },
+    desktopContent: {
+        paddingHorizontal: 0,
     },
     listItemButton: {
         width: 100,

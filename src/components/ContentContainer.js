@@ -7,7 +7,9 @@ import { useResponsiveDimensions } from '../utils/responsive'
  * Mobile stays full width. Tablet stays centered. Desktop sits on the left
  * with the same inset from the content area in every view.
  */
-const ContentContainer = ({ children, style, maxWidth }) => {
+const DESKTOP_CONTENT_PADDING_TOP = 24
+
+const ContentContainer = ({ children, style, maxWidth, insetTop = true }) => {
     const {
         width,
         isDesktop,
@@ -40,6 +42,7 @@ const ContentContainer = ({ children, style, maxWidth }) => {
                     width: desktopWidth,
                     maxWidth: desktopWidth,
                     marginLeft: inset,
+                    paddingTop: insetTop ? DESKTOP_CONTENT_PADDING_TOP : 0,
                     alignSelf: 'flex-start',
                 },
                 style,
