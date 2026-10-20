@@ -1,5 +1,64 @@
 import categoriesData from '../data/categories.json'
 
+/** Full category tree used by food-item forms. */
+export const getCategoryTree = () => categoriesData
+
+/**
+ * Resolve a category id (or nested child id) to a display name.
+ * Falls back to the raw id/name when unknown.
+ */
+export const getCategoryDisplayName = (
+    id,
+    categories = getCategoryTree()
+) => {
+    if (id == null || id === '') return ''
+    const needle = String(id)
+    for (const category of categories) {
+        if (String(category.id) === needle) return category.name
+        const subcategory = category.children?.find(
+            (child) => String(child.id) === needle
+        )
+        if (subcategory) return subcategory.name
+    }
+    return needle
+}
+
+/**
+ * Normalize form category values (ids, objects, JSON strings) into name strings.
+ */
+export const processFormCategories = (categoryInput) => {
+    if (!categoryInput) return []
+
+    const toName = (item) => {
+        if (typeof item === 'string') return getCategoryDisplayName(item)
+        if (item && typeof item === 'object' && item.name) return item.name
+        return getCategoryDisplayName(item)
+    }
+
+    if (Array.isArray(categoryInput)) {
+        return categoryInput
+            .map(toName)
+            .filter((name) => name && String(name).trim() !== '')
+    }
+
+    if (typeof categoryInput === 'string') {
+        try {
+            const parsed = JSON.parse(categoryInput)
+            if (Array.isArray(parsed)) {
+                return parsed
+                    .map(toName)
+                    .filter((name) => name && String(name).trim() !== '')
+            }
+        } catch {
+            // treat as single category id/name
+        }
+        const name = getCategoryDisplayName(categoryInput)
+        return name && String(name).trim() !== '' ? [name] : []
+    }
+
+    return []
+}
+
 /** Preferred section order when an item has multiple food categories. */
 export const FOOD_CATEGORY_PRIORITY = [
     'Pakasteet',

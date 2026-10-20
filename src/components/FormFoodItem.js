@@ -13,8 +13,18 @@ import {
     View,
 } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
-import * as ImagePicker from 'expo-image-picker'
 import { useShowNutrition } from '../hooks/useShowNutrition'
+import { processFormCategories } from '../utils/foodCategories'
+import {
+    pickFoodItemImage,
+    uploadFoodItemImage,
+} from '../utils/foodItemImage'
+import {
+    NUTRITION_FIELDS,
+    buildNutritionFromFormData,
+    getInitialNutritionValue,
+    hasAnyInitialNutrition,
+} from '../utils/nutritionFields'
 import { useResponsiveDimensions } from '../utils/responsive'
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
@@ -23,40 +33,12 @@ import Button from './Button'
 import CustomText from './CustomText'
 import FormDateField from './FormDateField'
 import CustomInput from './CustomInput'
+import FoodItemNutritionFields from './FoodItemNutritionFields'
 import InlineCategorySelect from './InlineCategorySelect'
-import CollapsibleFormSection from './CollapsibleFormSection'
 import ToggleButton from './ToggleButton'
 import UnifiedFoodSearch from './UnifiedFoodSearch'
 import UnitSelect from './UnitSelect'
-import categories from '../data/categories'
 import { formStyles } from '../styles/formStyles'
-
-const NUTRITION_FIELDS = [
-    { name: 'calories', label: 'Kalorit', unit: 'kcal' },
-    { name: 'proteins', label: 'Proteiini', unit: 'g' },
-    { name: 'carbohydrates', label: 'Hiilihydraatit', unit: 'g' },
-    { name: 'sugars', label: 'Sokerit', unit: 'g' },
-    { name: 'fat', label: 'Rasva', unit: 'g' },
-    { name: 'saturatedFat', label: 'Tyydyttynyt rasva', unit: 'g' },
-    { name: 'fiber', label: 'Kuitu', unit: 'g' },
-    { name: 'salt', label: 'Suola', unit: 'g' },
-]
-
-const getInitialNutritionValue = (initialValues, fieldName) => {
-    if (fieldName === 'calories') {
-        return (
-            initialValues?.nutrition?.calories ??
-            initialValues?.calories ??
-            initialValues?.openFoodFactsData?.nutrition?.calories ??
-            ''
-        )
-    }
-    return (
-        initialValues?.nutrition?.[fieldName] ??
-        initialValues?.openFoodFactsData?.nutrition?.[fieldName] ??
-        ''
-    )
-}
 
 const FormFoodItem = forwardRef(
     (
@@ -79,12 +61,8 @@ const FormFoodItem = forwardRef(
     ) => {
         const { isDesktop } = useResponsiveDimensions()
         const showNutrition = useShowNutrition()
-        const hasInitialNutrition = NUTRITION_FIELDS.some((field) => {
-            const value = getInitialNutritionValue(initialValues, field.name)
-            return value !== '' && value != null && Number(value) !== 0
-        })
         const [nutritionExpanded, setNutritionExpanded] = useState(
-            hasInitialNutrition
+            hasAnyInitialNutrition(initialValues)
         )
         const [unitMenuOpen, setUnitMenuOpen] = useState(false)
         const [date, setDate] = useState(
@@ -181,251 +159,15 @@ const FormFoodItem = forwardRef(
         }
 
         const pickImage = async () => {
-            try {
-                if (Platform.OS === 'web') {
-                    // For web, only show library option
-                    const result = await ImagePicker.launchImageLibraryAsync({
-                        mediaTypes: ['images'],
-                        allowsEditing: true,
-                        aspect: [4, 3],
-                        quality: 1,
-                    })
-
-                    if (!result.canceled) {
-                        setFoodItemImage(result.assets[0])
-                    }
-                    return
-                }
-
-                // For mobile, show action sheet with options
-                Alert.alert(
-                    'Select Image',
-                    'Choose how you want to add an image',
-                    [
-                        {
-                            text: 'Camera',
-                            onPress: async () => {
-                                try {
-                                    console.log(
-                                        'Requesting camera permissions...'
-                                    )
-                                    const { status } =
-                                        await ImagePicker.requestCameraPermissionsAsync()
-                                    console.log(
-                                        'Camera permission status:',
-                                        status
-                                    )
-
-                                    if (status !== 'granted') {
-                                        Alert.alert(
-                                            'Sorry, we need camera permissions to make this work!'
-                                        )
-                                        return
-                                    }
-
-                                    console.log('Launching camera...')
-                                    const result =
-                                        await ImagePicker.launchCameraAsync({
-                                            mediaTypes: ['images'],
-                                            allowsEditing: true,
-                                            aspect: [4, 3],
-                                            quality: 1,
-                                        })
-
-                                    console.log('Camera result:', result)
-                                    if (!result.canceled) {
-                                        setFoodItemImage(result.assets[0])
-                                    }
-                                } catch (error) {
-                                    console.error('Camera error:', error)
-                                    Alert.alert(
-                                        'Error',
-                                        'Failed to open camera: ' +
-                                            error.message
-                                    )
-                                }
-                            },
-                        },
-                        {
-                            text: 'Photo Library',
-                            onPress: async () => {
-                                const { status } =
-                                    await ImagePicker.requestMediaLibraryPermissionsAsync()
-                                if (status !== 'granted') {
-                                    Alert.alert(
-                                        'Sorry, we need camera roll permissions to make this work!'
-                                    )
-                                    return
-                                }
-
-                                const result =
-                                    await ImagePicker.launchImageLibraryAsync({
-                                        mediaTypes: ['images'],
-                                        allowsEditing: true,
-                                        aspect: [4, 3],
-                                        quality: 1,
-                                    })
-
-                                if (!result.canceled) {
-                                    setFoodItemImage(result.assets[0])
-                                }
-                            },
-                        },
-                        {
-                            text: 'Cancel',
-                            style: 'cancel',
-                        },
-                    ]
-                )
-            } catch (error) {
-                console.error('Error picking image:', error)
-                Alert.alert('Error', 'Failed to pick image')
-            }
-        }
-
-        const uploadFoodItemImage = async (foodItemId, imageFile) => {
-            try {
-                console.log('Starting image upload for food item:', foodItemId)
-                console.log('Image file received:', imageFile)
-
-                const token = await storage.getItem('userToken')
-                if (!token) {
-                    throw new Error('No token found')
-                }
-
-                const formData = new FormData()
-
-                // Handle web blob URLs differently
-                if (
-                    Platform.OS === 'web' &&
-                    imageFile.uri.startsWith('blob:')
-                ) {
-                    console.log('Processing web blob image')
-                    // For web, we need to fetch the blob and convert it to a File
-                    const response = await fetch(imageFile.uri)
-                    const blob = await response.blob()
-                    const file = new File([blob], 'food-item.jpg', {
-                        type: 'image/jpeg',
-                    })
-                    formData.append('mealImage', file)
-                    console.log('Web blob processed, file created:', file)
-                } else {
-                    console.log('Processing mobile image')
-                    // For mobile platforms
-                    formData.append('mealImage', {
-                        uri: imageFile.uri,
-                        type: 'image/jpeg',
-                        name: 'food-item.jpg',
-                    })
-                    console.log('Mobile image added to FormData')
-                }
-
-                const url = getServerUrl(`/food-items/${foodItemId}/image`)
-                console.log('Uploading food item image to URL:', url)
-                console.log('FormData contents:', formData)
-
-                const response = await axios.post(url, formData, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data',
-                        Authorization: `Bearer ${token}`,
-                    },
-                })
-
-                console.log('Upload response:', response.data)
-                if (response.data.success) {
-                    console.log('Food item image uploaded successfully')
-                    return response.data.foodItem // Return the updated food item with image
-                } else {
-                    throw new Error('Upload failed: ' + response.data.message)
-                }
-            } catch (error) {
-                console.error('Error uploading food item image:', error)
-                console.error('Error response:', error.response?.data)
-                console.error('Error status:', error.response?.status)
-                throw error
-            }
+            const asset = await pickFoodItemImage()
+            if (asset) setFoodItemImage(asset)
         }
 
         const handleFormSubmit = async (data) => {
             try {
                 const quantity = parseFloat(data.quantity) || 0
-
-                // Get category names from IDs
-                const getCategoryName = (id) => {
-                    for (const category of categories) {
-                        if (category.id === id) return category.name
-                        const subcategory = category.children.find(
-                            (c) => c.id === id
-                        )
-                        if (subcategory) return subcategory.name
-                    }
-                    return id
-                }
-
-                // Robust category processing - handle stringified arrays and objects
-                let processedCategories = []
-                if (data.category) {
-                    if (Array.isArray(data.category)) {
-                        // Already an array, process each item
-                        processedCategories = data.category
-                            .map((item) => {
-                                if (typeof item === 'string') {
-                                    return getCategoryName(item)
-                                } else if (
-                                    item &&
-                                    typeof item === 'object' &&
-                                    item.name
-                                ) {
-                                    return item.name
-                                }
-                                return getCategoryName(item)
-                            })
-                            .filter((name) => name && name.trim() !== '')
-                    } else if (typeof data.category === 'string') {
-                        try {
-                            // Try to parse as JSON
-                            const parsed = JSON.parse(data.category)
-                            if (Array.isArray(parsed)) {
-                                processedCategories = parsed
-                                    .map((item) => {
-                                        if (typeof item === 'string') {
-                                            return getCategoryName(item)
-                                        } else if (
-                                            item &&
-                                            typeof item === 'object' &&
-                                            item.name
-                                        ) {
-                                            return item.name
-                                        }
-                                        return getCategoryName(item)
-                                    })
-                                    .filter(
-                                        (name) => name && name.trim() !== ''
-                                    )
-                            }
-                        } catch (e) {
-                            // If parsing fails, treat as single category
-                            processedCategories = [
-                                getCategoryName(data.category),
-                            ]
-                        }
-                    }
-                }
-
-                const nutrition =
-                    data.isFood === false
-                        ? undefined
-                        : {
-                              calories: parseFloat(data.calories) || 0,
-                              proteins: parseFloat(data.proteins) || 0,
-                              carbohydrates:
-                                  parseFloat(data.carbohydrates) || 0,
-                              sugars: parseFloat(data.sugars) || 0,
-                              fat: parseFloat(data.fat) || 0,
-                              saturatedFat: parseFloat(data.saturatedFat) || 0,
-                              fiber: parseFloat(data.fiber) || 0,
-                              salt: parseFloat(data.salt) || 0,
-                          }
+                const processedCategories = processFormCategories(data.category)
+                const nutrition = buildNutritionFromFormData(data)
 
                 const formData = {
                     name: data.name,
@@ -928,46 +670,16 @@ const FormFoodItem = forwardRef(
                     )}
 
                     {showFoodFields && showNutrition && (
-                        <CollapsibleFormSection
-                            label="Ravintoarvot (per 100g/100ml)"
-                            placeholder="Valinnainen"
+                        <FoodItemNutritionFields
+                            control={control}
                             expanded={nutritionExpanded}
                             onExpandedChange={setNutritionExpanded}
-                            style={[
-                                formStyles.fieldGroup,
-                                styles.nutritionFieldGroup,
-                                unitMenuOpen && styles.unitColumnBehind,
-                            ]}
-                        >
-                            {NUTRITION_FIELDS.map((field) => (
-                                <View
-                                    key={field.name}
-                                    style={styles.nutritionField}
-                                >
-                                    <CustomText style={formStyles.label}>
-                                        {field.label}
-                                    </CustomText>
-                                    <View style={formStyles.inputRow}>
-                                        <CustomInput
-                                            control={control}
-                                            name={field.name}
-                                            placeholder="Valinnainen"
-                                            variant="form"
-                                            style={formStyles.inputInRow}
-                                        />
-                                        <View
-                                            style={formStyles.inputTrailing}
-                                        >
-                                            <CustomText
-                                                style={formStyles.inputMetric}
-                                            >
-                                                {field.unit}
-                                            </CustomText>
-                                        </View>
-                                    </View>
-                                </View>
-                            ))}
-                        </CollapsibleFormSection>
+                            style={
+                                unitMenuOpen
+                                    ? styles.unitColumnBehind
+                                    : undefined
+                            }
+                        />
                     )}
                 </View>
 
@@ -1210,12 +922,6 @@ const FormFoodItem = forwardRef(
 FormFoodItem.displayName = 'FormFoodItem'
 
 const styles = StyleSheet.create({
-    nutritionFieldGroup: {
-       paddingTop: 10,
-    },
-    nutritionField: {
-        marginTop: 12,
-    },
     backButton: {
         alignSelf: 'flex-start',
         paddingVertical: 8,
