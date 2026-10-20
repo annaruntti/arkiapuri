@@ -80,6 +80,7 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         flexDirection: 'row',
+        justifyContent: 'flex-start',
         backgroundColor: '#f9fafb',
         borderBottomWidth: 1,
         borderBottomColor: '#dee2e6',
@@ -91,7 +92,6 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
     },
     tabButton: {
-        flex: 1,
         paddingVertical: 15,
         paddingHorizontal: 20,
         alignItems: 'center',

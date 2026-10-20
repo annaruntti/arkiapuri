@@ -516,7 +516,17 @@ const Table = ({ onRequireLogin }) => {
                     },
                 ]}
             >
-                <View style={styles.bottomWeekNavigationInner}>
+                <View
+                    style={[
+                        styles.bottomWeekNavigationInner,
+                        isDesktop && {
+                            width: weekColumnWidth,
+                            maxWidth: weekColumnWidth,
+                            marginLeft: contentPadding,
+                            alignSelf: 'flex-start',
+                        },
+                    ]}
+                >
                     <TouchableOpacity
                         onPress={goToPreviousWeek}
                         style={styles.bottomNavButton}
