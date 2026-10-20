@@ -39,6 +39,12 @@ import { lineAmount } from '../utils/shoppingListPrice'
 import { addOrMergeShoppingListItem } from '../utils/shoppingListAddItem'
 import { updateShoppingListItemWithCatalog } from '../utils/shoppingListUpdateItem'
 import { collapseDuplicateShoppingListItems } from '../utils/shoppingListDuplicate'
+import {
+    buildMoveToPantryAlert,
+    nameByShoppingItemId,
+    parseMoveToPantryResponse,
+    resolveCheckedShoppingItems,
+} from '../utils/shoppingListCheckedActions'
 import { resolveAppUnit } from '../utils/units'
 import { shoppingListLineFromMappedPackage } from '../utils/openFoodFactsMapper'
 import storage from '../utils/storage'
@@ -296,26 +302,18 @@ const ShoppingListDetail = ({
                 ? checkedItemIds
                 : checkedItemsRef.current
 
-        // Resolve selection against the current list so we always send real
-        // shopping-list item ids (not stale/food ids).
-        const selectedIds = new Set(
-            (rawIds || []).map((id) => String(id).trim()).filter(Boolean)
+        const { selectedItems, itemIds } = resolveCheckedShoppingItems(
+            shoppingList.items,
+            rawIds,
+            getListItemId
         )
-        const selectedItems = (shoppingList.items || []).filter((item) =>
-            selectedIds.has(getListItemId(item))
-        )
-        const itemIds = [
-            ...new Set(selectedItems.map((item) => getListItemId(item))),
-        ]
         if (itemIds.length === 0) {
             Alert.alert('Huomio', 'Valittuja tuotteita ei löytynyt listalta')
             setCheckedItems([])
             return
         }
 
-        const nameById = Object.fromEntries(
-            selectedItems.map((item) => [getListItemId(item), item.name])
-        )
+        const nameById = nameByShoppingItemId(selectedItems, getListItemId)
 
         setLoading(true)
         try {
@@ -323,14 +321,8 @@ const ShoppingListDetail = ({
                 shoppingList._id,
                 itemIds
             )
-            const moved = Array.isArray(data.moved) ? data.moved : []
-            const skippedNonFood = Array.isArray(data.skippedNonFood)
-                ? data.skippedNonFood
-                : []
-            const removedNonFood = Array.isArray(data.removedNonFood)
-                ? data.removedNonFood
-                : skippedNonFood
-            const notFound = Array.isArray(data.notFound) ? data.notFound : []
+            const { moved, skippedNonFood, removedNonFood, notFound } =
+                parseMoveToPantryResponse(data)
 
             const clearedIdSet = new Set(
                 [...moved, ...removedNonFood]
@@ -351,57 +343,14 @@ const ShoppingListDetail = ({
                 await fetchPantryItems()
             }
 
-            if (moved.length > 0 || removedNonFood.length > 0) {
-                const movedNames = moved
-                    .map(
-                        (item) =>
-                            item.name || nameById[String(item.id)] || ''
-                    )
-                    .filter(Boolean)
-                const removedNames = removedNonFood
-                    .map(
-                        (item) =>
-                            item.name || nameById[String(item.id)] || ''
-                    )
-                    .filter(Boolean)
-                const parts = []
-                if (moved.length > 0) {
-                    parts.push(
-                        `${moved.length} elintarviketta pentteriin${
-                            movedNames.length
-                                ? `: ${movedNames.join(', ')}`
-                                : ''
-                        }`
-                    )
-                }
-                if (removedNonFood.length > 0) {
-                    parts.push(
-                        `${removedNonFood.length} muuta tuotetta poistettu listalta${
-                            removedNames.length
-                                ? `: ${removedNames.join(', ')}`
-                                : ''
-                        }`
-                    )
-                }
-                if (notFound.length > 0) {
-                    parts.push(
-                        `${notFound.length} valintaa ei löytynyt listalta`
-                    )
-                }
-                Alert.alert('Onnistui', parts.join('. ') + '.')
-            } else if (skippedNonFood.length > 0) {
-                Alert.alert(
-                    'Huomio',
-                    'Muut tuotteet eivät siirry pentteriin. Poista ne listalta tai merkitse ostetuiksi.'
-                )
-            } else {
-                Alert.alert(
-                    'Huomio',
-                    notFound.length > 0
-                        ? 'Valittuja tuotteita ei löytynyt listalta. Kokeile valita uudelleen.'
-                        : 'Valittuja tuotteita ei voitu siirtää'
-                )
-            }
+            const alert = buildMoveToPantryAlert({
+                moved,
+                removedNonFood,
+                skippedNonFood,
+                notFound,
+                nameById,
+            })
+            Alert.alert(alert.title, alert.message)
         } catch (error) {
             console.error('Error moving items to pantry:', error)
             Alert.alert('Virhe', 'Tuotteiden siirto pentteriin epäonnistui')
@@ -467,15 +416,11 @@ const ShoppingListDetail = ({
 
         // Resolve against current list so we never call delete with a stale
         // FoodItem id left over from barcode add / merge.
-        const selectedIds = new Set(
-            (checkedItemIds || []).map((id) => String(id).trim()).filter(Boolean)
+        const { itemIds } = resolveCheckedShoppingItems(
+            shoppingList.items,
+            checkedItemIds,
+            getListItemId
         )
-        const selectedItems = (shoppingList.items || []).filter((item) =>
-            selectedIds.has(getListItemId(item))
-        )
-        const itemIds = [
-            ...new Set(selectedItems.map((item) => getListItemId(item))),
-        ]
         if (itemIds.length === 0) {
             setCheckedItems([])
             setLoading(false)
