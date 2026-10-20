@@ -48,9 +48,11 @@ const Table = ({ onRequireLogin }) => {
     const {
         width: windowWidth,
         isDesktop,
+        isTablet,
         containerMaxWidth,
         responsivePadding,
     } = useResponsiveDimensions()
+    const isTabletLayout = isTablet && !isDesktop
     const contentPadding = isDesktop ? responsivePadding : 0
     const contentAreaWidth = isDesktop
         ? Math.max(0, windowWidth - DESKTOP_SIDEBAR_WIDTH)
@@ -61,10 +63,13 @@ const Table = ({ onRequireLogin }) => {
               Math.max(0, contentAreaWidth - contentPadding * 2)
           )
         : Math.min(containerMaxWidth, contentAreaWidth)
-    const weekBarLeftBleed = contentPadding
+    const tabletSideBleed = isTabletLayout
+        ? Math.max(0, (contentAreaWidth - weekColumnWidth) / 2)
+        : 0
+    const weekBarLeftBleed = isDesktop ? contentPadding : tabletSideBleed
     const weekBarRightBleed = isDesktop
         ? Math.max(0, contentAreaWidth - contentPadding - weekColumnWidth)
-        : 0
+        : tabletSideBleed
     const { continueWithoutLogin } = useLogin()
     const [dates, setDates] = useState([])
     const [weekOffset, setWeekOffset] = useState(0) // 0 = current week, -1 = previous, +1 = next
@@ -462,11 +467,13 @@ const Table = ({ onRequireLogin }) => {
             leftBleed={weekBarLeftBleed}
             rightBleed={weekBarRightBleed}
             innerStyle={
-                isDesktop
+                isDesktop || tabletSideBleed > 0
                     ? {
                           width: weekColumnWidth,
                           maxWidth: weekColumnWidth,
-                          marginLeft: contentPadding,
+                          marginLeft: isDesktop
+                              ? contentPadding
+                              : tabletSideBleed,
                           alignSelf: 'flex-start',
                       }
                     : undefined
