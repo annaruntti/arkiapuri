@@ -29,7 +29,7 @@ export const getPantryFoodId = (item) => {
     return String(item.foodId)
 }
 
-const collectPantryMergedIds = (item) => {
+export const collectPantryMergedIds = (item) => {
     const ids = []
     if (Array.isArray(item?.mergedIds)) {
         ids.push(...item.mergedIds)

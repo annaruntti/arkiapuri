@@ -32,7 +32,6 @@ import { getServerUrl } from '../utils/getServerUrl'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 import {
-    addPantryItem,
     deletePantryItem,
     dismissPantryRemovalSuggestions,
 } from '../services/collectionApi'
@@ -44,11 +43,12 @@ import {
     UNLOCATED_LOCATION_ID,
     filterItemsByLocation,
     groupItemsByPantryLocation,
-    inferLocationIdFromCategories,
     locationIdOf,
 } from '../utils/pantryLocations'
-import { mergeDuplicatePantryItems } from '../utils/pantryItemMerge'
-import { buildPantryItemPayload } from '../utils/pantryAddItem'
+import {
+    collectPantryMergedIds,
+    mergeDuplicatePantryItems,
+} from '../utils/pantryItemMerge'
 import {
     parsePantryFetchResponse,
     pantryFetchErrorMessage,
@@ -57,6 +57,13 @@ import {
     commitPantryScanItems,
     rewritePartialScanCandidates,
 } from '../utils/pantryScanCommitSubmit'
+import {
+    buildGuestPantryItem,
+    filterPantryItemsByRemovedIds,
+    submitPantryAddItem,
+    submitPantryRemoveIds,
+    submitPantryUpdateItem,
+} from '../utils/pantryItemMutationsSubmit'
 
 const PantryScreen = ({}) => {
     const { isDesktop } = useResponsiveDimensions()
@@ -101,36 +108,10 @@ const PantryScreen = ({}) => {
     })
 
     const addGuestPantryItem = (itemData) => {
-        const quantity =
-            Number(itemData.quantity) ||
-            Number(itemData.quantities?.pantry) ||
-            Number(itemData.packageQuantity) ||
-            1
-        const guestItem = {
-            _id: itemData._id || `guest-pantry-${Date.now()}`,
-            name: (itemData.name || '').trim(),
-            quantity,
-            unit: itemData.unit || 'kpl',
-            expirationDate: itemData.expirationDate || undefined,
-            expirationDateSetByUser: Boolean(itemData.expirationDate),
-            foodId: itemData.foodId || itemData._id,
-            category: itemData.category || [],
-            calories: Number(itemData.calories) || 0,
-            price: Number(itemData.price) || 0,
-            image: itemData.image,
-            openFoodFactsData: itemData.openFoodFactsData,
-            source: itemData.source,
-            addedFrom: 'pantry',
-            locationId:
-                selectedLocationId !== ALL_LOCATIONS_ID &&
-                selectedLocationId !== UNLOCATED_LOCATION_ID
-                    ? selectedLocationId
-                    : itemData.locationId ||
-                      inferLocationIdFromCategories(
-                          itemData.category,
-                          pantryLocations
-                      ),
-        }
+        const guestItem = buildGuestPantryItem(itemData, {
+            selectedLocationId,
+            pantryLocations,
+        })
         setPantryItems((prev) =>
             mergeDuplicatePantryItems([...prev, guestItem])
         )
@@ -240,21 +221,22 @@ const PantryScreen = ({}) => {
 
     const handleAddItem = async (itemData) => {
         try {
-            const token = await storage.getItem('userToken')
+            const result = await submitPantryAddItem({
+                itemData,
+                selectedLocationId,
+                pantryLocations,
+                continueWithoutLogin,
+            })
 
-            if (!token) {
-                if (!continueWithoutLogin) {
-                    showLoginPrompt('save', () => handleAddItem(itemData))
-                    return
-                }
-                if (!itemData.name || !itemData.unit) {
-                    Alert.alert(
-                        'Virhe',
-                        'Nimi ja yksikkö ovat pakollisia tietoja'
-                    )
-                    return
-                }
-                addGuestPantryItem(itemData)
+            if (result.status === 'need_login') {
+                showLoginPrompt('save', () => handleAddItem(itemData))
+                return
+            }
+
+            if (result.status === 'guest') {
+                setPantryItems((prev) =>
+                    mergeDuplicatePantryItems([...prev, result.guestItem])
+                )
                 setShowAddItemSearch(false)
                 Alert.alert(
                     'Onnistui',
@@ -263,32 +245,12 @@ const PantryScreen = ({}) => {
                 return
             }
 
-            const pantryItemData = await buildPantryItemPayload(itemData, {
-                selectedLocationId,
-                pantryLocations,
-            })
-
-            const pantryResponse = await axios.post(
-                getServerUrl('/pantry/items'),
-                pantryItemData,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                    },
-                }
+            setShowAddItemSearch(false)
+            await fetchPantryItems()
+            Alert.alert(
+                'Onnistui',
+                `Tuote "${itemData.name}" lisätty pentteriin`
             )
-
-            if (pantryResponse.data.success) {
-                setShowAddItemSearch(false)
-                await fetchPantryItems()
-                Alert.alert(
-                    'Onnistui',
-                    `Tuote "${itemData.name}" lisätty pentteriin`
-                )
-            } else {
-                throw new Error('Failed to add item to pantry')
-            }
         } catch (error) {
             console.error('Error adding item:', error?.response?.data || error)
             const message =
@@ -303,12 +265,8 @@ const PantryScreen = ({}) => {
     const getPantryItemIds = (item) => collectPantryMergedIds(item)
 
     const removeItemsLocally = (idsToRemove) => {
-        const removeSet = new Set(idsToRemove.map(String))
         setPantryItems((prevItems) =>
-            prevItems.filter(
-                (row) =>
-                    !collectPantryMergedIds(row).some((id) => removeSet.has(id))
-            )
+            filterPantryItemsByRemovedIds(prevItems, idsToRemove)
         )
     }
 
@@ -329,17 +287,12 @@ const PantryScreen = ({}) => {
             destructive: true,
             onConfirm: async () => {
                 try {
-                    if (!token) {
-                        removeItemsLocally(idsToRemove)
-                        return
-                    }
-
-                    setLoading(true)
-                    await Promise.all(
-                        idsToRemove.map((id) => deletePantryItem(id))
-                    )
+                    setLoading(Boolean(token))
+                    const result = await submitPantryRemoveIds(idsToRemove)
                     removeItemsLocally(idsToRemove)
-                    await fetchPantryItems()
+                    if (result.status === 'ok') {
+                        await fetchPantryItems()
+                    }
                 } catch (error) {
                     console.error('Error removing item:', error)
                     Alert.alert(
@@ -356,13 +309,19 @@ const PantryScreen = ({}) => {
 
     const handleUpdateItem = async (itemId, updatedData) => {
         try {
-            const token = await storage.getItem('userToken')
+            setLoading(true)
+            const result = await submitPantryUpdateItem({
+                itemId,
+                updatedData,
+                continueWithoutLogin,
+            })
 
-            if (!token) {
-                if (!continueWithoutLogin) {
-                    showLoginPrompt('save')
-                    return
-                }
+            if (result.status === 'need_login') {
+                showLoginPrompt('save')
+                return
+            }
+
+            if (result.status === 'guest') {
                 setPantryItems((prev) =>
                     prev.map((item) =>
                         item._id === itemId ? { ...item, ...updatedData } : item
@@ -372,25 +331,8 @@ const PantryScreen = ({}) => {
                 return
             }
 
-            setLoading(true)
-
-            const response = await axios.put(
-                getServerUrl(`/pantry/items/${itemId}`),
-                updatedData,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            )
-
-            if (response.data.success) {
-                // Fetch fresh data from server to ensure sync
-                await fetchPantryItems()
-                setDetailsVisible(false)
-            } else {
-                Alert.alert('Virhe', 'Tuotteen päivitys epäonnistui')
-            }
+            await fetchPantryItems()
+            setDetailsVisible(false)
         } catch (error) {
             console.error('Error updating item:', error)
             Alert.alert(

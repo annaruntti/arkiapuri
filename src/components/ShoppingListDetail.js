@@ -21,13 +21,12 @@ import {
     entityId,
     moveShoppingListItemsToPantry,
     setShoppingListItemBought,
-    updateShoppingList,
     updateShoppingListItem,
 } from '../services/collectionApi'
 import { SORT_OPTION_IDS } from '../utils/listSort'
 import { addOrMergeShoppingListItem } from '../utils/shoppingListAddItem'
 import { updateShoppingListItemWithCatalog } from '../utils/shoppingListUpdateItem'
-import { collapseDuplicateShoppingListItems } from '../utils/shoppingListDuplicate'
+import { persistShoppingListDuplicateCollapse } from '../utils/shoppingListCollapseDuplicatesSubmit'
 import {
     buildMoveToPantryAlert,
     nameByShoppingItemId,
@@ -38,6 +37,7 @@ import useShoppingListCheckedBatch from '../hooks/useShoppingListCheckedBatch'
 import { resolveAppUnit } from '../utils/units'
 import { buildShoppingListItemFromSearchSelect } from '../utils/shoppingListSearchSelect'
 import storage from '../utils/storage'
+import { useResponsiveDimensions } from '../utils/responsive'
 
 const getListItemId = (item) => entityId(item)
 
@@ -56,6 +56,7 @@ const ShoppingListDetail = ({
     onRequireLogin,
 }) => {
     const navigation = useNavigation()
+    const { isTablet } = useResponsiveDimensions()
     const [checkedItems, setCheckedItems] = useState([])
     const checkedItemsRef = useRef(checkedItems)
     checkedItemsRef.current = checkedItems
@@ -112,49 +113,16 @@ const ShoppingListDetail = ({
         let cancelled = false
 
         const mergeExistingDuplicates = async () => {
-            const items = shoppingList?.items || []
-            if (!shoppingList?._id || items.length < 2) return
             if (collapsingDuplicatesRef.current) return
-
-            const { items: collapsed, didMerge } =
-                collapseDuplicateShoppingListItems(items)
-            if (!didMerge) return
-
             collapsingDuplicatesRef.current = true
             try {
-                const token = await storage.getItem('userToken')
-                if (!token) {
-                    if (cancelled) return
-                    onUpdate({ ...shoppingList, items: collapsed })
-                    return
-                }
-
-                const payload = collapsed.map((item) => ({
-                    _id: getListItemId(item) || undefined,
-                    name: item.name,
-                    quantity: item.quantity,
-                    unit: item.unit,
-                    category: item.category || [],
-                    calories: item.calories || 0,
-                    price: item.price || 0,
-                    priceEstimate:
-                        Number(item.priceEstimate) > 0
-                            ? Number(item.priceEstimate)
-                            : undefined,
-                    priceEstimateSource:
-                        Number(item.priceEstimate) > 0
-                            ? item.priceEstimateSource || 'history'
-                            : undefined,
-                    foodId: item.foodId?._id || item.foodId,
-                    isFood: item.isFood !== false,
-                    bought: Boolean(item.bought),
-                }))
-
-                const data = await updateShoppingList(shoppingList._id, {
-                    items: payload,
+                await persistShoppingListDuplicateCollapse({
+                    shoppingList,
+                    getListItemId,
+                    onUpdate: (next) => {
+                        if (!cancelled) onUpdate(next)
+                    },
                 })
-                if (cancelled) return
-                onUpdate(data.shoppingList)
             } catch (error) {
                 console.warn(
                     'Failed to merge duplicate shopping list items:',
@@ -552,6 +520,7 @@ const ShoppingListDetail = ({
                                     onSecondaryPress={() =>
                                         openAddItemView()
                                     }
+                                    compactButton={isTablet}
                                 />
                             </>
                         }

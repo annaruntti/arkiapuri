@@ -238,3 +238,29 @@ export const collapseDuplicateShoppingListItems = (items = []) => {
 
     return { items: collapsed, didMerge }
 }
+
+/**
+ * Map collapsed shopping rows to PUT /shopping-lists/:id items payload.
+ */
+export const shoppingListItemsToUpdatePayload = (items, getListItemId) =>
+    (items || []).map((item) => ({
+        _id: getListItemId(item) || undefined,
+        name: item.name,
+        quantity: item.quantity,
+        unit: item.unit,
+        category: item.category || [],
+        calories: item.calories || 0,
+        price: item.price || 0,
+        priceEstimate:
+            Number(item.priceEstimate) > 0
+                ? Number(item.priceEstimate)
+                : undefined,
+        priceEstimateSource:
+            Number(item.priceEstimate) > 0
+                ? item.priceEstimateSource || 'history'
+                : undefined,
+        foodId: item.foodId?._id || item.foodId,
+        isFood: item.isFood !== false,
+        bought: Boolean(item.bought),
+    }))
+
