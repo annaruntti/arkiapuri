@@ -20,3 +20,19 @@ export const rebuildEatingDatesAfterMove = (
 
 export const isSameCalendarDay = (a, b) =>
     format(a, 'yyyy-MM-dd') === format(b, 'yyyy-MM-dd')
+
+/**
+ * Format calendar day selections as stored meal eating dates.
+ */
+export const formatSelectedDatesForMeal = (selectedDates) =>
+    (selectedDates || []).map(
+        (date) => format(date, 'yyyy-MM-dd') + 'T00:00:00.000Z'
+    )
+
+export const formatMealAddedSuccessMessage = (selectedDates) => {
+    const dateText =
+        selectedDates.length === 1
+            ? format(selectedDates[0], 'd.M.yyyy')
+            : `${selectedDates.length} päivälle`
+    return `Ateria lisätty ${dateText}`
+}

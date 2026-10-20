@@ -21,6 +21,8 @@ import {
     isAnyDateBeforeCooking,
 } from '../utils/mealDates'
 import {
+    formatMealAddedSuccessMessage,
+    formatSelectedDatesForMeal,
     isSameCalendarDay,
     rebuildEatingDatesAfterMove,
 } from '../utils/weekMealMove'
@@ -227,12 +229,9 @@ const Table = ({ onRequireLogin }) => {
         try {
             const token = await getAuthTokenOrPrompt('sync')
             if (!token) return
-            const formattedDates = selectedDates.map(
-                (date) => format(date, 'yyyy-MM-dd') + 'T00:00:00.000Z'
-            )
+            const formattedDates = formatSelectedDatesForMeal(selectedDates)
 
-            // Use PUT with the meal._id
-            const response = await axios.put(
+            await axios.put(
                 getServerUrl(`/meals/${meal._id}`),
                 {
                     plannedEatingDates: formattedDates,
@@ -245,16 +244,12 @@ const Table = ({ onRequireLogin }) => {
                 }
             )
 
-            // Refresh the meal data
             fetchMealData(dates)
             setIsModalVisible(false)
-
-            // Show success message
-            const dateText =
-                selectedDates.length === 1
-                    ? format(selectedDates[0], 'd.M.yyyy')
-                    : `${selectedDates.length} päivälle`
-            Alert.alert('Onnistui', `Ateria lisätty ${dateText}`)
+            Alert.alert(
+                'Onnistui',
+                formatMealAddedSuccessMessage(selectedDates)
+            )
         } catch (error) {
             console.error('Error updating meal:', error.response?.data || error)
             if (error.response?.status === 404) {

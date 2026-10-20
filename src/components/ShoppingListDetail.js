@@ -41,7 +41,7 @@ import {
     resolveCheckedShoppingItems,
 } from '../utils/shoppingListCheckedActions'
 import { resolveAppUnit } from '../utils/units'
-import { shoppingListLineFromMappedPackage } from '../utils/openFoodFactsMapper'
+import { buildShoppingListItemFromSearchSelect } from '../utils/shoppingListSearchSelect'
 import storage from '../utils/storage'
 
 const getListItemId = (item) => entityId(item)
@@ -540,43 +540,11 @@ const ShoppingListDetail = ({
 
     const handleSearchItemSelect = async (selectedItem, meta = {}) => {
         try {
-            // Transform the selected food item to shopping list item format.
             // Barcode / OFF products may already have a FoodItem id but are
             // not yet on this list — handleAddItem checks for duplicates.
-            // Packaged goods are counted in kpl (packages), not grams/ml.
-            const line = shoppingListLineFromMappedPackage(
-                {
-                    unit: selectedItem.unit,
-                    packageQuantity: selectedItem.packageQuantity,
-                },
-                resolveAppUnit(selectedItem.unit) === 'kpl'
-                    ? {
-                          quantity: selectedItem.quantity,
-                          unit: selectedItem.unit,
-                      }
-                    : {}
+            await handleAddItem(
+                buildShoppingListItemFromSearchSelect(selectedItem)
             )
-            const itemData = {
-                name: selectedItem.name,
-                unit: line.unit,
-                price: selectedItem.price || 0,
-                priceEstimate: selectedItem.priceEstimate || 0,
-                priceEstimateSource: selectedItem.priceEstimateSource,
-                calories: selectedItem.calories || 0,
-                category: selectedItem.category || [],
-                quantity: line.quantity,
-                location: 'shopping-list',
-                foodId: selectedItem.foodId || selectedItem._id,
-                barcode:
-                    selectedItem.barcode ||
-                    selectedItem.openFoodFactsData?.barcode,
-                image: selectedItem.image,
-                openFoodFactsData: selectedItem.openFoodFactsData,
-                source: selectedItem.source,
-                packageQuantity: selectedItem.packageQuantity,
-            }
-
-            await handleAddItem(itemData)
         } catch (error) {
             console.error('Error adding searched item:', error)
             Alert.alert('Virhe', 'Tuotteen lisääminen epäonnistui')

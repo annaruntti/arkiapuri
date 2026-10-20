@@ -59,6 +59,11 @@ import {
     mergeDuplicatePantryItems,
 } from '../utils/pantryItemMerge'
 import { buildPantryItemPayload } from '../utils/pantryAddItem'
+import {
+    buildPantryScanAddPayload,
+    normalizePantryScanCommitPayload,
+    uniquePantryItemIds,
+} from '../utils/pantryScanCommit'
 
 const PantryScreen = ({}) => {
     const { isDesktop } = useResponsiveDimensions()
@@ -490,14 +495,9 @@ const PantryScreen = ({}) => {
         setSuggestionsSubmitting(true)
         try {
             await Promise.all(
-                [
-                    ...new Set(
-                        suggestions
-                            .map((suggestion) => suggestion.itemId)
-                            .filter(Boolean)
-                            .map(String)
-                    ),
-                ].map((itemId) => deletePantryItem(itemId))
+                uniquePantryItemIds(suggestions).map((itemId) =>
+                    deletePantryItem(itemId)
+                )
             )
             await fetchPantryItems()
             setSuggestionsModalVisible(false)
@@ -538,11 +538,8 @@ const PantryScreen = ({}) => {
     }
 
     const handleCommitScanItems = async (payload) => {
-        const selectedItems = Array.isArray(payload)
-            ? payload
-            : payload?.adds || []
-        const removals = payload?.removals || []
-        const keptRemovals = payload?.keptRemovals || []
+        const { selectedItems, removals, keptRemovals } =
+            normalizePantryScanCommitPayload(payload)
         if (!selectedItems.length && !removals.length && !keptRemovals.length) {
             return
         }
@@ -552,27 +549,9 @@ const PantryScreen = ({}) => {
         try {
             for (const item of selectedItems) {
                 try {
-                    await addPantryItem({
-                        name: item.name,
-                        quantity: item.quantity,
-                        unit: item.unit,
-                        category: item.category || [],
-                        foodId: item.foodId || undefined,
-                        calories: item.calories,
-                        nutrition: item.nutrition,
-                        barcode: item.barcode,
-                        imageUrl: item.imageUrl,
-                        locationId: scanLocation?._id,
-                        openFoodFactsData:
-                            item.barcode || item.imageUrl
-                                ? {
-                                      barcode: item.barcode,
-                                      imageUrl: item.imageUrl,
-                                      nutrition: item.nutrition,
-                                  }
-                                : undefined,
-                        addedFrom: 'pantry',
-                    })
+                    await addPantryItem(
+                        buildPantryScanAddPayload(item, scanLocation?._id)
+                    )
                     if (item.key) succeededKeys.push(item.key)
                 } catch (error) {
                     lastError = error
@@ -581,15 +560,7 @@ const PantryScreen = ({}) => {
             }
 
             if (removals.length) {
-                const uniqueRemovalIds = [
-                    ...new Set(
-                        removals
-                            .map((item) => item.itemId)
-                            .filter(Boolean)
-                            .map(String)
-                    ),
-                ]
-                for (const itemId of uniqueRemovalIds) {
+                for (const itemId of uniquePantryItemIds(removals)) {
                     try {
                         await deletePantryItem(itemId)
                     } catch (error) {
