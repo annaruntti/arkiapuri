@@ -5,18 +5,23 @@ import {
     Platform,
     ScrollView,
     StyleSheet,
-    TextInput,
     TouchableOpacity,
     View,
     KeyboardAvoidingView,
 } from 'react-native'
 import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import * as ImagePicker from 'expo-image-picker'
-import { MaterialIcons, Feather } from '@expo/vector-icons'
+import { MaterialIcons } from '@expo/vector-icons'
 
 import { useLogin } from '../context/LoginProvider'
+import useMealFoodItemActions from '../hooks/useMealFoodItemActions'
 import { getServerUrl } from '../utils/getServerUrl'
+import { normalizeCategoryArray } from '../utils/foodCategory'
+import {
+    isPersistedFoodItemId,
+    resolveCatalogFoodId,
+} from '../utils/foodItemId'
+import { pickMealImage, uploadMealImage } from '../utils/mealImage'
 import {
     clampDatesToMin,
     OVERDUE_COOKING_MESSAGE,
@@ -43,7 +48,9 @@ import GuestWarningBanner from './GuestWarningBanner'
 import NoticeBanner from './NoticeBanner'
 import CollapsibleFormSection from './CollapsibleFormSection'
 import MealCategorySelector from './MealCategorySelector'
+import MealFormSelectedIngredient from './MealFormSelectedIngredient'
 import MealRoleSelector from './MealRoleSelector'
+import ShoppingListPickerModal from './ShoppingListPickerModal'
 import UnifiedFoodSearch from './UnifiedFoodSearch'
 import {
     applyIngredientQuantity,
@@ -51,16 +58,13 @@ import {
 } from '../utils/mealFoodItem'
 import {
     DEFAULT_SERVINGS,
-    formatScaledQuantity,
     scaleMealFoodItems,
 } from '../utils/mealServings'
-import { SOURCE_LABELS } from '../utils/dishFromPhotoDraft'
 import {
     checkFoodItemsAvailability,
     mapAvailabilityFromApi,
     mergeFoodItemAvailability,
 } from '../utils/foodItemAvailability'
-import { resolveAppUnit } from '../utils/units'
 import {
     joinRecipeSteps,
     normalizeRecipeSteps,
@@ -71,18 +75,6 @@ import openFoodFactsApi from '../services/openFoodFactsApi'
 import Info from './Info'
 import MealServingsStepper from './MealServingsStepper'
 import RecipeStepsEditor from './RecipeStepsEditor'
-
-const isPersistedFoodItemId = (id) =>
-    typeof id === 'string' && /^[a-fA-F0-9]{24}$/.test(id)
-
-const resolveCatalogFoodId = (item) => {
-    const raw = item?.foodId
-    if (raw && typeof raw === 'object') {
-        return String(raw._id || raw.id || '')
-    }
-    if (raw) return String(raw)
-    return item?._id ? String(item._id) : ''
-}
 
 const AddMealForm = ({ onSubmit, aiDraft }) => {
     const { profile } = useLogin()
@@ -120,7 +112,6 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
     const [servings, setServings] = useState(
         aiDraft?.servings || DEFAULT_SERVINGS
     )
-    const [selectedShoppingListId, setSelectedShoppingListId] = useState(null)
     const [showItemForm, setShowItemForm] = useState(false)
     const [mealImage, setMealImage] = useState(aiDraft?.image || null)
     const [formErrors, setFormErrors] = useState({})
@@ -131,6 +122,23 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
     const rolesErrorRef = useRef(null)
     const foodItemsErrorRef = useRef(null)
     const recipeErrorRef = useRef(null)
+
+    const {
+        shoppingLists,
+        selectedShoppingListId,
+        pendingShoppingListItem,
+        showShoppingListPicker,
+        isAddingToShoppingList,
+        fetchShoppingLists,
+        requestAddToShoppingList,
+        addItemToShoppingList,
+        addItemToPantry,
+        closeShoppingListPicker,
+    } = useMealFoodItemActions({
+        foodItems,
+        setFoodItems,
+        setFoodItemsWithAvailability: setFoodItems,
+    })
 
     useEffect(() => {
         if (!aiDraft) return
@@ -170,168 +178,9 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
         }
     }, [aiDraft, resetFields])
 
-    const fetchShoppingLists = async () => {
-        try {
-            const token = await storage.getItem('userToken')
-            const response = await axios.get(getServerUrl('/shopping-lists'), {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            })
-            if (response.data.success) {
-                const lists = response.data.shoppingLists || []
-                console.log('Fetched shopping lists:', lists.length)
-                if (lists.length === 1) {
-                    setSelectedShoppingListId(lists[0]._id)
-                    console.log('Auto-selected shopping list:', lists[0]._id)
-                } else if (lists.length > 1 && !selectedShoppingListId) {
-                    // If multiple lists and none selected, use the first one
-                    setSelectedShoppingListId(lists[0]._id)
-                    console.log(
-                        'Auto-selected first shopping list:',
-                        lists[0]._id
-                    )
-                } else if (lists.length === 0) {
-                    console.log('No shopping lists found')
-                }
-            }
-        } catch (error) {
-            console.error('Error fetching shopping lists:', error)
-            Alert.alert('Virhe', 'Ostoslistojen hakeminen epäonnistui')
-        }
-    }
-
     const pickImage = async () => {
-        try {
-            if (Platform.OS === 'web') {
-                // For web, only show library option
-                const result = await ImagePicker.launchImageLibraryAsync({
-                    mediaTypes: ['images'],
-                    allowsEditing: true,
-                    aspect: [4, 3],
-                    quality: 1,
-                })
-
-                if (!result.canceled) {
-                    setMealImage(result.assets[0])
-                }
-                return
-            }
-
-            // For mobile, show action sheet with options
-            Alert.alert('Valitse kuva', 'valitse, miten haluat lisätä kuvan', [
-                {
-                    text: 'Camera',
-                    onPress: async () => {
-                        try {
-                            const { status } =
-                                await ImagePicker.requestCameraPermissionsAsync()
-
-                            if (status !== 'granted') {
-                                Alert.alert(
-                                    'Tämä toiminto vaatii kameran käyttöoikeuden.'
-                                )
-                                return
-                            }
-
-                            const result = await ImagePicker.launchCameraAsync({
-                                mediaTypes: ['images'],
-                                allowsEditing: true,
-                                aspect: [4, 3],
-                                quality: 1,
-                            })
-                            if (!result.canceled) {
-                                setMealImage(result.assets[0])
-                            }
-                        } catch (error) {
-                            console.error('Camera error:', error)
-                            Alert.alert(
-                                'Virhe',
-                                'Kameran avaaminen epäonnistui: ' +
-                                    error.message
-                            )
-                        }
-                    },
-                },
-                {
-                    text: 'Photo Library',
-                    onPress: async () => {
-                        const { status } =
-                            await ImagePicker.requestMediaLibraryPermissionsAsync()
-                        if (status !== 'granted') {
-                            Alert.alert(
-                                'Tämä toiminto vaatii kameran käyttöoikeuden.'
-                            )
-                            return
-                        }
-
-                        const result =
-                            await ImagePicker.launchImageLibraryAsync({
-                                mediaTypes: ['images'],
-                                allowsEditing: true,
-                                aspect: [4, 3],
-                                quality: 1,
-                            })
-
-                        if (!result.canceled) {
-                            setMealImage(result.assets[0])
-                        }
-                    },
-                },
-                {
-                    text: 'Cancel',
-                    style: 'cancel',
-                },
-            ])
-        } catch (error) {
-            console.error('Error picking image:', error)
-            Alert.alert('Virhe', 'kuvan valitseminen epäonnistui')
-        }
-    }
-
-    const uploadMealImage = async (mealId, imageFile) => {
-        try {
-            const token = await storage.getItem('userToken')
-            if (!token) {
-                throw new Error('No token found')
-            }
-
-            const formData = new FormData()
-
-            // Handle web blob URLs differently
-            if (Platform.OS === 'web' && imageFile.uri.startsWith('blob:')) {
-                // For web, we need to fetch the blob and convert it to a File
-                const response = await fetch(imageFile.uri)
-                const blob = await response.blob()
-                const file = new File([blob], 'meal.jpg', {
-                    type: 'image/jpeg',
-                })
-                formData.append('mealImage', file)
-            } else {
-                // For mobile platforms
-                formData.append('mealImage', {
-                    uri: imageFile.uri,
-                    type: 'image/jpeg',
-                    name: 'meal.jpg',
-                })
-            }
-
-            const url = getServerUrl(`/meals/${mealId}/image`)
-
-            const response = await axios.post(url, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                    Authorization: `Bearer ${token}`,
-                },
-            })
-
-            if (response.data.success) {
-                return response.data.meal // Return the updated meal with image
-            }
-        } catch (error) {
-            console.error('Error uploading meal image:', error)
-            throw error
-        }
+        const asset = await pickMealImage()
+        if (asset) setMealImage(asset)
     }
 
     const validateCustomFields = () => {
@@ -467,29 +316,9 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
                             }
                         }
 
-                        // Prepare category array
-                        const categoryArray = (() => {
-                            let catArray = item.category
-                            if (typeof item.category === 'string') {
-                                try {
-                                    catArray = JSON.parse(item.category)
-                                } catch (e) {
-                                    catArray = []
-                                }
-                            }
-                            if (!Array.isArray(catArray)) return []
-                            return catArray
-                                .map((cat) => {
-                                    if (
-                                        typeof cat === 'object' &&
-                                        cat !== null
-                                    ) {
-                                        return cat.name || cat.id || String(cat)
-                                    }
-                                    return String(cat)
-                                })
-                                .filter((cat) => cat && cat.trim() !== '')
-                        })()
+                        const categoryArray = normalizeCategoryArray(
+                            item.category
+                        )
 
                         const findOrCreateResponse = await axios.post(
                             getServerUrl('/food-items/find-or-create'),
@@ -678,330 +507,6 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
         }
     }
 
-    const addItemToShoppingList = async (selectedItem, foodItemInList) => {
-        try {
-            console.log('addItemToShoppingList called', {
-                selectedShoppingListId,
-                selectedItem,
-                foodItemInList,
-            })
-
-            // Get current shopping list ID
-            let listIdToUse = selectedShoppingListId
-            if (!listIdToUse) {
-                console.log('No shopping list selected, fetching...')
-                const token = await storage.getItem('userToken')
-                const response = await axios.get(
-                    getServerUrl('/shopping-lists'),
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                    }
-                )
-                if (
-                    response.data.success &&
-                    response.data.shoppingLists?.length > 0
-                ) {
-                    listIdToUse = response.data.shoppingLists[0]._id
-                    setSelectedShoppingListId(listIdToUse)
-                    console.log('Auto-selected shopping list:', listIdToUse)
-                } else {
-                    Alert.alert(
-                        'Virhe',
-                        'Sinulla ei ole ostoslistaa. Luo ensin ostoslista.'
-                    )
-                    return
-                }
-            }
-
-            const token = await storage.getItem('userToken')
-            if (!token) {
-                console.log('No token found')
-                Alert.alert('Virhe', 'Kirjaudu uudelleen sisään')
-                return
-            }
-
-            const quantity = getIngredientQuantity(foodItemInList)
-            console.log('Adding to shopping list with quantity:', quantity)
-
-            // Prepare category array
-            const categoryArray = (() => {
-                let catArray = selectedItem.category || foodItemInList.category
-                if (typeof catArray === 'string') {
-                    try {
-                        catArray = JSON.parse(catArray)
-                    } catch (e) {
-                        catArray = []
-                    }
-                }
-                if (!Array.isArray(catArray)) return []
-                return catArray
-                    .map((cat) => {
-                        if (typeof cat === 'object' && cat !== null) {
-                            return cat.name || cat.id || String(cat)
-                        }
-                        return String(cat)
-                    })
-                    .filter((cat) => cat && cat.trim() !== '')
-            })()
-
-            // Use findOrCreateFoodItem to sync
-            const findOrCreateResponse = await axios.post(
-                getServerUrl('/food-items/find-or-create'),
-                {
-                    name: selectedItem.name || foodItemInList.name,
-                    unit: selectedItem.unit || foodItemInList.unit || 'kpl',
-                    category: categoryArray,
-                    calories:
-                        parseInt(
-                            selectedItem.calories || foodItemInList.calories
-                        ) || 0,
-                    price:
-                        parseFloat(
-                            selectedItem.price || foodItemInList.price
-                        ) || 0,
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            )
-
-            const foodItem = findOrCreateResponse.data.foodItem
-
-            // Add to shopping list
-            const shoppingListItem = {
-                foodId: foodItem._id,
-                name: selectedItem.name || foodItemInList.name,
-                estimatedPrice:
-                    parseFloat(selectedItem.price || foodItemInList.price) || 0,
-                quantity: quantity,
-                unit: selectedItem.unit || foodItemInList.unit || 'kpl',
-                category: categoryArray,
-                calories:
-                    parseInt(
-                        selectedItem.calories || foodItemInList.calories
-                    ) || 0,
-                price:
-                    parseFloat(selectedItem.price || foodItemInList.price) || 0,
-            }
-
-            console.log(
-                'Sending request to add item to shopping list:',
-                shoppingListItem
-            )
-            const shoppingListResponse = await axios.post(
-                getServerUrl(`/shopping-lists/${listIdToUse}/items`),
-                { items: [shoppingListItem] },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            )
-
-            console.log('Shopping list response:', shoppingListResponse.data)
-
-            // Get the quantity from the response
-            // The response returns shoppingList with items array
-            let actualQuantity = quantity
-            let actualUnit = selectedItem.unit || foodItemInList.unit || 'kpl'
-            if (shoppingListResponse.data?.shoppingList?.items) {
-                const addedItem =
-                    shoppingListResponse.data.shoppingList.items.find(
-                        (item) => {
-                            const itemFoodId =
-                                item.foodId?._id?.toString() ||
-                                item.foodId?.toString() ||
-                                item.foodId
-                            const itemName = item.name || item.foodId?.name
-                            const searchName =
-                                selectedItem.name || foodItemInList.name
-                            return (
-                                itemFoodId === foodItem._id.toString() ||
-                                (itemName &&
-                                    searchName &&
-                                    itemName.toLowerCase() ===
-                                        searchName.toLowerCase())
-                            )
-                        }
-                    )
-                if (addedItem) {
-                    actualQuantity = addedItem.quantity || quantity
-                    actualUnit = addedItem.unit || actualUnit
-                    console.log(
-                        'Found added item with quantity:',
-                        actualQuantity
-                    )
-                }
-            }
-
-            // Update the food item in the list to mark it as in shopping list
-            setFoodItems((prevItems) =>
-                prevItems.map((item) => {
-                    if (item.tempId === foodItemInList.tempId) {
-                        console.log('Updating item availability:', item.tempId)
-                        return {
-                            ...item,
-                            availability: {
-                                ...item.availability,
-                                inShoppingList: true,
-                                shoppingListQuantity: actualQuantity,
-                                shoppingListUnit: resolveAppUnit(actualUnit),
-                            },
-                        }
-                    }
-                    return item
-                })
-            )
-            console.log('Successfully added to shopping list')
-            Alert.alert('Onnistui', 'Tuote lisätty ostoslistaan')
-        } catch (error) {
-            console.error('Error adding to shopping list:', error)
-            console.error('Error response:', error.response?.data)
-            Alert.alert(
-                'Virhe',
-                'Tuotteen lisääminen ostoslistaan epäonnistui: ' +
-                    (error.response?.data?.error ||
-                        error.response?.data?.message ||
-                        error.message)
-            )
-        }
-    }
-
-    const addItemToPantry = async (selectedItem, foodItemInList) => {
-        try {
-            const token = await storage.getItem('userToken')
-            const quantity = getIngredientQuantity(foodItemInList)
-
-            // Prepare category array
-            const categoryArray = (() => {
-                let catArray = selectedItem.category || foodItemInList.category
-                if (typeof catArray === 'string') {
-                    try {
-                        catArray = JSON.parse(catArray)
-                    } catch (e) {
-                        catArray = []
-                    }
-                }
-                if (!Array.isArray(catArray)) return []
-                return catArray
-                    .map((cat) => {
-                        if (typeof cat === 'object' && cat !== null) {
-                            return cat.name || cat.id || String(cat)
-                        }
-                        return String(cat)
-                    })
-                    .filter((cat) => cat && cat.trim() !== '')
-            })()
-
-            // Use findOrCreateFoodItem to sync
-            const findOrCreateResponse = await axios.post(
-                getServerUrl('/food-items/find-or-create'),
-                {
-                    name: selectedItem.name || foodItemInList.name,
-                    unit: selectedItem.unit || foodItemInList.unit || 'kpl',
-                    category: categoryArray,
-                    calories:
-                        parseInt(
-                            selectedItem.calories || foodItemInList.calories
-                        ) || 0,
-                    price:
-                        parseFloat(
-                            selectedItem.price || foodItemInList.price
-                        ) || 0,
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            )
-
-            const foodItem = findOrCreateResponse.data.foodItem
-
-            // Add to pantry
-            const pantryResponse = await axios.post(
-                getServerUrl('/pantry/items'),
-                {
-                    name: selectedItem.name || foodItemInList.name,
-                    category: categoryArray,
-                    quantity: quantity,
-                    unit: selectedItem.unit || foodItemInList.unit || 'kpl',
-                    price:
-                        parseFloat(
-                            selectedItem.price || foodItemInList.price
-                        ) || 0,
-                    calories:
-                        parseInt(
-                            selectedItem.calories || foodItemInList.calories
-                        ) || 0,
-                    foodId: foodItem._id,
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            )
-
-            // Get the quantity and unit from the pantry response
-            let actualQuantity = quantity
-            let actualUnit = selectedItem.unit || foodItemInList.unit || 'kpl'
-            if (pantryResponse.data?.pantry?.items) {
-                const pantryItem = pantryResponse.data.pantry.items.find(
-                    (item) => {
-                        const itemFoodId =
-                            item.foodId?.toString() ||
-                            item.foodId?._id?.toString()
-                        const itemName = item.name
-                        const searchName =
-                            selectedItem.name || foodItemInList.name
-                        return (
-                            itemFoodId === foodItem._id.toString() ||
-                            (itemName &&
-                                searchName &&
-                                itemName.toLowerCase() ===
-                                    searchName.toLowerCase())
-                        )
-                    }
-                )
-                if (pantryItem) {
-                    actualQuantity = pantryItem.quantity || quantity
-                    actualUnit = pantryItem.unit || actualUnit
-                }
-            }
-
-            // Update the food item in the list to mark it as in pantry with correct quantity
-            setFoodItems((prevItems) =>
-                prevItems.map((item) => {
-                    if (item.tempId === foodItemInList.tempId) {
-                        return {
-                            ...item,
-                            availability: {
-                                ...item.availability,
-                                inPantry: true,
-                                pantryQuantity: actualQuantity,
-                                pantryUnit: resolveAppUnit(actualUnit),
-                            },
-                        }
-                    }
-                    return item
-                })
-            )
-            Alert.alert('Onnistui', 'Tuote lisätty ruokavarastoon')
-        } catch (error) {
-            console.error('Error adding to pantry:', error)
-            Alert.alert(
-                'Virhe',
-                'Tuotteen lisääminen ruokavarastoon epäonnistui: ' +
-                    (error.response?.data?.error || error.message)
-            )
-        }
-    }
-
     const handleAddNewItem = async (itemData) => {
         try {
             const token = await storage.getItem('userToken')
@@ -1031,26 +536,7 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
 
             const availability = availabilityResponse.data
 
-            // Prepare category array
-            const categoryArray = (() => {
-                let catArray = itemData.category
-                if (typeof itemData.category === 'string') {
-                    try {
-                        catArray = JSON.parse(itemData.category)
-                    } catch (e) {
-                        catArray = []
-                    }
-                }
-                if (!Array.isArray(catArray)) return []
-                return catArray
-                    .map((cat) => {
-                        if (typeof cat === 'object' && cat !== null) {
-                            return cat.name || cat.id || String(cat)
-                        }
-                        return String(cat)
-                    })
-                    .filter((cat) => cat && cat.trim() !== '')
-            })()
+            const categoryArray = normalizeCategoryArray(itemData.category)
 
             // Use findOrCreateFoodItem to sync
             const findOrCreateResponse = await axios.post(
@@ -1143,179 +629,9 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
         setFoodItems((prevItems) => prevItems.filter((_, i) => i !== index))
     }
 
-    const renderSelectedItem = ({ item, index }) => {
-        const availability = item.availability || {}
-        const showSuggestion =
-            Boolean(item.availability) &&
-            (availability.inPantry !== true ||
-                availability.inShoppingList !== true)
-        const sourceLabel = SOURCE_LABELS[item.matchSource]
-        const visibilityLabel =
-            item.visibleInPhoto === true
-                ? 'Näkyy kuvassa'
-                : item.visibleInPhoto === false
-                  ? 'Tyypillinen ainesosa'
-                  : null
-
-        return (
-            <View style={styles.selectedItem}>
-                <TouchableOpacity
-                    style={styles.removeButton}
-                    onPress={() => handleRemoveFoodItem(index)}
-                >
-                    <Feather name="trash-2" size={18} color="#666" />
-                </TouchableOpacity>
-
-                <View style={styles.itemInfo}>
-                    <CustomText style={styles.itemName}>{item.name}</CustomText>
-                    <CustomText style={styles.itemDetails}>
-                        {`${formatScaledQuantity(getIngredientQuantity(item))} ${item.unit || 'kpl'}`}
-                    </CustomText>
-                    {(sourceLabel || visibilityLabel) && (
-                        <CustomText style={styles.ingredientSourceText}>
-                            {[visibilityLabel, sourceLabel]
-                                .filter(Boolean)
-                                .join(' · ')}
-                        </CustomText>
-                    )}
-                    <View style={styles.quantityRow}>
-                        <CustomText style={styles.quantityLabel}>
-                            Määrä:
-                        </CustomText>
-                        <TextInput
-                            style={styles.quantityInput}
-                            value={String(getIngredientQuantity(item))}
-                            onChangeText={(text) =>
-                                handleUpdateQuantity(
-                                    index,
-                                    parseFloat(text) || 0
-                                )
-                            }
-                            keyboardType="numeric"
-                            placeholder="0"
-                        />
-                        <CustomText style={styles.unitText}>
-                            {item.unit || 'kpl'}
-                        </CustomText>
-                    </View>
-
-                    {/* Show availability status or suggestion */}
-                    <View style={styles.availabilityContainer}>
-                        {availability.inPantry && (
-                            <View style={styles.availabilityBadge}>
-                                <MaterialIcons
-                                    name="check-circle"
-                                    size={16}
-                                    color="#10B981"
-                                />
-                                <CustomText style={styles.availabilityText}>
-                                    Ruokavarastossa (
-                                    {availability.pantryQuantity || 0}{' '}
-                                    {availability.pantryUnit || 'kpl'})
-                                </CustomText>
-                            </View>
-                        )}
-                        {availability.inShoppingList && (
-                            <View style={styles.availabilityBadge}>
-                                <MaterialIcons
-                                    name="check-circle"
-                                    size={16}
-                                    color="#10B981"
-                                />
-                                <CustomText style={styles.availabilityText}>
-                                    Ostoslistalla (
-                                    {availability.shoppingListQuantity || 0}{' '}
-                                    {availability.shoppingListUnit || 'kpl'})
-                                </CustomText>
-                            </View>
-                        )}
-                        {showSuggestion && (
-                            <>
-                                <CustomText style={styles.suggestionText}>
-                                    Lisää raaka-aine myös:
-                                </CustomText>
-                                <View style={styles.suggestionButtons}>
-                                    {!availability.inShoppingList && (
-                                        <TouchableOpacity
-                                            style={styles.suggestionButton}
-                                            activeOpacity={0.7}
-                                            onPress={async () => {
-                                                console.log(
-                                                    'Ostoslistaan button clicked',
-                                                    {
-                                                        selectedShoppingListId,
-                                                        item: item.name,
-                                                    }
-                                                )
-                                                try {
-                                                    await addItemToShoppingList(
-                                                        item,
-                                                        item
-                                                    )
-                                                } catch (error) {
-                                                    console.error(
-                                                        'Error in onPress handler:',
-                                                        error
-                                                    )
-                                                    Alert.alert(
-                                                        'Virhe',
-                                                        'Tuotteen lisääminen epäonnistui: ' +
-                                                            (error.message ||
-                                                                'Tuntematon virhe')
-                                                    )
-                                                }
-                                            }}
-                                        >
-                                            <MaterialIcons
-                                                name="shopping-cart"
-                                                size={16}
-                                                color="#000000"
-                                            />
-                                            <CustomText
-                                                style={
-                                                    styles.suggestionButtonText
-                                                }
-                                            >
-                                                Ostoslistalle
-                                            </CustomText>
-                                        </TouchableOpacity>
-                                    )}
-                                    {!availability.inPantry && (
-                                        <TouchableOpacity
-                                            style={styles.suggestionButton}
-                                            onPress={async () => {
-                                                await addItemToPantry(
-                                                    item,
-                                                    item
-                                                )
-                                            }}
-                                        >
-                                            <MaterialIcons
-                                                name="kitchen"
-                                                size={16}
-                                                color="#000000"
-                                            />
-                                            <CustomText
-                                                style={
-                                                    styles.suggestionButtonText
-                                                }
-                                            >
-                                                Ruokavarastoon
-                                            </CustomText>
-                                        </TouchableOpacity>
-                                    )}
-                                </View>
-                            </>
-                        )}
-                    </View>
-                </View>
-            </View>
-        )
-    }
-
     useEffect(() => {
         fetchShoppingLists()
-    }, [])
+    }, [fetchShoppingLists])
 
     return (
         <KeyboardAvoidingView
@@ -1592,14 +908,20 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
                                     Valitut raaka-aineet:
                                 </CustomText>
                                 {foodItems.map((item, index) => (
-                                    <View
+                                    <MealFormSelectedIngredient
                                         key={
                                             item.tempId ||
                                             `${item._id || item.name}-${index}`
                                         }
-                                    >
-                                        {renderSelectedItem({ item, index })}
-                                    </View>
+                                        item={item}
+                                        index={index}
+                                        onRemove={handleRemoveFoodItem}
+                                        onUpdateQuantity={handleUpdateQuantity}
+                                        onAddToShoppingList={
+                                            requestAddToShoppingList
+                                        }
+                                        onAddToPantry={addItemToPantry}
+                                    />
                                 ))}
                             </View>
                         )}
@@ -1655,6 +977,17 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
                     </View>
                 </View>
             </ScrollView>
+            <ShoppingListPickerModal
+                visible={showShoppingListPicker}
+                shoppingLists={shoppingLists}
+                selectedShoppingListId={selectedShoppingListId}
+                pendingItemName={pendingShoppingListItem?.name}
+                loading={isAddingToShoppingList}
+                onClose={closeShoppingListPicker}
+                onSelect={(listId) =>
+                    addItemToShoppingList(pendingShoppingListItem, listId)
+                }
+            />
         </KeyboardAvoidingView>
     )
 }
@@ -1833,14 +1166,6 @@ const styles = StyleSheet.create({
     checkboxContainer: {
         marginLeft: 10,
     },
-    itemName: {
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
-    itemDetails: {
-        color: '#666',
-        fontSize: 14,
-    },
     dateButton: {
         backgroundColor: 'white',
         borderColor: '#bbb',
@@ -1903,31 +1228,6 @@ const styles = StyleSheet.create({
         color: '#666',
         minWidth: 100,
     },
-    quantityLabel: {
-        fontSize: 14,
-        fontWeight: '500',
-        marginRight: 10,
-        color: '#333',
-        minWidth: 50,
-    },
-    quantityInput: {
-        width: 60,
-        height: 32,
-        borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 6,
-        paddingHorizontal: 8,
-        backgroundColor: 'white',
-        fontSize: 14,
-        textAlign: 'center',
-        marginRight: 8,
-    },
-    unitText: {
-        fontSize: 14,
-        color: '#666',
-        fontWeight: '500',
-        minWidth: 30,
-    },
     selectedItemsContainer: {
         marginTop: 15,
         padding: 10,
@@ -1941,45 +1241,6 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         marginBottom: 10,
         color: '#333',
-    },
-    selectedItem: {
-        backgroundColor: '#f8f8f8',
-        padding: 15,
-        borderRadius: 10,
-        marginBottom: 10,
-        flexDirection: 'column',
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 1,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 2,
-        position: 'relative',
-    },
-    itemInfo: {
-        flex: 1,
-        flexDirection: 'column',
-        width: '100%',
-    },
-    quantityRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-        marginTop: 8,
-    },
-    removeButton: {
-        position: 'absolute',
-        top: 10,
-        right: 10,
-        backgroundColor: '#e0e0e0',
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 10,
     },
     manualAddContainer: {
         marginTop: 10,
@@ -2041,64 +1302,6 @@ const styles = StyleSheet.create({
     datePickerContainer: {
         marginTop: 10,
         marginLeft: -10,
-    },
-    availabilityContainer: {
-        marginTop: 12,
-        padding: 12,
-        backgroundColor: '#F3F4F6',
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
-        gap: 8,
-    },
-    availabilityBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        paddingVertical: 6,
-        paddingHorizontal: 10,
-        backgroundColor: '#D1FAE5',
-        borderRadius: 6,
-    },
-    availabilityText: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: '#065F46',
-    },
-    suggestionText: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: '#374151',
-        marginTop: 4,
-        marginBottom: 8,
-    },
-    suggestionButtons: {
-        flexDirection: 'row',
-        gap: 8,
-        flexWrap: 'wrap',
-    },
-    suggestionButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        backgroundColor: 'transparent',
-        borderWidth: 2,
-        borderColor: '#5844BB',
-        borderRadius: 25,
-        paddingVertical: 6,
-        paddingHorizontal: 12,
-        minHeight: 32,
-    },
-    suggestionButtonText: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#000000',
-    },
-    ingredientSourceText: {
-        fontSize: 12,
-        color: '#6B7280',
-        marginTop: 2,
-        marginBottom: 4,
     },
     formFoodItemSection: {
         marginTop: 20,

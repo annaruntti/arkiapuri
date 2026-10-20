@@ -1,6 +1,8 @@
 import axios from 'axios'
 import { useCallback, useState } from 'react'
 import { Alert } from 'react-native'
+import { normalizeCategoryArray } from '../utils/foodCategory'
+import { resolveCatalogFoodId } from '../utils/foodItemId'
 import { checkFoodItemsAvailability } from '../utils/foodItemAvailability'
 import { getServerUrl } from '../utils/getServerUrl'
 import {
@@ -16,10 +18,9 @@ const getAuthHeaders = async () => {
 
 const getItemQuantity = (item) => getIngredientQuantity(item)
 
-const getItemCategory = (item) =>
-    Array.isArray(item.category) ? item.category : []
+const getItemCategory = (item) => normalizeCategoryArray(item?.category)
 
-const getFoodItemId = (item) => item._id || item.foodId?._id || item.foodId
+const getFoodItemId = (item) => resolveCatalogFoodId(item) || null
 
 /**
  * Shared actions for adding meal ingredients to shopping list / pantry.
@@ -227,7 +228,10 @@ const useMealFoodItemActions = ({
                 const headers = await getAuthHeaders()
                 const quantity = getItemQuantity(item)
                 const categoryArray = getItemCategory(item)
-                const foodItemId = getFoodItemId(item)
+                const foodItem = await ensureFoodItemForShoppingList(
+                    item,
+                    headers
+                )
 
                 const pantryResponse = await axios.post(
                     getServerUrl('/pantry/items'),
@@ -235,10 +239,10 @@ const useMealFoodItemActions = ({
                         name: item.name,
                         category: categoryArray,
                         quantity,
-                        unit: item.unit || 'kpl',
+                        unit: item.unit || foodItem.unit || 'kpl',
                         price: parseFloat(item.price) || 0,
                         calories: parseInt(item.calories, 10) || 0,
-                        foodId: foodItemId,
+                        foodId: foodItem._id,
                     },
                     { headers }
                 )
@@ -251,7 +255,10 @@ const useMealFoodItemActions = ({
                     )
                 }
 
-                await applyFoodItemUpdate(item, pantryResponse.data.foodItem)
+                await applyFoodItemUpdate(
+                    item,
+                    pantryResponse.data.foodItem || foodItem
+                )
                 Alert.alert('Onnistui', 'Tuote lisätty ruokavarastoon')
             } catch (error) {
                 console.error('Error adding to pantry:', error)

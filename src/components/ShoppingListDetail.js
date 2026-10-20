@@ -4,18 +4,14 @@ import {
     Alert,
     Platform,
     StyleSheet,
-    TouchableOpacity,
     View,
     ActivityIndicator,
 } from 'react-native'
-import { MaterialIcons } from '@expo/vector-icons'
-
 import AddActionSection from './AddActionSection'
 import AddFoodItemPanel from './AddFoodItemPanel'
 import Button from './Button'
 import CategorySectionHeader from './CategorySectionHeader'
 import CustomText from './CustomText'
-import FoodListItemRow from './FoodListItemRow'
 import GenericFilter from './GenericFilter'
 import GenericFilterSection from './GenericFilterSection'
 import ListSortControl from './ListSortControl'
@@ -26,11 +22,12 @@ import PantryItemDetails from './PantryItemDetails'
 import ResponsiveModal from './ResponsiveModal'
 import SearchSection from './SearchSection'
 import StickyListLayout from './StickyListLayout'
-import ShoppingListItemQuantityControl from './ShoppingListItemQuantityControl'
+import ShoppingListDetailItemRow from './ShoppingListDetailItemRow'
 import { useFilteredItemList } from '../hooks/useFilteredItemList'
 import {
     addShoppingListItems,
     deleteShoppingListItem,
+    entityId,
     moveShoppingListItemsToPantry,
     setShoppingListItemBought,
     updateShoppingList,
@@ -43,7 +40,6 @@ import {
 } from '../utils/listSort'
 import {
     formatEuro,
-    formatLinePrice,
     lineAmount,
     sumLineAmounts,
 } from '../utils/shoppingListPrice'
@@ -56,24 +52,7 @@ import { resolveAppUnit } from '../utils/units'
 import { shoppingListLineFromMappedPackage } from '../utils/openFoodFactsMapper'
 import storage from '../utils/storage'
 
-const getListItemId = (item) => {
-    if (!item) return ''
-    const candidate = item._id ?? item.id
-    if (candidate == null) return ''
-    if (typeof candidate === 'object') {
-        if (candidate.$oid) return String(candidate.$oid)
-        if (typeof candidate.toHexString === 'function') {
-            return candidate.toHexString()
-        }
-        if (candidate._id != null) return getListItemId({ _id: candidate._id })
-        if (typeof candidate.toString === 'function') {
-            const asString = candidate.toString()
-            if (asString && asString !== '[object Object]') return asString
-        }
-        return ''
-    }
-    return String(candidate).trim()
-}
+const getListItemId = (item) => entityId(item)
 
 const MODAL_VIEWS = {
     LIST: 'list',
@@ -889,44 +868,17 @@ const ShoppingListDetail = ({
     }
 
     const renderItem = ({ item }) => (
-        <FoodListItemRow
-            variant="card"
+        <ShoppingListDetailItemRow
             item={item}
-            style={styles.listCard}
-            bought={Boolean(item.bought)}
-            showImageInfoIcon
-            detail={formatLinePrice(item)}
-            hideQuantityInDetails
+            checked={checkedItems.includes(getListItemId(item))}
             onPress={() => handleItemPress(item)}
             onImagePress={() => handleItemDetailsPress(item)}
             onLongPress={() => handleCheckItem(item)}
-            trailingAction={
-                <View style={styles.itemTrailing}>
-                    <TouchableOpacity
-                        style={styles.checkboxContainer}
-                        onPress={() => handleCheckItem(item)}
-                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    >
-                        <MaterialIcons
-                            name={
-                                checkedItems.includes(getListItemId(item))
-                                    ? 'check-box'
-                                    : 'check-box-outline-blank'
-                            }
-                            size={22}
-                            color="#000000"
-                        />
-                    </TouchableOpacity>
-                    <ShoppingListItemQuantityControl
-                        quantity={item.quantity}
-                        unit={item.unit}
-                        onChange={({ quantity, unit }) =>
-                            setItemQuantity(item, quantity, unit)
-                        }
-                        onDelete={() => removeItem(item)}
-                    />
-                </View>
+            onToggleChecked={() => handleCheckItem(item)}
+            onQuantityChange={({ quantity, unit }) =>
+                setItemQuantity(item, quantity, unit)
             }
+            onDelete={() => removeItem(item)}
         />
     )
 
@@ -1277,9 +1229,6 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#f9fafb',
     },
-    listCard: {
-        backgroundColor: '#ffffff',
-    },
     formHeader: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -1343,14 +1292,6 @@ const styles = StyleSheet.create({
     },
     listContent: {
         paddingBottom: 20,
-    },
-    checkboxContainer: {
-        marginLeft: 10,
-    },
-    itemTrailing: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginLeft: 4,
     },
     primaryButton: {
         borderRadius: 25,

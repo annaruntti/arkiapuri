@@ -3,6 +3,10 @@ import { useEffect, useState } from 'react'
 import { Alert, Platform, ScrollView, StyleSheet, View } from 'react-native'
 import useMealFoodItemActions from '../hooks/useMealFoodItemActions'
 import { getServerUrl } from '../utils/getServerUrl'
+import {
+    isPersistedFoodItemId,
+    resolveCatalogFoodId,
+} from '../utils/foodItemId'
 import { clampDatesToMin, toStoredMealDate, toStoredMealDates } from '../utils/mealDates'
 import {
     mergeUpdatedFoodItem,
@@ -27,23 +31,8 @@ import PantryItemDetails from './PantryItemDetails'
 import ResponsiveModal from './ResponsiveModal'
 import ShoppingListPickerModal from './ShoppingListPickerModal'
 
-const isPersistedFoodItemId = (id) =>
-    typeof id === 'string' && /^[a-fA-F0-9]{24}$/.test(id)
-
-const resolveCatalogId = (item) => {
-    if (!item) return ''
-    if (item.foodId && typeof item.foodId === 'object') {
-        return String(item.foodId._id || '')
-    }
-    if (item.foodId) return String(item.foodId)
-    if (item._id && typeof item._id === 'object') {
-        return String(item._id._id || item._id)
-    }
-    return item._id ? String(item._id) : ''
-}
-
 const toFoodItemDetails = (item) => {
-    const catalogId = resolveCatalogId(item)
+    const catalogId = resolveCatalogFoodId(item)
     const catalog =
         item.foodId && typeof item.foodId === 'object' ? item.foodId : null
     const merged = {
@@ -232,7 +221,7 @@ const MealItemDetail = ({
     }
 
     const handleUpdateFoodItem = async (itemId, updatedData) => {
-        const catalogId = resolveCatalogId({
+        const catalogId = resolveCatalogFoodId({
             ...updatedData,
             _id: itemId,
             foodId: updatedData.foodId || itemId,
