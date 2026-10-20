@@ -38,7 +38,9 @@ const TableMonth = ({ onRequireLogin }) => {
     const [mealSelectView, setMealSelectView] = useState('select') // 'select' | 'create' | 'details'
     const [selectDetailMeal, setSelectDetailMeal] = useState(null)
     const [selectDetailsTitle, setSelectDetailsTitle] = useState('')
+    const [createMealNestedTitle, setCreateMealNestedTitle] = useState(null)
     const mealDetailBackRef = useRef(null)
+    const createMealBackRef = useRef(null)
 
     const {
         mealsByDate,
@@ -61,6 +63,12 @@ const TableMonth = ({ onRequireLogin }) => {
 
     const handleSelectDetailsHeaderChange = useCallback(({ title }) => {
         setSelectDetailsTitle(title || '')
+    }, [])
+
+    const handleCreateMealHeaderChange = useCallback(({ title, isNested }) => {
+        setCreateMealNestedTitle(
+            isNested ? title || 'Valitse ostoslista' : null
+        )
     }, [])
 
     const openSelectMealDetails = (meal) => {
@@ -320,6 +328,8 @@ const TableMonth = ({ onRequireLogin }) => {
                         return
                     }
                     if (mealSelectView === 'create') {
+                        if (createMealBackRef.current?.()) return
+                        setCreateMealNestedTitle(null)
                         setMealSelectView('select')
                         return
                     }
@@ -335,7 +345,7 @@ const TableMonth = ({ onRequireLogin }) => {
                           selectDetailMeal?.name ||
                           'Ateria'
                         : mealSelectView === 'create'
-                          ? 'Luo uusi ateria'
+                          ? createMealNestedTitle || 'Luo uusi ateria'
                           : 'Valitse ateria ja päivät'
                 }
                 showBackButton={
@@ -352,9 +362,12 @@ const TableMonth = ({ onRequireLogin }) => {
                 {mealSelectView === 'create' ? (
                     <FormAddMeal
                         onSubmit={() => {
+                            setCreateMealNestedTitle(null)
                             setMealSelectView('select')
                             generateMonthDates(currentMonth)
                         }}
+                        backHandlerRef={createMealBackRef}
+                        onHeaderStateChange={handleCreateMealHeaderChange}
                     />
                 ) : mealSelectView === 'details' ? (
                     <MealItemDetail

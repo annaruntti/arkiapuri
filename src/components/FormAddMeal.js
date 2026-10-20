@@ -76,7 +76,12 @@ import Info from './Info'
 import MealServingsStepper from './MealServingsStepper'
 import RecipeStepsEditor from './RecipeStepsEditor'
 
-const AddMealForm = ({ onSubmit, aiDraft }) => {
+const AddMealForm = ({
+    onSubmit,
+    aiDraft,
+    onHeaderStateChange,
+    backHandlerRef,
+}) => {
     const { profile } = useLogin()
     const { isDesktop } = useResponsiveDimensions()
     const [foodItems, setFoodItems] = useState(aiDraft?.foodItems || [])
@@ -633,6 +638,42 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
         fetchShoppingLists()
     }, [fetchShoppingLists])
 
+    useEffect(() => {
+        onHeaderStateChange?.({
+            title: showShoppingListPicker ? 'Valitse ostoslista' : null,
+            isNested: Boolean(showShoppingListPicker),
+        })
+        return () => {
+            onHeaderStateChange?.({ title: null, isNested: false })
+        }
+    }, [showShoppingListPicker, onHeaderStateChange])
+
+    if (backHandlerRef) {
+        backHandlerRef.current = () => {
+            if (!showShoppingListPicker) return false
+            closeShoppingListPicker()
+            return true
+        }
+    }
+
+    if (showShoppingListPicker) {
+        return (
+            <View style={styles.container}>
+                <ShoppingListPickerModal
+                    embedded
+                    shoppingLists={shoppingLists}
+                    selectedShoppingListId={selectedShoppingListId}
+                    pendingItemName={pendingShoppingListItem?.name}
+                    loading={isAddingToShoppingList}
+                    onClose={closeShoppingListPicker}
+                    onSelect={(listId) =>
+                        addItemToShoppingList(pendingShoppingListItem, listId)
+                    }
+                />
+            </View>
+        )
+    }
+
     return (
         <KeyboardAvoidingView
             style={styles.container}
@@ -977,17 +1018,6 @@ const AddMealForm = ({ onSubmit, aiDraft }) => {
                     </View>
                 </View>
             </ScrollView>
-            <ShoppingListPickerModal
-                visible={showShoppingListPicker}
-                shoppingLists={shoppingLists}
-                selectedShoppingListId={selectedShoppingListId}
-                pendingItemName={pendingShoppingListItem?.name}
-                loading={isAddingToShoppingList}
-                onClose={closeShoppingListPicker}
-                onSelect={(listId) =>
-                    addItemToShoppingList(pendingShoppingListItem, listId)
-                }
-            />
         </KeyboardAvoidingView>
     )
 }

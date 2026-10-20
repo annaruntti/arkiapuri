@@ -49,7 +49,9 @@ const Table = ({ onRequireLogin }) => {
     const [mealSelectView, setMealSelectView] = useState('select') // 'select' | 'create' | 'details'
     const [selectDetailMeal, setSelectDetailMeal] = useState(null)
     const [selectDetailsTitle, setSelectDetailsTitle] = useState('')
+    const [createMealNestedTitle, setCreateMealNestedTitle] = useState(null)
     const mealDetailBackRef = useRef(null)
+    const createMealBackRef = useRef(null)
 
     const {
         mealsByDate,
@@ -81,6 +83,12 @@ const Table = ({ onRequireLogin }) => {
 
     const handleSelectDetailsHeaderChange = useCallback(({ title }) => {
         setSelectDetailsTitle(title || '')
+    }, [])
+
+    const handleCreateMealHeaderChange = useCallback(({ title, isNested }) => {
+        setCreateMealNestedTitle(
+            isNested ? title || 'Valitse ostoslista' : null
+        )
     }, [])
 
     const openSelectMealDetails = (meal) => {
@@ -735,6 +743,8 @@ const Table = ({ onRequireLogin }) => {
             return
         }
         if (mealSelectView === 'create') {
+            if (createMealBackRef.current?.()) return
+            setCreateMealNestedTitle(null)
             setMealSelectView('select')
             return
         }
@@ -827,6 +837,9 @@ const Table = ({ onRequireLogin }) => {
                 selectDetailMeal={selectDetailMeal}
                 selectDetailsTitle={selectDetailsTitle}
                 mealDetailBackRef={mealDetailBackRef}
+                createMealBackRef={createMealBackRef}
+                createMealNestedTitle={createMealNestedTitle}
+                onCreateHeaderChange={handleCreateMealHeaderChange}
                 onClose={handleMealSelectModalClose}
                 onToggleDateSelection={toggleDateSelection}
                 onClearSelection={clearDateSelection}
@@ -834,6 +847,7 @@ const Table = ({ onRequireLogin }) => {
                 onMealDetails={openSelectMealDetails}
                 onCreateMeal={() => setMealSelectView('create')}
                 onCreateSubmit={() => {
+                    setCreateMealNestedTitle(null)
                     setMealSelectView('select')
                     fetchMealData(dates)
                 }}

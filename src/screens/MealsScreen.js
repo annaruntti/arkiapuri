@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
     ActivityIndicator,
     Alert,
@@ -80,6 +80,8 @@ import { pickScanImageFromLibrary } from '../utils/scanImage'
 
 const MealsScreen = ({ route, navigation }) => {
     const [modalVisible, setModalVisible] = useState(false)
+    const [addMealNested, setAddMealNested] = useState(false)
+    const addMealBackRef = useRef(null)
     const { showLoginPrompt, loginPromptProps } = useLoginPrompt()
     const [meals, setMeals] = useState([])
     const [loading, setLoading] = useState(true)
@@ -184,6 +186,17 @@ const MealsScreen = ({ route, navigation }) => {
     useEffect(() => {
         fetchMeals()
     }, [])
+
+    const handleAddMealHeaderChange = useCallback(({ isNested }) => {
+        setAddMealNested(Boolean(isNested))
+    }, [])
+
+    const closeAddMealModal = () => {
+        if (addMealBackRef.current?.()) return
+        setModalVisible(false)
+        setAiDraft(null)
+        setAddMealNested(false)
+    }
 
     const handleAddMeal = async (newMeal) => {
         try {
@@ -647,21 +660,23 @@ const MealsScreen = ({ route, navigation }) => {
         <View style={styles.container}>
             <ResponsiveModal
                 visible={modalVisible}
-                onClose={() => {
-                    setModalVisible(false)
-                    setAiDraft(null)
-                }}
-                title={aiDraft ? 'Tarkista AI:n ehdotus' : 'Lisää uusi ateria'}
+                onClose={closeAddMealModal}
+                title={
+                    addMealNested
+                        ? 'Valitse ostoslista'
+                        : aiDraft
+                          ? 'Tarkista AI:n ehdotus'
+                          : 'Lisää uusi ateria'
+                }
+                showBackButton={addMealNested}
                 maxWidth={640}
             >
                 <AddMealForm
                     key={aiDraft ? 'ai-draft' : 'manual'}
                     onSubmit={handleAddMeal}
-                    onClose={() => {
-                        setModalVisible(false)
-                        setAiDraft(null)
-                    }}
                     aiDraft={aiDraft}
+                    backHandlerRef={addMealBackRef}
+                    onHeaderStateChange={handleAddMealHeaderChange}
                 />
             </ResponsiveModal>
 

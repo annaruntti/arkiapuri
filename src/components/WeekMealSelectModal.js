@@ -18,6 +18,9 @@ const WeekMealSelectModal = ({
     selectDetailMeal,
     selectDetailsTitle,
     mealDetailBackRef,
+    createMealBackRef,
+    createMealNestedTitle,
+    onCreateHeaderChange,
     onClose,
     onToggleDateSelection,
     onClearSelection,
@@ -36,7 +39,7 @@ const WeekMealSelectModal = ({
             view === 'details'
                 ? selectDetailsTitle || selectDetailMeal?.name || 'Ateria'
                 : view === 'create'
-                  ? 'Luo uusi ateria'
+                  ? createMealNestedTitle || 'Luo uusi ateria'
                   : 'Valitse ateria ja päivät'
         }
         showBackButton={view === 'create' || view === 'details'}
@@ -49,7 +52,11 @@ const WeekMealSelectModal = ({
         }
     >
         {view === 'create' ? (
-            <FormAddMeal onSubmit={onCreateSubmit} />
+            <FormAddMeal
+                onSubmit={onCreateSubmit}
+                backHandlerRef={createMealBackRef}
+                onHeaderStateChange={onCreateHeaderChange}
+            />
         ) : view === 'details' ? (
             <MealItemDetail
                 embedded
