@@ -47,12 +47,14 @@ import { showConfirm } from '../utils/showAlert'
 import { getAiEntitlement } from '../services/aiApi'
 import {
     ALL_LOCATIONS_ID,
+    DEFAULT_PANTRY_LOCATIONS,
     UNLOCATED_LOCATION_ID,
     filterItemsByLocation,
     groupItemsByPantryLocation,
     inferLocationIdFromCategories,
     locationIdOf,
 } from '../utils/pantryLocations'
+import { mergeDuplicatePantryItems } from '../utils/pantryItemMerge'
 import { buildPantryItemPayload } from '../utils/pantryAddItem'
 import {
     parsePantryFetchResponse,
