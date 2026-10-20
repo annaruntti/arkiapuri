@@ -7,7 +7,8 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,css,scss,md}\""
+    "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,css,scss,md}\"",
+    "test": "node --test test/vendorSecurity.test.js"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -17,6 +18,7 @@
     "@react-navigation/native-stack": "^6.9.17",
     "axios": "^1.7.2",
     "date-fns": "^4.1.0",
+    "decode-uri-component": "file:vendor/decode-uri-component",
     "expo": "^57.0.0",
     "expo-camera": "~57.0.5",
     "expo-font": "~57.0.4",
@@ -52,8 +54,9 @@
     "xml2js": "0.6.2",
     "postcss": "8.5.23",
     "uuid": "11.1.1",
-    "minimatch": "10.2.5",
-    "brace-expansion": "5.0.9",
+    "minimatch": "10.2.6",
+    "brace-expansion": "5.0.12",
+    "decode-uri-component": "$decode-uri-component",
     "test-exclude": "7.0.2",
     "chromium-edge-launcher": "2.0.1",
     "react-native": "0.86.3"

@@ -1,0 +1,13 @@
+{
+  "name": "decode-uri-component",
+  "version": "0.5.0+cjs.1",
+  "private": true,
+  "type": "commonjs",
+  "description": "CommonJS build of decode-uri-component 0.5.0. Same decoder as the patched release; require() returns the function.",
+  "license": "MIT",
+  "main": "index.js",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=14.16"
+  }
+}
