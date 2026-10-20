@@ -6,6 +6,8 @@ import {
     navigateToMainTab,
 } from '../utils/mainNavigation'
 
+export const DESKTOP_SIDEBAR_WIDTH = 240
+
 const DesktopNavigation = ({ activeRoute }) => {
     const navigation = useNavigation()
 
@@ -51,7 +53,7 @@ const DesktopNavigation = ({ activeRoute }) => {
 
 const styles = StyleSheet.create({
     container: {
-        width: 240,
+        width: DESKTOP_SIDEBAR_WIDTH,
         backgroundColor: '#fff',
         borderRightWidth: 1,
         borderRightColor: '#e0e0e0',

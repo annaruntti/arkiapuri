@@ -44,7 +44,7 @@ const ReadingOrderScreen = ({}) => {
             <View style={styles.container}>
                 {/* Content */}
                 <View style={styles.contentContainer}>
-                    <ContentContainer>
+                    <ContentContainer style={styles.weekContent}>
                         {activeTab === 'week' ? (
                             <TableWeek onRequireLogin={handleRequireLogin} />
                         ) : (
@@ -72,6 +72,7 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#f9fafb',
         position: 'relative',
+        overflow: 'visible',
     },
     tabContainer: {
         position: 'absolute',
@@ -113,5 +114,9 @@ const styles = StyleSheet.create({
     contentContainer: {
         flex: 1,
         paddingTop: 53,
+        overflow: 'visible',
+    },
+    weekContent: {
+        overflow: 'visible',
     },
 })

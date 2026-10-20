@@ -33,6 +33,7 @@ import {
 import { getMealTypeText } from '../utils/mealUtils'
 import Button from './Button'
 import CustomText from './CustomText'
+import { DESKTOP_SIDEBAR_WIDTH } from './DesktopNavigation'
 import DraggableMealItem from './DraggableMealItem'
 import MealItemDetail from './MealItemDetail'
 import WeekMealSelectModal from './WeekMealSelectModal'
@@ -40,7 +41,15 @@ import WeekMoveMealModal from './WeekMoveMealModal'
 import { MEAL_PLACEHOLDER_IMAGE_URL } from '../constants/images'
 
 const Table = ({ onRequireLogin }) => {
-    const { isDesktop } = useResponsiveDimensions()
+    const { width: windowWidth, isDesktop, containerMaxWidth } =
+        useResponsiveDimensions()
+    const contentAreaWidth = isDesktop
+        ? Math.max(0, windowWidth - DESKTOP_SIDEBAR_WIDTH)
+        : windowWidth
+    const weekColumnWidth = Math.min(containerMaxWidth, contentAreaWidth)
+    const weekBarGutter = isDesktop
+        ? Math.max(0, (contentAreaWidth - weekColumnWidth) / 2)
+        : 0
     const { continueWithoutLogin } = useLogin()
     const [dates, setDates] = useState([])
     const [weekOffset, setWeekOffset] = useState(0) // 0 = current week, -1 = previous, +1 = next
@@ -633,37 +642,60 @@ const Table = ({ onRequireLogin }) => {
               : `${weekOffset} viiko${weekOffset > 1 ? 'n' : 'n'} päästä`
 
         return (
-            <View style={styles.bottomWeekNavigation}>
-                <TouchableOpacity
-                    onPress={goToPreviousWeek}
-                    style={styles.bottomNavButton}
+            <View
+                style={[
+                    styles.bottomWeekNavigation,
+                    weekBarGutter > 0 && {
+                        left: -weekBarGutter,
+                        right: -weekBarGutter,
+                        paddingHorizontal: 0,
+                    },
+                ]}
+            >
+                <View
+                    style={[
+                        styles.bottomWeekNavigationInner,
+                        isDesktop && {
+                            maxWidth: weekColumnWidth,
+                            alignSelf: 'center',
+                        },
+                    ]}
                 >
-                    <MaterialIcons name="chevron-left" size={24} color="#333" />
-                </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={goToPreviousWeek}
+                        style={styles.bottomNavButton}
+                    >
+                        <MaterialIcons
+                            name="chevron-left"
+                            size={24}
+                            color="#333"
+                        />
+                    </TouchableOpacity>
 
-                <View style={styles.bottomWeekLabelContainer}>
-                    <CustomText style={styles.bottomWeekLabel}>
-                        {weekLabel}
-                    </CustomText>
-                    {!isCurrentWeek && (
-                        <TouchableOpacity onPress={goToCurrentWeek}>
-                            <CustomText style={styles.bottomCurrentWeekLink}>
-                                Palaa nykyiseen
-                            </CustomText>
-                        </TouchableOpacity>
-                    )}
+                    <View style={styles.bottomWeekLabelContainer}>
+                        <CustomText style={styles.bottomWeekLabel}>
+                            {weekLabel}
+                        </CustomText>
+                        {!isCurrentWeek && (
+                            <TouchableOpacity onPress={goToCurrentWeek}>
+                                <CustomText style={styles.bottomCurrentWeekLink}>
+                                    Palaa nykyiseen
+                                </CustomText>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+
+                    <TouchableOpacity
+                        onPress={goToNextWeek}
+                        style={styles.bottomNavButton}
+                    >
+                        <MaterialIcons
+                            name="chevron-right"
+                            size={24}
+                            color="#333"
+                        />
+                    </TouchableOpacity>
                 </View>
-
-                <TouchableOpacity
-                    onPress={goToNextWeek}
-                    style={styles.bottomNavButton}
-                >
-                    <MaterialIcons
-                        name="chevron-right"
-                        size={24}
-                        color="#333"
-                    />
-                </TouchableOpacity>
             </View>
         )
     }
@@ -736,7 +768,7 @@ const Table = ({ onRequireLogin }) => {
     )
 
     return (
-        <GestureHandlerRootView style={{ flex: 1 }}>
+        <GestureHandlerRootView style={styles.gestureRoot}>
             {content}
             {renderWeekNavigation()}
             {draggingMeal && (
@@ -786,6 +818,10 @@ const Table = ({ onRequireLogin }) => {
 }
 
 const styles = StyleSheet.create({
+    gestureRoot: {
+        flex: 1,
+        overflow: 'visible',
+    },
     container: {
         flex: 1,
         backgroundColor: '#f9fafb',
@@ -1121,11 +1157,6 @@ const styles = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingVertical: 8,
-        paddingHorizontal: 15,
         backgroundColor: '#ffffff',
         borderTopWidth: 1,
         borderTopColor: '#e0e0e0',
@@ -1138,6 +1169,14 @@ const styles = StyleSheet.create({
         shadowRadius: 3,
         elevation: 5,
         zIndex: 10,
+    },
+    bottomWeekNavigationInner: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        width: '100%',
+        paddingVertical: 8,
+        paddingHorizontal: 15,
     },
     bottomNavButton: {
         padding: 6,
