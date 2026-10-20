@@ -15,14 +15,6 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { getServerUrl } from '../utils/getServerUrl'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
-import {
-    EATING_BEFORE_COOKING_MESSAGE,
-    isAnyDateBeforeCooking,
-} from '../utils/mealDates'
-import {
-    isSameCalendarDay,
-    rebuildEatingDatesAfterMove,
-} from '../utils/weekMealMove'
 import useWeekMealAssign from '../hooks/useWeekMealAssign'
 import { useMealCalendar } from '../hooks/useMealCalendar'
 import useWeekMealDrag from '../hooks/useWeekMealDrag'
@@ -32,16 +24,20 @@ import {
     toggleDateSelection as toggleDateUtil,
     clearDateSelection as clearDateUtil,
 } from '../utils/mealCalendarUtils'
+import {
+    alertMealMoveBeforeCooking,
+    alertMealMoveFailed,
+    alertMealMoveSuccess,
+    submitMealDayMove,
+} from '../utils/weekMealMoveSubmit'
 
 import { getMealTypeText } from '../utils/mealUtils'
 import Button from './Button'
 import CustomText from './CustomText'
 import { DESKTOP_SIDEBAR_WIDTH } from './DesktopNavigation'
-import MealItemDetail from './MealItemDetail'
+import TableWeekOverlays from './TableWeekOverlays'
 import WeekBottomNavigation from './WeekBottomNavigation'
 import WeekDaySection from './WeekDaySection'
-import WeekMealSelectModal from './WeekMealSelectModal'
-import WeekMoveMealModal from './WeekMoveMealModal'
 import { MEAL_PLACEHOLDER_IMAGE_URL } from '../constants/images'
 
 const Table = ({ onRequireLogin }) => {
@@ -250,58 +246,22 @@ const Table = ({ onRequireLogin }) => {
             return
         }
 
-        if (isSameCalendarDay(moveFromDate, targetDate)) {
-            setMoveMealModalVisible(false)
-            setMealToMove(null)
-            setMoveFromDate(null)
-            return
-        }
-
-        if (
-            isAnyDateBeforeCooking([targetDate], mealToMove.plannedCookingDate)
-        ) {
-            Alert.alert('Virhe', EATING_BEFORE_COOKING_MESSAGE)
-            setMoveMealModalVisible(false)
-            setMealToMove(null)
-            setMoveFromDate(null)
-            return
-        }
-
         try {
-            const updatedDates = rebuildEatingDatesAfterMove(
-                mealToMove.plannedEatingDates,
-                moveFromDate,
-                targetDate
-            )
-
-            const token = await getAuthTokenOrPrompt('sync')
-            if (!token) return
-
-            await axios.put(
-                getServerUrl(`/meals/${mealToMove._id}`),
-                {
-                    plannedEatingDates: updatedDates,
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                    },
-                }
-            )
-
-            await fetchMealData(dates)
-
-            if (Platform.OS !== 'web') {
-                Alert.alert('Valmis!', 'Ateria siirretty')
+            const status = await submitMealDayMove({
+                meal: mealToMove,
+                fromDate: moveFromDate,
+                toDate: targetDate,
+                getToken: () => getAuthTokenOrPrompt('sync'),
+            })
+            if (status === 'before_cooking') {
+                alertMealMoveBeforeCooking()
+            } else if (status === 'ok') {
+                await fetchMealData(dates)
+                alertMealMoveSuccess()
             }
         } catch (error) {
             console.error('Error moving meal:', error)
-            if (Platform.OS === 'web') {
-                alert('Virhe: Aterian siirtäminen epäonnistui')
-            } else {
-                Alert.alert('Virhe', 'Aterian siirtäminen epäonnistui')
-            }
+            alertMealMoveFailed()
         } finally {
             setMoveMealModalVisible(false)
             setMealToMove(null)
@@ -309,48 +269,22 @@ const Table = ({ onRequireLogin }) => {
         }
     }
 
-    // Handler for when a meal is dropped on a new day
     const handleMealDrop = async (meal, fromDate, toDate) => {
-        if (isSameCalendarDay(fromDate, toDate)) {
-            return
-        }
-
-        if (isAnyDateBeforeCooking([toDate], meal.plannedCookingDate)) {
-            Alert.alert('Virhe', EATING_BEFORE_COOKING_MESSAGE)
-            return
-        }
-
         try {
-            const updatedDates = rebuildEatingDatesAfterMove(
-                meal.plannedEatingDates,
+            const status = await submitMealDayMove({
+                meal,
                 fromDate,
-                toDate
-            )
-
-            const token = await getAuthTokenOrPrompt('sync')
-            if (!token) return
-
-            await axios.put(
-                getServerUrl(`/meals/${meal._id}`),
-                {
-                    plannedEatingDates: updatedDates,
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                    },
-                }
-            )
-
-            await fetchMealData(dates)
+                toDate,
+                getToken: () => getAuthTokenOrPrompt('sync'),
+            })
+            if (status === 'before_cooking') {
+                alertMealMoveBeforeCooking()
+            } else if (status === 'ok') {
+                await fetchMealData(dates)
+            }
         } catch (error) {
             console.error('Error moving meal:', error)
-            if (Platform.OS === 'web') {
-                alert('Virhe: Aterian siirtäminen epäonnistui')
-            } else {
-                Alert.alert('Virhe', 'Aterian siirtäminen epäonnistui')
-            }
+            alertMealMoveFailed()
         }
     }
 
@@ -500,9 +434,16 @@ const Table = ({ onRequireLogin }) => {
                 }}
                 scrollEventThrottle={16}
             />
-            <WeekMealSelectModal
-                visible={isModalVisible}
-                view={mealSelectView}
+        </View>
+    )
+
+    return (
+        <GestureHandlerRootView style={styles.gestureRoot}>
+            {content}
+            {renderWeekNavigation()}
+            <TableWeekOverlays
+                isModalVisible={isModalVisible}
+                mealSelectView={mealSelectView}
                 dates={dates}
                 selectedDates={selectedDates}
                 availableMeals={availableMeals}
@@ -512,7 +453,7 @@ const Table = ({ onRequireLogin }) => {
                 createMealBackRef={createMealBackRef}
                 createMealNestedTitle={createMealNestedTitle}
                 onCreateHeaderChange={handleCreateMealHeaderChange}
-                onClose={handleMealSelectModalClose}
+                onCloseSelectModal={handleMealSelectModalClose}
                 onToggleDateSelection={toggleDateSelection}
                 onClearSelection={clearDateSelection}
                 onMealSelect={handleSelectMeal}
@@ -526,74 +467,21 @@ const Table = ({ onRequireLogin }) => {
                 onCloseDetails={closeSelectMealDetails}
                 onMealUpdate={handleMealUpdate}
                 onDetailsHeaderChange={handleSelectDetailsHeaderChange}
-            />
-            <WeekMoveMealModal
-                visible={moveMealModalVisible}
-                meal={mealToMove}
-                fromDate={moveFromDate}
-                dates={dates}
-                onClose={() => {
+                moveMealModalVisible={moveMealModalVisible}
+                mealToMove={mealToMove}
+                moveFromDate={moveFromDate}
+                onCloseMoveModal={() => {
                     setMoveMealModalVisible(false)
                     setMealToMove(null)
                     setMoveFromDate(null)
                 }}
-                onSelectDay={handleMoveMealToDay}
+                onSelectMoveDay={handleMoveMealToDay}
+                selectedMeal={selectedMeal}
+                detailModalVisible={detailModalVisible}
+                onCloseDetail={handleCloseDetail}
+                draggingMeal={draggingMeal}
+                dragPosition={dragPosition}
             />
-            <MealItemDetail
-                meal={selectedMeal}
-                visible={detailModalVisible}
-                onClose={handleCloseDetail}
-                onUpdate={handleMealUpdate}
-            />
-        </View>
-    )
-
-    return (
-        <GestureHandlerRootView style={styles.gestureRoot}>
-            {content}
-            {renderWeekNavigation()}
-            {draggingMeal && (
-                <View
-                    style={[
-                        styles.dragOverlay,
-                        {
-                            left: dragPosition.x - 140,
-                            top: dragPosition.y - 140,
-                            pointerEvents: 'none',
-                        },
-                    ]}
-                >
-                    <View style={styles.mealItemContainer}>
-                        <View style={styles.mealItemInfo}>
-                            <Image
-                                source={{
-                                    uri:
-                                        draggingMeal.image?.url ||
-                                        MEAL_PLACEHOLDER_IMAGE_URL,
-                                }}
-                                style={styles.mealImage}
-                                resizeMode="cover"
-                            />
-                            <View style={styles.mealTextContainer}>
-                                <CustomText
-                                    style={styles.mealName}
-                                    numberOfLines={2}
-                                    ellipsizeMode="tail"
-                                >
-                                    {draggingMeal.name}
-                                </CustomText>
-                                <CustomText
-                                    style={styles.mealType}
-                                    numberOfLines={1}
-                                    ellipsizeMode="tail"
-                                >
-                                    {getMealTypeText(draggingMeal.defaultRoles)}
-                                </CustomText>
-                            </View>
-                        </View>
-                    </View>
-                </View>
-            )}
         </GestureHandlerRootView>
     )
 }
@@ -921,20 +809,6 @@ const styles = StyleSheet.create({
         overflow: 'visible',
         zIndex: 100,
         position: 'relative',
-    },
-    dragOverlay: {
-        position: 'absolute',
-        zIndex: 100,
-        elevation: 100,
-        opacity: 0.9,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 4,
-        },
-        shadowOpacity: 0.3,
-        shadowRadius: 4.65,
-        width: 300,
     },
 })
 

@@ -20,12 +20,7 @@ import {
 } from '../utils/foodItemId'
 import { pickMealImage, uploadMealImage } from '../utils/mealImage'
 import { resolveMealFoodItemRefs } from '../utils/resolveMealFoodItems'
-import {
-    clampDatesToMin,
-    toStoredMealDate,
-    toStoredMealDates,
-} from '../utils/mealDates'
-import { getDifficultyEnum, parseMealCategories } from '../utils/mealUtils'
+import { clampDatesToMin } from '../utils/mealDates'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 
@@ -47,13 +42,16 @@ import {
     mergeFoodItemAvailability,
 } from '../utils/foodItemAvailability'
 import {
-    joinRecipeSteps,
     normalizeRecipeSteps,
     resolveRecipeSteps,
 } from '../utils/recipeSteps'
 import MealFormBasicsSection from './MealFormBasicsSection'
 import MealFormIngredientsSection from './MealFormIngredientsSection'
 import { scrollMealFormToFirstError } from '../utils/mealFormScroll'
+import {
+    buildGuestMealPayload,
+    buildPersistedMealPayload,
+} from '../utils/mealFormSubmit'
 
 const AddMealForm = ({
     onSubmit,
@@ -206,40 +204,20 @@ const AddMealForm = ({
 
             // Guest mode: keep meal in local UI state only
             if (!token) {
-                const eatingDates =
-                    plannedEatingDates.length > 0
-                        ? clampDatesToMin(
-                              plannedEatingDates,
-                              plannedCookingDate
-                          )
-                        : [plannedCookingDate]
-                const guestMeal = {
-                    _id: `guest-meal-${Date.now()}`,
-                    name: data.name,
-                    recipe: joinRecipeSteps(recipeSteps),
-                    recipeSteps: normalizeRecipeSteps(recipeSteps),
-                    difficultyLevel: getDifficultyEnum(difficultyLevel),
-                    cookingTime: parseInt(data.cookingTime) || 0,
-                    foodItems: foodItems.map((item) => ({
-                        ...item,
-                        _id:
-                            item._id ||
-                            `guest-food-${Date.now()}-${Math.random()
-                                .toString(36)
-                                .slice(2, 8)}`,
-                        quantity: getIngredientQuantity(item),
-                    })),
-                    defaultRoles: [...selectedRoles],
-                    mealCategory: parseMealCategories(mealCategory, []),
-                    plannedCookingDate: toStoredMealDate(plannedCookingDate),
-                    plannedEatingDates: toStoredMealDates(eatingDates),
-                    servings,
-                    image: mealImage
-                        ? { url: mealImage.uri || mealImage }
-                        : undefined,
-                    user: 'guest',
-                }
-                onSubmit(guestMeal)
+                onSubmit(
+                    buildGuestMealPayload({
+                        data,
+                        recipeSteps,
+                        difficultyLevel,
+                        foodItems,
+                        selectedRoles,
+                        mealCategory,
+                        plannedCookingDate,
+                        plannedEatingDates,
+                        servings,
+                        mealImage,
+                    })
+                )
                 return
             }
 
@@ -248,26 +226,18 @@ const AddMealForm = ({
                 token
             )
 
-            // If no eating dates specified, default to cooking date
-            const eatingDates =
-                plannedEatingDates.length > 0
-                    ? clampDatesToMin(plannedEatingDates, plannedCookingDate)
-                    : [plannedCookingDate]
-
-            const mealData = {
-                name: data.name,
-                recipe: joinRecipeSteps(recipeSteps),
-                recipeSteps: normalizeRecipeSteps(recipeSteps),
-                difficultyLevel: getDifficultyEnum(difficultyLevel),
-                cookingTime: parseInt(data.cookingTime) || 0,
-                foodItems: createdFoodItemIds,
-                defaultRoles: [...selectedRoles],
-                mealCategory: parseMealCategories(mealCategory, []),
-                plannedCookingDate: toStoredMealDate(plannedCookingDate),
-                plannedEatingDates: toStoredMealDates(eatingDates),
+            const mealData = buildPersistedMealPayload({
+                data,
+                recipeSteps,
+                difficultyLevel,
+                foodItemRefs: createdFoodItemIds,
+                selectedRoles,
+                mealCategory,
+                plannedCookingDate,
+                plannedEatingDates,
                 servings,
-                user: profile._id,
-            }
+                userId: profile._id,
+            })
 
             const response = await axios.post(
                 getServerUrl('/meals'),

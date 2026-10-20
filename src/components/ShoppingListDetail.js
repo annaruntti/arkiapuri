@@ -8,15 +8,11 @@ import {
     ActivityIndicator,
 } from 'react-native'
 import AddActionSection from './AddActionSection'
-import AddFoodItemPanel from './AddFoodItemPanel'
 import CustomText from './CustomText'
-import MissingPriceItemsPanel from './MissingPriceItemsPanel'
-import DuplicateShoppingItemModal from './DuplicateShoppingItemModal'
-import PantryItemDetails from './PantryItemDetails'
-import ResponsiveModal from './ResponsiveModal'
 import SearchSection from './SearchSection'
 import StickyListLayout from './StickyListLayout'
 import ShoppingListDetailItemRow from './ShoppingListDetailItemRow'
+import ShoppingListDetailModals from './ShoppingListDetailModals'
 import ShoppingListFloatingActions from './ShoppingListFloatingActions'
 import ShoppingListItemsBody from './ShoppingListItemsBody'
 import { useFilteredItemList } from '../hooks/useFilteredItemList'
@@ -29,7 +25,6 @@ import {
     updateShoppingListItem,
 } from '../services/collectionApi'
 import { SORT_OPTION_IDS } from '../utils/listSort'
-import { lineAmount } from '../utils/shoppingListPrice'
 import { addOrMergeShoppingListItem } from '../utils/shoppingListAddItem'
 import { updateShoppingListItemWithCatalog } from '../utils/shoppingListUpdateItem'
 import { collapseDuplicateShoppingListItems } from '../utils/shoppingListDuplicate'
@@ -614,75 +609,29 @@ const ShoppingListDetail = ({
                 </View>
             )}
 
-            <ResponsiveModal
-                visible={
-                    modalView === MODAL_VIEWS.ITEM_DETAILS &&
-                    Boolean(selectedItem)
-                }
-                onClose={goToListView}
-                title={selectedItem?.name || 'Tuotteen tiedot'}
-                maxWidth={640}
-            >
-                {selectedItem ? (
-                    <PantryItemDetails
-                        item={selectedItem}
-                        embedded
-                        onClose={goToListView}
-                        onUpdate={handleUpdateItem}
-                    />
-                ) : null}
-            </ResponsiveModal>
-
-            <ResponsiveModal
-                visible={showAddItem}
-                onClose={goToListView}
-                title="Lisää tuote"
-                maxWidth={640}
-            >
-                <AddFoodItemPanel
-                    key={addItemSession}
-                    location="shopping-list"
-                    shoppingListId={shoppingList?._id}
-                    onSelectItem={handleSearchItemSelect}
-                    onSubmitNewItem={handleAddItem}
-                    onCloseForm={goToListView}
-                    showFormBackButton={false}
-                    autoOpenScanner={autoOpenScanner}
-                />
-            </ResponsiveModal>
-
-            <ResponsiveModal
-                visible={showMissingPrices}
-                onClose={() => setShowMissingPrices(false)}
-                title="Puuttuvat hinnat"
-                maxWidth={640}
-            >
-                <MissingPriceItemsPanel
-                    items={(shoppingList?.items || []).filter(
-                        (item) => lineAmount(item).missing
-                    )}
-                    onSavePrice={async (item, price) => {
-                        await handleUpdateItem(getListItemId(item), { price }, {
-                            keepView: true,
-                        })
-                    }}
-                    onOpenDetails={(item) => {
-                        setShowMissingPrices(false)
-                        handleItemDetailsPress(item)
-                    }}
-                    onClose={() => setShowMissingPrices(false)}
-                />
-            </ResponsiveModal>
-
-            <DuplicateShoppingItemModal
-                visible={Boolean(duplicateMerge)}
-                existing={duplicateMerge?.existing}
-                incoming={duplicateMerge?.incoming}
-                onConfirm={() => {
+            <ShoppingListDetailModals
+                modalView={modalView}
+                itemDetailsView={MODAL_VIEWS.ITEM_DETAILS}
+                selectedItem={selectedItem}
+                onCloseListView={goToListView}
+                onUpdateItem={handleUpdateItem}
+                showAddItem={showAddItem}
+                addItemSession={addItemSession}
+                shoppingListId={shoppingList?._id}
+                onSelectSearchItem={handleSearchItemSelect}
+                onSubmitNewItem={handleAddItem}
+                autoOpenScanner={autoOpenScanner}
+                showMissingPrices={showMissingPrices}
+                onCloseMissingPrices={() => setShowMissingPrices(false)}
+                shoppingListItems={shoppingList?.items}
+                getListItemId={getListItemId}
+                onOpenItemDetails={handleItemDetailsPress}
+                duplicateMerge={duplicateMerge}
+                onConfirmDuplicateMerge={() => {
                     duplicateMerge?.resolve?.(true)
                     setDuplicateMerge(null)
                 }}
-                onCancel={() => {
+                onCancelDuplicateMerge={() => {
                     duplicateMerge?.resolve?.(false)
                     setDuplicateMerge(null)
                 }}

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
-    ActivityIndicator,
     Alert,
     StyleSheet,
     View,
@@ -10,7 +9,6 @@ import { useFocusEffect } from '@react-navigation/native'
 
 import PantryFilterChrome from '../components/PantryFilterChrome'
 import PantryItemsBody from '../components/PantryItemsBody'
-import CustomText from '../components/CustomText'
 import AddFoodItemPanel from '../components/AddFoodItemPanel'
 import FoodListItemRow from '../components/FoodListItemRow'
 import LoginPromptModal from '../components/LoginPromptModal'
@@ -18,12 +16,6 @@ import useLoginPrompt from '../hooks/useLoginPrompt'
 import usePantryLocations from '../hooks/usePantryLocations'
 import usePantryScan from '../hooks/usePantryScan'
 import { useLogin } from '../context/LoginProvider'
-import PantryItemDetails from '../components/PantryItemDetails'
-import PantryScanReview from '../components/PantryScanReview'
-import PantryScanLockedModal from '../components/PantryScanLockedModal'
-import PantryLocationsEditor from '../components/PantryLocationsEditor'
-import PantryScanLocationPicker from '../components/PantryScanLocationPicker'
-import PantryRemovalSuggestionsModal from '../components/PantryRemovalSuggestionsModal'
 import NoticeBanner from '../components/NoticeBanner'
 import ContentContainer from '../components/ContentContainer'
 import ResponsiveLayout from '../components/ResponsiveLayout'
@@ -31,6 +23,7 @@ import ResponsiveModal from '../components/ResponsiveModal'
 import AddActionSection from '../components/AddActionSection'
 import SearchSection from '../components/SearchSection'
 import StickyListLayout from '../components/StickyListLayout'
+import PantryScreenModals from '../components/PantryScreenModals'
 
 import { useFilteredItemList } from '../hooks/useFilteredItemList'
 import { SORT_OPTION_IDS } from '../utils/listSort'
@@ -765,72 +758,52 @@ const PantryScreen = ({}) => {
                             />
                         </View>
                     </StickyListLayout>
-                    <PantryScanLockedModal
-                        visible={scanLockVisible}
-                        onClose={() => setScanLockVisible(false)}
-                        onAddManually={() => {
+                    <PantryScreenModals
+                        scanLockVisible={scanLockVisible}
+                        onCloseScanLock={() => setScanLockVisible(false)}
+                        onScanLockAddManually={() => {
                             setScanLockVisible(false)
                             setShowAddItemSearch(true)
                         }}
-                        reason={scanLockReason}
-                    />
-                    <PantryScanReview
-                        visible={scanReviewVisible}
-                        onClose={() => setScanReviewVisible(false)}
-                        items={scanCandidates}
-                        suggestedRemovals={scanRemovals}
-                        locationName={scanLocation?.name}
-                        usage={scanUsage}
-                        submitting={scanSubmitting}
-                        onSubmit={handleCommitScanItems}
-                    />
-                    <PantryScanLocationPicker
-                        visible={scanLocationPickerVisible}
-                        onClose={() => setScanLocationPickerVisible(false)}
-                        locations={pantryLocations}
-                        onSelect={startScanForLocation}
-                    />
-                    <PantryLocationsEditor
-                        visible={locationsEditorVisible}
-                        onClose={() => setLocationsEditorVisible(false)}
-                        locations={pantryLocations}
-                        onAdd={handleAddLocation}
-                        onRename={handleRenameLocation}
-                        onDelete={handleDeleteLocation}
-                    />
-                    <PantryRemovalSuggestionsModal
-                        visible={suggestionsModalVisible}
-                        onClose={() => setSuggestionsModalVisible(false)}
-                        suggestions={removalSuggestions}
-                        submitting={suggestionsSubmitting}
-                        onRemove={handleRemoveSuggestedItems}
-                        onKeep={handleKeepSuggestedItems}
-                    />
-                    <ResponsiveModal
-                        visible={scanLoading}
-                        onClose={() => {}}
-                        title="Tunnistetaan tuotteita"
-                        maxWidth={400}
-                        showCloseButton={false}
-                    >
-                        <View style={styles.scanLoadingBox}>
-                            <ActivityIndicator size="large" color="#5844BB" />
-                            <CustomText style={styles.scanLoadingText}>
-                                Analysoidaan kuvaa. Tämä voi kestää hetken.
-                            </CustomText>
-                        </View>
-                    </ResponsiveModal>
-                    <PantryItemDetails
-                        item={selectedItem}
-                        visible={detailsVisible}
-                        locations={pantryLocations}
-                        onClose={() => {
+                        scanLockReason={scanLockReason}
+                        scanReviewVisible={scanReviewVisible}
+                        onCloseScanReview={() => setScanReviewVisible(false)}
+                        scanCandidates={scanCandidates}
+                        scanRemovals={scanRemovals}
+                        scanLocationName={scanLocation?.name}
+                        scanUsage={scanUsage}
+                        scanSubmitting={scanSubmitting}
+                        onCommitScanItems={handleCommitScanItems}
+                        scanLocationPickerVisible={scanLocationPickerVisible}
+                        onCloseScanLocationPicker={() =>
+                            setScanLocationPickerVisible(false)
+                        }
+                        pantryLocations={pantryLocations}
+                        onSelectScanLocation={startScanForLocation}
+                        locationsEditorVisible={locationsEditorVisible}
+                        onCloseLocationsEditor={() =>
+                            setLocationsEditorVisible(false)
+                        }
+                        onAddLocation={handleAddLocation}
+                        onRenameLocation={handleRenameLocation}
+                        onDeleteLocation={handleDeleteLocation}
+                        suggestionsModalVisible={suggestionsModalVisible}
+                        onCloseSuggestions={() =>
+                            setSuggestionsModalVisible(false)
+                        }
+                        removalSuggestions={removalSuggestions}
+                        suggestionsSubmitting={suggestionsSubmitting}
+                        onRemoveSuggestions={handleRemoveSuggestedItems}
+                        onKeepSuggestions={handleKeepSuggestedItems}
+                        scanLoading={scanLoading}
+                        selectedItem={selectedItem}
+                        detailsVisible={detailsVisible}
+                        onCloseDetails={() => {
                             setDetailsVisible(false)
                             setSelectedItem(null)
-                            // Refresh pantry items to ensure we have latest data
                             fetchPantryItems()
                         }}
-                        onUpdate={handleUpdateItem}
+                        onUpdateItem={handleUpdateItem}
                     />
                 </View>
             </ContentContainer>
@@ -901,15 +874,6 @@ const styles = StyleSheet.create({
         paddingLeft: 10,
         paddingRight: 10,
         minWidth: 150,
-    },
-    scanLoadingBox: {
-        alignItems: 'center',
-        paddingVertical: 20,
-    },
-    scanLoadingText: {
-        marginTop: 12,
-        textAlign: 'center',
-        color: '#555',
     },
     secondaryButton: {
         borderRadius: 25,

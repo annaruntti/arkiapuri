@@ -1,7 +1,6 @@
 import axios from 'axios'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
-    ActivityIndicator,
     Alert,
     Platform,
     RefreshControl,
@@ -10,20 +9,16 @@ import {
 } from 'react-native'
 import CategorySectionHeader from '../components/CategorySectionHeader'
 import CustomText from '../components/CustomText'
-import AddMealForm from '../components/FormAddMeal'
 import MealsFilterChrome from '../components/MealsFilterChrome'
 import MealItem from '../components/MealItem'
-import MealItemDetail from '../components/MealItemDetail'
-import LoginPromptModal from '../components/LoginPromptModal'
+import MealsScreenModals from '../components/MealsScreenModals'
 import ContentContainer from '../components/ContentContainer'
 import ResponsiveLayout from '../components/ResponsiveLayout'
 import useLoginPrompt from '../hooks/useLoginPrompt'
 import useDishScan from '../hooks/useDishScan'
-import ResponsiveModal from '../components/ResponsiveModal'
 import AddActionSection from '../components/AddActionSection'
 import SearchSection from '../components/SearchSection'
 import StickyListLayout from '../components/StickyListLayout'
-import PantryScanLockedModal from '../components/PantryScanLockedModal'
 import { getServerUrl } from '../utils/getServerUrl'
 import { useResponsiveDimensions } from '../utils/responsive'
 import { DEFAULT_SERVINGS } from '../utils/mealServings'
@@ -504,29 +499,28 @@ const MealsScreen = ({ route, navigation }) => {
 
     const content = (
         <View style={[styles.container, isDesktop && styles.desktopContainer]}>
-            <ResponsiveModal
-                visible={modalVisible}
-                onClose={closeAddMealModal}
-                title={
-                    addMealNested
-                        ? 'Valitse ostoslista'
-                        : aiDraft
-                          ? 'Tarkista AI:n ehdotus'
-                          : 'Lisää uusi ateria'
-                }
-                showBackButton={addMealNested}
-                maxWidth={640}
-            >
-                <AddMealForm
-                    key={aiDraft ? 'ai-draft' : 'manual'}
-                    onSubmit={handleAddMeal}
-                    aiDraft={aiDraft}
-                    backHandlerRef={addMealBackRef}
-                    onHeaderStateChange={handleAddMealHeaderChange}
-                />
-            </ResponsiveModal>
-
-            <LoginPromptModal {...loginPromptProps} />
+            <MealsScreenModals
+                modalVisible={modalVisible}
+                onCloseAddMeal={closeAddMealModal}
+                addMealNested={addMealNested}
+                aiDraft={aiDraft}
+                onSubmitAddMeal={handleAddMeal}
+                addMealBackRef={addMealBackRef}
+                onAddMealHeaderChange={handleAddMealHeaderChange}
+                loginPromptProps={loginPromptProps}
+                selectedMeal={selectedMeal}
+                detailModalVisible={detailModalVisible}
+                onCloseDetail={handleCloseDetail}
+                onUpdateMeal={handleUpdateMeal}
+                scanLockVisible={scanLockVisible}
+                onCloseScanLock={() => setScanLockVisible(false)}
+                onScanLockAddManually={() => {
+                    setScanLockVisible(false)
+                    handleOpenAddMeal()
+                }}
+                scanLockReason={scanLockReason}
+                scanLoading={scanLoading}
+            />
 
             <StickyListLayout
                 chromeBackgroundColor="#f9fafb"
@@ -623,38 +617,6 @@ const MealsScreen = ({ route, navigation }) => {
                     )}
                 </>
             </StickyListLayout>
-
-            <MealItemDetail
-                meal={selectedMeal}
-                visible={detailModalVisible}
-                onClose={handleCloseDetail}
-                onUpdate={handleUpdateMeal}
-            />
-            <PantryScanLockedModal
-                visible={scanLockVisible}
-                onClose={() => setScanLockVisible(false)}
-                onAddManually={() => {
-                    setScanLockVisible(false)
-                    handleOpenAddMeal()
-                }}
-                reason={scanLockReason}
-                manualButtonTitle="Lisää ateria manuaalisesti"
-                upgradeMessage="Aterian tunnistus kuvasta kuuluu maksulliseen sopimukseen. Ilmaisella tilillä voit lisätä aterian manuaalisesti."
-            />
-            <ResponsiveModal
-                visible={scanLoading}
-                onClose={() => {}}
-                title="Tunnistetaan ateriaa"
-                maxWidth={400}
-                showCloseButton={false}
-            >
-                <View style={styles.scanLoadingBox}>
-                    <ActivityIndicator size="large" color="#5844BB" />
-                    <CustomText style={styles.scanLoadingText}>
-                        Analysoidaan kuvaa. Tämä voi kestää hetken.
-                    </CustomText>
-                </View>
-            </ResponsiveModal>
         </View>
     )
 
@@ -739,16 +701,6 @@ const styles = StyleSheet.create({
     },
     categorySection: {
         marginBottom: 20,
-    },
-    scanLoadingBox: {
-        alignItems: 'center',
-        paddingVertical: 20,
-    },
-    scanLoadingText: {
-        marginTop: 16,
-        fontSize: 16,
-        textAlign: 'center',
-        color: '#374151',
     },
 })
 
