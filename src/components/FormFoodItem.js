@@ -14,13 +14,15 @@ import {
 } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
 import { useShowNutrition } from '../hooks/useShowNutrition'
-import { processFormCategories } from '../utils/foodCategories'
+import {
+    getCategoryTree,
+    processFormCategories,
+} from '../utils/foodCategories'
 import {
     pickFoodItemImage,
     uploadFoodItemImage,
 } from '../utils/foodItemImage'
 import {
-    NUTRITION_FIELDS,
     buildNutritionFromFormData,
     getInitialNutritionValue,
     hasAnyInitialNutrition,
@@ -570,7 +572,7 @@ const FormFoodItem = forwardRef(
                                     <InlineCategorySelect
                                         value={value}
                                         onChange={onChange}
-                                        categories={categories}
+                                        categories={getCategoryTree()}
                                         placeholder="Valitse elintarvikkeen kategoriat"
                                     />
                                 )}
