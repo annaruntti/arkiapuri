@@ -1,6 +1,4 @@
-const DEFAULT_PROFILE_IMAGE = {
-    uri: 'https://images.ctfassets.net/hef5a6s5axrs/2wzxlzyydJLVr8T7k67cOO/90074490ee64362fe6f0e384d2b3daf8/arkiapuri-removebg-preview.png',
-}
+import { DEFAULT_PROFILE_IMAGE } from '../constants/images'
 
 export const getProfileImageUrl = (userOrImage) => {
     if (!userOrImage) return null

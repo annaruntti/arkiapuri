@@ -45,10 +45,9 @@ import CustomText from './CustomText'
 import DateSelector from './DateSelector'
 import FormAddMeal from './FormAddMeal'
 import MealItemDetail from './MealItemDetail'
-import MealSelectionList, {
-    PLACEHOLDER_IMAGE_URL,
-} from './MealSelectionList'
+import MealSelectionList from './MealSelectionList'
 import ResponsiveModal from './ResponsiveModal'
+import { MEAL_PLACEHOLDER_IMAGE_URL } from '../constants/images'
 
 // Custom Draggable Component
 const DraggableMealItem = ({
@@ -657,7 +656,7 @@ const Table = ({ onRequireLogin }) => {
         >
             <Image
                 source={{
-                    uri: item.image?.url || PLACEHOLDER_IMAGE_URL,
+                    uri: item.image?.url || MEAL_PLACEHOLDER_IMAGE_URL,
                 }}
                 style={styles.mealImage}
                 resizeMode="cover"
@@ -700,7 +699,7 @@ const Table = ({ onRequireLogin }) => {
                         <Image
                             source={{
                                 uri:
-                                    meal.image?.url || PLACEHOLDER_IMAGE_URL,
+                                    meal.image?.url || MEAL_PLACEHOLDER_IMAGE_URL,
                             }}
                             style={styles.mealImage}
                             resizeMode="cover"
@@ -1096,7 +1095,7 @@ const Table = ({ onRequireLogin }) => {
                                 source={{
                                     uri:
                                         draggingMeal.image?.url ||
-                                        PLACEHOLDER_IMAGE_URL,
+                                        MEAL_PLACEHOLDER_IMAGE_URL,
                                 }}
                                 style={styles.mealImage}
                                 resizeMode="cover"

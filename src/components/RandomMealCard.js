@@ -12,10 +12,8 @@ import { useResponsiveDimensions } from '../utils/responsive'
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
 import CustomText from './CustomText'
+import { MEAL_PLACEHOLDER_IMAGE_URL } from '../constants/images'
 import { getMealRoles } from '../utils/mealFilters'
-
-const PLACEHOLDER_IMAGE_URL =
-    'https://images.ctfassets.net/2pij69ehhf4n/3b9imD6TDC4i68V4uHVgL1/1ac1194dccb086bb52ebd674c59983e3/undraw_breakfast_rgx5.png'
 
 const emptyPantryIndex = { ids: new Set(), names: new Set() }
 
@@ -224,7 +222,7 @@ const RandomMealCard = ({ onMealPress, iconImage, filterByPantry = false }) => {
                 ]}
             >
                 <Image
-                    source={iconImage || { uri: PLACEHOLDER_IMAGE_URL }}
+                    source={iconImage || { uri: MEAL_PLACEHOLDER_IMAGE_URL }}
                     style={[styles.image, isDesktop && styles.desktopImage]}
                     resizeMode="contain"
                 />
@@ -251,7 +249,7 @@ const RandomMealCard = ({ onMealPress, iconImage, filterByPantry = false }) => {
             ? { uri: randomMeal.imageUrl }
             : randomMeal.image?.url
             ? { uri: randomMeal.image.url }
-            : iconImage || { uri: PLACEHOLDER_IMAGE_URL }
+            : iconImage || { uri: MEAL_PLACEHOLDER_IMAGE_URL }
 
     return (
         <TouchableOpacity

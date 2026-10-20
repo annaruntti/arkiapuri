@@ -16,10 +16,9 @@ import { AUTH_FORM_MAX_WIDTH } from '../components/AuthLayout'
 import { useLogin } from '../context/LoginProvider'
 import { useResponsiveDimensions } from '../utils/responsive'
 import { authFormStyles } from '../styles/authFormStyles'
+import { LANDING_HERO_IMAGE } from '../constants/images'
 
-const image = {
-    uri: 'https://images.ctfassets.net/hef5a6s5axrs/4GwuSgvoXA0VX6cv5ix521/8545dbed4f7a510976eb78f8dcf4b91e/pexels-katerina-holmes-5907832.jpg',
-}
+const image = LANDING_HERO_IMAGE
 
 const LandingScreen = ({ navigation }) => {
     const { isDesktop, isTablet } = useResponsiveDimensions()

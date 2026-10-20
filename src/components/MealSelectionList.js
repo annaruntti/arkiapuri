@@ -6,10 +6,11 @@ import GuestWarningBanner from './GuestWarningBanner'
 import ListItem from './ListItem'
 import CategorySectionHeader from './CategorySectionHeader'
 import StickyListLayout from './StickyListLayout'
+import {
+    MEAL_PLACEHOLDER_IMAGE_URL,
+    PLACEHOLDER_IMAGE_URL,
+} from '../constants/images'
 import { getMealRoles } from '../utils/mealFilters'
-
-const PLACEHOLDER_IMAGE_URL =
-    'https://images.ctfassets.net/2pij69ehhf4n/3b9imD6TDC4i68V4uHVgL1/1ac1194dccb086bb52ebd674c59983e3/undraw_breakfast_rgx5.png'
 
 const mealTypeTranslations = {
     breakfast: 'Aamiainen',
@@ -123,7 +124,7 @@ const MealSelectionList = ({
                                     image={{
                                         uri:
                                             item.image?.url ||
-                                            PLACEHOLDER_IMAGE_URL,
+                                            MEAL_PLACEHOLDER_IMAGE_URL,
                                     }}
                                     imageSize={50}
                                     title={item.name}

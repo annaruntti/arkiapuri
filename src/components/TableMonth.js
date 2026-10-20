@@ -22,7 +22,8 @@ import CustomText from './CustomText'
 import DateSelector from './DateSelector'
 import FormAddMeal from './FormAddMeal'
 import MealItemDetail from './MealItemDetail'
-import MealSelectionList, { PLACEHOLDER_IMAGE_URL } from './MealSelectionList'
+import MealSelectionList from './MealSelectionList'
+import { MEAL_PLACEHOLDER_IMAGE_URL } from '../constants/images'
 import ResponsiveModal from './ResponsiveModal'
 import { useMealCalendar } from '../hooks/useMealCalendar'
 import { 
@@ -158,7 +159,7 @@ const TableMonth = ({ onRequireLogin }) => {
             >
                 <Image
                     source={{
-                        uri: meal.image?.url || PLACEHOLDER_IMAGE_URL,
+                        uri: meal.image?.url || MEAL_PLACEHOLDER_IMAGE_URL,
                     }}
                     style={styles.mealImage}
                     resizeMode="cover"

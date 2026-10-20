@@ -8,6 +8,7 @@ import Animated, {
     withSequence,
     withTiming,
 } from 'react-native-reanimated'
+import { LOGO_IMAGE } from '../constants/images'
 
 const AnimatedSplashScreen = () => {
     const scale = useSharedValue(1)
@@ -50,7 +51,7 @@ const AnimatedSplashScreen = () => {
         <View style={styles.container}>
             <Animated.View style={[styles.logoContainer, animatedStyle]}>
                 <Image
-                    source={require('../../assets/arkiapuri-logo.png')}
+                    source={LOGO_IMAGE}
                     style={styles.logo}
                     resizeMode="contain"
                 />

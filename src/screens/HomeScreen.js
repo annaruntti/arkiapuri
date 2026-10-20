@@ -17,30 +17,14 @@ import Info from '../components/Info'
 import ContentContainer from '../components/ContentContainer'
 import ResponsiveLayout from '../components/ResponsiveLayout'
 import { useResponsiveDimensions } from '../utils/responsive'
+import { HOME_CARD_IMAGES } from '../constants/images'
 
-const mealImage = {
-    uri: 'https://images.ctfassets.net/hef5a6s5axrs/1fvToRJqesGgl6dJCFyyJl/0f484ccfe293cca2a0a4ab57d3324c34/undraw_breakfast_rgx5.png',
-}
-
-const pantryImage = {
-    uri: 'https://images.ctfassets.net/hef5a6s5axrs/ShAURfxCIu9Og4KJZW5dW/ace0e55a861fa451eec6090a9b79c44e/undraw_online-groceries_n03y.png',
-}
-
-const shoppingListImage = {
-    uri: 'https://images.ctfassets.net/hef5a6s5axrs/4RDsykanJeWsUOE9vZJWsT/be968786ae294ee4dcedbc29823dbbdc/undraw_shopping-app_b80f.png',
-}
-
-const readingOrderImage = {
-    uri: 'https://images.ctfassets.net/hef5a6s5axrs/5s04BoMG8Blt6H2mvimgUK/ec13e9499e1d6e280ad8ae44c13e674b/undraw_diet_zdwe.png',
-}
-
-const quickMealsImage = {
-    uri: 'https://images.ctfassets.net/hef5a6s5axrs/1fvToRJqesGgl6dJCFyyJl/0f484ccfe293cca2a0a4ab57d3324c34/undraw_breakfast_rgx5.png',
-}
-
-const randomMealImage = {
-    uri: 'https://images.ctfassets.net/hef5a6s5axrs/5s04BoMG8Blt6H2mvimgUK/ec13e9499e1d6e280ad8ae44c13e674b/undraw_diet_zdwe.png',
-}
+const mealImage = HOME_CARD_IMAGES.meals
+const pantryImage = HOME_CARD_IMAGES.pantry
+const shoppingListImage = HOME_CARD_IMAGES.shoppingList
+const readingOrderImage = HOME_CARD_IMAGES.readingOrder
+const quickMealsImage = HOME_CARD_IMAGES.quickMeals
+const randomMealImage = HOME_CARD_IMAGES.randomMeal
 
 const staticWavePathData =
     'M0,96L40,112C80,128,160,160,240,186.7C320,213,400,235,480,208C560,181,640,107,720,69.3C800,32,880,32,960,74.7C1040,117,1120,203,1200,229.3C1280,256,1360,224,1400,208L1440,192L1440,320L1400,320C1360,320,1280,320,1200,320C1120,320,1040,320,960,320C880,320,800,320,720,320C640,320,560,320,480,320C400,320,320,320,240,320C160,320,80,320,40,320L0,320Z'

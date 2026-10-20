@@ -19,6 +19,7 @@ import { AntDesign, Feather, FontAwesome6 } from '@expo/vector-icons'
 import { useLogin } from '../context/LoginProvider'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
+import { LOGO_IMAGE_SOURCE } from '../constants/images'
 
 import CustomText from '../components/CustomText'
 import ResponsiveLayout from '../components/ResponsiveLayout'
@@ -106,9 +107,7 @@ function LogoTitle() {
     const navigation = useNavigation()
     const { isLoggedIn, hasCompletedOnboarding } = useLogin()
 
-    const image = {
-        uri: 'https://images.ctfassets.net/hef5a6s5axrs/2wzxlzyydJLVr8T7k67cOO/90074490ee64362fe6f0e384d2b3daf8/arkiapuri-removebg-preview.png',
-    }
+    const image = LOGO_IMAGE_SOURCE
 
     const handleLogoPress = () => {
         if (!isLoggedIn && !hasCompletedOnboarding) {
