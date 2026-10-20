@@ -54,10 +54,9 @@ import {
     pantryFetchErrorMessage,
 } from '../utils/pantryFetch'
 import {
-    buildPantryScanAddPayload,
-    normalizePantryScanCommitPayload,
-    uniquePantryItemIds,
-} from '../utils/pantryScanCommit'
+    commitPantryScanItems,
+    rewritePartialScanCandidates,
+} from '../utils/pantryScanCommitSubmit'
 
 const PantryScreen = ({}) => {
     const { isDesktop } = useResponsiveDimensions()
@@ -517,103 +516,50 @@ const PantryScreen = ({}) => {
     }
 
     const handleCommitScanItems = async (payload) => {
-        const { selectedItems, removals, keptRemovals } =
-            normalizePantryScanCommitPayload(payload)
-        if (!selectedItems.length && !removals.length && !keptRemovals.length) {
-            return
-        }
         setScanSubmitting(true)
-        const succeededKeys = []
-        let lastError = null
         try {
-            for (const item of selectedItems) {
-                try {
-                    await addPantryItem(
-                        buildPantryScanAddPayload(item, scanLocation?._id)
-                    )
-                    if (item.key) succeededKeys.push(item.key)
-                } catch (error) {
-                    lastError = error
-                    console.error('Error committing scan item:', error)
-                }
-            }
+            const result = await commitPantryScanItems({
+                payload,
+                locationId: scanLocation?._id,
+            })
 
-            if (removals.length) {
-                for (const itemId of uniquePantryItemIds(removals)) {
-                    try {
-                        await deletePantryItem(itemId)
-                    } catch (error) {
-                        lastError = error
-                        console.error('Error removing scanned pantry item:', error)
-                    }
-                }
-            }
-            if (keptRemovals.length) {
-                await dismissPantryRemovalSuggestions(
-                    keptRemovals.map((item) => item.itemId),
-                    'missing_from_photo'
-                )
-            }
+            if (result.status === 'empty') return
 
-            const addsOk =
-                selectedItems.length === 0 ||
-                succeededKeys.length === selectedItems.length
-
-            if (addsOk) {
+            if (result.status === 'ok') {
                 setScanReviewVisible(false)
                 setScanCandidates([])
                 setScanRemovals([])
                 await fetchPantryItems()
                 const parts = []
-                if (succeededKeys.length) {
-                    parts.push(`${succeededKeys.length} lisätty`)
+                if (result.succeededKeys.length) {
+                    parts.push(`${result.succeededKeys.length} lisätty`)
                 }
-                if (removals.length) {
-                    parts.push(`${removals.length} poistettu`)
+                if (result.removalsCount) {
+                    parts.push(`${result.removalsCount} poistettu`)
                 }
                 Alert.alert(
                     'Onnistui',
-                    parts.length
-                        ? parts.join(', ')
-                        : 'Valinnat tallennettu'
+                    parts.length ? parts.join(', ') : 'Valinnat tallennettu'
                 )
                 return
             }
 
-            if (succeededKeys.length > 0) {
-                const succeededSet = new Set(succeededKeys)
-                const submittedByKey = new Map(
-                    selectedItems.map((item) => [item.key, item])
-                )
+            if (result.succeededKeys.length > 0) {
                 setScanCandidates((prev) =>
-                    prev.flatMap((candidate, index) => {
-                        const key = `${candidate.foodId || candidate.name}-${index}`
-                        if (succeededSet.has(key)) return []
-                        const submitted = submittedByKey.get(key)
-                        if (!submitted) return [candidate]
-                        return [
-                            {
-                                ...candidate,
-                                name: submitted.name,
-                                quantity: submitted.quantity,
-                                unit: submitted.unit,
-                                category: submitted.category,
-                                foodId: submitted.foodId,
-                                calories: submitted.calories,
-                                nutrition: submitted.nutrition,
-                                barcode: submitted.barcode,
-                                imageUrl: submitted.imageUrl,
-                            },
-                        ]
-                    })
+                    rewritePartialScanCandidates(
+                        prev,
+                        result.selectedItems,
+                        result.succeededKeys
+                    )
                 )
                 await fetchPantryItems()
             }
 
+            const lastError = result.lastError
             Alert.alert(
                 'Virhe',
-                succeededKeys.length > 0
-                    ? `${succeededKeys.length} tuotetta lisättiin, mutta kaikkia ei voitu lisätä. Yritä uudelleen jäljellä oleville.`
+                result.succeededKeys.length > 0
+                    ? `${result.succeededKeys.length} tuotetta lisättiin, mutta kaikkia ei voitu lisätä. Yritä uudelleen jäljellä oleville.`
                     : lastError?.response?.data?.message ||
                           lastError?.response?.data?.error ||
                           lastError?.message ||

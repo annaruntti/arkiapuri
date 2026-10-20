@@ -21,26 +21,13 @@ import SearchSection from '../components/SearchSection'
 import StickyListLayout from '../components/StickyListLayout'
 import { getServerUrl } from '../utils/getServerUrl'
 import { useResponsiveDimensions } from '../utils/responsive'
-import { DEFAULT_SERVINGS } from '../utils/mealServings'
-import { processFormCategories } from '../utils/foodCategories'
-import {
-    isPersistedFoodItemId,
-    resolveCatalogFoodId,
-} from '../utils/foodItemId'
-import { getIngredientQuantity } from '../utils/mealFoodItem'
 import { mapDishScanToFormDraft } from '../utils/dishFromPhotoDraft'
-import {
-    clampDatesToMin,
-    toStoredMealDate,
-    toStoredMealDates,
-} from '../utils/mealDates'
 import { SORT_OPTION_IDS, sortListItems } from '../utils/listSort'
+import { getMealRoleText } from '../utils/mealUtils'
 import {
-    getDifficultyEnum,
-    getMealRoleText,
-    parseMealCategories,
-    parseMealRoles,
-} from '../utils/mealUtils'
+    deleteMealOnServer,
+    submitMealUpdate,
+} from '../utils/mealUpdateSubmit'
 import {
     filterMealsBySearch,
     filterMealsByDiet,
@@ -207,92 +194,59 @@ const MealsScreen = ({ route, navigation }) => {
             return
         }
 
-        if (Platform.OS === 'web') {
-            // For web, skipping the Alert and directly make the API call
+        const removeFromList = () =>
+            setMeals((prevMeals) =>
+                prevMeals.filter((meal) => meal._id !== mealId)
+            )
+
+        const runDelete = async () => {
             try {
                 setLoading(true)
-                const response = await axios.delete(
-                    getServerUrl(`/meals/${mealId}`),
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
+                const ok = await deleteMealOnServer(mealId, token)
+                if (ok) {
+                    removeFromList()
+                    if (Platform.OS === 'web') {
+                        alert('Ateria poistettu')
+                    } else {
+                        Alert.alert('Onnistui', 'Ateria poistettu')
                     }
-                )
-
-                if (response.data.success) {
-                    setMeals((prevMeals) =>
-                        prevMeals.filter((meal) => meal._id !== mealId)
-                    )
-                    alert('Ateria poistettu') // window.alert for web
-                } else {
+                } else if (Platform.OS === 'web') {
                     alert('Aterian poistaminen epäonnistui')
+                } else {
+                    Alert.alert('Virhe', 'Aterian poistaminen epäonnistui')
                 }
             } catch (error) {
                 console.error('Error in delete API call:', error)
-                alert(
+                const message =
                     'Aterian poistaminen epäonnistui: ' +
-                        (error.response?.data?.message || error.message)
-                )
+                    (error.response?.data?.message || error.message)
+                if (Platform.OS === 'web') {
+                    alert(message)
+                } else {
+                    Alert.alert('Virhe', message)
+                }
             } finally {
                 setLoading(false)
             }
-        } else {
-            // For mobile, Alert.alert
-            Alert.alert(
-                'Poista ateria',
-                'Haluatko varmasti poistaa tämän aterian?',
-                [
-                    {
-                        text: 'Peruuta',
-                        style: 'cancel',
-                    },
-                    {
-                        text: 'Poista',
-                        style: 'destructive',
-                        onPress: async () => {
-                            try {
-                                setLoading(true)
-                                const response = await axios.delete(
-                                    getServerUrl(`/meals/${mealId}`),
-                                    {
-                                        headers: {
-                                            Authorization: `Bearer ${token}`,
-                                        },
-                                    }
-                                )
-                                if (response.data.success) {
-                                    setMeals((prevMeals) =>
-                                        prevMeals.filter(
-                                            (meal) => meal._id !== mealId
-                                        )
-                                    )
-                                    Alert.alert('Onnistui', 'Ateria poistettu')
-                                } else {
-                                    Alert.alert(
-                                        'Virhe',
-                                        'Aterian poistaminen epäonnistui'
-                                    )
-                                }
-                            } catch (error) {
-                                console.error(
-                                    'Error in delete API call:',
-                                    error
-                                )
-                                Alert.alert(
-                                    'Virhe',
-                                    'Aterian poistaminen epäonnistui: ' +
-                                        (error.response?.data?.message ||
-                                            error.message)
-                                )
-                            } finally {
-                                setLoading(false)
-                            }
-                        },
-                    },
-                ]
-            )
         }
+
+        if (Platform.OS === 'web') {
+            await runDelete()
+            return
+        }
+
+        Alert.alert(
+            'Poista ateria',
+            'Haluatko varmasti poistaa tämän aterian?',
+            [
+                { text: 'Peruuta', style: 'cancel' },
+                {
+                    text: 'Poista',
+                    style: 'destructive',
+                    onPress: runDelete,
+                },
+            ]
+        )
     }
 
     const handleCloseDetail = () => {
@@ -302,103 +256,18 @@ const MealsScreen = ({ route, navigation }) => {
 
     const handleUpdateMeal = async (mealId, updatedMeal) => {
         try {
-            const token = await storage.getItem('userToken')
-            // First, handle each food item
-            const processedFoodItems = await Promise.all(
-                updatedMeal.foodItems.map(async (item) => {
-                    const categoryIds = processFormCategories(item.category)
-
-                    const quantity = getIngredientQuantity(item)
-                    const unit = item.unit || 'kpl'
-                    const catalogPayload = {
-                        name: item.name,
-                        isFood: item.isFood !== false,
-                        unit,
-                        category: categoryIds,
-                        calories: parseInt(item.calories) || 0,
-                        price: parseFloat(item.price) || 0,
-                    }
-                    const catalogId = resolveCatalogFoodId(item)
-
-                    if (isPersistedFoodItemId(catalogId)) {
-                        return { foodId: catalogId, quantity, unit }
-                    }
-
-                    const response = await axios.post(
-                        getServerUrl('/food-items/find-or-create'),
-                        catalogPayload,
-                        {
-                            headers: {
-                                Authorization: `Bearer ${token}`,
-                            },
-                        }
-                    )
-                    return {
-                        foodId: response.data.foodItem._id,
-                        quantity,
-                        unit,
-                    }
-                })
-            )
-
-            const validDifficulties = ['easy', 'medium', 'hard']
-            const difficultyLevel = validDifficulties.includes(
-                updatedMeal.difficultyLevel
-            )
-                ? updatedMeal.difficultyLevel
-                : getDifficultyEnum(updatedMeal.difficultyLevel)
-
-            const cleanedMeal = {
-                name: updatedMeal.name,
-                cookingTime: parseInt(updatedMeal.cookingTime) || 0,
-                difficultyLevel,
-                defaultRoles: parseMealRoles(
-                    updatedMeal.defaultRoles,
-                    ['dinner']
-                ),
-                mealCategory: parseMealCategories(updatedMeal.mealCategory, []),
-                plannedCookingDate: toStoredMealDate(
-                    updatedMeal.plannedCookingDate
-                ),
-                plannedEatingDates: toStoredMealDates(
-                    clampDatesToMin(
-                        updatedMeal.plannedEatingDates || [],
-                        updatedMeal.plannedCookingDate
-                    )
-                ),
-                servings: parseInt(updatedMeal.servings, 10) || DEFAULT_SERVINGS,
-                recipe: updatedMeal.recipe || '',
-                recipeSteps: Array.isArray(updatedMeal.recipeSteps)
-                    ? updatedMeal.recipeSteps
-                    : [],
-                foodItems: processedFoodItems,
-            }
-
-            const response = await axios.put(
-                getServerUrl(`/meals/${mealId}`),
-                cleanedMeal,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                    },
-                }
-            )
-
-            if (response.data.success) {
+            const result = await submitMealUpdate(mealId, updatedMeal)
+            if (result.ok) {
                 setMeals((prevMeals) =>
                     prevMeals.map((meal) =>
-                        meal._id === mealId ? response.data.meal : meal
+                        meal._id === mealId ? result.meal : meal
                     )
                 )
                 return true
             }
 
-            console.error('Failed to update meal:', response.data.message)
-            Alert.alert(
-                'Virhe',
-                response.data.message || 'Aterian tallennus epäonnistui'
-            )
+            console.error('Failed to update meal:', result.message)
+            Alert.alert('Virhe', result.message || 'Aterian tallennus epäonnistui')
             return false
         } catch (error) {
             console.error('Error updating meal:', error)
