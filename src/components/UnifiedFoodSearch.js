@@ -34,7 +34,6 @@ import {
     dedupeFoodItems,
     filterLocalFoodItemsForQuery,
     getFoodSearchTabResults,
-    normalizeItemName,
     normalizeOpenFoodFactsSearchResults,
 } from '../utils/foodSearchDedupe'
 import {
@@ -48,8 +47,12 @@ import {
 import {
     buildGuestFoodItemFromOpenFoodFacts,
     mapOpenFoodFactsToFoodItemFields,
-    shoppingListLineFromMappedPackage,
 } from '../utils/openFoodFactsMapper'
+import {
+    buildOpenFoodFactsAddArgs,
+    buildShoppingListItemFromOffAdd,
+    parseBarcodeReviewConfirm,
+} from '../utils/foodSearchOpenFoodFacts'
 
 const UnifiedFoodSearch = ({
     onSelectItem,
@@ -416,25 +419,14 @@ const UnifiedFoodSearch = ({
             }
 
             // For other locations (shopping-list, pantry), use the API
-            const mapped = mapOpenFoodFactsToFoodItemFields(product)
-            const shoppingLine =
-                location === 'shopping-list'
-                    ? shoppingListLineFromMappedPackage(mapped, {
-                          quantity: overrides.quantity,
-                          unit: overrides.unit,
-                      })
-                    : null
-            const data = await openFoodFactsApi.addToFoodItems(product.barcode, {
-                location,
-                quantity: shoppingLine
-                    ? shoppingLine.quantity
-                    : overrides.quantity || mapped.packageQuantity || 1,
-                unit: shoppingLine
-                    ? shoppingLine.unit
-                    : overrides.unit || mapped.unit || 'kpl',
-                shoppingListId,
-                mealId,
-            })
+            const { mapped, shoppingLine, apiBody } = buildOpenFoodFactsAddArgs(
+                product,
+                { location, overrides, shoppingListId, mealId }
+            )
+            const data = await openFoodFactsApi.addToFoodItems(
+                product.barcode,
+                apiBody
+            )
 
             if (data.success) {
                 // Now add to the specific collection using the same flow as manual addition
@@ -453,55 +445,14 @@ const UnifiedFoodSearch = ({
                 ) {
                     // Parent (ShoppingListDetail) adds the row so it can
                     // detect duplicates and offer to increase quantity.
-                    const line =
-                        shoppingLine ||
-                        shoppingListLineFromMappedPackage(mapped, {
-                            quantity: overrides.quantity,
-                            unit: overrides.unit,
-                        })
-                    const foodPrice = parseFloat(data.foodItem.price) || 0
-                    const overridePrice = Number(overrides.price) || 0
-                    const overrideEstimate =
-                        Number(overrides.priceEstimate) || 0
-                    const priceEstimate =
-                        overrideEstimate > 0
-                            ? overrideEstimate
-                            : overridePrice > 0
-                              ? 0
-                              : foodPrice > 0
-                                ? foodPrice
-                                : 0
-                    const {
-                        _id: foodCatalogId,
-                        ...foodFields
-                    } = data.foodItem || {}
                     emitSelectedItem(
-                        {
-                            ...foodFields,
-                            foodId: foodCatalogId,
-                            name: overrides.name || data.foodItem.name,
-                            quantity: line.quantity,
-                            unit: line.unit,
-                            price: overridePrice,
-                            priceEstimate,
-                            priceEstimateSource:
-                                overrides.priceEstimateSource ||
-                                (priceEstimate > 0 ? 'history' : undefined),
-                            calories:
-                                overrides.calories != null
-                                    ? overrides.calories
-                                    : data.foodItem.calories || 0,
-                            category:
-                                overrides.category ||
-                                data.foodItem.category ||
-                                [],
-                            barcode:
-                                product.barcode ||
-                                data.foodItem.openFoodFactsData?.barcode,
-                            packageQuantity:
-                                line.packageQuantity ||
-                                data.foodItem.packageQuantity,
-                        },
+                        buildShoppingListItemFromOffAdd({
+                            data,
+                            product,
+                            mapped,
+                            shoppingLine,
+                            overrides,
+                        }),
                         { alreadyAdded: false }
                     )
                     setSearchQuery('')
@@ -548,45 +499,20 @@ const UnifiedFoodSearch = ({
     }) => {
         const review = pendingBarcodeReview
         if (!review?.product) return
-        const foundName = normalizeItemName(review.name)
-        const chosenName = normalizeItemName(name)
-        // Estimates are not user prices — keep them as priceEstimate so the
-        // list row still shows the amount after add.
-        const parsedPrice = parseFloat(String(price ?? '').replace(',', '.'))
-        const hasPositivePrice =
-            Number.isFinite(parsedPrice) && parsedPrice > 0
-        const userPrice =
-            priceIsEstimate || !hasPositivePrice ? 0 : parsedPrice
-        const details = {
+        const { details, renamed, manualItem } = parseBarcodeReviewConfirm({
             name,
             quantity,
             unit,
-            price: userPrice,
-            priceEstimate:
-                priceIsEstimate && hasPositivePrice ? parsedPrice : 0,
-            priceEstimateSource:
-                priceIsEstimate && hasPositivePrice ? 'history' : undefined,
+            price,
+            priceIsEstimate,
             calories,
             category,
-        }
+            review,
+        })
         setPendingBarcodeReview(null)
 
-        if (chosenName && chosenName !== foundName) {
-            emitSelectedItem(
-                {
-                    name,
-                    barcode: review.barcode,
-                    quantity,
-                    unit,
-                    price: userPrice,
-                    priceEstimate: details.priceEstimate,
-                    priceEstimateSource: details.priceEstimateSource,
-                    calories: calories || 0,
-                    category: category || [],
-                    source: 'manual',
-                },
-                { alreadyAdded: false }
-            )
+        if (renamed && manualItem) {
+            emitSelectedItem(manualItem, { alreadyAdded: false })
             setSearchQuery('')
             setIsListVisible(false)
             return
