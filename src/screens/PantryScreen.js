@@ -20,6 +20,7 @@ import AddFoodItemPanel from '../components/AddFoodItemPanel'
 import FoodListItemRow from '../components/FoodListItemRow'
 import LoginPromptModal from '../components/LoginPromptModal'
 import useLoginPrompt from '../hooks/useLoginPrompt'
+import usePantryLocations from '../hooks/usePantryLocations'
 import { useLogin } from '../context/LoginProvider'
 import PantryItemDetails from '../components/PantryItemDetails'
 import PantryScanReview from '../components/PantryScanReview'
@@ -44,11 +45,8 @@ import storage from '../utils/storage'
 import { findOrCreateFoodItem } from '../services/foodItemApi'
 import {
     addPantryItem,
-    addPantryLocation,
     deletePantryItem,
-    deletePantryLocation,
     dismissPantryRemovalSuggestions,
-    updatePantryLocation,
 } from '../services/collectionApi'
 import { showConfirm } from '../utils/showAlert'
 import {
@@ -211,6 +209,17 @@ const PantryScreen = ({}) => {
             setLoading(false)
         }
     }
+
+    const {
+        handleAddLocation,
+        handleRenameLocation,
+        handleDeleteLocation,
+    } = usePantryLocations({
+        fetchPantryItems,
+        selectedLocationId,
+        setSelectedLocationId,
+        showLoginPrompt,
+    })
 
     const fetchAiEntitlement = async () => {
         try {
@@ -687,56 +696,6 @@ const PantryScreen = ({}) => {
                 { text: 'Peruuta', style: 'cancel' },
             ]
         )
-    }
-
-    const handleAddLocation = async ({ type, name }) => {
-        try {
-            const token = await storage.getItem('userToken')
-            if (!token) {
-                showLoginPrompt('save')
-                return
-            }
-            await addPantryLocation({ type, name })
-            await fetchPantryItems()
-        } catch (error) {
-            Alert.alert(
-                'Virhe',
-                error.response?.data?.message ||
-                    error.message ||
-                    'Säilytyspaikan lisääminen epäonnistui'
-            )
-        }
-    }
-
-    const handleRenameLocation = async (locationId, updates) => {
-        try {
-            await updatePantryLocation(locationId, updates)
-            await fetchPantryItems()
-        } catch (error) {
-            Alert.alert(
-                'Virhe',
-                error.response?.data?.message ||
-                    error.message ||
-                    'Säilytyspaikan päivitys epäonnistui'
-            )
-        }
-    }
-
-    const handleDeleteLocation = async (locationId) => {
-        try {
-            await deletePantryLocation(locationId)
-            await fetchPantryItems()
-            if (selectedLocationId === String(locationId)) {
-                setSelectedLocationId(ALL_LOCATIONS_ID)
-            }
-        } catch (error) {
-            Alert.alert(
-                'Virhe',
-                error.response?.data?.message ||
-                    error.message ||
-                    'Säilytyspaikan poisto epäonnistui'
-            )
-        }
     }
 
     const handleRemoveSuggestedItems = async (suggestions) => {

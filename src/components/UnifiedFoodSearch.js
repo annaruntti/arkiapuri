@@ -18,10 +18,7 @@ import { getServerUrl } from '../utils/getServerUrl'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 import openFoodFactsApi from '../services/openFoodFactsApi'
-import {
-    addPantryItem,
-    previewShoppingListPrices,
-} from '../services/collectionApi'
+import { addPantryItem } from '../services/collectionApi'
 import CustomText from './CustomText'
 import MealIngredientQuantityModal from './MealIngredientQuantityModal'
 import BarcodeProductReview from './BarcodeProductReview'
@@ -35,9 +32,15 @@ import {
 import { DEFAULT_SERVINGS } from '../utils/mealServings'
 import {
     dedupeFoodItems,
+    filterLocalFoodItemsForQuery,
     getFoodSearchTabResults,
     normalizeItemName,
+    normalizeOpenFoodFactsSearchResults,
 } from '../utils/foodSearchDedupe'
+import {
+    buildShoppingListBarcodeReview,
+    fetchBarcodeReviewPriceEstimate,
+} from '../utils/foodSearchBarcode'
 import {
     FoodSearchLocalRow,
     FoodSearchOpenFoodFactsRow,
@@ -189,46 +192,10 @@ const UnifiedFoodSearch = ({
         renderTimestampRef.current = Date.now()
 
         try {
-            // Search local items with better filtering
-            const queryLower = normalizeItemName(query)
-            const localFiltered = dedupeFoodItems(
-                localFoodItems.filter((item) => {
-                    if (!item.name) return false
-                    return normalizeItemName(item.name).includes(queryLower)
-                })
+            setFilteredLocalItems(
+                filterLocalFoodItemsForQuery(query, localFoodItems)
             )
-                .sort((a, b) => {
-                    // Prioritize exact matches and starts-with matches
-                    const aName = normalizeItemName(a.name)
-                    const bName = normalizeItemName(b.name)
-                    const aExact = aName === queryLower
-                    const bExact = bName === queryLower
-                    const aStarts = aName.startsWith(queryLower)
-                    const bStarts = bName.startsWith(queryLower)
 
-                    if (aExact && !bExact) return -1
-                    if (!aExact && bExact) return 1
-                    if (aStarts && !bStarts) return -1
-                    if (!aStarts && bStarts) return 1
-                    return aName.localeCompare(bName)
-                })
-                .slice(0, 15) // Limit to 15 local items max
-                .map((item) => ({
-                    ...item,
-                    source: item.source || 'local',
-                    // Ensure local items have proper structure
-                    name: item.name || 'Nimetön tuote',
-                    category: Array.isArray(item.category)
-                        ? item.category
-                        : item.category
-                          ? [item.category]
-                          : [],
-                    calories: item.calories || 0,
-                }))
-
-            setFilteredLocalItems(localFiltered)
-
-            // Search Open Food Facts
             if (activeTab === 'all' || activeTab === 'openfoodfacts') {
                 try {
                     const data = await openFoodFactsApi.searchByText(
@@ -238,25 +205,11 @@ const UnifiedFoodSearch = ({
                     )
 
                     if (data.success) {
-                        const processedProducts = dedupeFoodItems(
-                            (data.products || []).map((product) => ({
-                                ...product,
-                                source: 'openfoodfacts',
-                                name: String(product.name || 'Nimetön tuote'),
-                                brands: String(product.brands || ''),
-                                nutrition: product.nutrition || { calories: 0 },
-                                nutritionGrade: String(
-                                    product.nutritionGrade || ''
-                                ),
-                                category: Array.isArray(product.category)
-                                    ? product.category
-                                    : product.category
-                                      ? [product.category]
-                                      : [],
-                            }))
+                        setOpenFoodFactsItems(
+                            normalizeOpenFoodFactsSearchResults(
+                                data.products || []
+                            )
                         )
-
-                        setOpenFoodFactsItems(processedProducts)
                     } else {
                         setOpenFoodFactsItems([])
                     }
@@ -295,82 +248,29 @@ const UnifiedFoodSearch = ({
 
             if (data.success && data.product) {
                 if (location === 'shopping-list') {
-                    const mapped = mapOpenFoodFactsToFoodItemFields(
-                        data.product
-                    )
-                    const reviewBarcode =
-                        data.product.barcode ||
-                        mapped.openFoodFactsData?.barcode ||
+                    const review = buildShoppingListBarcodeReview(
+                        data.product,
                         barcode
-                    const line = shoppingListLineFromMappedPackage(mapped)
-                    setPendingBarcodeReview({
-                        product: data.product,
-                        name: mapped.name,
-                        brands: data.product.brands || '',
-                        barcode: reviewBarcode,
-                        imageUrl:
-                            mapped.image?.url || data.product.imageUrl || null,
-                        quantityLabel:
-                            mapped.openFoodFactsData?.quantityLabel ||
-                            data.product.quantity ||
-                            '',
-                        category: mapped.category || [],
-                        calories: mapped.calories || 0,
-                        nutritionGrade:
-                            mapped.openFoodFactsData?.nutritionGrade || '',
-                        quantity: line.quantity,
-                        unit: line.unit,
-                        packageQuantity: line.packageQuantity,
-                        packageUnit: line.packageUnit,
-                        price: 0,
-                        priceIsEstimate: false,
-                    })
+                    )
+                    setPendingBarcodeReview(review)
                     setSearchQuery('')
                     setIsListVisible(false)
-                    const token = await storage.getItem('userToken')
-                    if (token) {
-                        try {
-                            const [estimated] = await previewShoppingListPrices(
-                                [
-                                    {
-                                        name: mapped.name,
-                                        quantity: line.quantity,
-                                        unit: line.unit,
-                                        category: mapped.category || [],
-                                        isFood: true,
-                                        price: 0,
-                                        barcode: reviewBarcode,
-                                        packageQuantity: line.packageQuantity,
-                                        packageUnit: line.packageUnit,
-                                    },
-                                ]
-                            )
-                            const amount =
-                                parseFloat(estimated?.priceEstimate) || 0
-                            if (amount > 0) {
-                                setPendingBarcodeReview((current) => {
-                                    if (
-                                        !current ||
-                                        current.barcode !== reviewBarcode ||
-                                        current.price
-                                    ) {
-                                        return current
-                                    }
-                                    return {
-                                        ...current,
-                                        price: amount,
-                                        priceIsEstimate: true,
-                                    }
-                                })
+                    const amount = await fetchBarcodeReviewPriceEstimate(review)
+                    if (amount > 0) {
+                        setPendingBarcodeReview((current) => {
+                            if (
+                                !current ||
+                                current.barcode !== review.barcode ||
+                                current.price
+                            ) {
+                                return current
                             }
-                        } catch (estimateError) {
-                            console.warn(
-                                'Scanned product price estimate unavailable:',
-                                estimateError?.response?.status ||
-                                    estimateError?.message ||
-                                    estimateError
-                            )
-                        }
+                            return {
+                                ...current,
+                                price: amount,
+                                priceIsEstimate: true,
+                            }
+                        })
                     }
                 } else {
                     Alert.alert(

@@ -45,6 +45,63 @@ export const dedupeFoodItems = (items = []) => {
     return [...byName.values()]
 }
 
+/** Filter + rank local catalog rows for a typed search query. */
+export const filterLocalFoodItemsForQuery = (query, localFoodItems = []) => {
+    if (!query || String(query).length < 2) return []
+
+    const queryLower = normalizeItemName(query)
+    return dedupeFoodItems(
+        localFoodItems.filter((item) => {
+            if (!item.name) return false
+            return normalizeItemName(item.name).includes(queryLower)
+        })
+    )
+        .sort((a, b) => {
+            const aName = normalizeItemName(a.name)
+            const bName = normalizeItemName(b.name)
+            const aExact = aName === queryLower
+            const bExact = bName === queryLower
+            const aStarts = aName.startsWith(queryLower)
+            const bStarts = bName.startsWith(queryLower)
+
+            if (aExact && !bExact) return -1
+            if (!aExact && bExact) return 1
+            if (aStarts && !bStarts) return -1
+            if (!aStarts && bStarts) return 1
+            return aName.localeCompare(bName)
+        })
+        .slice(0, 15)
+        .map((item) => ({
+            ...item,
+            source: item.source || 'local',
+            name: item.name || 'Nimetön tuote',
+            category: Array.isArray(item.category)
+                ? item.category
+                : item.category
+                  ? [item.category]
+                  : [],
+            calories: item.calories || 0,
+        }))
+}
+
+/** Normalize OFF search API products for the result list. */
+export const normalizeOpenFoodFactsSearchResults = (products = []) =>
+    dedupeFoodItems(
+        products.map((product) => ({
+            ...product,
+            source: 'openfoodfacts',
+            name: String(product.name || 'Nimetön tuote'),
+            brands: String(product.brands || ''),
+            nutrition: product.nutrition || { calories: 0 },
+            nutritionGrade: String(product.nutritionGrade || ''),
+            category: Array.isArray(product.category)
+                ? product.category
+                : product.category
+                  ? [product.category]
+                  : [],
+        }))
+    )
+
 /**
  * Build the visible result list for a search tab.
  * "all" prioritizes local catalog items, then OFF rows without name collisions.
