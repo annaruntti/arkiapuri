@@ -7,9 +7,12 @@ import ResponsiveLayout from '../components/ResponsiveLayout'
 import TableMonth from '../components/TableMonth'
 import TableWeek from '../components/TableWeek'
 import useLoginPrompt from '../hooks/useLoginPrompt'
+import { useResponsiveDimensions } from '../utils/responsive'
 
 const ReadingOrderScreen = ({}) => {
     const { showLoginPrompt, loginPromptProps } = useLoginPrompt()
+    const { isTablet } = useResponsiveDimensions()
+    const isMobile = !isTablet
     const [activeTab, setActiveTab] = useState('week')
 
     const handleRequireLogin = (trigger = 'sync', action = null) => {
@@ -21,6 +24,7 @@ const ReadingOrderScreen = ({}) => {
             key={tabKey}
             style={[
                 styles.tabButton,
+                isMobile && styles.tabButtonMobile,
                 activeTab === tabKey && styles.activeTabButton,
             ]}
             onPress={() => setActiveTab(tabKey)}
@@ -56,7 +60,12 @@ const ReadingOrderScreen = ({}) => {
                 <LoginPromptModal {...loginPromptProps} />
 
                 {/* Tab Navigation is rendered last so it's on top */}
-                <View style={styles.tabContainer}>
+                <View
+                    style={[
+                        styles.tabContainer,
+                        isMobile && styles.tabContainerMobile,
+                    ]}
+                >
                     {renderTabButton('week', 'Viikko')}
                     {renderTabButton('month', 'Kuukausi')}
                 </View>
@@ -82,38 +91,44 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'flex-start',
         backgroundColor: '#fff',
-        borderBottomWidth: 1,
-        borderBottomColor: '#dee2e6',
         zIndex: 10000000,
         elevation: 10000,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
+        alignItems: 'stretch',
+        borderBottomWidth: 0,
+    },
+    tabContainerMobile: {
+        justifyContent: 'center',
     },
     tabButton: {
         paddingVertical: 15,
         paddingHorizontal: 36,
         alignItems: 'center',
-        backgroundColor: '#e9ecef',
+        alignSelf: 'stretch',
+        backgroundColor: '#f7f8fa',
         borderBottomWidth: 3,
-        borderBottomColor: '#e9ecef',
+        borderBottomColor: '#dee2e6',
+    },
+    tabButtonMobile: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     activeTabButton: {
         backgroundColor: '#fff',
         borderBottomColor: '#5844BB',
         zIndex: 1,
-        shadowColor: '#5844BB',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.22,
-        shadowRadius: 4,
         elevation: 3,
-        boxShadow: '0 1px 6px rgba(88, 68, 187, 0.22)',
+        boxShadow: '0 1px 6px rgba(88, 68, 187, 0.28)',
     },
     tabButtonText: {
         fontSize: 16,
         fontWeight: '500',
-        color: '#666',
+        color: '#000',
+        textAlign: 'center',
     },
     activeTabButtonText: {
         color: '#5844BB',
@@ -121,7 +136,7 @@ const styles = StyleSheet.create({
     },
     contentContainer: {
         flex: 1,
-        paddingTop: 53,
+        paddingTop: 52,
         overflow: 'visible',
     },
     weekContent: {
