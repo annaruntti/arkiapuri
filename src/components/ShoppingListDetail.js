@@ -12,10 +12,7 @@ import AddFoodItemPanel from './AddFoodItemPanel'
 import Button from './Button'
 import CategorySectionHeader from './CategorySectionHeader'
 import CustomText from './CustomText'
-import GenericFilter from './GenericFilter'
 import GenericFilterSection from './GenericFilterSection'
-import ListSortControl from './ListSortControl'
-import ListStatsRow from './ListStatsRow'
 import MissingPriceItemsPanel from './MissingPriceItemsPanel'
 import DuplicateShoppingItemModal from './DuplicateShoppingItemModal'
 import PantryItemDetails from './PantryItemDetails'
@@ -23,6 +20,8 @@ import ResponsiveModal from './ResponsiveModal'
 import SearchSection from './SearchSection'
 import StickyListLayout from './StickyListLayout'
 import ShoppingListDetailItemRow from './ShoppingListDetailItemRow'
+import ShoppingListFloatingActions from './ShoppingListFloatingActions'
+import ShoppingListSummaryHeader from './ShoppingListSummaryHeader'
 import { useFilteredItemList } from '../hooks/useFilteredItemList'
 import {
     addShoppingListItems,
@@ -38,11 +37,7 @@ import {
     SHOPPING_SORT_OPTIONS,
     SORT_OPTION_IDS,
 } from '../utils/listSort'
-import {
-    formatEuro,
-    lineAmount,
-    sumLineAmounts,
-} from '../utils/shoppingListPrice'
+import { lineAmount } from '../utils/shoppingListPrice'
 import {
     buildDuplicateMergeUpdates,
     collapseDuplicateShoppingListItems,
@@ -941,108 +936,24 @@ const ShoppingListDetail = ({
                         }
                     >
                         <View style={styles.itemsListContainer}>
-                            {(() => {
-                                const listItems = shoppingList.items || []
-                                const missingPriceItems = listItems.filter(
-                                    (item) => lineAmount(item).missing
-                                )
-                                const showsOpenPrices = listItems.some(
-                                    (item) => lineAmount(item).openPrices
-                                )
-                                const totalPrice = (() => {
-                                    const visibleSum =
-                                        sumLineAmounts(filteredItems)
-                                    const isFiltered =
-                                        searchQuery.length > 0 ||
-                                        selectedCategoryFilters.length > 0
-                                    if (isFiltered) return visibleSum
-                                    return (
-                                        visibleSum ||
-                                        shoppingList.totalEstimatedPrice ||
-                                        0
-                                    )
-                                })()
-                                const hasMissingPrices =
-                                    missingPriceItems.length > 0
-
-                                return (
-                                    <>
-                                        <View style={styles.totalPriceRow}>
-                                            <CustomText
-                                                style={styles.totalPriceText}
-                                            >
-                                                Kokonaishinta:{' '}
-                                                {formatEuro(totalPrice)}
-                                            </CustomText>
-                                            {hasMissingPrices ? (
-                                                <Button
-                                                    title={`Lisää puuttuvia hintoja (${missingPriceItems.length})`}
-                                                    type="SECONDARY"
-                                                    size="small"
-                                                    onPress={() =>
-                                                        setShowMissingPrices(
-                                                            true
-                                                        )
-                                                    }
-                                                    style={
-                                                        styles.missingPricesButton
-                                                    }
-                                                    textStyle={
-                                                        styles.missingPricesButtonText
-                                                    }
-                                                />
-                                            ) : null}
-                                        </View>
-                                        <ListStatsRow
-                                            actions={
-                                                <>
-                                                    <ListSortControl
-                                                        options={
-                                                            SHOPPING_SORT_OPTIONS
-                                                        }
-                                                        value={sortId}
-                                                        onChange={setSortId}
-                                                    />
-                                                    <GenericFilter
-                                                        selectedFilters={
-                                                            selectedCategoryFilters
-                                                        }
-                                                        showFilters={
-                                                            showFilters
-                                                        }
-                                                        onToggleShowFilters={() =>
-                                                            setShowFilters(
-                                                                !showFilters
-                                                            )
-                                                        }
-                                                    />
-                                                </>
-                                            }
-                                        >
-                                            <CustomText>Tuotteita:</CustomText>
-                                            <CustomText>
-                                                {searchQuery.length > 0 ||
-                                                selectedCategoryFilters.length >
-                                                    0
-                                                    ? `${filteredItems.length} / ${shoppingList.items?.length || 0}`
-                                                    : `${shoppingList.items?.length || 0} kpl`}
-                                            </CustomText>
-                                        </ListStatsRow>
-                                        {showsOpenPrices ? (
-                                            <View style={styles.priceNotice}>
-                                                <CustomText
-                                                    style={
-                                                        styles.priceNoticeText
-                                                    }
-                                                >
-                                                    Osa hinta-arvioista on Open
-                                                    Prices -aineistosta (ODbL).
-                                                </CustomText>
-                                            </View>
-                                        ) : null}
-                                    </>
-                                )
-                            })()}
+                            <ShoppingListSummaryHeader
+                                shoppingList={shoppingList}
+                                filteredItems={filteredItems}
+                                searchQuery={searchQuery}
+                                selectedCategoryFilters={
+                                    selectedCategoryFilters
+                                }
+                                sortId={sortId}
+                                sortOptions={SHOPPING_SORT_OPTIONS}
+                                onSortChange={setSortId}
+                                showFilters={showFilters}
+                                onToggleShowFilters={() =>
+                                    setShowFilters(!showFilters)
+                                }
+                                onShowMissingPrices={() =>
+                                    setShowMissingPrices(true)
+                                }
+                            />
                             <GenericFilterSection
                                 selectedFilters={selectedCategoryFilters}
                                 showFilters={showFilters}
@@ -1100,42 +1011,16 @@ const ShoppingListDetail = ({
                         </View>
                     </StickyListLayout>
 
-                    {checkedItems.length > 0 && (
-                        <View
-                            style={[
-                                styles.floatingActionBar,
-                                { pointerEvents: 'box-none' },
-                            ]}
-                        >
-                            <View style={styles.floatingActionBarInner}>
-                                {checkedFoodItemIds.length > 0 && (
-                                    <Button
-                                        title={`Siirrä pentteriin (${checkedFoodItemIds.length})`}
-                                        type="PRIMARY"
-                                        fullWidth
-                                        onPress={() =>
-                                            moveCheckedToPantry(
-                                                checkedFoodItemIds
-                                            )
-                                        }
-                                        style={styles.floatingActionButton}
-                                    />
-                                )}
-                                <Button
-                                    title={`Poista valitut (${checkedItems.length})`}
-                                    type="TERTIARY"
-                                    fullWidth
-                                    onPress={() =>
-                                        deleteCheckedItems(checkedItems)
-                                    }
-                                    style={[
-                                        styles.floatingActionButton,
-                                        styles.floatingTertiaryButton,
-                                    ]}
-                                />
-                            </View>
-                        </View>
-                    )}
+                    <ShoppingListFloatingActions
+                        checkedCount={checkedItems.length}
+                        checkedFoodCount={checkedFoodItemIds.length}
+                        onMoveToPantry={() =>
+                            moveCheckedToPantry(checkedFoodItemIds)
+                        }
+                        onDeleteChecked={() =>
+                            deleteCheckedItems(checkedItems)
+                        }
+                    />
                 </View>
             )}
 
@@ -1337,42 +1222,6 @@ const styles = StyleSheet.create({
         borderColor: '#5844BB',
         whiteSpace: 'nowrap',
     },
-    floatingActionBar: {
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 50,
-        paddingHorizontal: 0,
-        paddingTop: 8,
-        paddingBottom: Platform.OS === 'ios' ? 16 : 10,
-        backgroundColor: 'transparent',
-    },
-    floatingActionBarInner: {
-        width: '100%',
-        gap: 10,
-        alignItems: 'stretch',
-    },
-    floatingActionButton: {
-        width: '100%',
-        alignSelf: 'stretch',
-        marginTop: 0,
-        marginBottom: 0,
-        minHeight: 45,
-        paddingVertical: 7,
-        paddingHorizontal: 14,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.18,
-        shadowRadius: 4,
-        elevation: 4,
-        ...(Platform.OS === 'web' && {
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.18)',
-        }),
-    },
-    floatingTertiaryButton: {
-        backgroundColor: '#fff',
-    },
     scrollContentWithFloatingBar: {
         paddingBottom: 120,
     },
@@ -1448,43 +1297,6 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
 
-    priceNotice: {
-        marginTop: 0,
-        marginBottom: 8,
-        gap: 8,
-    },
-    priceNoticeText: {
-        fontSize: 14,
-        textAlign: 'left',
-        color: '#333',
-    },
-    totalPriceRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 8,
-        width: '100%',
-        marginBottom: 14,
-    },
-    totalPriceText: {
-        flex: 1,
-        flexShrink: 1,
-        minWidth: 0,
-        textAlign: 'left',
-    },
-    missingPricesButton: {
-        flexGrow: 0,
-        flexShrink: 1,
-        maxWidth: '58%',
-        minHeight: 40,
-        paddingVertical: 6,
-        paddingHorizontal: 12,
-        borderRadius: 999,
-    },
-    missingPricesButtonText: {
-        fontSize: 14,
-        fontWeight: '600',
-    },
     loadingOverlay: {
         ...StyleSheet.absoluteFillObject,
         backgroundColor: 'rgba(255,255,255,0.7)',
