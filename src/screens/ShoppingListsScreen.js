@@ -191,6 +191,7 @@ const ShoppingListsScreen = ({ route }) => {
                                         hint="Luo ostoslista ostettaville tuotteille. Voit täydentää listaa myöhemmin."
                                         primaryTitle="Luo uusi ostoslista"
                                         primaryIcon="add"
+                                        compactButton
                                         onPrimaryPress={handleOpenCreateList}
                                     />
                                 </View>

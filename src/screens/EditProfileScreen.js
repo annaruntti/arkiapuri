@@ -15,6 +15,7 @@ import Button from '../components/Button'
 import CustomInput from '../components/CustomInput'
 import CustomRadioButton from '../components/CustomRadioButton'
 import CustomText from '../components/CustomText'
+import ContentContainer from '../components/ContentContainer'
 import ResponsiveLayout from '../components/ResponsiveLayout'
 import { AUTH_FORM_MAX_WIDTH } from '../components/AuthLayout'
 import { useLogin } from '../context/LoginProvider'
@@ -27,14 +28,14 @@ import storage from '../utils/storage'
 const EditProfileScreen = () => {
     const { profile, setProfile, logout } = useLogin()
     const navigation = useNavigation()
-    const { isDesktop, isTablet, responsivePadding } = useResponsiveDimensions()
+    const { isDesktop, isTablet } = useResponsiveDimensions()
     const [loading, setLoading] = useState(false)
     const [showPasswordFields, setShowPasswordFields] = useState(false)
     const [showNutrition, setShowNutrition] = useState(
         getShowNutrition(profile)
     )
 
-    const { control, handleSubmit, watch, reset } = useForm({
+    const { control, handleSubmit, watch, reset, getValues } = useForm({
         defaultValues: {
             username: profile?.username || '',
             currentPassword: '',
@@ -44,6 +45,21 @@ const EditProfileScreen = () => {
     })
 
     const newPassword = watch('newPassword')
+
+    const onCancelPress = () => {
+        if (showPasswordFields) {
+            const values = getValues()
+            setShowPasswordFields(false)
+            reset({
+                ...values,
+                currentPassword: '',
+                newPassword: '',
+                confirmPassword: '',
+            })
+            return
+        }
+        navigation.navigate('Omat tiedot')
+    }
 
     const onSavePressed = async (data) => {
         try {
@@ -250,13 +266,11 @@ const EditProfileScreen = () => {
         styles.container,
         isTablet && styles.tabletContainer,
         isDesktop && styles.desktopContainer,
-        isDesktop && { paddingHorizontal: responsivePadding },
     ]
 
     const getContentStyle = () => [
         styles.content,
-        isDesktop && styles.desktopContent,
-        isTablet && styles.tabletContent,
+        isTablet && styles.wideContent,
     ]
 
     return (
@@ -269,6 +283,7 @@ const EditProfileScreen = () => {
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
+                <ContentContainer>
                 <View style={getContainerStyle()}>
                     <View style={getContentStyle()}>
                         <View
@@ -277,19 +292,27 @@ const EditProfileScreen = () => {
                                 isDesktop && styles.desktopProfileCard,
                             ]}
                         >
-                        <View style={styles.header}>
+                        <View
+                            style={[
+                                styles.header,
+                                isTablet && styles.wideHeader,
+                            ]}
+                        >
                             <CustomText
                                 style={[
                                     styles.title,
                                     isDesktop && styles.desktopTitle,
+                                    isTablet && styles.wideTitle,
                                 ]}
                             >
                                 Muokkaa tietoja
                             </CustomText>
                         </View>
 
+                        <View style={styles.formColumn}>
                         <View style={styles.form}>
-                            {/* Username */}
+                            <View style={styles.fieldRow}>
+                            <View style={styles.fieldCell}>
                             <CustomInput
                                 label="Käyttäjänimi"
                                 name="username"
@@ -307,9 +330,9 @@ const EditProfileScreen = () => {
                                     },
                                 }}
                             />
+                            </View>
 
-                            {/* Email (read-only) */}
-                            <View style={styles.fieldContainer}>
+                            <View style={[styles.fieldCell, styles.fieldContainer]}>
                                 <CustomText style={styles.label}>
                                     Sähköpostiosoite
                                 </CustomText>
@@ -322,8 +345,15 @@ const EditProfileScreen = () => {
                                     </CustomText>
                                 </View>
                             </View>
+                            </View>
 
-                            <View style={styles.fieldContainer}>
+                            <View
+                                style={[
+                                    styles.fieldContainer,
+                                    !showPasswordFields &&
+                                        styles.preferenceSection,
+                                ]}
+                            >
                                 <CustomText style={styles.label}>
                                     Näyttöasetukset
                                 </CustomText>
@@ -331,6 +361,7 @@ const EditProfileScreen = () => {
                                     Näytetäänkö elintarvikkeiden ja aterioiden
                                     kalorit sekä ravintoarvot?
                                 </CustomText>
+                                <View style={styles.preferenceRow}>
                                 <TouchableOpacity
                                     style={[
                                         styles.preferenceOption,
@@ -373,24 +404,12 @@ const EditProfileScreen = () => {
                                         Ei, piilota ravintoarvot
                                     </CustomText>
                                 </TouchableOpacity>
+                                </View>
                             </View>
-
-                            <Button
-                                title={
-                                    showPasswordFields
-                                        ? 'Sulje salasanan vaihto'
-                                        : 'Vaihda salasana'
-                                }
-                                type="SECONDARY"
-                                fullWidth
-                                style={styles.actionButton}
-                                onPress={() =>
-                                    setShowPasswordFields(!showPasswordFields)
-                                }
-                            />
 
                             {showPasswordFields && (
                                 <View style={styles.passwordSection}>
+                                    <View style={styles.fieldCell}>
                                     <CustomInput
                                         label="Nykyinen salasana"
                                         name="currentPassword"
@@ -403,7 +422,9 @@ const EditProfileScreen = () => {
                                                 : false,
                                         }}
                                     />
+                                    </View>
 
+                                    <View style={styles.fieldCell}>
                                     <CustomInput
                                         label="Uusi salasana"
                                         name="newPassword"
@@ -417,7 +438,9 @@ const EditProfileScreen = () => {
                                             ...passwordLengthRules,
                                         }}
                                     />
+                                    </View>
 
+                                    <View style={styles.fieldCell}>
                                     <CustomInput
                                         label="Vahvista uusi salasana"
                                         name="confirmPassword"
@@ -433,6 +456,7 @@ const EditProfileScreen = () => {
                                                 'Salasanat eivät täsmää',
                                         }}
                                     />
+                                    </View>
                                 </View>
                             )}
                         </View>
@@ -445,23 +469,42 @@ const EditProfileScreen = () => {
                                         : 'Tallenna muutokset'
                                 }
                                 type="PRIMARY"
-                                fullWidth
-                                style={styles.actionButton}
+                                style={styles.compactButton}
                                 onPress={handleSubmit(onSavePressed)}
                                 disabled={loading}
                             />
+                            {!showPasswordFields ? (
+                                <Button
+                                    title="Vaihda salasana"
+                                    type="SECONDARY"
+                                    style={styles.compactButton}
+                                    onPress={() => setShowPasswordFields(true)}
+                                />
+                            ) : null}
                             <Button
                                 title="Peruuta"
                                 type="TERTIARY"
-                                fullWidth
-                                style={[styles.actionButton, styles.cancelButton]}
-                                onPress={() => navigation.goBack()}
+                                style={[
+                                    styles.compactButton,
+                                    styles.cancelButton,
+                                ]}
+                                onPress={onCancelPress}
                                 disabled={loading}
                             />
                         </View>
                         </View>
+                        </View>
 
-                        <View style={styles.accountSection}>
+                        <View
+                            style={[
+                                styles.accountSection,
+                                isDesktop && styles.desktopAccountSection,
+                                isTablet &&
+                                    !isDesktop &&
+                                    styles.tabletAccountSection,
+                            ]}
+                        >
+                            <View style={styles.dangerRow}>
                             <View style={styles.accountSectionHeader}>
                                 <CustomText
                                     style={[
@@ -478,8 +521,7 @@ const EditProfileScreen = () => {
                             <Button
                                 title="Poista tili pysyvästi"
                                 type="TERTIARY"
-                                fullWidth
-                                style={styles.actionButton}
+                                style={styles.compactButton}
                                 onPress={onDeleteAccountPressed}
                                 disabled={loading}
                                 icon={
@@ -490,9 +532,11 @@ const EditProfileScreen = () => {
                                     />
                                 }
                             />
+                            </View>
                         </View>
                     </View>
                 </View>
+                </ContentContainer>
             </ScrollView>
         </ResponsiveLayout>
     )
@@ -518,8 +562,9 @@ const styles = StyleSheet.create({
         backgroundColor: '#f9fafb',
     },
     desktopContainer: {
-        paddingHorizontal: 24,
-        paddingVertical: 48,
+        paddingHorizontal: 0,
+        paddingTop: 0,
+        paddingBottom: 48,
         alignItems: 'flex-start',
         justifyContent: 'flex-start',
         backgroundColor: '#f9fafb',
@@ -529,10 +574,10 @@ const styles = StyleSheet.create({
         }),
     },
     tabletContainer: {
-        paddingHorizontal: 24,
+        paddingHorizontal: 0,
         paddingVertical: 48,
-        alignItems: 'center',
-        justifyContent: 'center',
+        alignItems: 'flex-start',
+        justifyContent: 'flex-start',
         backgroundColor: '#f9fafb',
         width: '100%',
     },
@@ -541,17 +586,21 @@ const styles = StyleSheet.create({
         maxWidth: AUTH_FORM_MAX_WIDTH,
         alignItems: 'center',
     },
-    desktopContent: {
-        maxWidth: AUTH_FORM_MAX_WIDTH,
+    wideContent: {
+        maxWidth: '100%',
         width: '100%',
-        alignItems: 'center',
+        alignItems: 'stretch',
         padding: 0,
     },
-    tabletContent: {
-        maxWidth: AUTH_FORM_MAX_WIDTH,
+    wideHeader: {
+        alignItems: 'flex-start',
+        paddingTop: 0,
+    },
+    wideTitle: {
+        textAlign: 'left',
+    },
+    formColumn: {
         width: '100%',
-        alignItems: 'center',
-        padding: 0,
     },
     profileCard: {
         width: '100%',
@@ -586,8 +635,21 @@ const styles = StyleSheet.create({
         gap: 10,
         marginBottom: 12,
     },
+    fieldRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 12,
+        width: '100%',
+        alignItems: 'flex-start',
+    },
+    fieldCell: {
+        flexGrow: 1,
+        flexShrink: 1,
+        flexBasis: 0,
+        minWidth: 180,
+    },
     fieldContainer: {
-        marginBottom: 16,
+        marginBottom: 0,
     },
     label: {
         fontSize: 14,
@@ -611,9 +673,21 @@ const styles = StyleSheet.create({
         color: '#9ca3af',
         marginTop: 4,
     },
+    preferenceSection: {
+        marginBottom: 18,
+    },
+    preferenceRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 10,
+        marginTop: 8,
+    },
     preferenceOption: {
         flexDirection: 'row',
         alignItems: 'center',
+        flexGrow: 1,
+        flexBasis: 220,
+        minWidth: 200,
         gap: 12,
         borderWidth: 1,
         borderColor: '#e5e7eb',
@@ -621,7 +695,6 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         paddingHorizontal: 14,
         paddingVertical: 12,
-        marginTop: 8,
     },
     preferenceOptionSelected: {
         borderColor: '#5844BB',
@@ -633,20 +706,25 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     passwordSection: {
-        gap: 5,
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 12,
+        width: '100%',
         paddingTop: 8,
     },
     buttonSection: {
         width: '100%',
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'flex-start',
+        alignItems: 'center',
         gap: 12,
-        alignItems: 'stretch',
     },
-    actionButton: {
-        width: '100%',
-        alignSelf: 'stretch',
-        minHeight: 45,
-        paddingHorizontal: 14,
-        paddingVertical: 7,
+    compactButton: {
+        width: 'auto',
+        alignSelf: 'flex-start',
+        flexGrow: 0,
+        flexShrink: 0,
     },
     cancelButton: {
         backgroundColor: '#ffffff',
@@ -654,8 +732,21 @@ const styles = StyleSheet.create({
     accountSection: {
         width: '100%',
     },
+    desktopAccountSection: {
+        paddingHorizontal: 32,
+    },
+    tabletAccountSection: {
+        paddingHorizontal: 16,
+    },
+    dangerRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        gap: 16,
+    },
     accountSectionHeader: {
-        marginBottom: 16,
+        marginBottom: 0,
     },
     accountSectionTitle: {
         fontSize: 16,

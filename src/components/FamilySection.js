@@ -1,6 +1,5 @@
 import { StyleSheet, View } from 'react-native'
 import { useResponsiveDimensions } from '../utils/responsive'
-import Button from './Button'
 import CustomText from './CustomText'
 import ListItem from './ListItem'
 import { getProfileImageSource } from '../utils/profileImage'
@@ -24,7 +23,7 @@ const getRefId = (value) => {
     return ''
 }
 
-const FamilySection = ({ household, onManagePress }) => {
+const FamilySection = ({ household }) => {
     const { isDesktop } = useResponsiveDimensions()
     const members = household?.members || []
 
@@ -65,14 +64,6 @@ const FamilySection = ({ household, onManagePress }) => {
                         />
                     ))
                 )}
-                <Button
-                    title="Hallinnoi perhettä"
-                    type="SECONDARY"
-                    fullWidth
-                    style={styles.manageFamilyButton}
-                    textStyle={styles.buttonText}
-                    onPress={onManagePress}
-                />
             </View>
         </View>
     )
@@ -87,6 +78,7 @@ const styles = StyleSheet.create({
         color: '#6b7280',
         fontSize: 15,
         marginBottom: 8,
+        textAlign: 'left',
     },
     familyHeader: {
         marginBottom: 12,
@@ -95,6 +87,7 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '700',
         color: '#1f2937',
+        textAlign: 'left',
     },
     desktopFamilyTitle: {
         fontSize: 20,
@@ -104,19 +97,6 @@ const styles = StyleSheet.create({
     },
     memberItem: {
         backgroundColor: '#ffffff',
-    },
-    manageFamilyButton: {
-        width: '100%',
-        alignSelf: 'stretch',
-        minHeight: 45,
-        marginTop: 12,
-        paddingHorizontal: 14,
-        paddingVertical: 7,
-    },
-    buttonText: {
-        color: '#000000',
-        fontWeight: 'bold',
-        textAlign: 'center',
     },
 })
 

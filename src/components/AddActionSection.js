@@ -14,8 +14,14 @@ const AddActionSection = ({
     onSecondaryPress,
     primaryIcon = 'photo-camera',
     secondaryIcon = 'add',
+    compactButton = false,
 }) => {
     const { isDesktop } = useResponsiveDimensions()
+    const buttonStyle = compactButton
+        ? styles.compactButton
+        : isDesktop
+          ? styles.desktopButton
+          : undefined
 
     return (
         <PrimaryActionFade
@@ -26,15 +32,19 @@ const AddActionSection = ({
             <View
                 style={[
                     styles.buttons,
-                    isDesktop ? styles.buttonsRow : styles.buttonsStack,
+                    compactButton
+                        ? styles.buttonsStart
+                        : isDesktop
+                          ? styles.buttonsRow
+                          : styles.buttonsStack,
                 ]}
             >
                 <Button
                     title={primaryTitle}
                     type="PRIMARY"
-                    fullWidth={!isDesktop}
+                    fullWidth={!compactButton && !isDesktop}
                     onPress={onPrimaryPress}
-                    style={isDesktop ? styles.desktopButton : undefined}
+                    style={buttonStyle}
                     icon={
                         <MaterialIcons
                             name={primaryIcon}
@@ -47,9 +57,9 @@ const AddActionSection = ({
                     <Button
                         title={secondaryTitle}
                         type="SECONDARY"
-                        fullWidth={!isDesktop}
+                        fullWidth={!compactButton && !isDesktop}
                         onPress={onSecondaryPress}
-                        style={isDesktop ? styles.desktopButton : undefined}
+                        style={buttonStyle}
                         icon={
                             <MaterialIcons
                                 name={secondaryIcon}
@@ -83,13 +93,13 @@ const styles = StyleSheet.create({
         fontSize: 17,
         fontWeight: '700',
         color: '#2D2463',
-        marginBottom: 6,
+        marginBottom: 12,
     },
     hint: {
         fontSize: 14,
         lineHeight: 20,
         color: '#4B445C',
-        marginBottom: 12,
+        marginBottom: 24,
     },
     buttons: {
         width: '100%',
@@ -103,6 +113,17 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         flexWrap: 'wrap',
+    },
+    buttonsStart: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'flex-start',
+        alignItems: 'center',
+    },
+    compactButton: {
+        alignSelf: 'flex-start',
+        flexGrow: 0,
+        flexShrink: 0,
     },
     desktopButton: {
         flexGrow: 1,

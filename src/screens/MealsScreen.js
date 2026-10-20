@@ -403,6 +403,7 @@ const MealsScreen = ({ route, navigation }) => {
                             onPrimaryPress={handleOpenDishScan}
                             secondaryTitle="Lisää manuaalisesti"
                             onSecondaryPress={handleOpenAddMeal}
+                            compactButton
                         />
                     </View>
                 }

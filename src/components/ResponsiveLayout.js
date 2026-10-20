@@ -43,7 +43,18 @@ const ResponsiveLayout = ({
         )
     }
 
-    return <View style={styles.mobileContainer}>{children}</View>
+    return (
+        <View
+            style={[
+                styles.mobileContainer,
+                contentBackgroundColor && {
+                    backgroundColor: contentBackgroundColor,
+                },
+            ]}
+        >
+            {children}
+        </View>
+    )
 }
 
 const styles = StyleSheet.create({

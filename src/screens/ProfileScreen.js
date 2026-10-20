@@ -204,10 +204,11 @@ const ProfileScreen = () => {
                                     <View
                                         style={[
                                             styles.profileImageContainer,
+                                            isTablet &&
+                                                !isDesktop &&
+                                                styles.tabletProfileImage,
                                             isDesktop &&
                                                 styles.desktopProfileImage,
-                                            isTablet &&
-                                                styles.tabletProfileImage,
                                         ]}
                                     >
                                         <Image
@@ -242,16 +243,16 @@ const ProfileScreen = () => {
                                 <View
                                     style={[
                                         styles.lastActions,
-                                        isDesktop && styles.desktopGuestActions,
+                                        isTablet && styles.compactActions,
                                     ]}
                                 >
                                     <Button
                                         title="Kirjaudu sisään"
-                                        fullWidth={!isDesktop}
+                                        fullWidth={!isTablet}
                                         style={[
                                             styles.lastActionButton,
-                                            isDesktop &&
-                                                styles.desktopGuestButton,
+                                            isTablet &&
+                                                styles.compactActionButton,
                                         ]}
                                         onPress={() =>
                                             openAuthScreen(
@@ -263,11 +264,11 @@ const ProfileScreen = () => {
                                     <Button
                                         title="Luo käyttäjätunnus"
                                         type="TERTIARY"
-                                        fullWidth={!isDesktop}
+                                        fullWidth={!isTablet}
                                         style={[
                                             styles.lastActionButton,
-                                            isDesktop &&
-                                                styles.desktopGuestButton,
+                                            isTablet &&
+                                                styles.compactActionButton,
                                         ]}
                                         onPress={() =>
                                             openAuthScreen(
@@ -291,10 +292,11 @@ const ProfileScreen = () => {
                                             <View
                                                 style={[
                                                     styles.profileImageContainer,
+                                                    isTablet &&
+                                                        !isDesktop &&
+                                                        styles.tabletProfileImage,
                                                     isDesktop &&
                                                         styles.desktopProfileImage,
-                                                    isTablet &&
-                                                        styles.tabletProfileImage,
                                                 ]}
                                             >
                                                 <Image
@@ -336,41 +338,63 @@ const ProfileScreen = () => {
                                         </View>
                                     </View>
 
-                                    <View style={styles.lastActions}>
+                                    <View
+                                        style={[
+                                            styles.lastActions,
+                                            styles.compactActions,
+                                        ]}
+                                    >
                                         <Button
                                             title="Muokkaa tietoja"
-                                            fullWidth
-                                            style={styles.lastActionButton}
+                                            style={[
+                                                styles.lastActionButton,
+                                                styles.compactActionButton,
+                                            ]}
                                             onPress={() =>
                                                 navigation.navigate(
                                                     'Muokkaa tietoja'
                                                 )
                                             }
                                         />
+                                        <Button
+                                            title="Kirjaudu ulos"
+                                            type="TERTIARY"
+                                            style={[
+                                                styles.lastActionButton,
+                                                styles.compactActionButton,
+                                            ]}
+                                            onPress={handleLogout}
+                                        />
                                     </View>
                                 </View>
 
                                 <View style={styles.actions}>
                                     {!loadingHousehold ? (
-                                        <FamilySection
-                                            household={household}
-                                            onManagePress={() =>
-                                                navigation.navigate(
-                                                    'Hallinnoi perhettä'
-                                                )
-                                            }
-                                        />
+                                        <FamilySection household={household} />
                                     ) : null}
 
-                                    <View style={styles.lastActions}>
-                                        <Button
-                                            title="Kirjaudu ulos"
-                                            type="TERTIARY"
-                                            fullWidth
-                                            style={styles.lastActionButton}
-                                            onPress={handleLogout}
-                                        />
-                                    </View>
+                                    {!loadingHousehold ? (
+                                        <View
+                                            style={[
+                                                styles.lastActions,
+                                                styles.compactActions,
+                                            ]}
+                                        >
+                                            <Button
+                                                title="Hallinnoi perhettä"
+                                                type="SECONDARY"
+                                                style={[
+                                                    styles.lastActionButton,
+                                                    styles.compactActionButton,
+                                                ]}
+                                                onPress={() =>
+                                                    navigation.navigate(
+                                                        'Hallinnoi perhettä'
+                                                    )
+                                                }
+                                            />
+                                        </View>
+                                    ) : null}
                                 </View>
                             </>
                         )}
@@ -447,7 +471,8 @@ const styles = StyleSheet.create({
         paddingVertical: 28,
     },
     header: {
-        alignItems: 'center',
+        flexDirection: 'row',
+        alignItems: 'stretch',
         marginBottom: 16,
         width: '100%',
     },
@@ -456,7 +481,9 @@ const styles = StyleSheet.create({
         height: 120,
         borderRadius: 60,
         overflow: 'hidden',
-        marginBottom: 24,
+        marginRight: 16,
+        marginBottom: 10,
+        flexShrink: 0,
         borderWidth: 3,
         borderColor: '#5844BB',
         position: 'relative',
@@ -473,14 +500,14 @@ const styles = StyleSheet.create({
         height: 140,
         borderRadius: 70,
         borderWidth: 4,
-        marginBottom: 28,
+        marginRight: 20,
     },
     tabletProfileImage: {
         width: 130,
         height: 130,
         borderRadius: 65,
         borderWidth: 3.5,
-        marginBottom: 28,
+        marginRight: 18,
     },
     profileImage: {
         width: '100%',
@@ -501,14 +528,19 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     userInfo: {
-        alignItems: 'center',
-        width: '100%',
+        alignItems: 'flex-start',
+        alignSelf: 'stretch',
+        justifyContent: 'center',
+        flex: 1,
+        minWidth: 0,
+        marginBottom: 10,
+        paddingLeft: 8,
     },
     username: {
         fontSize: 24,
         fontWeight: '700',
         color: '#1f2937',
-        textAlign: 'center',
+        textAlign: 'left',
         marginBottom: 8,
     },
     desktopUsername: {
@@ -518,7 +550,7 @@ const styles = StyleSheet.create({
     email: {
         fontSize: 15,
         color: '#6b7280',
-        textAlign: 'center',
+        textAlign: 'left',
         fontWeight: '400',
         lineHeight: 22,
     },
@@ -527,7 +559,7 @@ const styles = StyleSheet.create({
     },
     actions: {
         width: '100%',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         gap: 12,
     },
     lastActions: {
@@ -543,17 +575,17 @@ const styles = StyleSheet.create({
         paddingHorizontal: 14,
         paddingVertical: 7,
     },
-    desktopGuestActions: {
+    compactActions: {
         flexDirection: 'row',
-        alignItems: 'stretch',
+        flexWrap: 'wrap',
+        justifyContent: 'flex-start',
+        alignItems: 'center',
         gap: 12,
     },
-    desktopGuestButton: {
-        flex: 1,
+    compactActionButton: {
         width: 'auto',
-        alignSelf: 'stretch',
-        minHeight: 40,
-        minWidth: 0,
-        paddingVertical: 7,
+        alignSelf: 'flex-start',
+        flexGrow: 0,
+        flexShrink: 0,
     },
 })

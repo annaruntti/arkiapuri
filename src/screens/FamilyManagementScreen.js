@@ -5,6 +5,7 @@ import React, { useState } from 'react'
 import { Alert, ScrollView, StyleSheet, TextInput, View } from 'react-native'
 import { AUTH_FORM_MAX_WIDTH } from '../components/AuthLayout'
 import Button from '../components/Button'
+import ContentContainer from '../components/ContentContainer'
 import CustomText from '../components/CustomText'
 import ListItem from '../components/ListItem'
 import ResponsiveLayout from '../components/ResponsiveLayout'
@@ -47,7 +48,7 @@ const getRoleLabel = (role) => {
 
 const FamilyManagementScreen = ({ navigation }) => {
     const { profile } = useLogin()
-    const { isDesktop, isTablet, responsivePadding } = useResponsiveDimensions()
+    const { isDesktop, isTablet } = useResponsiveDimensions()
     const [household, setHousehold] = useState(null)
     const [loading, setLoading] = useState(true)
     const [inviteEmail, setInviteEmail] = useState('')
@@ -280,12 +281,12 @@ const FamilyManagementScreen = ({ navigation }) => {
         styles.container,
         isTablet && styles.tabletContainer,
         isDesktop && styles.desktopContainer,
-        isDesktop && { paddingHorizontal: responsivePadding },
     ]
 
     const getContentStyle = () => [
         styles.content,
-        (isDesktop || isTablet) && styles.wideContent,
+        isTablet && !isDesktop && styles.wideContent,
+        isDesktop && styles.desktopContent,
     ]
 
     const inviteModal = (
@@ -346,31 +347,77 @@ const FamilyManagementScreen = ({ navigation }) => {
                     showsVerticalScrollIndicator={false}
                 >
                     <View style={getContainerStyle()}>
+                        <ContentContainer maxWidth={760}>
                         <View style={getContentStyle()}>
-                            <View style={styles.emptyState}>
-                                <MaterialIcons
-                                    name="people-outline"
-                                    size={80}
-                                    color="#5844BB"
-                                />
-                                <CustomText style={styles.emptyTitle}>
-                                    Et ole vielä osa perhettä
-                                </CustomText>
-                                <CustomText style={styles.emptySubtitle}>
-                                    Luo oma perhe tai liity olemassa olevaan
-                                    perheeseen kutsulinkin kautta
-                                </CustomText>
-                                <View style={authFormStyles.buttonSection}>
+                            <View
+                                style={[
+                                    isDesktop && styles.profileCard,
+                                    isDesktop && styles.desktopProfileCard,
+                                ]}
+                            >
+                            <View
+                                style={[
+                                    styles.emptyState,
+                                    isDesktop && styles.desktopEmptyState,
+                                ]}
+                            >
+                                <View style={styles.emptyHeader}>
+                                    <View style={styles.emptyIconCircle}>
+                                        <MaterialIcons
+                                            name="people-outline"
+                                            size={56}
+                                            color="#5844BB"
+                                        />
+                                    </View>
+                                    <View style={styles.emptyText}>
+                                        <CustomText
+                                            style={[
+                                                styles.emptyTitle,
+                                                isDesktop &&
+                                                    styles.desktopEmptyTitle,
+                                            ]}
+                                        >
+                                            Et ole vielä osa perhettä
+                                        </CustomText>
+                                        <CustomText
+                                            style={[
+                                                styles.emptySubtitle,
+                                                isDesktop &&
+                                                    styles.desktopEmptySubtitle,
+                                            ]}
+                                        >
+                                            Luo oma perhe tai liity
+                                            olemassa olevaan perheeseen
+                                            kutsulinkin kautta
+                                        </CustomText>
+                                    </View>
+                                </View>
+                                <View
+                                    style={[
+                                        authFormStyles.buttonSection,
+                                        isDesktop && styles.desktopActions,
+                                    ]}
+                                >
                                     <Button
                                         title="Luo perhe"
                                         onPress={handleCreateHousehold}
-                                        fullWidth
-                                        style={authFormStyles.primaryButton}
-                                        textStyle={authFormStyles.buttonText}
+                                        fullWidth={!isDesktop}
+                                        style={
+                                            isDesktop
+                                                ? styles.compactButton
+                                                : authFormStyles.primaryButton
+                                        }
+                                        textStyle={
+                                            isDesktop
+                                                ? undefined
+                                                : authFormStyles.buttonText
+                                        }
                                     />
                                 </View>
                             </View>
+                            </View>
                         </View>
+                        </ContentContainer>
                     </View>
                 </ScrollView>
             </ResponsiveLayout>
@@ -388,8 +435,20 @@ const FamilyManagementScreen = ({ navigation }) => {
                 showsVerticalScrollIndicator={false}
             >
                 <View style={getContainerStyle()}>
+                    <ContentContainer maxWidth={760}>
                     <View style={getContentStyle()}>
-                        <View style={styles.header}>
+                        <View
+                            style={[
+                                isDesktop && styles.profileCard,
+                                isDesktop && styles.desktopProfileCard,
+                            ]}
+                        >
+                        <View
+                            style={[
+                                styles.header,
+                                isDesktop && styles.desktopHeader,
+                            ]}
+                        >
                             <CustomText
                                 style={[
                                     styles.title,
@@ -408,6 +467,7 @@ const FamilyManagementScreen = ({ navigation }) => {
                                     Omistaja
                                 </CustomText>
                             )}
+                        </View>
                         </View>
 
                         <View style={styles.section}>
@@ -471,14 +531,30 @@ const FamilyManagementScreen = ({ navigation }) => {
                                 )
                             })}
                             {canManageMembers && (
+                                <View
+                                    style={
+                                        isDesktop
+                                            ? styles.desktopActions
+                                            : undefined
+                                    }
+                                >
                                 <Button
                                     title="Kutsu perheenjäsen"
                                     type="TERTIARY"
-                                    fullWidth
+                                    fullWidth={!isDesktop}
                                     onPress={() => setShowInviteModal(true)}
-                                    style={authFormStyles.tertiaryButton}
-                                    textStyle={authFormStyles.buttonText}
+                                    style={
+                                        isDesktop
+                                            ? styles.compactButton
+                                            : authFormStyles.tertiaryButton
+                                    }
+                                    textStyle={
+                                        isDesktop
+                                            ? undefined
+                                            : authFormStyles.buttonText
+                                    }
                                 />
+                                </View>
                             )}
                         </View>
 
@@ -512,18 +588,32 @@ const FamilyManagementScreen = ({ navigation }) => {
                         )}
 
                         {!isOwner && (
-                            <View style={authFormStyles.buttonSection}>
+                            <View
+                                style={[
+                                    authFormStyles.buttonSection,
+                                    isDesktop && styles.desktopActions,
+                                ]}
+                            >
                                 <Button
                                     title="Poistu perheestä"
                                     type="TERTIARY"
-                                    fullWidth
+                                    fullWidth={!isDesktop}
                                     onPress={handleLeaveHousehold}
-                                    style={authFormStyles.tertiaryButton}
-                                    textStyle={authFormStyles.buttonText}
+                                    style={
+                                        isDesktop
+                                            ? styles.compactButton
+                                            : authFormStyles.tertiaryButton
+                                    }
+                                    textStyle={
+                                        isDesktop
+                                            ? undefined
+                                            : authFormStyles.buttonText
+                                    }
                                 />
                             </View>
                         )}
                     </View>
+                    </ContentContainer>
                 </View>
             </ScrollView>
             {inviteModal}
@@ -549,7 +639,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#f9fafb',
     },
     desktopContainer: {
-        paddingHorizontal: 24,
+        paddingHorizontal: 0,
         paddingTop: 32,
         paddingBottom: 48,
         alignItems: 'flex-start',
@@ -577,6 +667,48 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 0,
     },
+    desktopContent: {
+        maxWidth: '100%',
+        width: '100%',
+        alignItems: 'stretch',
+        padding: 0,
+    },
+    profileCard: {
+        width: '100%',
+        backgroundColor: '#F4F0FF',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#D8CEF8',
+        padding: 16,
+        marginBottom: 20,
+    },
+    desktopProfileCard: {
+        paddingHorizontal: 32,
+        paddingVertical: 28,
+    },
+    desktopHeader: {
+        alignItems: 'flex-start',
+        marginBottom: 0,
+    },
+    desktopEmptyState: {
+        alignItems: 'flex-start',
+    },
+    desktopEmptyTitle: {
+        textAlign: 'left',
+    },
+    desktopEmptySubtitle: {
+        textAlign: 'left',
+    },
+    desktopActions: {
+        width: '100%',
+        alignItems: 'flex-start',
+    },
+    compactButton: {
+        width: 'auto',
+        alignSelf: 'flex-start',
+        flexGrow: 0,
+        flexShrink: 0,
+    },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
@@ -590,18 +722,41 @@ const styles = StyleSheet.create({
         width: '100%',
         alignItems: 'center',
     },
+    emptyHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: '100%',
+        marginBottom: 16,
+    },
+    emptyIconCircle: {
+        width: 112,
+        height: 112,
+        borderRadius: 56,
+        backgroundColor: '#ffffff',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 16,
+        flexShrink: 0,
+    },
+    emptyText: {
+        flex: 1,
+        minWidth: 0,
+        alignItems: 'flex-start',
+        justifyContent: 'center',
+        paddingLeft: 8,
+        transform: [{ translateY: 8 }],
+    },
     emptyTitle: {
         fontSize: 24,
         fontWeight: '700',
         color: '#1f2937',
-        marginTop: 24,
         marginBottom: 8,
-        textAlign: 'center',
+        textAlign: 'left',
     },
     emptySubtitle: {
         fontSize: 15,
         color: '#6b7280',
-        textAlign: 'center',
+        textAlign: 'left',
         lineHeight: 22,
         marginBottom: 8,
         width: '100%',
@@ -621,6 +776,7 @@ const styles = StyleSheet.create({
     desktopTitle: {
         fontSize: 28,
         marginBottom: 8,
+        textAlign: 'left',
     },
     subtitle: {
         fontSize: 16,
@@ -629,6 +785,7 @@ const styles = StyleSheet.create({
     },
     desktopSubtitle: {
         fontSize: 18,
+        textAlign: 'left',
     },
     section: {
         width: '100%',

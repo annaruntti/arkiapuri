@@ -570,6 +570,7 @@ const PantryScreen = ({}) => {
                                     onPrimaryPress={handleOpenPantryScan}
                                     secondaryTitle="Lisää manuaalisesti"
                                     onSecondaryPress={handleOpenAddItemSearch}
+                                    compactButton
                                 />
                             </View>
                         }
