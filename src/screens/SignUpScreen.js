@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form'
 import { Alert, View } from 'react-native'
 import { getServerUrl } from '../utils/getServerUrl'
 import { authFormStyles } from '../styles/authFormStyles'
+import { useResponsiveDimensions } from '../utils/responsive'
 
 import AuthLayout from '../components/AuthLayout'
 import Button from '../components/Button'
@@ -27,6 +28,7 @@ const SignUpScreen = () => {
     const pwd = watch('password')
 
     const navigation = useNavigation()
+    const { isDesktop } = useResponsiveDimensions()
 
     const onRegisterPressed = async (data) => {
         try {
@@ -93,6 +95,7 @@ const SignUpScreen = () => {
 
     return (
         <AuthLayout
+            profileCard
             title="Luo käyttäjätunnus"
             subtitle={
                 invitedEmail
@@ -101,6 +104,8 @@ const SignUpScreen = () => {
             }
         >
             <View style={authFormStyles.form}>
+                <View style={isDesktop ? authFormStyles.desktopFieldRow : undefined}>
+                <View style={isDesktop ? authFormStyles.desktopFieldCell : undefined}>
                 <CustomInput
                     label="Käyttäjänimi"
                     name="username"
@@ -120,6 +125,8 @@ const SignUpScreen = () => {
                         },
                     }}
                 />
+                </View>
+                <View style={isDesktop ? authFormStyles.desktopFieldCell : undefined}>
                 <CustomInput
                     label="Sähköpostiosoite"
                     name="email"
@@ -135,6 +142,10 @@ const SignUpScreen = () => {
                         required: 'Sähköpostiosoite on pakollinen tieto',
                     }}
                 />
+                </View>
+                </View>
+                <View style={isDesktop ? authFormStyles.desktopFieldRow : undefined}>
+                <View style={isDesktop ? authFormStyles.desktopFieldCell : undefined}>
                 <CustomInput
                     label="Salasana"
                     name="password"
@@ -146,6 +157,8 @@ const SignUpScreen = () => {
                         ...passwordLengthRules,
                     }}
                 />
+                </View>
+                <View style={isDesktop ? authFormStyles.desktopFieldCell : undefined}>
                 <CustomInput
                     label="Salasana uudelleen"
                     name="confirmPassword"
@@ -157,31 +170,64 @@ const SignUpScreen = () => {
                             value === pwd || 'Salasana ei täsmää',
                     }}
                 />
+                </View>
+                </View>
 
-                <View style={authFormStyles.buttonSection}>
-                    <Button
-                        title="Luo käyttäjätunnus"
-                        onPress={handleSubmit(onRegisterPressed)}
-                        fullWidth
-                        style={authFormStyles.primaryButton}
-                        textStyle={authFormStyles.buttonText}
-                    />
-
-                    <View style={authFormStyles.secondarySection}>
-                        <CustomText style={authFormStyles.secondaryText}>
-                            Onko sinulla jo käyttäjätunnus?
-                        </CustomText>
+                {isDesktop ? (
+                    <View
+                        style={[
+                            authFormStyles.desktopButtonRow,
+                            authFormStyles.signupButtons,
+                        ]}
+                    >
+                        <Button
+                            title="Luo käyttäjätunnus"
+                            onPress={handleSubmit(onRegisterPressed)}
+                            style={authFormStyles.desktopCompactButton}
+                        />
                         <Button
                             title="Kirjaudu sisään"
                             onPress={onSignInPress}
                             type="TERTIARY"
-                            fullWidth
-                            style={authFormStyles.tertiaryButton}
-                            textStyle={authFormStyles.buttonText}
+                            style={authFormStyles.desktopCompactButton}
                         />
                     </View>
+                ) : (
+                    <View
+                        style={[
+                            authFormStyles.buttonSection,
+                            authFormStyles.signupButtons,
+                        ]}
+                    >
+                        <Button
+                            title="Luo käyttäjätunnus"
+                            onPress={handleSubmit(onRegisterPressed)}
+                            fullWidth
+                            style={authFormStyles.primaryButton}
+                            textStyle={authFormStyles.buttonText}
+                        />
+                        <View style={authFormStyles.secondarySection}>
+                            <CustomText style={authFormStyles.secondaryText}>
+                                Onko sinulla jo käyttäjätunnus?
+                            </CustomText>
+                            <Button
+                                title="Kirjaudu sisään"
+                                onPress={onSignInPress}
+                                type="TERTIARY"
+                                fullWidth
+                                style={authFormStyles.tertiaryButton}
+                                textStyle={authFormStyles.buttonText}
+                            />
+                        </View>
+                    </View>
+                )}
 
-                    <CustomText style={authFormStyles.termsText}>
+                <CustomText
+                    style={[
+                        authFormStyles.termsText,
+                        isDesktop && authFormStyles.desktopTermsText,
+                    ]}
+                >
                         Rekisteröitymällä hyväksyt{' '}
                         <CustomText
                             style={authFormStyles.termsLink}
@@ -197,7 +243,6 @@ const SignUpScreen = () => {
                             tietosuojaselosteen
                         </CustomText>
                     </CustomText>
-                </View>
             </View>
         </AuthLayout>
     )

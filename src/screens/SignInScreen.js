@@ -8,6 +8,7 @@ import { getServerUrl } from '../utils/getServerUrl'
 import { hasCompletedPersonalization } from '../utils/userPreferences'
 import storage from '../utils/storage'
 import { authFormStyles } from '../styles/authFormStyles'
+import { useResponsiveDimensions } from '../utils/responsive'
 
 import AuthLayout from '../components/AuthLayout'
 import Button from '../components/Button'
@@ -21,6 +22,7 @@ const SignInScreen = () => {
     const navigation = useNavigation()
     const route = useRoute()
     const { login } = useLogin()
+    const { isDesktop } = useResponsiveDimensions()
 
     const { control, handleSubmit, setError } = useForm()
 
@@ -149,10 +151,13 @@ const SignInScreen = () => {
 
     return (
         <AuthLayout
+            profileCard
             title="Kirjaudu sisään"
             subtitle="Tervetuloa takaisin! Kirjaudu sisään jatkaaksesi."
         >
             <View style={authFormStyles.form}>
+                <View style={isDesktop ? authFormStyles.desktopFieldRow : undefined}>
+                <View style={isDesktop ? authFormStyles.desktopFieldCell : undefined}>
                 <CustomInput
                     label="Sähköpostiosoite"
                     name="email"
@@ -167,6 +172,8 @@ const SignInScreen = () => {
                         required: 'Sähköpostiosoite on pakollinen tieto',
                     }}
                 />
+                </View>
+                <View style={isDesktop ? authFormStyles.desktopFieldCell : undefined}>
                 <CustomInput
                     label="Salasana"
                     name="password"
@@ -182,6 +189,8 @@ const SignInScreen = () => {
                         },
                     }}
                 />
+                </View>
+                </View>
 
                 <TouchableOpacity
                     onPress={() => navigation.navigate('Unohtunut salasana')}
@@ -192,31 +201,50 @@ const SignInScreen = () => {
                     </CustomText>
                 </TouchableOpacity>
 
-                <View style={authFormStyles.buttonSection}>
-                    <Button
-                        title="Kirjaudu sisään"
-                        onPress={handleSubmit(onSignInPressed)}
-                        fullWidth
-                        style={authFormStyles.primaryButton}
-                        textStyle={authFormStyles.buttonText}
-                    />
-
-                    <View style={authFormStyles.secondarySection}>
-                        <CustomText style={authFormStyles.secondaryText}>
-                            Eikö sinulla ole vielä käyttäjätunnusta?
-                        </CustomText>
+                {isDesktop ? (
+                    <View style={authFormStyles.desktopButtonRow}>
+                        <Button
+                            title="Kirjaudu sisään"
+                            onPress={handleSubmit(onSignInPressed)}
+                            style={authFormStyles.desktopCompactButton}
+                        />
                         <Button
                             title="Luo käyttäjätunnus"
                             onPress={onSignUpPress}
                             type="TERTIARY"
-                            fullWidth
-                            style={authFormStyles.tertiaryButton}
-                            textStyle={authFormStyles.buttonText}
+                            style={authFormStyles.desktopCompactButton}
                         />
                     </View>
+                ) : (
+                    <View style={authFormStyles.buttonSection}>
+                        <Button
+                            title="Kirjaudu sisään"
+                            onPress={handleSubmit(onSignInPressed)}
+                            fullWidth
+                            style={authFormStyles.primaryButton}
+                            textStyle={authFormStyles.buttonText}
+                        />
+                        <View style={authFormStyles.secondarySection}>
+                            <CustomText style={authFormStyles.secondaryText}>
+                                Eikö sinulla ole vielä käyttäjätunnusta?
+                            </CustomText>
+                            <Button
+                                title="Luo käyttäjätunnus"
+                                onPress={onSignUpPress}
+                                type="TERTIARY"
+                                fullWidth
+                                style={authFormStyles.tertiaryButton}
+                                textStyle={authFormStyles.buttonText}
+                            />
+                        </View>
+                    </View>
+                )}
 
-                    <SocialSignInButtons onSocialSignIn={onSocialSignIn} />
-                </View>
+                <SocialSignInButtons
+                    onSocialSignIn={onSocialSignIn}
+                    layout={isDesktop ? 'row' : 'column'}
+                    alignStart={isDesktop}
+                />
             </View>
         </AuthLayout>
     )

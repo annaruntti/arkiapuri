@@ -1,5 +1,6 @@
-import { Platform, ScrollView, StyleSheet, View } from 'react-native'
+import { ScrollView, StyleSheet, View } from 'react-native'
 import { useResponsiveDimensions } from '../utils/responsive'
+import ContentContainer from './ContentContainer'
 import CustomText from './CustomText'
 import FullWidthLayout from './FullWidthLayout'
 
@@ -14,9 +15,11 @@ const AuthLayout = ({
     headerStyle,
     contentStyle,
     centerContent = true,
+    profileCard = false,
 }) => {
     const { isDesktop, isTablet } = useResponsiveDimensions()
     const isWide = isDesktop || isTablet
+    const useProfileCard = profileCard && isDesktop
 
     const getContainerStyle = () => [
         styles.container,
@@ -36,6 +39,50 @@ const AuthLayout = ({
         headerStyle,
     ]
 
+    const header = showHeader ? (
+        <View style={getHeaderStyle()}>
+            {title && (
+                <CustomText
+                    style={[styles.title, isWide && styles.wideTitle]}
+                >
+                    {title}
+                </CustomText>
+            )}
+            {subtitle && (
+                <CustomText
+                    style={[
+                        styles.subtitle,
+                        isWide && styles.wideSubtitle,
+                    ]}
+                >
+                    {subtitle}
+                </CustomText>
+            )}
+        </View>
+    ) : null
+
+    if (useProfileCard) {
+        return (
+            <View style={styles.profilePage}>
+                <ScrollView
+                    style={styles.profileScroll}
+                    contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                >
+                    <ContentContainer>
+                        <View style={styles.profileInner}>
+                            <View style={styles.profileCard}>
+                                {header}
+                                {children}
+                            </View>
+                        </View>
+                    </ContentContainer>
+                </ScrollView>
+            </View>
+        )
+    }
+
     return (
         <FullWidthLayout>
             <ScrollView
@@ -46,30 +93,7 @@ const AuthLayout = ({
             >
                 <View style={getContainerStyle()}>
                     <View style={getContentStyle()}>
-                        {showHeader && (
-                            <View style={getHeaderStyle()}>
-                                {title && (
-                                    <CustomText
-                                        style={[
-                                            styles.title,
-                                            isWide && styles.wideTitle,
-                                        ]}
-                                    >
-                                        {title}
-                                    </CustomText>
-                                )}
-                                {subtitle && (
-                                    <CustomText
-                                        style={[
-                                            styles.subtitle,
-                                            isWide && styles.wideSubtitle,
-                                        ]}
-                                    >
-                                        {subtitle}
-                                    </CustomText>
-                                )}
-                            </View>
-                        )}
+                        {header}
                         {children}
                     </View>
                 </View>
@@ -146,6 +170,28 @@ const styles = StyleSheet.create({
     wideSubtitle: {
         textAlign: 'left',
         fontSize: 15,
+    },
+    profilePage: {
+        flex: 1,
+        backgroundColor: '#f9fafb',
+    },
+    profileScroll: {
+        flex: 1,
+        backgroundColor: '#f9fafb',
+    },
+    profileInner: {
+        width: '100%',
+        paddingTop: 8,
+        paddingBottom: 48,
+    },
+    profileCard: {
+        width: '100%',
+        backgroundColor: '#F4F0FF',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#D8CEF8',
+        paddingHorizontal: 32,
+        paddingVertical: 28,
     },
 })
 

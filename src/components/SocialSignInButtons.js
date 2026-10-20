@@ -18,6 +18,7 @@ const SocialSignInButtons = ({
     showDivider = true,
     layout = 'column',
     compact = false,
+    alignStart = false,
 }) => {
     // OAuth configuration
     const googleAuthUrl = `${getServerUrl('')}/auth/google`
@@ -175,22 +176,39 @@ const SocialSignInButtons = ({
     return (
         <View style={styles.container}>
             {showDivider && (
-                <View style={styles.dividerContainer}>
-                    <View style={styles.divider} />
-                    <CustomText style={styles.dividerText}>
+                <View
+                    style={[
+                        styles.dividerContainer,
+                        alignStart && styles.dividerContainerStart,
+                    ]}
+                >
+                    {alignStart ? null : <View style={styles.divider} />}
+                    <CustomText
+                        style={[
+                            styles.dividerText,
+                            alignStart && styles.dividerTextStart,
+                        ]}
+                    >
                         tai kirjaudu
                     </CustomText>
                     <View style={styles.divider} />
                 </View>
             )}
 
-            <View style={[styles.buttonsWrap, isRow && styles.buttonsRow]}>
+            <View
+                style={[
+                    styles.buttonsWrap,
+                    isRow && styles.buttonsRow,
+                    isRow && alignStart && styles.buttonsRowStart,
+                ]}
+            >
                 <TouchableOpacity
                     style={[
                         styles.socialButton,
                         styles.googleButton,
                         compact && styles.socialButtonCompact,
-                        isRow && styles.socialButtonInRow,
+                        isRow && !alignStart && styles.socialButtonInRow,
+                        isRow && alignStart && styles.socialButtonStart,
                     ]}
                     onPress={handleGoogleSignIn}
                 >
@@ -214,7 +232,8 @@ const SocialSignInButtons = ({
                         styles.socialButton,
                         styles.facebookButton,
                         compact && styles.socialButtonCompact,
-                        isRow && styles.socialButtonInRow,
+                        isRow && !alignStart && styles.socialButtonInRow,
+                        isRow && alignStart && styles.socialButtonStart,
                     ]}
                     onPress={handleFacebookSignIn}
                 >
@@ -261,6 +280,9 @@ const styles = StyleSheet.create({
         gap: 10,
         justifyContent: 'center',
     },
+    buttonsRowStart: {
+        justifyContent: 'flex-start',
+    },
     dividerContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -275,6 +297,14 @@ const styles = StyleSheet.create({
         marginHorizontal: 15,
         color: '#666',
         fontSize: 14,
+    },
+    dividerContainerStart: {
+        justifyContent: 'flex-start',
+    },
+    dividerTextStart: {
+        marginLeft: 0,
+        textAlign: 'left',
+        paddingVertical: 12,
     },
     socialButton: {
         flexDirection: 'row',
@@ -296,6 +326,16 @@ const styles = StyleSheet.create({
         flex: 1,
         width: 'auto',
         maxWidth: 190,
+    },
+    socialButtonStart: {
+        flexGrow: 0,
+        flexShrink: 0,
+        width: 'auto',
+        maxWidth: 'none',
+        minHeight: 40,
+        marginVertical: 0,
+        paddingVertical: 7,
+        paddingHorizontal: 14,
     },
     googleButton: {
         backgroundColor: '#DB4437',

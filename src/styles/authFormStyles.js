@@ -93,4 +93,47 @@ export const authFormStyles = StyleSheet.create({
         fontWeight: '600',
         textDecorationLine: 'underline',
     },
+    desktopFieldRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 12,
+        width: '100%',
+        alignItems: 'flex-start',
+    },
+    desktopFieldCell: {
+        flexGrow: 1,
+        flexShrink: 1,
+        flexBasis: 0,
+        minWidth: 180,
+    },
+    desktopButtonRow: {
+        width: '100%',
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'flex-start',
+        alignItems: 'center',
+        gap: 12,
+        marginTop: 8,
+    },
+    signupButtons: {
+        marginBottom: 16,
+    },
+    desktopCompactButton: {
+        width: 'auto',
+        alignSelf: 'flex-start',
+        flexGrow: 0,
+        flexShrink: 0,
+    },
+    desktopSecondarySection: {
+        alignItems: 'flex-start',
+        gap: 10,
+        width: '100%',
+        marginTop: 4,
+    },
+    desktopSecondaryText: {
+        textAlign: 'left',
+    },
+    desktopTermsText: {
+        textAlign: 'left',
+    },
 })
