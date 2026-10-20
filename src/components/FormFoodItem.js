@@ -3,7 +3,6 @@ import { forwardRef, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import {
     Alert,
-    Image,
     Platform,
     ScrollView,
     StyleSheet,
@@ -28,12 +27,12 @@ import {
 import { useResponsiveDimensions } from '../utils/responsive'
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
-import Button from './Button'
 import CustomText from './CustomText'
 import FormDateField from './FormDateField'
 import CustomInput from './CustomInput'
 import FoodItemNutritionFields from './FoodItemNutritionFields'
 import FormFoodItemIsFoodToggle from './FormFoodItemIsFoodToggle'
+import FormFoodItemImageSubmit from './FormFoodItemImageSubmit'
 import FormFoodItemLocationTargets from './FormFoodItemLocationTargets'
 import InlineCategorySelect from './InlineCategorySelect'
 import UnifiedFoodSearch from './UnifiedFoodSearch'
@@ -469,52 +468,12 @@ const FormFoodItem = forwardRef(
                     />
                 )}
 
-                {/* Row 4: Image Picker and Submit Button */}
-                <View
-                    style={[
-                        styles.formSingleColumn,
-                        unitMenuOpen && styles.unitColumnBehind,
-                    ]}
-                >
-                    <View style={formStyles.fieldGroup}>
-                        <CustomText style={formStyles.label}>
-                            Tuotteen kuva
-                        </CustomText>
-                        <TouchableOpacity
-                            style={styles.imagePicker}
-                            onPress={pickImage}
-                        >
-                            {foodItemImage ? (
-                                <Image
-                                    source={{ uri: foodItemImage.uri }}
-                                    style={styles.selectedImage}
-                                />
-                            ) : (
-                                <View style={styles.imagePlaceholder}>
-                                    <MaterialIcons
-                                        name="add-a-photo"
-                                        size={40}
-                                        color="#5844BB"
-                                    />
-                                    <CustomText
-                                        style={styles.imagePlaceholderText}
-                                    >
-                                        Lisää kuva
-                                    </CustomText>
-                                </View>
-                            )}
-                        </TouchableOpacity>
-                    </View>
-
-                    <View style={styles.buttonContainer}>
-                        <Button
-                            title="Tallenna tuote"
-                            onPress={handleSubmit(handleFormSubmit)}
-                            style={styles.submitButton}
-                            textStyle={styles.submitButtonText}
-                        />
-                    </View>
-                </View>
+                <FormFoodItemImageSubmit
+                    foodItemImage={foodItemImage}
+                    onPickImage={pickImage}
+                    onSubmit={handleSubmit(handleFormSubmit)}
+                    style={unitMenuOpen ? styles.unitColumnBehind : undefined}
+                />
             </View>
         )
 
@@ -679,27 +638,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         width: '100%',
     },
-    buttonContainer: {
-        alignItems: 'center',
-        width: '100%',
-        marginVertical: 10,
-    },
-    submitButton: {
-        borderRadius: 25,
-        paddingTop: 7,
-        paddingBottom: 7,
-        paddingLeft: 10,
-        paddingRight: 10,
-        elevation: 2,
-        backgroundColor: '#AE9CFC',
-        width: '100%',
-        marginBottom: 10,
-    },
-    submitButtonText: {
-        color: '#000000',
-        fontWeight: 'bold',
-        textAlign: 'center',
-    },
     errorMsg: {
         color: '#e53e3e',
         marginLeft: 5,
@@ -709,30 +647,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         marginTop: 4,
-    },
-    imagePicker: {
-        borderWidth: 2,
-        borderColor: '#5844BB',
-        borderStyle: 'dashed',
-        borderRadius: 8,
-        overflow: 'hidden',
-    },
-    imagePlaceholder: {
-        height: 120,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#f8f9fa',
-    },
-    imagePlaceholderText: {
-        marginTop: 8,
-        color: '#5844BB',
-        fontSize: 16,
-        fontWeight: '500',
-    },
-    selectedImage: {
-        width: '100%',
-        height: 200,
-        resizeMode: 'cover',
     },
 })
 

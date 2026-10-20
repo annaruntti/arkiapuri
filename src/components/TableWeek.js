@@ -20,11 +20,10 @@ import {
     isAnyDateBeforeCooking,
 } from '../utils/mealDates'
 import {
-    formatMealAddedSuccessMessage,
-    formatSelectedDatesForMeal,
     isSameCalendarDay,
     rebuildEatingDatesAfterMove,
 } from '../utils/weekMealMove'
+import useWeekMealAssign from '../hooks/useWeekMealAssign'
 import { useMealCalendar } from '../hooks/useMealCalendar'
 import useWeekMealDrag from '../hooks/useWeekMealDrag'
 import { useLogin } from '../context/LoginProvider'
@@ -220,52 +219,13 @@ const Table = ({ onRequireLogin }) => {
         openAddMealModal(date, token)
     }
 
-    const handleSelectMeal = async (meal) => {
-        if (isAnyDateBeforeCooking(selectedDates, meal.plannedCookingDate)) {
-            Alert.alert('Virhe', EATING_BEFORE_COOKING_MESSAGE)
-            return
-        }
-
-        try {
-            const token = await getAuthTokenOrPrompt('sync')
-            if (!token) return
-            const formattedDates = formatSelectedDatesForMeal(selectedDates)
-
-            await axios.put(
-                getServerUrl(`/meals/${meal._id}`),
-                {
-                    plannedEatingDates: formattedDates,
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                    },
-                }
-            )
-
-            fetchMealData(dates)
-            setIsModalVisible(false)
-            Alert.alert(
-                'Onnistui',
-                formatMealAddedSuccessMessage(selectedDates)
-            )
-        } catch (error) {
-            console.error('Error updating meal:', error.response?.data || error)
-            if (error.response?.status === 404) {
-                Alert.alert(
-                    'Virhe',
-                    'Ateriaa ei löytynyt tai sinulla ei ole oikeuksia muokata sitä.'
-                )
-            } else {
-                Alert.alert(
-                    'Virhe',
-                    'Aterian päivämäärän päivitys epäonnistui: ' +
-                        (error.response?.data?.message || error.message)
-                )
-            }
-        }
-    }
+    const { handleSelectMeal } = useWeekMealAssign({
+        selectedDates,
+        dates,
+        fetchMealData,
+        setIsModalVisible,
+        getAuthTokenOrPrompt,
+    })
 
     const goToPreviousWeek = () => {
         setWeekOffset((prev) => prev - 1)

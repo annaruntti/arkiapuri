@@ -47,18 +47,17 @@ import { showConfirm } from '../utils/showAlert'
 import { getAiEntitlement } from '../services/aiApi'
 import {
     ALL_LOCATIONS_ID,
-    DEFAULT_PANTRY_LOCATIONS,
     UNLOCATED_LOCATION_ID,
     filterItemsByLocation,
     groupItemsByPantryLocation,
     inferLocationIdFromCategories,
     locationIdOf,
 } from '../utils/pantryLocations'
-import {
-    decoratePantryItems,
-    mergeDuplicatePantryItems,
-} from '../utils/pantryItemMerge'
 import { buildPantryItemPayload } from '../utils/pantryAddItem'
+import {
+    parsePantryFetchResponse,
+    pantryFetchErrorMessage,
+} from '../utils/pantryFetch'
 import {
     buildPantryScanAddPayload,
     normalizePantryScanCommitPayload,
@@ -162,19 +161,10 @@ const PantryScreen = ({}) => {
             })
 
             if (response.data.success) {
-                const pantry = response.data.pantry || {}
-                const locations = pantry.locations?.length
-                    ? pantry.locations
-                    : DEFAULT_PANTRY_LOCATIONS
-                const items = pantry.items || response.data.items || []
-                setPantryLocations(locations)
-                setRemovalSuggestions(pantry.removalSuggestions || [])
-                setPantryItems(
-                    decoratePantryItems(
-                        mergeDuplicatePantryItems(items),
-                        locations
-                    )
-                )
+                const parsed = parsePantryFetchResponse(response.data)
+                setPantryLocations(parsed.locations)
+                setRemovalSuggestions(parsed.removalSuggestions)
+                setPantryItems(parsed.items)
             } else {
                 console.error('Failed to fetch pantry items:', response.data)
                 setPantryItems([])
@@ -184,13 +174,7 @@ const PantryScreen = ({}) => {
             console.error('Error fetching pantry items:', error)
             setPantryItems([])
             if (error?.response?.status !== 401) {
-                Alert.alert(
-                    'Virhe',
-                    'Pentterin tietojen haku epäonnistui: ' +
-                        (error.message === 'timeout exceeded'
-                            ? 'Yhteys aikakatkaistiin'
-                            : error.message || 'Tuntematon virhe')
-                )
+                Alert.alert('Virhe', pantryFetchErrorMessage(error))
             }
         } finally {
             setLoading(false)
