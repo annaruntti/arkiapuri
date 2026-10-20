@@ -28,12 +28,12 @@ import {
 import { useResponsiveDimensions } from '../utils/responsive'
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
-import CustomRadioButton from './CustomRadioButton'
 import Button from './Button'
 import CustomText from './CustomText'
 import FormDateField from './FormDateField'
 import CustomInput from './CustomInput'
 import FoodItemNutritionFields from './FoodItemNutritionFields'
+import FormFoodItemIsFoodToggle from './FormFoodItemIsFoodToggle'
 import FormFoodItemLocationTargets from './FormFoodItemLocationTargets'
 import InlineCategorySelect from './InlineCategorySelect'
 import UnifiedFoodSearch from './UnifiedFoodSearch'
@@ -261,57 +261,16 @@ const FormFoodItem = forwardRef(
                 )}
 
                 {allowNonFood && (
-                    <View style={formStyles.fieldGroup}>
-                        <CustomText style={styles.isFoodQuestion}>
-                            Onko kyseessä elintarvike?
-                        </CustomText>
-                        <View style={styles.isFoodRow}>
-                            <TouchableOpacity
-                                style={styles.isFoodOption}
-                                onPress={() => setValue('isFood', true)}
-                                activeOpacity={0.7}
-                            >
-                                <CustomRadioButton
-                                    status={
-                                        showFoodFields
-                                            ? 'checked'
-                                            : 'unchecked'
-                                    }
-                                    onPress={() => setValue('isFood', true)}
-                                    color="#5844BB"
-                                />
-                                <CustomText style={styles.isFoodOptionText}>
-                                    Elintarvike
-                                </CustomText>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={styles.isFoodOption}
-                                onPress={() => {
-                                    setValue('isFood', false)
-                                    setValue('category', [])
-                                    setValue('calories', '0')
-                                }}
-                                activeOpacity={0.7}
-                            >
-                                <CustomRadioButton
-                                    status={
-                                        !showFoodFields
-                                            ? 'checked'
-                                            : 'unchecked'
-                                    }
-                                    onPress={() => {
-                                        setValue('isFood', false)
-                                        setValue('category', [])
-                                        setValue('calories', '0')
-                                    }}
-                                    color="#5844BB"
-                                />
-                                <CustomText style={styles.isFoodOptionText}>
-                                    Muu tuote
-                                </CustomText>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
+                    <FormFoodItemIsFoodToggle
+                        showFoodFields={showFoodFields}
+                        onSelectFood={(isFood) => {
+                            setValue('isFood', isFood)
+                            if (!isFood) {
+                                setValue('category', [])
+                                setValue('calories', '0')
+                            }
+                        }}
+                    />
                 )}
 
                 {/* Row 1: Name and Category */}
@@ -630,29 +589,6 @@ const styles = StyleSheet.create({
         paddingBottom: 20,
         width: '100%',
         ...(Platform.OS === 'web' && { overflow: 'visible' }),
-    },
-    isFoodQuestion: {
-        fontSize: 16,
-        marginBottom: 10,
-        color: '#333',
-        fontWeight: '500',
-    },
-    isFoodRow: {
-        flexDirection: 'row',
-        gap: 16,
-        flexWrap: 'wrap',
-    },
-    isFoodOption: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        paddingVertical: 4,
-        paddingRight: 8,
-    },
-    isFoodOptionText: {
-        fontSize: 15,
-        color: '#333',
-        fontWeight: '500',
     },
     formSingleColumn: {
         width: '100%',

@@ -1,17 +1,6 @@
 import axios from 'axios'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import {
-    ActivityIndicator,
-    Alert,
-
-    Platform,
-    ScrollView,
-    StyleSheet,
-    TextInput,
-    TouchableOpacity,
-    View,
-} from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
+import { Alert, Platform, StyleSheet, View } from 'react-native'
 import { useShowNutrition } from '../hooks/useShowNutrition'
 import { useBarcodeScanner } from '../context/BarcodeScannerProvider'
 import { getServerUrl } from '../utils/getServerUrl'
@@ -19,12 +8,10 @@ import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 import openFoodFactsApi from '../services/openFoodFactsApi'
 import { addPantryItem } from '../services/collectionApi'
-import CustomText from './CustomText'
 import MealIngredientQuantityModal from './MealIngredientQuantityModal'
 import BarcodeProductReview from './BarcodeProductReview'
-import FoodSearchSourceTabs, {
-    FOOD_SEARCH_TABS,
-} from './FoodSearchSourceTabs'
+import { FOOD_SEARCH_TABS } from './FoodSearchSourceTabs'
+import FoodSearchInputPanel from './FoodSearchInputPanel'
 import {
     applyIngredientQuantity,
     stripCatalogLocationQuantity,
@@ -649,69 +636,24 @@ const UnifiedFoodSearch = ({
                 />
             ) : null}
             {!pendingMealPick && !pendingBarcodeReview && (
-            <>
-            <View style={styles.searchRow}>
-                <View style={styles.searchInputContainer}>
-                    <TextInput
-                        style={styles.searchInput}
-                        placeholder="Hae tuotteita nimellä..."
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                        onFocus={() =>
-                            searchQuery.length >= 2 && setIsListVisible(true)
-                        }
-                    />
-                    {loading && (
-                        <ActivityIndicator
-                            size="small"
-                            color="#5844BB"
-                            style={styles.loadingIndicator}
-                        />
-                    )}
-                </View>
-                {showBarcodeButton && !isDesktop ? (
-                    <TouchableOpacity
-                        style={styles.scanButton}
-                        onPress={openScanner}
-                        accessibilityRole="button"
-                        accessibilityLabel="Skannaa viivakoodi"
-                    >
-                        <Ionicons name="barcode" size={24} color="#5844BB" />
-                    </TouchableOpacity>
-                ) : null}
-            </View>
-
-            {isListVisible && searchQuery.length >= 2 && (
-                <View style={styles.resultsContainer}>
-                    <FoodSearchSourceTabs
-                        activeTab={activeTab}
-                        onChange={setActiveTab}
-                        localCount={filteredLocalItems.length}
-                        openFoodFactsCount={openFoodFactsItems.length}
-                    />
-
-                    {memoizedData.length === 0 && !loading ? (
-                        <View style={styles.emptyContainer}>
-                            <CustomText style={styles.emptyText}>
-                                {String(`Ei tuloksia haulle "${searchQuery}"`)}
-                            </CustomText>
-                        </View>
-                    ) : (
-                        <ScrollView
-                            key={`results-${renderTimestampRef.current}`}
-                            style={styles.resultsList}
-                            keyboardShouldPersistTaps="handled"
-                            nestedScrollEnabled
-                        >
-                            {memoizedData.map((item, index) =>
-                                memoizedRenderItem({ item, index })
-                            )}
-                        </ScrollView>
-                    )}
-                </View>
-            )}
-
-            </>
+                <FoodSearchInputPanel
+                    searchQuery={searchQuery}
+                    onSearchChange={setSearchQuery}
+                    onFocusSearch={() =>
+                        searchQuery.length >= 2 && setIsListVisible(true)
+                    }
+                    loading={loading}
+                    showBarcodeButton={showBarcodeButton && !isDesktop}
+                    onOpenScanner={openScanner}
+                    isListVisible={isListVisible}
+                    activeTab={activeTab}
+                    onChangeTab={setActiveTab}
+                    localCount={filteredLocalItems.length}
+                    openFoodFactsCount={openFoodFactsItems.length}
+                    results={memoizedData}
+                    renderResult={memoizedRenderItem}
+                    resultsKey={`results-${renderTimestampRef.current}`}
+                />
             )}
         </View>
     )
@@ -723,70 +665,6 @@ const styles = StyleSheet.create({
         zIndex: 9998,
         width: '100%',
         alignSelf: 'center',
-    },
-    searchRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-        width: '100%',
-
-        alignSelf: 'center',
-    },
-    searchInputContainer: {
-        flex: 1,
-        position: 'relative',
-        width: '100%',
-        alignSelf: 'center',
-    },
-    searchInput: {
-        borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 8,
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-        fontSize: 16,
-        backgroundColor: '#fff',
-    },
-    loadingIndicator: {
-        position: 'absolute',
-        right: 12,
-        top: '50%',
-        marginTop: -10,
-    },
-    scanButton: {
-        padding: 8,
-        height: 40,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#5844BB',
-        backgroundColor: '#fff',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    resultsContainer: {
-        marginTop: 5,
-        backgroundColor: '#fff',
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#ddd',
-        maxHeight: 380,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 10,
-    },
-    resultsList: {
-        maxHeight: 280,
-    },
-    emptyContainer: {
-        padding: 20,
-        alignItems: 'center',
-    },
-    emptyText: {
-        fontSize: 14,
-        color: '#666',
-        textAlign: 'center',
     },
     desktopContainer: {
         alignSelf: 'flex-start',
