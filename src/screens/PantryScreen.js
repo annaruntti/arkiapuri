@@ -41,7 +41,6 @@ import { PANTRY_SORT_OPTIONS, SORT_OPTION_IDS } from '../utils/listSort'
 import { groupItemsByFoodCategory } from '../utils/foodCategories'
 import { getServerUrl } from '../utils/getServerUrl'
 import storage from '../utils/storage'
-import { findOrCreateFoodItem } from '../services/foodItemApi'
 import {
     addPantryItem,
     deletePantryItem,
@@ -62,7 +61,7 @@ import {
     decoratePantryItems,
     mergeDuplicatePantryItems,
 } from '../utils/pantryItemMerge'
-import { isPersistedFoodItemId } from '../utils/foodItemId'
+import { buildPantryItemPayload } from '../utils/pantryAddItem'
 
 const PantryScreen = ({}) => {
     const { continueWithoutLogin } = useLogin()
@@ -283,58 +282,10 @@ const PantryScreen = ({}) => {
                 return
             }
 
-            // Validate required fields
-            if (!itemData.name || !itemData.unit) {
-                Alert.alert('Virhe', 'Nimi ja yksikkö ovat pakollisia tietoja')
-                return
-            }
-
-            const quantity =
-                Number(itemData.quantity) ||
-                Number(itemData.packageQuantity) ||
-                1
-            const catalogId = String(itemData.foodId || itemData._id || '')
-            let foodId = isPersistedFoodItemId(catalogId) ? catalogId : null
-
-            if (!foodId) {
-                const foodItemResult = await findOrCreateFoodItem({
-                    name: itemData.name.trim(),
-                    category: itemData.category || [],
-                    unit: itemData.unit,
-                    price: Number(itemData.price) || 0,
-                    calories: Number(itemData.calories) || 0,
-                })
-                if (!foodItemResult.success || !foodItemResult.foodItem?._id) {
-                    throw new Error('Failed to create food item')
-                }
-                foodId = foodItemResult.foodItem._id
-            }
-
-            const pantryItemData = {
-                name: itemData.name.trim(),
-                quantity,
-                unit: itemData.unit,
-                foodId,
-                category: itemData.category || [],
-                calories: Number(itemData.calories) || 0,
-                price: Number(itemData.price) || 0,
-                addedFrom: 'pantry',
-                locationId:
-                    itemData.locationId ||
-                    (selectedLocationId !== ALL_LOCATIONS_ID &&
-                    selectedLocationId !== UNLOCATED_LOCATION_ID
-                        ? selectedLocationId
-                        : inferLocationIdFromCategories(
-                              itemData.category,
-                              pantryLocations
-                          ) || undefined),
-                ...(itemData.expirationDate
-                    ? {
-                          expirationDate: itemData.expirationDate,
-                          expirationDateSetByUser: true,
-                      }
-                    : {}),
-            }
+            const pantryItemData = await buildPantryItemPayload(itemData, {
+                selectedLocationId,
+                pantryLocations,
+            })
 
             const pantryResponse = await axios.post(
                 getServerUrl('/pantry/items'),
@@ -359,11 +310,12 @@ const PantryScreen = ({}) => {
             }
         } catch (error) {
             console.error('Error adding item:', error?.response?.data || error)
-            Alert.alert(
-                'Virhe',
-                'Tuotteen lisääminen epäonnistui: ' +
-                    (error.message || 'Tuntematon virhe')
-            )
+            const message =
+                error.message === 'Nimi ja yksikkö ovat pakollisia tietoja'
+                    ? error.message
+                    : 'Tuotteen lisääminen epäonnistui: ' +
+                      (error.message || 'Tuntematon virhe')
+            Alert.alert('Virhe', message)
         }
     }
 

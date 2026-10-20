@@ -20,6 +20,10 @@ import {
     EATING_BEFORE_COOKING_MESSAGE,
     isAnyDateBeforeCooking,
 } from '../utils/mealDates'
+import {
+    isSameCalendarDay,
+    rebuildEatingDatesAfterMove,
+} from '../utils/weekMealMove'
 import { useMealCalendar } from '../hooks/useMealCalendar'
 import useWeekMealDrag from '../hooks/useWeekMealDrag'
 import { useLogin } from '../context/LoginProvider'
@@ -275,11 +279,7 @@ const Table = ({ onRequireLogin }) => {
             return
         }
 
-        const fromDateStr = format(moveFromDate, 'yyyy-MM-dd')
-        const toDateStr = format(targetDate, 'yyyy-MM-dd')
-
-        // Don't do anything if same date
-        if (fromDateStr === toDateStr) {
+        if (isSameCalendarDay(moveFromDate, targetDate)) {
             setMoveMealModalVisible(false)
             setMealToMove(null)
             setMoveFromDate(null)
@@ -297,16 +297,11 @@ const Table = ({ onRequireLogin }) => {
         }
 
         try {
-            // Get current planned eating dates
-            const currentDates = mealToMove.plannedEatingDates || []
-
-            // Remove the old date and add the new date
-            const updatedDates = currentDates
-                .filter((dateStr) => {
-                    const mealDate = format(new Date(dateStr), 'yyyy-MM-dd')
-                    return mealDate !== fromDateStr
-                })
-                .concat([format(targetDate, 'yyyy-MM-dd') + 'T00:00:00.000Z'])
+            const updatedDates = rebuildEatingDatesAfterMove(
+                mealToMove.plannedEatingDates,
+                moveFromDate,
+                targetDate
+            )
 
             const token = await getAuthTokenOrPrompt('sync')
             if (!token) return
@@ -324,7 +319,6 @@ const Table = ({ onRequireLogin }) => {
                 }
             )
 
-            // Refresh the meal data
             await fetchMealData(dates)
 
             if (Platform.OS !== 'web') {
@@ -346,11 +340,7 @@ const Table = ({ onRequireLogin }) => {
 
     // Handler for when a meal is dropped on a new day
     const handleMealDrop = async (meal, fromDate, toDate) => {
-        const fromDateStr = format(fromDate, 'yyyy-MM-dd')
-        const toDateStr = format(toDate, 'yyyy-MM-dd')
-
-        // Don't do anything if dropped on the same date
-        if (fromDateStr === toDateStr) {
+        if (isSameCalendarDay(fromDate, toDate)) {
             return
         }
 
@@ -360,16 +350,11 @@ const Table = ({ onRequireLogin }) => {
         }
 
         try {
-            // Get current planned eating dates
-            const currentDates = meal.plannedEatingDates || []
-
-            // Remove the old date and add the new date
-            const updatedDates = currentDates
-                .filter((dateStr) => {
-                    const mealDate = format(new Date(dateStr), 'yyyy-MM-dd')
-                    return mealDate !== fromDateStr
-                })
-                .concat([format(toDate, 'yyyy-MM-dd') + 'T00:00:00.000Z'])
+            const updatedDates = rebuildEatingDatesAfterMove(
+                meal.plannedEatingDates,
+                fromDate,
+                toDate
+            )
 
             const token = await getAuthTokenOrPrompt('sync')
             if (!token) return
@@ -387,7 +372,6 @@ const Table = ({ onRequireLogin }) => {
                 }
             )
 
-            // Refresh the meal data
             await fetchMealData(dates)
         } catch (error) {
             console.error('Error moving meal:', error)
