@@ -8,11 +8,8 @@ import {
 import axios from 'axios'
 import { useFocusEffect } from '@react-navigation/native'
 
-import GenericFilter from '../components/GenericFilter'
-import GenericFilterSection from '../components/GenericFilterSection'
-import ListSortControl from '../components/ListSortControl'
-import ListStatsRow from '../components/ListStatsRow'
 import CategorySectionHeader from '../components/CategorySectionHeader'
+import PantryFilterChrome from '../components/PantryFilterChrome'
 import CustomText from '../components/CustomText'
 import AddFoodItemPanel from '../components/AddFoodItemPanel'
 import FoodListItemRow from '../components/FoodListItemRow'
@@ -24,7 +21,6 @@ import { useLogin } from '../context/LoginProvider'
 import PantryItemDetails from '../components/PantryItemDetails'
 import PantryScanReview from '../components/PantryScanReview'
 import PantryScanLockedModal from '../components/PantryScanLockedModal'
-import PantryLocationChips from '../components/PantryLocationChips'
 import PantryLocationsEditor from '../components/PantryLocationsEditor'
 import PantryScanLocationPicker from '../components/PantryScanLocationPicker'
 import PantryRemovalSuggestionsModal from '../components/PantryRemovalSuggestionsModal'
@@ -37,7 +33,7 @@ import SearchSection from '../components/SearchSection'
 import StickyListLayout from '../components/StickyListLayout'
 
 import { useFilteredItemList } from '../hooks/useFilteredItemList'
-import { PANTRY_SORT_OPTIONS, SORT_OPTION_IDS } from '../utils/listSort'
+import { SORT_OPTION_IDS } from '../utils/listSort'
 import { groupItemsByFoodCategory } from '../utils/foodCategories'
 import { getServerUrl } from '../utils/getServerUrl'
 import { useResponsiveDimensions } from '../utils/responsive'
@@ -766,11 +762,11 @@ const PantryScreen = ({}) => {
                                 </NoticeBanner>
                             ) : null}
                             <View style={styles.findSection}>
-                                <PantryLocationChips
-                                    locations={pantryLocations}
+                                <PantryFilterChrome
+                                    pantryLocations={pantryLocations}
                                     selectedLocationId={selectedLocationId}
-                                    onSelect={setSelectedLocationId}
-                                    onManage={() =>
+                                    onSelectLocation={setSelectedLocationId}
+                                    onManageLocations={() =>
                                         setLocationsEditorVisible(true)
                                     }
                                     unlocatedCount={
@@ -778,45 +774,30 @@ const PantryScreen = ({}) => {
                                             (item) => !locationIdOf(item)
                                         ).length
                                     }
-                                />
-                                <ListStatsRow
-                                    actions={
-                                        <>
-                                            <ListSortControl
-                                                options={PANTRY_SORT_OPTIONS}
-                                                value={sortId}
-                                                onChange={setSortId}
-                                            />
-                                            <GenericFilter
-                                                selectedFilters={
-                                                    selectedCategoryFilters
-                                                }
-                                                showFilters={showFilters}
-                                                onToggleShowFilters={() =>
-                                                    setShowFilters(!showFilters)
-                                                }
-                                            />
-                                        </>
+                                    sortId={sortId}
+                                    onSortChange={setSortId}
+                                    selectedCategoryFilters={
+                                        selectedCategoryFilters
                                     }
-                                >
-                                    <CustomText>Tuotteita:</CustomText>
-                                    <CustomText>
-                                        {searchQuery.length > 0 ||
-                                        selectedCategoryFilters.length > 0
-                                            ? `${filteredPantryItems.length} / ${pantryItems?.length || 0}`
-                                            : `${pantryItems?.length || 0} kpl`}
-                                    </CustomText>
-                                </ListStatsRow>
-                                <GenericFilterSection
-                                    selectedFilters={selectedCategoryFilters}
                                     showFilters={showFilters}
-                                    filterTitle="Suodata kategorioittain:"
-                                    categories={ingredientCategories}
-                                    onToggleFilter={toggleCategoryFilter}
-                                    onClearFilters={() =>
+                                    onToggleShowFilters={() =>
+                                        setShowFilters(!showFilters)
+                                    }
+                                    filteredCount={filteredPantryItems.length}
+                                    totalCount={pantryItems?.length || 0}
+                                    searchQuery={searchQuery}
+                                    ingredientCategories={
+                                        ingredientCategories
+                                    }
+                                    onToggleCategoryFilter={
+                                        toggleCategoryFilter
+                                    }
+                                    onClearCategoryFilters={() =>
                                         setSelectedCategoryFilters([])
                                     }
-                                    getItemCounts={getCategoryItemCounts}
+                                    getCategoryItemCounts={
+                                        getCategoryItemCounts
+                                    }
                                 />
                             </View>
                             <View

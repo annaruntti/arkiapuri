@@ -9,10 +9,7 @@ import {
 } from 'react-native'
 import AddActionSection from './AddActionSection'
 import AddFoodItemPanel from './AddFoodItemPanel'
-import Button from './Button'
-import CategorySectionHeader from './CategorySectionHeader'
 import CustomText from './CustomText'
-import GenericFilterSection from './GenericFilterSection'
 import MissingPriceItemsPanel from './MissingPriceItemsPanel'
 import DuplicateShoppingItemModal from './DuplicateShoppingItemModal'
 import PantryItemDetails from './PantryItemDetails'
@@ -21,7 +18,7 @@ import SearchSection from './SearchSection'
 import StickyListLayout from './StickyListLayout'
 import ShoppingListDetailItemRow from './ShoppingListDetailItemRow'
 import ShoppingListFloatingActions from './ShoppingListFloatingActions'
-import ShoppingListSummaryHeader from './ShoppingListSummaryHeader'
+import ShoppingListItemsBody from './ShoppingListItemsBody'
 import { useFilteredItemList } from '../hooks/useFilteredItemList'
 import {
     deleteShoppingListItem,
@@ -31,10 +28,7 @@ import {
     updateShoppingList,
     updateShoppingListItem,
 } from '../services/collectionApi'
-import {
-    SHOPPING_SORT_OPTIONS,
-    SORT_OPTION_IDS,
-} from '../utils/listSort'
+import { SORT_OPTION_IDS } from '../utils/listSort'
 import { lineAmount } from '../utils/shoppingListPrice'
 import { addOrMergeShoppingListItem } from '../utils/shoppingListAddItem'
 import { updateShoppingListItemWithCatalog } from '../utils/shoppingListUpdateItem'
@@ -697,80 +691,32 @@ const ShoppingListDetail = ({
                             </View>
                         }
                     >
-                        <View style={styles.itemsListContainer}>
-                            <ShoppingListSummaryHeader
-                                shoppingList={shoppingList}
-                                filteredItems={filteredItems}
-                                searchQuery={searchQuery}
-                                selectedCategoryFilters={
-                                    selectedCategoryFilters
-                                }
-                                sortId={sortId}
-                                sortOptions={SHOPPING_SORT_OPTIONS}
-                                onSortChange={setSortId}
-                                showFilters={showFilters}
-                                onToggleShowFilters={() =>
-                                    setShowFilters(!showFilters)
-                                }
-                                onShowMissingPrices={() =>
-                                    setShowMissingPrices(true)
-                                }
-                            />
-                            <GenericFilterSection
-                                selectedFilters={selectedCategoryFilters}
-                                showFilters={showFilters}
-                                filterTitle="Suodata kategorioittain:"
-                                categories={ingredientCategories}
-                                onToggleFilter={toggleCategoryFilter}
-                                onClearFilters={() =>
-                                    setSelectedCategoryFilters([])
-                                }
-                                getItemCounts={getCategoryItemCounts}
-                            />
-                            <View
-                                style={[
-                                    styles.itemsList,
-                                    styles.listContent,
-                                ]}
-                            >
-                                {itemSections.map((section) => (
-                                    <View
-                                        key={
-                                            section.title ||
-                                            'shopping-section'
-                                        }
-                                    >
-                                        <CategorySectionHeader
-                                            title={section.title}
-                                            count={section.data.length}
-                                        />
-                                        {section.data.map((item) => (
-                                            <View key={item._id}>
-                                                {renderItem({ item })}
-                                            </View>
-                                        ))}
-                                    </View>
-                                ))}
-                            </View>
-                            {boughtItemCount > 0 && (
-                                <View style={styles.listEndActions}>
-                                    <Button
-                                        title={`Palauta kerätyt (${boughtItemCount})`}
-                                        type="SECONDARY"
-                                        fullWidth
-                                        onPress={restoreBoughtItemsToList}
-                                        style={styles.listEndActionButton}
-                                    />
-                                    <Button
-                                        title={`Poista kerätyt (${boughtItemCount})`}
-                                        type="TERTIARY"
-                                        fullWidth
-                                        onPress={deleteBoughtItemsFromList}
-                                        style={styles.listEndActionButton}
-                                    />
-                                </View>
-                            )}
-                        </View>
+                        <ShoppingListItemsBody
+                            shoppingList={shoppingList}
+                            filteredItems={filteredItems}
+                            searchQuery={searchQuery}
+                            selectedCategoryFilters={selectedCategoryFilters}
+                            sortId={sortId}
+                            onSortChange={setSortId}
+                            showFilters={showFilters}
+                            onToggleShowFilters={() =>
+                                setShowFilters(!showFilters)
+                            }
+                            onShowMissingPrices={() =>
+                                setShowMissingPrices(true)
+                            }
+                            ingredientCategories={ingredientCategories}
+                            onToggleCategoryFilter={toggleCategoryFilter}
+                            onClearCategoryFilters={() =>
+                                setSelectedCategoryFilters([])
+                            }
+                            getCategoryItemCounts={getCategoryItemCounts}
+                            itemSections={itemSections}
+                            renderItem={renderItem}
+                            boughtItemCount={boughtItemCount}
+                            onRestoreBought={restoreBoughtItemsToList}
+                            onDeleteBought={deleteBoughtItemsFromList}
+                        />
                     </StickyListLayout>
 
                     <ShoppingListFloatingActions
@@ -892,35 +838,9 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#333',
     },
-    listEndActions: {
-        width: '100%',
-        gap: 10,
-        marginTop: 16,
-        marginBottom: 8,
-    },
-    listEndActionButton: {
-        width: '100%',
-        minHeight: 45,
-        paddingVertical: 7,
-        paddingHorizontal: 14,
-    },
-    itemsListContainer: {
-        flex: 1,
-        minHeight: 400,
-    },
     findSection: {
         backgroundColor: '#f9fafb',
         paddingTop: 4,
-    },
-    findHeading: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: '#555',
-        marginBottom: 8,
-    },
-    itemsList: {
-        width: '100%',
-        zIndex: 1,
     },
     header: {
         marginBottom: 5,
@@ -949,15 +869,6 @@ const styles = StyleSheet.create({
         elevation: 2,
         backgroundColor: '#AE9CFC',
         width: '100%',
-        marginBottom: 10,
-    },
-    smallPrimaryButton: {
-        borderRadius: 25,
-        paddingTop: 7,
-        paddingBottom: 7,
-        paddingLeft: 10,
-        paddingRight: 10,
-        minWidth: 150,
         marginBottom: 10,
     },
     secondaryButton: {
