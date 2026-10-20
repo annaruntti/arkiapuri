@@ -11,7 +11,6 @@ import {
 } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
 import { addDays, format } from 'date-fns'
-import { fi } from 'date-fns/locale'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 
 import { getServerUrl } from '../utils/getServerUrl'
@@ -34,8 +33,8 @@ import { getMealTypeText } from '../utils/mealUtils'
 import Button from './Button'
 import CustomText from './CustomText'
 import { DESKTOP_SIDEBAR_WIDTH } from './DesktopNavigation'
-import DraggableMealItem from './DraggableMealItem'
 import MealItemDetail from './MealItemDetail'
+import WeekDaySection from './WeekDaySection'
 import WeekMealSelectModal from './WeekMealSelectModal'
 import WeekMoveMealModal from './WeekMoveMealModal'
 import { MEAL_PLACEHOLDER_IMAGE_URL } from '../constants/images'
@@ -47,8 +46,8 @@ const Table = ({ onRequireLogin }) => {
         ? Math.max(0, windowWidth - DESKTOP_SIDEBAR_WIDTH)
         : windowWidth
     const weekColumnWidth = Math.min(containerMaxWidth, contentAreaWidth)
-    const weekBarGutter = isDesktop
-        ? Math.max(0, (contentAreaWidth - weekColumnWidth) / 2)
+    const weekBarRightBleed = isDesktop
+        ? Math.max(0, contentAreaWidth - weekColumnWidth)
         : 0
     const { continueWithoutLogin } = useLogin()
     const [dates, setDates] = useState([])
@@ -447,161 +446,27 @@ const Table = ({ onRequireLogin }) => {
         </TouchableOpacity>
     )
 
-    const renderMealItemWithRemove = (meal, date) => {
+    const renderDateSection = ({ item: date }) => {
+        const dateKey = format(date, 'yyyy-MM-dd')
+        const isDropTarget =
+            dropTargetDate && format(dropTargetDate, 'yyyy-MM-dd') === dateKey
+
         return (
-            <DraggableMealItem
-                meal={meal}
+            <WeekDaySection
                 date={date}
+                meals={mealsByDate[dateKey] || []}
+                isDropTarget={Boolean(isDropTarget)}
+                draggingMeal={draggingMeal}
+                dayRefs={dayRefs}
+                onDayLayout={handleDayLayout}
+                onAddMeal={handleAddMeal}
+                onMealPress={handleMealPress}
+                onRemoveMeal={removeMealFromDate}
                 onDragStart={handleDragStart}
                 onDragging={handleDragging}
                 onDragEnd={handleDragEnd}
                 onDragPosition={handleDragPosition}
-            >
-                <View style={styles.mealItemContainer}>
-                    <TouchableOpacity
-                        onPress={() => handleMealPress(meal)}
-                        style={styles.mealContentTouchable}
-                        activeOpacity={0.7}
-                    >
-                        <Image
-                            source={{
-                                uri:
-                                    meal.image?.url || MEAL_PLACEHOLDER_IMAGE_URL,
-                            }}
-                            style={styles.mealImage}
-                            resizeMode="cover"
-                        />
-                        <View style={styles.mealTextContainer}>
-                            <CustomText
-                                style={styles.mealName}
-                                numberOfLines={2}
-                                ellipsizeMode="tail"
-                            >
-                                {meal.name}
-                            </CustomText>
-                            <CustomText
-                                style={styles.mealType}
-                                numberOfLines={1}
-                                ellipsizeMode="tail"
-                            >
-                                {getMealTypeText(meal.defaultRoles)}
-                            </CustomText>
-                        </View>
-                    </TouchableOpacity>
-                    <View style={styles.mealItemActions}>
-                        <TouchableOpacity
-                            style={styles.deleteButton}
-                            onPress={(e) => {
-                                e.stopPropagation()
-                                removeMealFromDate(meal, date)
-                            }}
-                            activeOpacity={0.7}
-                            hitSlop={{
-                                top: 10,
-                                bottom: 10,
-                                left: 10,
-                                right: 10,
-                            }}
-                            accessibilityRole="button"
-                            accessibilityLabel="Poista päivältä"
-                        >
-                            <MaterialIcons
-                                name="delete"
-                                size={20}
-                                color="#666"
-                            />
-                        </TouchableOpacity>
-                        <View
-                            style={styles.dragHandle}
-                            accessibilityLabel="Raahaa toiseen päivään"
-                        >
-                            <MaterialIcons
-                                name="drag-indicator"
-                                size={24}
-                                color="#999"
-                            />
-                        </View>
-                    </View>
-                </View>
-            </DraggableMealItem>
-        )
-    }
-
-    const renderDateSection = ({ item: date }) => {
-        const dateKey = format(date, 'yyyy-MM-dd')
-        const meals = mealsByDate[dateKey] || []
-        const isToday =
-            format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
-        const isDropTarget =
-            dropTargetDate && format(dropTargetDate, 'yyyy-MM-dd') === dateKey
-
-        // Format the date with capitalized day name
-        const formattedDate = format(date, 'EEEE d.M.yyyy', {
-            locale: fi,
-        })
-        const capitalizedDate =
-            formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1)
-
-        return (
-            <View
-                ref={(ref) => {
-                    if (ref) {
-                        dayRefs.current.set(dateKey, ref)
-                    }
-                }}
-                onLayout={(event) => {
-                    const { height } = event.nativeEvent.layout
-                    // Just pass the height, Y will be calculated cumulatively
-                    handleDayLayout(dateKey, {
-                        height: height,
-                    })
-                }}
-                style={[
-                    styles.dateSection,
-                    isDropTarget && styles.dateSectionDropTarget,
-                ]}
-            >
-                <View style={styles.dateHeaderContainer}>
-                    <CustomText style={styles.dateHeader}>
-                        {capitalizedDate}
-                        {isToday ? ' (Tänään)' : ''}
-                    </CustomText>
-                    <Button
-                        title="Lisää ateria"
-                        onPress={() => handleAddMeal(date)}
-                        style={styles.primaryButton}
-                        textStyle={styles.buttonText}
-                    />
-                </View>
-
-                {meals.length > 0 ? (
-                    <View style={styles.mealsContainer}>
-                        {meals.map((meal) => (
-                            <View key={meal._id || meal.id}>
-                                {renderMealItemWithRemove(meal, date)}
-                            </View>
-                        ))}
-                    </View>
-                ) : (
-                    <View style={styles.noMealsContainer}>
-                        <CustomText style={styles.noMealsText}>
-                            Ei aterioita
-                        </CustomText>
-                    </View>
-                )}
-                {isDropTarget && draggingMeal && (
-                    <View style={styles.dropIndicator}>
-                        <MaterialIcons
-                            name="arrow-downward"
-                            size={32}
-                            color="#fff"
-                        />
-                        <CustomText style={styles.dropIndicatorText}>
-                            Pudota tänne
-                        </CustomText>
-                    </View>
-                )}
-            </View>
+            />
         )
     }
 
@@ -645,9 +510,8 @@ const Table = ({ onRequireLogin }) => {
             <View
                 style={[
                     styles.bottomWeekNavigation,
-                    weekBarGutter > 0 && {
-                        left: -weekBarGutter,
-                        right: -weekBarGutter,
+                    weekBarRightBleed > 0 && {
+                        right: -weekBarRightBleed,
                         paddingHorizontal: 0,
                     },
                 ]}
@@ -656,8 +520,9 @@ const Table = ({ onRequireLogin }) => {
                     style={[
                         styles.bottomWeekNavigationInner,
                         isDesktop && {
+                            width: weekColumnWidth,
                             maxWidth: weekColumnWidth,
-                            alignSelf: 'center',
+                            alignSelf: 'flex-start',
                         },
                     ]}
                 >

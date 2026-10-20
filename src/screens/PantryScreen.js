@@ -2,13 +2,11 @@ import { useCallback, useEffect, useState } from 'react'
 import {
     ActivityIndicator,
     Alert,
-    Platform,
     StyleSheet,
     View,
 } from 'react-native'
 import axios from 'axios'
 import { useFocusEffect } from '@react-navigation/native'
-import * as ImagePicker from 'expo-image-picker'
 
 import GenericFilter from '../components/GenericFilter'
 import GenericFilterSection from '../components/GenericFilterSection'
@@ -21,6 +19,7 @@ import FoodListItemRow from '../components/FoodListItemRow'
 import LoginPromptModal from '../components/LoginPromptModal'
 import useLoginPrompt from '../hooks/useLoginPrompt'
 import usePantryLocations from '../hooks/usePantryLocations'
+import usePantryScan from '../hooks/usePantryScan'
 import { useLogin } from '../context/LoginProvider'
 import PantryItemDetails from '../components/PantryItemDetails'
 import PantryScanReview from '../components/PantryScanReview'
@@ -49,12 +48,7 @@ import {
     dismissPantryRemovalSuggestions,
 } from '../services/collectionApi'
 import { showConfirm } from '../utils/showAlert'
-import {
-    compressPantryScanImage,
-    getAiEntitlement,
-    scanPantryImage,
-} from '../services/aiApi'
-import { pickScanImageFromLibrary } from '../utils/scanImage'
+import { getAiEntitlement } from '../services/aiApi'
 import {
     ALL_LOCATIONS_ID,
     DEFAULT_PANTRY_LOCATIONS,
@@ -78,23 +72,14 @@ const PantryScreen = ({}) => {
     const [removalSuggestions, setRemovalSuggestions] = useState([])
     const [selectedLocationId, setSelectedLocationId] = useState(ALL_LOCATIONS_ID)
     const [locationsEditorVisible, setLocationsEditorVisible] = useState(false)
-    const [scanLocationPickerVisible, setScanLocationPickerVisible] = useState(false)
     const [suggestionsModalVisible, setSuggestionsModalVisible] = useState(false)
     const [suggestionsSubmitting, setSuggestionsSubmitting] = useState(false)
-    const [scanLocation, setScanLocation] = useState(null)
-    const [scanRemovals, setScanRemovals] = useState([])
     const [loading, setLoading] = useState(true)
     const [selectedItem, setSelectedItem] = useState(null)
     const [detailsVisible, setDetailsVisible] = useState(false)
     const [showAddItemSearch, setShowAddItemSearch] = useState(false)
     const [aiEntitlement, setAiEntitlement] = useState(null)
-    const [scanLockVisible, setScanLockVisible] = useState(false)
-    const [scanLockReason, setScanLockReason] = useState('upgrade_required')
-    const [scanReviewVisible, setScanReviewVisible] = useState(false)
-    const [scanCandidates, setScanCandidates] = useState([])
-    const [scanUsage, setScanUsage] = useState(null)
     const [scanSubmitting, setScanSubmitting] = useState(false)
-    const [scanLoading, setScanLoading] = useState(false)
 
     const {
         searchQuery,
@@ -219,6 +204,31 @@ const PantryScreen = ({}) => {
         selectedLocationId,
         setSelectedLocationId,
         showLoginPrompt,
+    })
+
+    const {
+        scanLocationPickerVisible,
+        setScanLocationPickerVisible,
+        scanLocation,
+        scanRemovals,
+        setScanRemovals,
+        scanLockVisible,
+        setScanLockVisible,
+        scanLockReason,
+        scanReviewVisible,
+        setScanReviewVisible,
+        scanCandidates,
+        setScanCandidates,
+        scanUsage,
+        scanLoading,
+        handleOpenPantryScan,
+        startScanForLocation,
+    } = usePantryScan({
+        pantryLocations,
+        aiEntitlement,
+        setAiEntitlement,
+        showLoginPrompt,
+        setLocationsEditorVisible,
     })
 
     const fetchAiEntitlement = async () => {
@@ -523,179 +533,6 @@ const PantryScreen = ({}) => {
             return
         }
         setShowAddItemSearch(true)
-    }
-
-    const showScanDenied = (reason) => {
-        setScanLockReason(reason || 'upgrade_required')
-        setScanLockVisible(true)
-    }
-
-    const runPantryScan = async (asset, location) => {
-        if (!location?._id) {
-            Alert.alert('Virhe', 'Valitse ensin säilytyspaikka.')
-            return
-        }
-        setScanLoading(true)
-        try {
-            const image = await compressPantryScanImage(asset)
-            const result = await scanPantryImage(image, {
-                locationId: location._id,
-            })
-            setScanLocation(location)
-            setScanCandidates(result.items || [])
-            setScanRemovals(result.suggestedRemovals || [])
-            setScanUsage(result.usage || null)
-            setScanReviewVisible(true)
-            if (result.usage) {
-                setAiEntitlement((prev) =>
-                    prev
-                        ? {
-                              ...prev,
-                              remainingCredits: result.usage.remainingCredits,
-                              creditsUsed:
-                                  (prev.creditLimit || 0) -
-                                  result.usage.remainingCredits,
-                          }
-                        : prev
-                )
-            }
-        } catch (error) {
-            const code = error.code || error.response?.data?.code
-            const message =
-                error.response?.data?.message ||
-                error.message ||
-                'Skannaus epäonnistui'
-            if (
-                code === 'upgrade_required' ||
-                code === 'quota_exceeded' ||
-                code === 'household_too_large' ||
-                code === 'not_configured' ||
-                code === 'budget_exceeded'
-            ) {
-                showScanDenied(code)
-                return
-            }
-            Alert.alert('Virhe', message)
-        } finally {
-            setScanLoading(false)
-        }
-    }
-
-    const pickPantryScanImage = async (fromCamera, location) => {
-        try {
-            if (fromCamera) {
-                const { status } =
-                    await ImagePicker.requestCameraPermissionsAsync()
-                if (status !== 'granted') {
-                    Alert.alert(
-                        'Lupa tarvitaan',
-                        'Tämä toiminto vaatii kameran käyttöoikeuden.'
-                    )
-                    return
-                }
-                const result = await ImagePicker.launchCameraAsync({
-                    mediaTypes: ['images'],
-                    quality: 0.8,
-                })
-                if (!result.canceled && result.assets?.[0]) {
-                    await runPantryScan(result.assets[0], location)
-                }
-                return
-            }
-
-            const { status } =
-                await ImagePicker.requestMediaLibraryPermissionsAsync()
-            if (status !== 'granted') {
-                Alert.alert(
-                    'Lupa tarvitaan',
-                    'Tämä toiminto vaatii kuvakirjaston käyttöoikeuden.'
-                )
-                return
-            }
-            const picked = await pickScanImageFromLibrary()
-            if (picked.error) {
-                Alert.alert('Tiedostotyyppi ei kelpaa', picked.error)
-                return
-            }
-            if (!picked.canceled && picked.asset) {
-                await runPantryScan(picked.asset, location)
-            }
-        } catch (error) {
-            Alert.alert(
-                'Virhe',
-                'Kuvan valitseminen epäonnistui: ' +
-                    (error.message || 'Tuntematon virhe')
-            )
-        }
-    }
-
-    const handleOpenPantryScan = async () => {
-        try {
-            const token = await storage.getItem('userToken')
-            if (!token) {
-                showLoginPrompt('save', () => handleOpenPantryScan())
-                return
-            }
-
-            const entitlement =
-                aiEntitlement || (await getAiEntitlement()).entitlement
-            setAiEntitlement(entitlement)
-            if (!entitlement?.hasAccess) {
-                showScanDenied(entitlement?.denyCode)
-                return
-            }
-
-            if (!pantryLocations.length) {
-                Alert.alert(
-                    'Säilytyspaikka puuttuu',
-                    'Lisää ensin jääkaappi, pakastin tai kuivakaappi.'
-                )
-                setLocationsEditorVisible(true)
-                return
-            }
-
-            setScanLocationPickerVisible(true)
-        } catch (error) {
-            const code = error.response?.data?.code
-            if (
-                code === 'upgrade_required' ||
-                code === 'quota_exceeded' ||
-                code === 'household_too_large' ||
-                code === 'not_configured' ||
-                code === 'budget_exceeded'
-            ) {
-                showScanDenied(code)
-                return
-            }
-            Alert.alert(
-                'Virhe',
-                error.response?.data?.message ||
-                    error.message ||
-                    'AI-skannausta ei voitu avata'
-            )
-        }
-    }
-
-    const startScanForLocation = async (location) => {
-        setScanLocationPickerVisible(false)
-        setScanLocation(location)
-        const openLibrary = () => pickPantryScanImage(false, location)
-        const openCamera = () => pickPantryScanImage(true, location)
-
-        if (Platform.OS === 'web') {
-            await openLibrary()
-            return
-        }
-
-        Alert.alert(
-            `Skannaa: ${location.name}`,
-            'Ota kuva tästä paikasta tai valitse kuva galleriasta.',
-            [
-                { text: 'Kamera', onPress: openCamera },
-                { text: 'Galleria', onPress: openLibrary },
-                { text: 'Peruuta', style: 'cancel' },
-            ]
-        )
     }
 
     const handleRemoveSuggestedItems = async (suggestions) => {
