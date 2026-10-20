@@ -9,6 +9,31 @@ export const NUTRITION_FIELDS = [
     { name: 'salt', label: 'Suola', unit: 'g' },
 ]
 
+export const getItemNutrition = (item) =>
+    item?.nutrition || item?.openFoodFactsData?.nutrition || {}
+
+/** Non-zero nutrition rows for read-only detail views. */
+export const getVisibleNutritionRows = (item) => {
+    const nutrition = getItemNutrition(item)
+    const offNutrition = item?.openFoodFactsData?.nutrition || {}
+    const caloriesValue =
+        item?.calories || nutrition.calories || offNutrition.calories || '0'
+
+    return NUTRITION_FIELDS.map((field) => {
+        const value =
+            field.name === 'calories'
+                ? caloriesValue
+                : nutrition[field.name] ?? offNutrition[field.name]
+        const numeric = parseFloat(value)
+        return {
+            key: field.name,
+            label: field.label,
+            unit: field.unit,
+            value: Number.isFinite(numeric) && numeric !== 0 ? numeric : null,
+        }
+    }).filter((row) => row.value != null)
+}
+
 export const getInitialNutritionValue = (initialValues, fieldName) => {
     if (fieldName === 'calories') {
         return (

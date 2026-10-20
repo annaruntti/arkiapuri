@@ -6,6 +6,27 @@ export const isPersistedFoodItemId = (id) =>
     typeof id === 'string' && /^[a-fA-F0-9]{24}$/.test(id)
 
 /**
+ * Stable string key for an entity that may use Mongo ObjectId-like shapes.
+ */
+export const resolveEntityKey = (value) => {
+    if (!value) return ''
+    const candidate = value._id ?? value.id
+    if (candidate == null) return ''
+    if (typeof candidate === 'object') {
+        if (candidate.$oid) return String(candidate.$oid)
+        if (typeof candidate.toHexString === 'function') {
+            return candidate.toHexString()
+        }
+        if (typeof candidate.toString === 'function') {
+            const asString = candidate.toString()
+            if (asString && asString !== '[object Object]') return asString
+        }
+        return ''
+    }
+    return String(candidate)
+}
+
+/**
  * Resolve the catalog food id from a meal/pantry/shopping row.
  * Prefers nested foodId, then top-level _id.
  */

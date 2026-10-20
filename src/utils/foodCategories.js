@@ -23,6 +23,36 @@ export const getCategoryDisplayName = (
     return needle
 }
 
+/** Resolve a display name back to a subcategory/category id. */
+export const getCategoryIdByName = (
+    name,
+    categories = getCategoryTree()
+) => {
+    if (name == null || name === '') return name
+    for (const category of categories) {
+        const subcategory = category.children?.find(
+            (child) => child.name === name
+        )
+        if (subcategory) return subcategory.id
+        if (category.name === name) return category.id
+    }
+    return name
+}
+
+/** Normalize a category entry (id, name, or object) to a display name. */
+export const toCategoryDisplayName = (entry, categories = getCategoryTree()) => {
+    if (entry && typeof entry === 'object') {
+        return (
+            entry.name ||
+            getCategoryDisplayName(
+                entry.subcategoryId ?? entry.id ?? entry._id,
+                categories
+            )
+        )
+    }
+    return getCategoryDisplayName(entry, categories)
+}
+
 /**
  * Normalize form category values (ids, objects, JSON strings) into name strings.
  */

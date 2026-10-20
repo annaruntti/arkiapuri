@@ -22,6 +22,7 @@ import {
     isAnyDateBeforeCooking,
 } from '../utils/mealDates'
 import { useMealCalendar } from '../hooks/useMealCalendar'
+import useWeekMealDrag from '../hooks/useWeekMealDrag'
 import { useLogin } from '../context/LoginProvider'
 import { 
     removeMealFromDate as removeMealUtil,
@@ -70,15 +71,8 @@ const Table = ({ onRequireLogin }) => {
         handleMealUpdate: handleMealUpdateBase,
     } = useMealCalendar({ onRequireLogin })
 
-    // Drag and drop state
-    const [draggingMeal, setDraggingMeal] = useState(null)
-    const [dropTargetDate, setDropTargetDate] = useState(null)
-    const [isScrollEnabled, setIsScrollEnabled] = useState(true)
-    const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 })
     const dayRefs = useRef(new Map())
     const flatListRef = useRef(null)
-    const draggingMealRef = useRef(null)
-    const draggingFromDateRef = useRef(null)
     const scrollOffsetRef = useRef(0)
 
     const handleSelectDetailsHeaderChange = useCallback(({ title }) => {
@@ -397,156 +391,21 @@ const Table = ({ onRequireLogin }) => {
         }
     }
 
-    // Store day layouts with cumulative positions
-    const [dayLayouts, setDayLayouts] = useState(new Map())
-    const dayHeightsRef = useRef(new Map())
-
-    const handleDayLayout = (dateKey, layout) => {
-        // Store the height if provided
-        if (dateKey && layout.height) {
-            dayHeightsRef.current.set(dateKey, layout.height)
-        }
-
-        // Calculate cumulative Y position based on date order
-        // onLayout positions are relative to FlatList content (after header)
-        let cumulativeY = 0
-        const updatedLayouts = new Map()
-
-        dates.forEach((date) => {
-            const key = format(date, 'yyyy-MM-dd')
-            const height = dayHeightsRef.current.get(key) || 0
-
-            if (height > 0) {
-                updatedLayouts.set(key, {
-                    y: cumulativeY,
-                    height: height,
-                })
-                cumulativeY += height
-            }
-        })
-
-        setDayLayouts(updatedLayouts)
-    }
-
-    // Drag gesture handlers
-    const screenPositionsRef = useRef(new Map())
-
-    const handleDragStart = (meal, date) => {
-        // Measure screen positions of all days using refs
-        screenPositionsRef.current = new Map()
-
-        dates.forEach((d, index) => {
-            const dateKey = format(d, 'yyyy-MM-dd')
-            const ref = dayRefs.current.get(dateKey)
-            if (ref) {
-                ref.measureInWindow((x, y, width, height) => {
-                    screenPositionsRef.current.set(dateKey, {
-                        y,
-                        height,
-                        index,
-                    })
-                })
-            }
-        })
-
-        try {
-            // Store in both state (for UI) and ref (for reliable access)
-            draggingMealRef.current = meal
-            draggingFromDateRef.current = date
-            setDraggingMeal(meal)
-            setIsScrollEnabled(false) // Disable scrolling during drag
-        } catch (error) {
-            // Silent fail for drag start
-        }
-    }
-
-    const handleDragging = (absoluteY) => {
-        try {
-            if (screenPositionsRef.current.size === 0) {
-                return
-            }
-
-            let targetDate = null
-            let prevTargetDate = dropTargetDate
-
-            // Use screen positions measured at drag start
-            screenPositionsRef.current.forEach((position, dateKey) => {
-                const { y, height } = position
-                // Check if finger is within this day's screen bounds
-                if (absoluteY >= y && absoluteY <= y + height) {
-                    const foundDate = dates.find(
-                        (d) => format(d, 'yyyy-MM-dd') === dateKey
-                    )
-                    if (foundDate) {
-                        targetDate = foundDate
-                    }
-                }
-            })
-
-            setDropTargetDate(targetDate || null)
-        } catch (error) {
-            // Silent fail for dragging
-        }
-    }
-
-    const handleDragPosition = (absoluteX, absoluteY) => {
-        setDragPosition({ x: absoluteX, y: absoluteY })
-    }
-
-    const findDropTargetAtPosition = (absoluteY) => {
-        let targetDate = null
-
-        // Use screen positions measured at drag start
-        screenPositionsRef.current.forEach((position, dateKey) => {
-            const { y, height } = position
-            const matches = absoluteY >= y && absoluteY <= y + height
-
-            if (matches) {
-                const foundDate = dates.find(
-                    (d) => format(d, 'yyyy-MM-dd') === dateKey
-                )
-                if (foundDate) {
-                    targetDate = foundDate
-                }
-            }
-        })
-
-        return targetDate
-    }
-
-    const handleDragEnd = (finalAbsoluteY) => {
-        try {
-            // Use refs for reliable access to drag data
-            const meal = draggingMealRef.current
-            const fromDate = draggingFromDateRef.current
-
-            // Find the drop target at the final position
-            const finalDropTarget = finalAbsoluteY
-                ? findDropTargetAtPosition(finalAbsoluteY)
-                : dropTargetDate
-
-            if (meal && finalDropTarget && fromDate) {
-                const fromDateStr = format(fromDate, 'yyyy-MM-dd')
-                const toDateStr = format(finalDropTarget, 'yyyy-MM-dd')
-
-                if (fromDateStr !== toDateStr) {
-                    handleMealDrop(meal, fromDate, finalDropTarget)
-                }
-            }
-
-            // Clear refs and state
-            draggingMealRef.current = null
-            draggingFromDateRef.current = null
-            screenPositionsRef.current.clear() // Clear screen positions
-            setDraggingMeal(null)
-            setDropTargetDate(null)
-            setDragPosition({ x: 0, y: 0 })
-            setIsScrollEnabled(true) // Re-enable scrolling
-        } catch (error) {
-            screenPositionsRef.current.clear() // Clear on error too
-            setIsScrollEnabled(true) // Re-enable scrolling even on error
-        }
-    }
+    const {
+        draggingMeal,
+        dropTargetDate,
+        dragPosition,
+        isScrollEnabled,
+        handleDayLayout,
+        handleDragStart,
+        handleDragging,
+        handleDragPosition,
+        handleDragEnd,
+    } = useWeekMealDrag({
+        dates,
+        dayRefs,
+        onDrop: handleMealDrop,
+    })
 
     const renderMealItem = ({ item }) => (
         <TouchableOpacity

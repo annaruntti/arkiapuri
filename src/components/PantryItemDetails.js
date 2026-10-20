@@ -1,4 +1,3 @@
-import axios from 'axios'
 import { useEffect, useState } from 'react'
 import {
     Alert,
@@ -11,71 +10,37 @@ import {
     View,
 } from 'react-native'
 import { Feather, MaterialIcons } from '@expo/vector-icons'
-import * as ImagePicker from 'expo-image-picker'
 
-import categories from '../data/categories'
+import { getCategoryTree, getCategoryIdByName, toCategoryDisplayName } from '../utils/foodCategories'
+import { resolveEntityKey } from '../utils/foodItemId'
+import {
+    confirmDeleteFoodItemImage,
+    ensureCatalogFoodItemId,
+    pickFoodItemImage,
+    uploadFoodItemImage,
+} from '../utils/foodItemImage'
+import { getVisibleNutritionRows } from '../utils/nutritionFields'
 import { useShowNutrition } from '../hooks/useShowNutrition'
-import { getServerUrl } from '../utils/getServerUrl'
 import { getFoodItemImageUrl } from '../utils/openFoodFactsMapper'
-import storage from '../utils/storage'
-
-import Button from './Button'
-import CustomText from './CustomText'
-import InlineCategorySelect from './InlineCategorySelect'
-import FormDateField from './FormDateField'
-import ResponsiveModal from './ResponsiveModal'
 import {
     inferLocationIdFromCategories,
     locationIdOf,
     syncStorageCategoryForLocation,
 } from '../utils/pantryLocations'
 
-const NUTRITION_ROWS = [
-    { key: 'calories', label: 'Kalorit', unit: 'kcal' },
-    { key: 'proteins', label: 'Proteiini', unit: 'g' },
-    { key: 'carbohydrates', label: 'Hiilihydraatit', unit: 'g' },
-    { key: 'sugars', label: 'Sokerit', unit: 'g' },
-    { key: 'fat', label: 'Rasva', unit: 'g' },
-    { key: 'saturatedFat', label: 'Tyydyttynyt rasva', unit: 'g' },
-    { key: 'fiber', label: 'Kuitu', unit: 'g' },
-    { key: 'salt', label: 'Suola', unit: 'g' },
-]
-
-const formatTagList = (value) => {
-    if (!value) return ''
-    const list = Array.isArray(value) ? value : String(value).split(',')
-    return list
-        .map((entry) =>
-            String(entry)
-                .replace(/^[a-z]{2}:/, '')
-                .replace(/-/g, ' ')
-                .trim()
-        )
-        .filter(Boolean)
-        .join(', ')
-}
-
-const getItemNutrition = (item) =>
-    item?.nutrition || item?.openFoodFactsData?.nutrition || {}
+import Button from './Button'
+import CustomText from './CustomText'
+import InlineCategorySelect from './InlineCategorySelect'
+import FormDateField from './FormDateField'
+import PantryItemOffSection from './PantryItemOffSection'
+import ResponsiveModal from './ResponsiveModal'
 
 const EMPTY_LOCATIONS = []
+const categories = getCategoryTree()
 
-const resolveItemKey = (value) => {
-    if (!value) return ''
-    const candidate = value._id ?? value.id
-    if (candidate == null) return ''
-    if (typeof candidate === 'object') {
-        if (candidate.$oid) return String(candidate.$oid)
-        if (typeof candidate.toHexString === 'function') {
-            return candidate.toHexString()
-        }
-        if (typeof candidate.toString === 'function') {
-            const asString = candidate.toString()
-            if (asString && asString !== '[object Object]') return asString
-        }
-        return ''
-    }
-    return String(candidate)
+const parsePriceInput = (value) => {
+    const parsed = parseFloat(String(value ?? '').replace(',', '.'))
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0
 }
 
 const PantryItemDetails = ({
@@ -92,47 +57,17 @@ const PantryItemDetails = ({
     const [isUploadingImage, setIsUploadingImage] = useState(false)
     const showNutrition = useShowNutrition()
 
-    const getCategoryName = (id) => {
-        // Search through all categories and their children to find the matching name
-        for (const category of categories) {
-            const subcategory = category.children.find(
-                (c) => String(c.id) === String(id)
-            )
-            if (subcategory) return subcategory.name
-        }
-        return id // Fallback to ID if name not found
-    }
-
-    const getCategoryId = (name) => {
-        // Search through all categories and their children to find the matching ID
-        for (const category of categories) {
-            const subcategory = category.children.find((c) => c.name === name)
-            if (subcategory) return subcategory.id
-        }
-        return name // Fallback to name if ID not found
-    }
-
-    const toCategoryName = (entry) => {
-        if (entry && typeof entry === 'object') {
-            return (
-                entry.name ||
-                getCategoryName(entry.subcategoryId ?? entry.id ?? entry._id)
-            )
-        }
-        return getCategoryName(entry)
-    }
-
-    const itemKey = resolveItemKey(item)
+    const itemKey = resolveEntityKey(item)
 
     useEffect(() => {
         if (!item) return
 
         const categoryNames = (item.category || [])
-            .map(toCategoryName)
+            .map((entry) => toCategoryDisplayName(entry))
             .filter(Boolean)
 
         setEditedValues((prev) => {
-            const prevKey = resolveItemKey(prev)
+            const prevKey = resolveEntityKey(prev)
             if (itemKey && prevKey === itemKey) {
                 const inferredLocationId = inferLocationIdFromCategories(
                     prev.category,
@@ -161,25 +96,11 @@ const PantryItemDetails = ({
 
     const imageUrl = getFoodItemImageUrl(item)
     const off = item.openFoodFactsData || {}
-    const nutrition = getItemNutrition(item)
+    const nutritionRows = getVisibleNutritionRows(item)
     const caloriesValue =
-        item.calories || nutrition.calories || off.nutrition?.calories || '0'
-    const nutritionRows = NUTRITION_ROWS.map((row) => {
-        const value =
-            row.key === 'calories'
-                ? caloriesValue
-                : nutrition[row.key] ?? off.nutrition?.[row.key]
-        const numeric = parseFloat(value)
-        return {
-            ...row,
-            value: Number.isFinite(numeric) && numeric !== 0 ? numeric : null,
-        }
-    }).filter((row) => row.value != null)
-
-    const parsePriceInput = (value) => {
-        const parsed = parseFloat(String(value ?? '').replace(',', '.'))
-        return Number.isFinite(parsed) && parsed > 0 ? parsed : 0
-    }
+        nutritionRows.find((row) => row.key === 'calories')?.value ??
+        item.calories ??
+        '0'
 
     const toggleEdit = (field) => {
         const opening = !editableFields[field]
@@ -213,7 +134,7 @@ const PantryItemDetails = ({
 
     const handleCategoryChange = (selectedItems) => {
         const categoryNames = (selectedItems || [])
-            .map(toCategoryName)
+            .map((entry) => toCategoryDisplayName(entry))
             .filter(Boolean)
         const inferredLocationId = inferLocationIdFromCategories(
             categoryNames,
@@ -241,9 +162,8 @@ const PantryItemDetails = ({
 
     const handleSave = async () => {
         try {
-            // Convert category names back to IDs before saving
             const categoryIds = (editedValues.category || []).map((name) =>
-                getCategoryId(name)
+                getCategoryIdByName(name)
             )
 
             const parsedPrice = parsePriceInput(editedValues.price)
@@ -264,183 +184,25 @@ const PantryItemDetails = ({
     }
 
     const pickImage = async () => {
-        try {
-            if (Platform.OS === 'web') {
-                // For web, only show library option
-                const result = await ImagePicker.launchImageLibraryAsync({
-                    mediaTypes: ['images'],
-                    allowsEditing: true,
-                    aspect: [4, 3],
-                    quality: 1,
-                })
+        const asset = await pickFoodItemImage({
+            title: 'Valitse kuva',
+            message: 'Valitse, miten haluat lisätä kuvan',
+            cameraDenied: 'Tämä toiminto vaatii kameran käyttöoikeuden.',
+            libraryDenied: 'Tämä toiminto vaatii kameran käyttöoikeuden.',
+            cameraError: 'Kameran avaaminen epäonnistui',
+            pickError: 'kuvan valitseminen epäonnistui',
+        })
+        if (!asset) return
 
-                if (!result.canceled) {
-                    await uploadFoodItemImage(result.assets[0])
-                }
-                return
-            }
-
-            // For mobile, show action sheet with options
-            Alert.alert('Valitse kuva', 'Valitse, miten haluat lisätä kuvan', [
-                {
-                    text: 'Camera',
-                    onPress: async () => {
-                        try {
-                            const { status } =
-                                await ImagePicker.requestCameraPermissionsAsync()
-
-                            if (status !== 'granted') {
-                                Alert.alert(
-                                    'Tämä toiminto vaatii kameran käyttöoikeuden.'
-                                )
-                                return
-                            }
-
-                            const result = await ImagePicker.launchCameraAsync({
-                                mediaTypes: ['images'],
-                                allowsEditing: true,
-                                aspect: [4, 3],
-                                quality: 1,
-                            })
-                            if (!result.canceled) {
-                                await uploadFoodItemImage(result.assets[0])
-                            }
-                        } catch (error) {
-                            console.error('Camera error:', error)
-                            Alert.alert(
-                                'Error',
-                                'Kameran avaaminen epäonnistui: ' +
-                                    error.message
-                            )
-                        }
-                    },
-                },
-                {
-                    text: 'Photo Library',
-                    onPress: async () => {
-                        const { status } =
-                            await ImagePicker.requestMediaLibraryPermissionsAsync()
-                        if (status !== 'granted') {
-                            Alert.alert(
-                                'Tämä toiminto vaatii kameran käyttöoikeuden.'
-                            )
-                            return
-                        }
-
-                        const result =
-                            await ImagePicker.launchImageLibraryAsync({
-                                mediaTypes: ['images'],
-                                allowsEditing: true,
-                                aspect: [4, 3],
-                                quality: 1,
-                            })
-
-                        if (!result.canceled) {
-                            await uploadFoodItemImage(result.assets[0])
-                        }
-                    },
-                },
-                {
-                    text: 'Cancel',
-                    style: 'cancel',
-                },
-            ])
-        } catch (error) {
-            console.error('Error picking image:', error)
-            Alert.alert('Virhe', 'kuvan valitseminen epäonnistui')
-        }
-    }
-
-    const uploadFoodItemImage = async (imageFile) => {
         try {
             setIsUploadingImage(true)
-            const token = await storage.getItem('userToken')
-            if (!token) {
-                throw new Error('No token found')
-            }
-
-            // Verify the food item still exists before uploading
-            if (!item) {
-                throw new Error('Food item not found')
-            }
-
-            let foodItemId = item.foodId?._id
-
-            // If no food item exists, create one
-            if (!foodItemId) {
-                try {
-                    const newFoodItemData = {
-                        name: item.name,
-                        category: item.category || [],
-                        unit: item.unit,
-                        calories: item.calories || 0,
-                        price: item.price || 0,
-                    }
-
-                    const createResponse = await axios.post(
-                        getServerUrl('/food-items/find-or-create'),
-                        newFoodItemData,
-                        {
-                            headers: {
-                                Authorization: `Bearer ${token}`,
-                            },
-                        }
-                    )
-
-                    if (createResponse.data.success) {
-                        const newFoodItem = createResponse.data.foodItem
-                        foodItemId = newFoodItem._id
-
-                        // Update the pantry item to reference the new food item
-                        // This will be handled by the parent component's onUpdate callback
-                    } else {
-                        throw new Error('Failed to create new food item')
-                    }
-                } catch (createError) {
-                    console.error('Error creating new food item:', createError)
-                    throw new Error(
-                        'Could not create food item for image upload'
-                    )
-                }
-            }
-
-            const formData = new FormData()
-            if (Platform.OS === 'web' && imageFile.uri.startsWith('blob:')) {
-                const response = await fetch(imageFile.uri)
-                const blob = await response.blob()
-                const file = new File([blob], 'food-item.jpg', {
-                    type: 'image/jpeg',
-                })
-                formData.append('mealImage', file)
-            } else {
-                formData.append('mealImage', {
-                    uri: imageFile.uri,
-                    type: 'image/jpeg',
-                    name: 'food-item.jpg',
-                })
-            }
-
-            const url = getServerUrl(`/food-items/${foodItemId}/image`)
-
-            const response = await axios.post(url, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                    Authorization: `Bearer ${token}`,
-                },
+            const foodItemId = await ensureCatalogFoodItemId(item)
+            const foodItem = await uploadFoodItemImage(foodItemId, asset)
+            onUpdate(item._id, {
+                ...item,
+                foodId: { ...foodItem },
+                image: foodItem.image,
             })
-
-            if (response.data.success) {
-                // Update with both foodId reference AND temporary image for immediate display
-                const updatedItem = {
-                    ...item,
-                    foodId: {
-                        ...response.data.foodItem, // Include full FoodItem data temporarily for display
-                    },
-                    image: response.data.foodItem.image, // Temporary image for immediate display
-                }
-
-                onUpdate(item._id, updatedItem)
-            }
         } catch (error) {
             console.error('Error uploading food item image:', error)
             if (error.message === 'Food item not found') {
@@ -459,45 +221,14 @@ const PantryItemDetails = ({
         }
     }
 
-    const removeFoodItemImage = () => {
-        Alert.alert('Poista kuva', 'Haluatko varmasti poistaa kuvan?', [
-            { text: 'Peruuta', style: 'cancel' },
-            {
-                text: 'Poista',
-                style: 'destructive',
-                onPress: async () => {
-                    try {
-                        const token = await storage.getItem('userToken')
-                        if (!token) {
-                            throw new Error('No token found')
-                        }
-
-                        const response = await axios.delete(
-                            getServerUrl(
-                                `/food-items/${item.foodId._id}/image`
-                            ),
-                            {
-                                headers: {
-                                    Authorization: `Bearer ${token}`,
-                                },
-                            }
-                        )
-
-                        if (response.data.success) {
-                            const updatedItem = { ...item, image: null }
-                            onUpdate(item._id, updatedItem)
-                            Alert.alert(
-                                'Success',
-                                'Kuva poistettu onnistuneesti'
-                            )
-                        }
-                    } catch (error) {
-                        console.error('Error removing food item image:', error)
-                        Alert.alert('Virhe', 'kuvan poistaminen epäonnistui')
-                    }
-                },
-            },
-        ])
+    const removeFoodItemImage = async () => {
+        const foodItemId = item.foodId?._id || item.foodId
+        if (!foodItemId) return
+        const removed = await confirmDeleteFoodItemImage(foodItemId)
+        if (removed) {
+            onUpdate(item._id, { ...item, image: null })
+            Alert.alert('Success', 'Kuva poistettu onnistuneesti')
+        }
     }
 
     const renderEditableField = (field, label, value, type = 'text') => {
@@ -693,98 +424,11 @@ const PantryItemDetails = ({
                         'number'
                     )}
 
-                {showNutrition && nutritionRows.length > 0 ? (
-                    <View style={styles.nutritionBlock}>
-                        <CustomText style={styles.sectionLabel}>
-                            Ravintoarvot (per 100 g / 100 ml)
-                        </CustomText>
-                        {nutritionRows
-                            .filter((row) => row.key !== 'calories')
-                            .map((row) => (
-                                <View key={row.key} style={styles.nutritionRow}>
-                                    <CustomText style={styles.nutritionLabel}>
-                                        {row.label}
-                                    </CustomText>
-                                    <CustomText style={styles.nutritionValue}>
-                                        {row.value} {row.unit}
-                                    </CustomText>
-                                </View>
-                            ))}
-                    </View>
-                ) : null}
-
-                {off.brands ||
-                off.barcode ||
-                off.nutritionGrade ||
-                off.quantityLabel ||
-                off.allergens ||
-                off.labels ? (
-                    <View style={styles.offBlock}>
-                        <CustomText style={styles.sectionLabel}>
-                            Open Food Facts
-                        </CustomText>
-                        {off.brands ? (
-                            <View style={styles.nutritionRow}>
-                                <CustomText style={styles.nutritionLabel}>
-                                    Merkki
-                                </CustomText>
-                                <CustomText style={styles.nutritionValue}>
-                                    {off.brands}
-                                </CustomText>
-                            </View>
-                        ) : null}
-                        {off.barcode ? (
-                            <View style={styles.nutritionRow}>
-                                <CustomText style={styles.nutritionLabel}>
-                                    Viivakoodi
-                                </CustomText>
-                                <CustomText style={styles.nutritionValue}>
-                                    {off.barcode}
-                                </CustomText>
-                            </View>
-                        ) : null}
-                        {off.nutritionGrade ? (
-                            <View style={styles.nutritionRow}>
-                                <CustomText style={styles.nutritionLabel}>
-                                    Nutri-Score
-                                </CustomText>
-                                <CustomText style={styles.nutritionValue}>
-                                    {String(off.nutritionGrade).toUpperCase()}
-                                </CustomText>
-                            </View>
-                        ) : null}
-                        {off.quantityLabel ? (
-                            <View style={styles.nutritionRow}>
-                                <CustomText style={styles.nutritionLabel}>
-                                    Pakkauskoko
-                                </CustomText>
-                                <CustomText style={styles.nutritionValue}>
-                                    {off.quantityLabel}
-                                </CustomText>
-                            </View>
-                        ) : null}
-                        {formatTagList(off.allergens) ? (
-                            <View style={styles.offTextRow}>
-                                <CustomText style={styles.nutritionLabel}>
-                                    Allergeenit
-                                </CustomText>
-                                <CustomText style={styles.offTextValue}>
-                                    {formatTagList(off.allergens)}
-                                </CustomText>
-                            </View>
-                        ) : null}
-                        {formatTagList(off.labels) ? (
-                            <View style={styles.offTextRow}>
-                                <CustomText style={styles.nutritionLabel}>
-                                    Merkinnät
-                                </CustomText>
-                                <CustomText style={styles.offTextValue}>
-                                    {formatTagList(off.labels)}
-                                </CustomText>
-                            </View>
-                        ) : null}
-                    </View>
-                ) : null}
+                <PantryItemOffSection
+                    showNutrition={showNutrition}
+                    nutritionRows={nutritionRows}
+                    off={off}
+                />
 
                 <View style={styles.categoryRow}>
                     <CustomText style={styles.label}>Kategoriat:</CustomText>
@@ -855,7 +499,6 @@ const styles = StyleSheet.create({
             '::-webkit-scrollbar': { display: 'none' },
         }),
     },
-    // Parent ResponsiveModal already pads the body; avoid stacking.
     detailScrollEmbedded: {
         paddingHorizontal: 0,
     },
@@ -954,49 +597,6 @@ const styles = StyleSheet.create({
     label: {
         fontWeight: 'bold',
         flex: 1,
-    },
-    sectionLabel: {
-        fontWeight: '600',
-        fontSize: 15,
-        color: '#1f2937',
-        marginBottom: 8,
-    },
-    nutritionBlock: {
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-    },
-    offBlock: {
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-    },
-    nutritionRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingVertical: 4,
-        gap: 12,
-    },
-    nutritionLabel: {
-        color: '#4b5563',
-        fontSize: 14,
-        flexShrink: 0,
-    },
-    nutritionValue: {
-        color: '#1f2937',
-        fontSize: 14,
-        fontWeight: '500',
-        textAlign: 'right',
-        flex: 1,
-    },
-    offTextRow: {
-        paddingVertical: 6,
-        gap: 4,
-    },
-    offTextValue: {
-        color: '#1f2937',
-        fontSize: 14,
-        lineHeight: 20,
     },
     valueContainer: {
         flexDirection: 'row',
