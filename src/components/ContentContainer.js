@@ -3,7 +3,7 @@ import { useResponsiveDimensions } from '../utils/responsive'
 
 /**
  * Keeps list, form, and button widths readable on tablet and desktop.
- * Mobile stays full width of the screen.
+ * Mobile stays full width. Tablet stays centered; desktop sits on the left.
  */
 const ContentContainer = ({ children, style, maxWidth }) => {
     const { isDesktop, isTablet, containerMaxWidth } = useResponsiveDimensions()
@@ -14,7 +14,10 @@ const ContentContainer = ({ children, style, maxWidth }) => {
             style={[
                 styles.root,
                 constrain && styles.constrained,
-                constrain && { maxWidth: maxWidth ?? containerMaxWidth },
+                constrain && {
+                    maxWidth: maxWidth ?? containerMaxWidth,
+                    alignSelf: isDesktop ? 'flex-start' : 'center',
+                },
                 style,
             ]}
         >
@@ -30,7 +33,6 @@ const styles = StyleSheet.create({
     },
     constrained: {
         width: '100%',
-        alignSelf: 'center',
     },
 })
 

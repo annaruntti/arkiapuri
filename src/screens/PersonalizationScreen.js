@@ -106,6 +106,7 @@ const PersonalizationScreen = () => {
             contentContainerStyle={[
                 styles.container,
                 (isDesktop || isTablet) && styles.wideContainer,
+                isDesktop && styles.desktopContainer,
             ]}
         >
             <CustomText
@@ -191,6 +192,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: 40,
         paddingVertical: 40,
         alignSelf: 'center',
+    },
+    desktopContainer: {
+        alignSelf: 'flex-start',
     },
     title: {
         fontSize: 26,

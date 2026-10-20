@@ -519,8 +519,8 @@ const styles = StyleSheet.create({
     desktopContainer: {
         paddingHorizontal: 24,
         paddingVertical: 48,
-        alignItems: 'center',
-        justifyContent: 'center',
+        alignItems: 'flex-start',
+        justifyContent: 'flex-start',
         backgroundColor: '#f9fafb',
         width: '100%',
         ...(Platform.OS === 'web' && {

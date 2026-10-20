@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 24,
         paddingTop: 32,
         paddingBottom: 48,
-        alignItems: 'center',
+        alignItems: 'flex-start',
         justifyContent: 'flex-start',
         backgroundColor: '#f9fafb',
         width: '100%',

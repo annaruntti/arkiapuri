@@ -12,6 +12,7 @@ const TermsOfServiceScreen = () => {
             contentContainerStyle={[
                 styles.scrollContent,
                 (isDesktop || isTablet) && styles.wideScrollContent,
+                isDesktop && styles.desktopScrollContent,
             ]}
             showsVerticalScrollIndicator
         >
@@ -177,6 +178,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: 40,
         paddingVertical: 40,
         alignItems: 'center',
+    },
+    desktopScrollContent: {
+        alignItems: 'flex-start',
     },
     content: {
         width: '100%',
