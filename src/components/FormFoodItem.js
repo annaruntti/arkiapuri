@@ -3,7 +3,6 @@ import { forwardRef, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import {
     Alert,
-    Animated,
     Image,
     Platform,
     ScrollView,
@@ -14,16 +13,16 @@ import {
 } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
 import { useShowNutrition } from '../hooks/useShowNutrition'
-import {
-    getCategoryTree,
-    processFormCategories,
-} from '../utils/foodCategories'
+import { getCategoryTree } from '../utils/foodCategories'
 import {
     pickFoodItemImage,
     uploadFoodItemImage,
 } from '../utils/foodItemImage'
 import {
-    buildNutritionFromFormData,
+    buildFoodItemFormPayload,
+    toCatalogFoodItemPayload,
+} from '../utils/foodItemForm'
+import {
     getInitialNutritionValue,
     hasAnyInitialNutrition,
 } from '../utils/nutritionFields'
@@ -36,8 +35,8 @@ import CustomText from './CustomText'
 import FormDateField from './FormDateField'
 import CustomInput from './CustomInput'
 import FoodItemNutritionFields from './FoodItemNutritionFields'
+import FormFoodItemShoppingListSelector from './FormFoodItemShoppingListSelector'
 import InlineCategorySelect from './InlineCategorySelect'
-import ToggleButton from './ToggleButton'
 import UnifiedFoodSearch from './UnifiedFoodSearch'
 import UnitSelect from './UnitSelect'
 import { formStyles } from '../styles/formStyles'
@@ -167,63 +166,20 @@ const FormFoodItem = forwardRef(
 
         const handleFormSubmit = async (data) => {
             try {
-                const quantity = parseFloat(data.quantity) || 0
-                const processedCategories = processFormCategories(data.category)
-                const nutrition = buildNutritionFromFormData(data)
-
-                const formData = {
-                    name: data.name,
-                    isFood: data.isFood !== false,
-                    category:
-                        data.isFood === false ? [] : processedCategories,
-                    unit: data.unit,
-                    price: parseFloat(data.price) || 0,
-                    calories:
-                        data.isFood === false
-                            ? 0
-                            : parseFloat(data.calories) || 0,
-                    nutrition,
-                    expirationDate:
-                        data.isFood === false ? undefined : date || undefined,
-                    expirationDateSetByUser: Boolean(
-                        data.isFood !== false && date
-                    ),
-                    location: location,
-                    locations: showLocationSelector
-                        ? selectedLocations
-                        : [location],
-                    quantity: quantity,
-                    quantities: {
-                        meal: 0,
-                        'shopping-list': 0,
-                        pantry: 0,
-                    },
-                }
-
-                // Location quantity belongs on the pantry/list row, not the catalog.
-                if (showLocationSelector) {
-                    selectedLocations.forEach((loc) => {
-                        const locQuantity = parseFloat(quantities[loc]) || 0
-                        formData.quantities[loc] = locQuantity
-                    })
-                    formData.quantity =
-                        parseFloat(quantities[location]) || quantity
-                }
+                const formData = buildFoodItemFormPayload({
+                    data,
+                    location,
+                    date,
+                    showLocationSelector,
+                    selectedLocations,
+                    quantities,
+                })
 
                 if (location === 'meal' || location === 'shopping-list') {
                     onSubmit(formData)
                     // Form reset and closing handled by parent component
                 } else {
-                    const catalogPayload = {
-                        name: formData.name,
-                        isFood: formData.isFood,
-                        category: formData.category,
-                        unit: formData.unit,
-                        price: formData.price,
-                        calories: formData.calories,
-                        nutrition: formData.nutrition,
-                        expirationDate: formData.expirationDate,
-                    }
+                    const catalogPayload = toCatalogFoodItemPayload(formData)
 
                     const token = await storage.getItem('userToken')
                     if (!token) {
@@ -243,54 +199,24 @@ const FormFoodItem = forwardRef(
 
                     if (response.data.success) {
                         const createdFoodItem = response.data.foodItem
-                        console.log(
-                            'Food item created successfully:',
-                            createdFoodItem._id
-                        )
-
-                        // Upload image if one was selected
                         let finalFoodItem = createdFoodItem
                         if (foodItemImage) {
                             try {
-                                console.log(
-                                    'Uploading image for food item:',
-                                    createdFoodItem._id
+                                finalFoodItem = await uploadFoodItemImage(
+                                    createdFoodItem._id,
+                                    foodItemImage
                                 )
-                                console.log('Image file details:', {
-                                    uri: foodItemImage.uri,
-                                    type: foodItemImage.type,
-                                    name:
-                                        foodItemImage.fileName ||
-                                        'food-item.jpg',
-                                })
-                                const updatedFoodItem =
-                                    await uploadFoodItemImage(
-                                        createdFoodItem._id,
-                                        foodItemImage
-                                    )
-                                console.log(
-                                    'Image uploaded successfully:',
-                                    updatedFoodItem
-                                )
-                                finalFoodItem = updatedFoodItem // Use the updated food item with image
                             } catch (imageError) {
                                 console.error(
                                     'Error uploading food item image:',
                                     imageError
                                 )
-                                console.error('Full error details:', {
-                                    message: imageError.message,
-                                    response: imageError.response?.data,
-                                    status: imageError.response?.status,
-                                })
                                 Alert.alert(
                                     'Warning',
                                     'Food item created but image upload failed: ' +
                                         imageError.message
                                 )
                             }
-                        } else {
-                            console.log('No image selected for food item')
                         }
 
                         onSubmit({
@@ -302,7 +228,6 @@ const FormFoodItem = forwardRef(
                                 formData.expirationDateSetByUser,
                         })
                         reset()
-                        // Reset quantities and locations except 'meal'
                         setQuantities({
                             meal: '',
                             'shopping-list': '',
@@ -321,154 +246,6 @@ const FormFoodItem = forwardRef(
                 console.error('Error submitting form:', error)
                 Alert.alert('Virhe', 'Raaka-aineen lisääminen epäonnistui')
             }
-        }
-
-        const ShoppingListSelector = ({
-            shoppingLists,
-            selectedId,
-            onSelect,
-        }) => {
-            const [isExpanded, setIsExpanded] = useState(false)
-            const [animation] = useState(new Animated.Value(0))
-
-            if (!shoppingLists || shoppingLists.length === 0) return null
-
-            // Animation functions
-            const animateIn = () => {
-                Animated.timing(animation, {
-                    toValue: 1,
-                    duration: 300,
-                    useNativeDriver: false,
-                }).start()
-            }
-
-            const animateOut = (callback) => {
-                Animated.timing(animation, {
-                    toValue: 0,
-                    duration: 200,
-                    useNativeDriver: false,
-                }).start(callback)
-            }
-
-            // Toggle expansion
-            const toggleExpansion = () => {
-                if (isExpanded) {
-                    animateOut(() => {
-                        setIsExpanded(false)
-                    })
-                } else {
-                    setIsExpanded(true)
-                    animateIn()
-                }
-            }
-
-            const selectedList = shoppingLists.find(
-                (list) => list._id === selectedId
-            )
-            const displayText = selectedList
-                ? selectedList.name
-                : 'Valitse ostoslista...'
-
-            return (
-                <View style={styles.shoppingListContainer}>
-                    <CustomText style={formStyles.label}>
-                        Valitse ostoslista
-                    </CustomText>
-                    <ToggleButton
-                        label={displayText}
-                        expanded={isExpanded}
-                        onPress={toggleExpansion}
-                        muted={!selectedList}
-                    />
-
-                    {/* Expandable Shopping List Selection */}
-                    {isExpanded && (
-                        <Animated.View
-                            style={[
-                                styles.shoppingListExpandableSection,
-                                {
-                                    maxHeight: animation.interpolate({
-                                        inputRange: [0, 1],
-                                        outputRange: [0, 300],
-                                    }),
-                                    opacity: animation,
-                                },
-                            ]}
-                        >
-                            <View style={styles.shoppingListHeader}>
-                                <CustomText style={styles.shoppingListTitle}>
-                                    Valitse ostoslista
-                                </CustomText>
-                                <TouchableOpacity
-                                    onPress={toggleExpansion}
-                                    style={styles.shoppingListCloseButton}
-                                >
-                                    <MaterialIcons
-                                        name="close"
-                                        size={24}
-                                        color="#666"
-                                    />
-                                </TouchableOpacity>
-                            </View>
-
-                            <ScrollView
-                                style={styles.shoppingListScrollContainer}
-                                showsVerticalScrollIndicator={true}
-                                nestedScrollEnabled={true}
-                            >
-                                <TouchableOpacity
-                                    style={[
-                                        styles.shoppingListOption,
-                                        !selectedId &&
-                                            styles.shoppingListOptionSelected,
-                                    ]}
-                                    onPress={() => {
-                                        onSelect('')
-                                        toggleExpansion()
-                                    }}
-                                >
-                                    <CustomText
-                                        style={[
-                                            styles.shoppingListOptionText,
-                                            !selectedId &&
-                                                styles.shoppingListOptionTextSelected,
-                                        ]}
-                                    >
-                                        Ei ostoslistaa
-                                    </CustomText>
-                                </TouchableOpacity>
-                                {shoppingLists.map((list) => {
-                                    const isSelected = selectedId === list._id
-                                    return (
-                                        <TouchableOpacity
-                                            key={list._id}
-                                            style={[
-                                                styles.shoppingListOption,
-                                                isSelected &&
-                                                    styles.shoppingListOptionSelected,
-                                            ]}
-                                            onPress={() => {
-                                                onSelect(list._id)
-                                                toggleExpansion()
-                                            }}
-                                        >
-                                            <CustomText
-                                                style={[
-                                                    styles.shoppingListOptionText,
-                                                    isSelected &&
-                                                        styles.shoppingListOptionTextSelected,
-                                                ]}
-                                            >
-                                                {list.name}
-                                            </CustomText>
-                                        </TouchableOpacity>
-                                    )
-                                })}
-                            </ScrollView>
-                        </Animated.View>
-                    )}
-                </View>
-            )
         }
 
         const renderForm = () => (
@@ -799,7 +576,7 @@ const FormFoodItem = forwardRef(
                                                     styles.shoppingListSelectorContainer
                                                 }
                                             >
-                                                <ShoppingListSelector
+                                                <FormFoodItemShoppingListSelector
                                                     shoppingLists={
                                                         shoppingLists
                                                     }
@@ -1138,63 +915,6 @@ const styles = StyleSheet.create({
     shoppingListSelectorContainer: {
         marginLeft: 30,
         marginBottom: 5,
-    },
-    // Shopping List Inline Selector Styles
-    shoppingListContainer: {
-        marginBottom: 10,
-    },
-    shoppingListExpandableSection: {
-        backgroundColor: '#f8f9fa',
-        borderRadius: 8,
-        marginTop: 8,
-        overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: '#e9ecef',
-    },
-    shoppingListHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: '#e9ecef',
-        backgroundColor: '#fff',
-    },
-    shoppingListTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#333',
-    },
-    shoppingListCloseButton: {
-        padding: 5,
-    },
-    shoppingListScrollContainer: {
-        maxHeight: 200,
-        padding: 15,
-    },
-    shoppingListOption: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 12,
-        paddingHorizontal: 15,
-        borderRadius: 6,
-        marginBottom: 4,
-        backgroundColor: 'white',
-        borderWidth: 1,
-        borderColor: '#e9ecef',
-    },
-    shoppingListOptionSelected: {
-        backgroundColor: '#f8f5ff',
-        borderColor: '#5844BB',
-    },
-    shoppingListOptionText: {
-        fontSize: 16,
-        color: '#666',
-        flex: 1,
-    },
-    shoppingListOptionTextSelected: {
-        color: '#333',
-        fontWeight: '500',
     },
     imagePicker: {
         borderWidth: 2,

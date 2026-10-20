@@ -24,7 +24,6 @@ import ShoppingListFloatingActions from './ShoppingListFloatingActions'
 import ShoppingListSummaryHeader from './ShoppingListSummaryHeader'
 import { useFilteredItemList } from '../hooks/useFilteredItemList'
 import {
-    addShoppingListItems,
     deleteShoppingListItem,
     entityId,
     moveShoppingListItemsToPantry,
@@ -38,11 +37,8 @@ import {
     SORT_OPTION_IDS,
 } from '../utils/listSort'
 import { lineAmount } from '../utils/shoppingListPrice'
-import {
-    buildDuplicateMergeUpdates,
-    collapseDuplicateShoppingListItems,
-    findMatchingShoppingListItem,
-} from '../utils/shoppingListDuplicate'
+import { addOrMergeShoppingListItem } from '../utils/shoppingListAddItem'
+import { collapseDuplicateShoppingListItems } from '../utils/shoppingListDuplicate'
 import { resolveAppUnit } from '../utils/units'
 import { shoppingListLineFromMappedPackage } from '../utils/openFoodFactsMapper'
 import storage from '../utils/storage'
@@ -577,161 +573,24 @@ const ShoppingListDetail = ({
 
     const handleAddItem = async (itemData) => {
         try {
-            // Food catalog / barcode payloads use FoodItem._id — never treat it
-            // as the shopping-list row id.
-            const { _id: _ignoredCatalogId, ...itemWithoutRowId } =
-                itemData || {}
-            const incoming = {
-                ...itemWithoutRowId,
-                isFood: itemData.isFood !== false,
-                quantity: itemData.quantity || 1,
-                unit: itemData.unit || 'kpl',
-            }
-
-            const existing = findMatchingShoppingListItem(
-                shoppingList?.items,
-                incoming
-            )
-            if (existing) {
-                // Close the add-product sheet first so the confirm dialog is
-                // visible (it was previously covered by "Lisää tuote").
-                setShowAddItem(false)
-                setAutoOpenScanner(false)
-                const shouldIncrease = await new Promise((resolve) => {
-                    setDuplicateMerge({ existing, incoming, resolve })
-                })
-                if (!shouldIncrease) return
-
-                const { updates, priceEstimate, priceEstimateSource } =
-                    buildDuplicateMergeUpdates(existing, incoming)
-                const itemId = getListItemId(existing)
-                const token = await storage.getItem('userToken')
-
-                if (!token) {
-                    const updatedList = {
-                        ...shoppingList,
-                        items: (shoppingList.items || []).map((item) =>
-                            getListItemId(item) === itemId
-                                ? {
-                                      ...item,
-                                      ...updates,
-                                      ...(updates.price > 0
-                                          ? {
-                                                priceEstimate: undefined,
-                                                priceEstimateSource: undefined,
-                                            }
-                                          : priceEstimate > 0
-                                            ? {
-                                                  price: 0,
-                                                  priceEstimate,
-                                                  priceEstimateSource,
-                                              }
-                                            : {}),
-                                  }
-                                : item
-                        ),
-                    }
-                    onUpdate(updatedList)
-                    goToListView()
-                    return
-                }
-
-                const data = await updateShoppingListItem(
-                    shoppingList._id,
-                    itemId,
-                    updates
-                )
-                // Ensure the visible line total matches the merged quantity even
-                // if the API response still has a stale single-item estimate.
-                if (
-                    data?.shoppingList &&
-                    !(updates.price > 0) &&
-                    priceEstimate > 0
-                ) {
-                    const patchedItems = (data.shoppingList.items || []).map(
-                        (item) =>
-                            getListItemId(item) === itemId
-                                ? {
-                                      ...item,
-                                      quantity:
-                                          updates.quantity ?? item.quantity,
-                                      unit: updates.unit || item.unit,
-                                      priceEstimate,
-                                      priceEstimateSource:
-                                          priceEstimateSource ||
-                                          item.priceEstimateSource ||
-                                          'history',
-                                  }
-                                : item
-                    )
-                    onUpdate({
-                        ...data.shoppingList,
-                        items: patchedItems,
-                    })
-                } else {
-                    onUpdate(data.shoppingList)
-                }
-                goToListView()
-                return
-            }
-
             const token = await storage.getItem('userToken')
-
-            // Guest mode: keep items on the local shopping list only
-            if (!token) {
-                const guestItem = {
-                    ...incoming,
-                    _id:
-                        itemData._id ||
-                        `guest-item-${Date.now()}-${Math.random()
-                            .toString(36)
-                            .slice(2, 8)}`,
-                    foodId: itemData.foodId || itemData._id,
-                    location: 'shopping-list',
-                    bought: false,
-                }
-                const updatedList = {
-                    ...shoppingList,
-                    items: [...(shoppingList.items || []), guestItem],
-                }
-                onUpdate(updatedList)
-                goToListView()
-                return
-            }
-
-            // Keep quantities in sync on the list row only, without ever
-            // resending the whole shopping list (which could resurrect
-            // already-removed items if this component's local state happened
-            // to be stale).
-            let foodItemId = itemData.foodId
-
-            if (!foodItemId) {
-                try {
-                    const foodItemResult = await findOrCreateFoodItem({
-                        name: itemData.name,
-                        isFood: itemData.isFood !== false,
-                        category: itemData.category || [],
-                        unit: itemData.unit || 'kpl',
-                        price: itemData.price || 0,
-                        calories: itemData.calories || 0,
+            const result = await addOrMergeShoppingListItem({
+                shoppingList,
+                itemData,
+                token,
+                confirmDuplicateMerge: async ({ existing, incoming }) => {
+                    // Close the add-product sheet first so the confirm dialog
+                    // is visible (it was previously covered by "Lisää tuote").
+                    setShowAddItem(false)
+                    setAutoOpenScanner(false)
+                    return new Promise((resolve) => {
+                        setDuplicateMerge({ existing, incoming, resolve })
                     })
-                    foodItemId = foodItemResult.foodItem?._id
-                } catch (foodItemError) {
-                    console.error('Error creating food item:', foodItemError)
-                    // Continue without foodId
-                }
-            }
+                },
+            })
 
-            const newItem = {
-                ...incoming,
-                foodId: foodItemId,
-                location: 'shopping-list',
-            }
-
-            const data = await addShoppingListItems(shoppingList._id, [
-                newItem,
-            ])
-            onUpdate(data.shoppingList)
+            if (result.status === 'cancelled') return
+            onUpdate(result.shoppingList)
             goToListView()
         } catch (error) {
             console.error('Error adding item:', error?.response?.data || error)
