@@ -4,8 +4,8 @@ import { useResponsiveDimensions } from '../utils/responsive'
 
 /**
  * Keeps list, form, and button widths readable on tablet and desktop.
- * Mobile stays full width. Tablet stays centered; desktop sits on the left
- * with the same inset from both edges of the content area.
+ * Mobile stays full width. Tablet stays centered. Desktop sits on the left
+ * with the same inset from the content area in every view.
  */
 const ContentContainer = ({ children, style, maxWidth }) => {
     const {
