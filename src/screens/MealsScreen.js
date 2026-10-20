@@ -8,14 +8,10 @@ import {
     StyleSheet,
     View,
 } from 'react-native'
-import ActiveFilterBanner from '../components/ActiveFilterBanner'
 import CategorySectionHeader from '../components/CategorySectionHeader'
 import CustomText from '../components/CustomText'
 import AddMealForm from '../components/FormAddMeal'
-import GenericFilter from '../components/GenericFilter'
-import GenericFilterSection from '../components/GenericFilterSection'
-import ListSortControl from '../components/ListSortControl'
-import ListStatsRow from '../components/ListStatsRow'
+import MealsFilterChrome from '../components/MealsFilterChrome'
 import MealItem from '../components/MealItem'
 import MealItemDetail from '../components/MealItemDetail'
 import LoginPromptModal from '../components/LoginPromptModal'
@@ -42,16 +38,10 @@ import {
     toStoredMealDate,
     toStoredMealDates,
 } from '../utils/mealDates'
+import { SORT_OPTION_IDS, sortListItems } from '../utils/listSort'
 import {
-    MEAL_SORT_OPTIONS,
-    SORT_OPTION_IDS,
-    sortListItems,
-} from '../utils/listSort'
-import {
-    getDifficultyText,
-    getMealRoleText,
     getDifficultyEnum,
-    mealRoles,
+    getMealRoleText,
     parseMealCategories,
     parseMealRoles,
 } from '../utils/mealUtils'
@@ -62,14 +52,8 @@ import {
     filterMealsByCookingTime,
     filterMealsByType,
     getDietCategories,
-    getMealCountByDifficulty,
-    getMealCountByCookingTime,
-    getMealCountByType,
 } from '../utils/mealFilters'
-import {
-    groupMealsByCategory,
-    getMealCountsForCategories,
-} from '../utils/mealGrouping'
+import { groupMealsByCategory } from '../utils/mealGrouping'
 import storage from '../utils/storage'
 
 const MealsScreen = ({ route, navigation }) => {
@@ -579,113 +563,40 @@ const MealsScreen = ({ route, navigation }) => {
             >
                 <>
                     <View style={styles.findSection}>
-                        <ActiveFilterBanner
+                        <MealsFilterChrome
                             filterDifficulty={filterDifficulty}
                             selectedDifficultyFilter={
                                 selectedDifficultyFilter
+                            }
+                            setSelectedDifficultyFilter={
+                                setSelectedDifficultyFilter
                             }
                             filterMaxCookingTime={filterMaxCookingTime}
                             selectedCookingTimeFilter={
                                 selectedCookingTimeFilter
                             }
-                            filterMealType={activeMealTypeFilter}
-                            onClear={clearNavigationFilters}
-                        />
-                        <ListStatsRow
-                            actions={
-                                <>
-                                    <ListSortControl
-                                        options={MEAL_SORT_OPTIONS}
-                                        value={sortId}
-                                        onChange={setSortId}
-                                    />
-                                    <GenericFilter
-                                        selectedFilters={selectedDietFilters}
-                                        showFilters={showFilters}
-                                        onToggleShowFilters={() =>
-                                            setShowFilters(!showFilters)
-                                        }
-                                    />
-                                </>
+                            setSelectedCookingTimeFilter={
+                                setSelectedCookingTimeFilter
                             }
-                        >
-                            <CustomText>
-                                Aterioita:{' '}
-                                {searchQuery.length > 0 || hasActiveFilters
-                                    ? `${filteredMeals.length} / ${meals.length}`
-                                    : `${filteredMeals.length} kpl`}
-                            </CustomText>
-                        </ListStatsRow>
-                        <GenericFilterSection
-                            selectedFilters={selectedDietFilters}
+                            activeMealTypeFilter={activeMealTypeFilter}
+                            selectedMealTypeFilter={selectedMealTypeFilter}
+                            setSelectedMealTypeFilter={
+                                setSelectedMealTypeFilter
+                            }
+                            onClearNavigationFilters={clearNavigationFilters}
+                            sortId={sortId}
+                            setSortId={setSortId}
+                            selectedDietFilters={selectedDietFilters}
+                            setSelectedDietFilters={setSelectedDietFilters}
                             showFilters={showFilters}
-                            filterTitle="Suodata ruokavalioin mukaan"
-                            categories={dietCategories}
-                            onToggleFilter={toggleDietFilter}
-                            onClearFilters={() => setSelectedDietFilters([])}
-                            getItemCounts={() =>
-                                getMealCountsForCategories(searchedMeals)
-                            }
-                            additionalFilterGroups={[
-                                {
-                                    title: 'Ateriatyyppi',
-                                    selectedValue: selectedMealTypeFilter,
-                                    onSelect: setSelectedMealTypeFilter,
-                                    getItemCount: (mealType) =>
-                                        getMealCountByType(
-                                            searchedMeals,
-                                            mealType
-                                        ),
-                                    options: Object.entries(mealRoles).map(
-                                        ([value, label]) => ({
-                                            value,
-                                            label,
-                                        })
-                                    ),
-                                },
-                                {
-                                    title: 'Vaikeustaso',
-                                    selectedValue: selectedDifficultyFilter,
-                                    onSelect: setSelectedDifficultyFilter,
-                                    getItemCount: (difficulty) =>
-                                        getMealCountByDifficulty(
-                                            searchedMeals,
-                                            difficulty
-                                        ),
-                                    options: [
-                                        {
-                                            value: 'easy',
-                                            label: getDifficultyText('easy'),
-                                        },
-                                        {
-                                            value: 'medium',
-                                            label: getDifficultyText(
-                                                'medium'
-                                            ),
-                                        },
-                                        {
-                                            value: 'hard',
-                                            label: getDifficultyText('hard'),
-                                        },
-                                    ],
-                                },
-                                {
-                                    title: 'Valmistusaika',
-                                    selectedValue: selectedCookingTimeFilter,
-                                    onSelect: setSelectedCookingTimeFilter,
-                                    getItemCount: (maxTime) =>
-                                        getMealCountByCookingTime(
-                                            searchedMeals,
-                                            maxTime
-                                        ),
-                                    options: [
-                                        { value: 15, label: '≤ 15 min' },
-                                        { value: 30, label: '≤ 30 min' },
-                                        { value: 45, label: '≤ 45 min' },
-                                        { value: 60, label: '≤ 60 min' },
-                                    ],
-                                },
-                            ]}
+                            setShowFilters={setShowFilters}
+                            dietCategories={dietCategories}
+                            onToggleDietFilter={toggleDietFilter}
+                            searchedMeals={searchedMeals}
+                            filteredMealsCount={filteredMeals.length}
+                            mealsCount={meals.length}
+                            searchQuery={searchQuery}
+                            hasActiveFilters={hasActiveFilters}
                         />
                     </View>
                     {meals.length === 0 ? (

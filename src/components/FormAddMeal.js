@@ -1,17 +1,14 @@
 import axios from 'axios'
 import {
     Alert,
-    Image,
     Platform,
     ScrollView,
     StyleSheet,
-    TouchableOpacity,
     View,
     KeyboardAvoidingView,
 } from 'react-native'
 import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { MaterialIcons } from '@expo/vector-icons'
 
 import { useLogin } from '../context/LoginProvider'
 import useMealFoodItemActions from '../hooks/useMealFoodItemActions'
@@ -25,30 +22,16 @@ import { pickMealImage, uploadMealImage } from '../utils/mealImage'
 import { resolveMealFoodItemRefs } from '../utils/resolveMealFoodItems'
 import {
     clampDatesToMin,
-    OVERDUE_COOKING_MESSAGE,
     toStoredMealDate,
     toStoredMealDates,
 } from '../utils/mealDates'
-import {
-    getDifficultyEnum,
-    getMealCategoryText,
-    getMealTypeText,
-    parseMealCategories,
-} from '../utils/mealUtils'
+import { getDifficultyEnum, parseMealCategories } from '../utils/mealUtils'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 
 import Button from './Button'
-import CustomInput from './CustomInput'
-import CustomText from './CustomText'
-import DifficultySelector from './DifficultySelector'
-import FormDateField from './FormDateField'
-import PlannedEatingDates from './PlannedEatingDates'
 import GuestWarningBanner from './GuestWarningBanner'
 import NoticeBanner from './NoticeBanner'
-import CollapsibleFormSection from './CollapsibleFormSection'
-import MealCategorySelector from './MealCategorySelector'
-import MealRoleSelector from './MealRoleSelector'
 import ShoppingListPickerModal from './ShoppingListPickerModal'
 import {
     applyIngredientQuantity,
@@ -68,10 +51,8 @@ import {
     normalizeRecipeSteps,
     resolveRecipeSteps,
 } from '../utils/recipeSteps'
-import Info from './Info'
+import MealFormBasicsSection from './MealFormBasicsSection'
 import MealFormIngredientsSection from './MealFormIngredientsSection'
-import MealServingsStepper from './MealServingsStepper'
-import RecipeStepsEditor from './RecipeStepsEditor'
 
 const AddMealForm = ({
     onSubmit,
@@ -625,174 +606,31 @@ const AddMealForm = ({
                             Open Food Factsista.
                         </NoticeBanner>
                     ) : null}
-                    <View ref={nameErrorRef}>
-                        <CustomInput
-                            control={control}
-                            name="name"
-                            label="Aterian nimi"
-                            placeholder="Esim. kasvisrisotto"
-                            rules={{
-                                required: 'Aterian nimi on pakollinen tieto',
-                            }}
-                            variant="form"
-                        />
-                    </View>
-                    <View ref={recipeErrorRef}>
-                        <CustomText style={styles.label}>
-                            Valmistusohje
-                        </CustomText>
-                        <RecipeStepsEditor
-                            steps={recipeSteps}
-                            onChange={(next) => {
-                                setRecipeSteps(next)
-                                if (normalizeRecipeSteps(next).length) {
-                                    setFormErrors((e) => ({
-                                        ...e,
-                                        recipeSteps: undefined,
-                                    }))
-                                }
-                            }}
-                        />
-                        {formErrors.recipeSteps && (
-                            <View style={styles.errorRow}>
-                                <MaterialIcons
-                                    name="error"
-                                    color="#e53e3e"
-                                    size={14}
-                                />
-                                <CustomText style={styles.errorMsg}>
-                                    {formErrors.recipeSteps}
-                                </CustomText>
-                            </View>
-                        )}
-                    </View>
-                    <CustomText style={styles.label}>Aterian kuva</CustomText>
-                    <TouchableOpacity
-                        style={styles.imagePicker}
-                        onPress={pickImage}
-                    >
-                        {mealImage ? (
-                            <Image
-                                source={{ uri: mealImage.uri }}
-                                style={styles.selectedImage}
-                            />
-                        ) : (
-                            <View style={styles.imagePlaceholder}>
-                                <MaterialIcons
-                                    name="add-a-photo"
-                                    size={40}
-                                    color="#5844BB"
-                                />
-                                <CustomText style={styles.imagePlaceholderText}>
-                                    Lisää kuva
-                                </CustomText>
-                            </View>
-                        )}
-                    </TouchableOpacity>
-                    <CustomText style={styles.label}>
-                        Vaikeustaso (1-5)
-                    </CustomText>
-                    <DifficultySelector
-                        value={difficultyLevel}
-                        onSelect={setDifficultyLevel}
-                    />
-                    <CustomInput
+                    <MealFormBasicsSection
                         control={control}
-                        name="cookingTime"
-                        label="Valmistusaika (min)"
-                        placeholder="Esim. 30"
-                        variant="form"
-                        keyboardType="numeric"
-                    />
-
-                    <MealServingsStepper
-                        value={servings}
-                        onChange={handleServingsChange}
-                    />
-
-                    <View
-                        ref={rolesErrorRef}
-                        style={styles.collapsibleFormSection}
-                    >
-                        <CollapsibleFormSection
-                            label="Aterian tyyppi"
-                            summary={
-                                selectedRoles.length > 0
-                                    ? getMealTypeText(selectedRoles)
-                                    : ''
-                            }
-                            expanded={rolesExpanded}
-                            onExpandedChange={setRolesExpanded}
-                        >
-                            <MealRoleSelector
-                                value={selectedRoles}
-                                onSelect={(next) => {
-                                    setSelectedRoles(next)
-                                    if (next.length > 0) {
-                                        setFormErrors((e) => ({
-                                            ...e,
-                                            roles: undefined,
-                                        }))
-                                    }
-                                }}
-                            />
-                        </CollapsibleFormSection>
-                        {formErrors.roles && (
-                            <View style={styles.errorRow}>
-                                <MaterialIcons
-                                    name="error"
-                                    color="#e53e3e"
-                                    size={14}
-                                />
-                                <CustomText style={styles.errorMsg}>
-                                    {formErrors.roles}
-                                </CustomText>
-                            </View>
-                        )}
-                    </View>
-
-                    <CollapsibleFormSection
-                        label="Ruokalaji"
-                        style={styles.collapsibleFormSection}
-                        summary={
-                            mealCategory.length > 0
-                                ? getMealCategoryText(mealCategory)
-                                : ''
-                        }
-                    >
-                        <MealCategorySelector
-                            value={mealCategory}
-                            onSelect={setMealCategory}
-                        />
-                    </CollapsibleFormSection>
-                    <FormDateField
-                        label="Suunniteltu valmistuspäivä"
-                        value={plannedCookingDate}
-                        onChange={handleCookingDateChange}
-                        minimumDate={new Date()}
-                        warnIfPast
-                        overdueMessage={OVERDUE_COOKING_MESSAGE}
-                        testID="plannedCookingDate"
-                        labelRight={
-                            <Info
-                                title="Suunniteltu valmistuspäivä"
-                                content="Tässä voit valita päivän, jolloin aiot valmistaa tämän aterian. Valittuasi suunnitellun valmistuspäivän, ateria ilmestyy lukujärjestykseesi kyseisen päivän kohdalle. Voit muuttaa päivämäärää myöhemmin tarvittaessa. Luotu ateria jää myös talteen Ateriat-listaasi ja voit asettaa aina uudelleen suunnitellun valmistuspäivämää sille kun haluat taas valmistaa kyseisen aterian."
-                            />
-                        }
-                    />
-
-                    <PlannedEatingDates
-                        dates={plannedEatingDates}
-                        onChange={setPlannedEatingDates}
-                        cookingDate={plannedCookingDate}
-                        label="Suunnitellut syöntipäivät (valinnainen)"
-                        labelRight={
-                            <Info
-                                title="Suunnitellut syöntipäivät"
-                                content="Voit lisätä useita päivämääriä, jos aiot syödä saman aterian useampana päivänä. Jos jätät tämän tyhjäksi, syöntipäiväksi asetetaan sama päivä kuin valmistuspäivä."
-                            />
-                        }
-                        style={styles.eatingDatesContainer}
+                        nameErrorRef={nameErrorRef}
+                        recipeErrorRef={recipeErrorRef}
+                        rolesErrorRef={rolesErrorRef}
+                        recipeSteps={recipeSteps}
+                        setRecipeSteps={setRecipeSteps}
+                        formErrors={formErrors}
+                        setFormErrors={setFormErrors}
+                        mealImage={mealImage}
+                        onPickImage={pickImage}
+                        difficultyLevel={difficultyLevel}
+                        setDifficultyLevel={setDifficultyLevel}
+                        servings={servings}
+                        onServingsChange={handleServingsChange}
+                        selectedRoles={selectedRoles}
+                        setSelectedRoles={setSelectedRoles}
+                        rolesExpanded={rolesExpanded}
+                        setRolesExpanded={setRolesExpanded}
+                        mealCategory={mealCategory}
+                        setMealCategory={setMealCategory}
+                        plannedCookingDate={plannedCookingDate}
+                        onCookingDateChange={handleCookingDateChange}
+                        plannedEatingDates={plannedEatingDates}
+                        setPlannedEatingDates={setPlannedEatingDates}
                     />
 
                     <MealFormIngredientsSection
@@ -890,20 +728,6 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         paddingBottom: 20,
     },
-    label: {
-        paddingTop: 10,
-        marginBottom: 5,
-    },
-    errorRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 6,
-    },
-    errorMsg: {
-        color: '#e53e3e',
-        marginLeft: 5,
-        fontSize: 13,
-    },
     primaryButton: {
         borderRadius: 25,
         paddingTop: 7,
@@ -932,40 +756,6 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         width: '100%',
         paddingTop: 15,
-    },
-    collapsibleFormSection: {
-        marginBottom: 10,
-    },
-    imagePicker: {
-        borderWidth: 2,
-        borderColor: '#5844BB',
-        borderStyle: 'dashed',
-        borderRadius: 8,
-        marginBottom: 20,
-        overflow: 'hidden',
-    },
-    imagePlaceholder: {
-        height: 120,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#f8f9fa',
-    },
-    imagePlaceholderText: {
-        marginTop: 8,
-        color: '#5844BB',
-        fontSize: 16,
-        fontWeight: '500',
-    },
-    selectedImage: {
-        width: '100%',
-        height: 200,
-        resizeMode: 'cover',
-    },
-    eatingDatesContainer: {
-        marginBottom: 15,
-        paddingTop: 0,
-        paddingBottom: 0,
-        borderBottomWidth: 0,
     },
 })
 
