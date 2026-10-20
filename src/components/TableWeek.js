@@ -32,12 +32,10 @@ import {
 import { getMealTypeText } from '../utils/mealUtils'
 import Button from './Button'
 import CustomText from './CustomText'
-import DateSelector from './DateSelector'
 import DraggableMealItem from './DraggableMealItem'
-import FormAddMeal from './FormAddMeal'
 import MealItemDetail from './MealItemDetail'
-import MealSelectionList from './MealSelectionList'
-import ResponsiveModal from './ResponsiveModal'
+import WeekMealSelectModal from './WeekMealSelectModal'
+import WeekMoveMealModal from './WeekMoveMealModal'
 import { MEAL_PLACEHOLDER_IMAGE_URL } from '../constants/images'
 
 const Table = ({ onRequireLogin }) => {
@@ -731,157 +729,21 @@ const Table = ({ onRequireLogin }) => {
         )
     }
 
-    const renderMealSelectModal = () => (
-        <ResponsiveModal
-            visible={isModalVisible}
-            onClose={() => {
-                if (mealSelectView === 'details') {
-                    mealDetailBackRef.current?.()
-                    return
-                }
-                if (mealSelectView === 'create') {
-                    setMealSelectView('select')
-                    return
-                }
-                setIsModalVisible(false)
-                setSelectedDates([])
-                setMealSelectView('select')
-                setSelectDetailMeal(null)
-                setSelectDetailsTitle('')
-            }}
-            title={
-                mealSelectView === 'details'
-                    ? selectDetailsTitle || selectDetailMeal?.name || 'Ateria'
-                    : mealSelectView === 'create'
-                      ? 'Luo uusi ateria'
-                      : 'Valitse ateria ja päivät'
-            }
-            showBackButton={
-                mealSelectView === 'create' || mealSelectView === 'details'
-            }
-            maxWidth={640}
-            contentStyle={styles.mealSelectModalContent}
-            bodyStyle={
-                mealSelectView === 'select'
-                    ? styles.mealSelectModalBody
-                    : styles.mealCreateModalBody
-            }
-        >
-            {mealSelectView === 'create' ? (
-                <FormAddMeal
-                    onSubmit={() => {
-                        setMealSelectView('select')
-                        fetchMealData(dates)
-                    }}
-                />
-            ) : mealSelectView === 'details' ? (
-                <MealItemDetail
-                    embedded
-                    meal={selectDetailMeal}
-                    visible
-                    onClose={closeSelectMealDetails}
-                    onUpdate={handleMealUpdate}
-                    backHandlerRef={mealDetailBackRef}
-                    onHeaderStateChange={handleSelectDetailsHeaderChange}
-                />
-            ) : (
-                <MealSelectionList
-                    header={
-                        <DateSelector
-                            dates={dates}
-                            selectedDates={selectedDates}
-                            onToggleDateSelection={toggleDateSelection}
-                            onClearSelection={clearDateSelection}
-                        />
-                    }
-                    availableMeals={availableMeals}
-                    selectedDates={selectedDates}
-                    onMealSelect={handleSelectMeal}
-                    onMealDetails={openSelectMealDetails}
-                    onCreateMeal={() => setMealSelectView('create')}
-                    showAllRoles={false}
-                />
-            )}
-        </ResponsiveModal>
-    )
-
-    const renderMoveMealModal = () => (
-        <ResponsiveModal
-            visible={moveMealModalVisible}
-            onClose={() => {
-                setMoveMealModalVisible(false)
-                setMealToMove(null)
-                setMoveFromDate(null)
-            }}
-        >
-            <View style={styles.modalContent}>
-                <CustomText style={styles.modalTitle}>
-                    Siirrä ateria toiselle päivälle
-                </CustomText>
-                {mealToMove && (
-                    <View style={styles.moveFromInfo}>
-                        <CustomText style={styles.moveFromText}>
-                            Siirretään:{' '}
-                            <CustomText style={styles.mealNameBold}>
-                                {mealToMove.name}
-                            </CustomText>
-                        </CustomText>
-                        {moveFromDate && (
-                            <CustomText style={styles.moveFromText}>
-                                Nykyinen päivä:{' '}
-                                {format(moveFromDate, 'EEEE d.M.', {
-                                    locale: fi,
-                                })}
-                            </CustomText>
-                        )}
-                    </View>
-                )}
-                <CustomText style={styles.selectDayTitle}>
-                    Valitse uusi päivä:
-                </CustomText>
-                <View style={styles.daysList}>
-                    {dates.map((date) => {
-                        const isCurrentDay =
-                            moveFromDate &&
-                            format(date, 'yyyy-MM-dd') ===
-                                format(moveFromDate, 'yyyy-MM-dd')
-                        const dayName = format(date, 'EEEE d.M.', {
-                            locale: fi,
-                        })
-                        const capitalizedDayName =
-                            dayName.charAt(0).toUpperCase() + dayName.slice(1)
-
-                        return (
-                            <TouchableOpacity
-                                key={format(date, 'yyyy-MM-dd')}
-                                style={[
-                                    styles.dayButton,
-                                    isCurrentDay && styles.currentDayButton,
-                                ]}
-                                onPress={() => handleMoveMealToDay(date)}
-                                disabled={isCurrentDay}
-                            >
-                                <CustomText
-                                    style={[
-                                        styles.dayButtonText,
-                                        isCurrentDay &&
-                                            styles.currentDayButtonText,
-                                    ]}
-                                >
-                                    {capitalizedDayName}
-                                </CustomText>
-                                {isCurrentDay && (
-                                    <CustomText style={styles.currentDayLabel}>
-                                        (Nykyinen)
-                                    </CustomText>
-                                )}
-                            </TouchableOpacity>
-                        )
-                    })}
-                </View>
-            </View>
-        </ResponsiveModal>
-    )
+    const handleMealSelectModalClose = () => {
+        if (mealSelectView === 'details') {
+            mealDetailBackRef.current?.()
+            return
+        }
+        if (mealSelectView === 'create') {
+            setMealSelectView('select')
+            return
+        }
+        setIsModalVisible(false)
+        setSelectedDates([])
+        setMealSelectView('select')
+        setSelectDetailMeal(null)
+        setSelectDetailsTitle('')
+    }
 
     const renderHeader = () => {
         return (
@@ -956,8 +818,41 @@ const Table = ({ onRequireLogin }) => {
                 }}
                 scrollEventThrottle={16}
             />
-            {renderMealSelectModal()}
-            {renderMoveMealModal()}
+            <WeekMealSelectModal
+                visible={isModalVisible}
+                view={mealSelectView}
+                dates={dates}
+                selectedDates={selectedDates}
+                availableMeals={availableMeals}
+                selectDetailMeal={selectDetailMeal}
+                selectDetailsTitle={selectDetailsTitle}
+                mealDetailBackRef={mealDetailBackRef}
+                onClose={handleMealSelectModalClose}
+                onToggleDateSelection={toggleDateSelection}
+                onClearSelection={clearDateSelection}
+                onMealSelect={handleSelectMeal}
+                onMealDetails={openSelectMealDetails}
+                onCreateMeal={() => setMealSelectView('create')}
+                onCreateSubmit={() => {
+                    setMealSelectView('select')
+                    fetchMealData(dates)
+                }}
+                onCloseDetails={closeSelectMealDetails}
+                onMealUpdate={handleMealUpdate}
+                onDetailsHeaderChange={handleSelectDetailsHeaderChange}
+            />
+            <WeekMoveMealModal
+                visible={moveMealModalVisible}
+                meal={mealToMove}
+                fromDate={moveFromDate}
+                dates={dates}
+                onClose={() => {
+                    setMoveMealModalVisible(false)
+                    setMealToMove(null)
+                    setMoveFromDate(null)
+                }}
+                onSelectDay={handleMoveMealToDay}
+            />
             <MealItemDetail
                 meal={selectedMeal}
                 visible={detailModalVisible}
@@ -1201,35 +1096,6 @@ const styles = StyleSheet.create({
         color: '#666',
         marginTop: 2,
     },
-    modalView: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'flex-end',
-    },
-    modalContent: {
-        backgroundColor: 'white',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        height: '90%',
-        width: '100%',
-        paddingBottom: 20,
-    },
-    modalHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 20,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-    },
-    modalTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        flex: 1,
-    },
-    closeButton: {
-        padding: 5,
-    },
     mealItemContainer: {
         backgroundColor: '#fff',
         paddingVertical: 12,
@@ -1358,61 +1224,6 @@ const styles = StyleSheet.create({
         borderRadius: 15,
         backgroundColor: 'rgba(255, 255, 255, 0.2)',
     },
-    moveFromInfo: {
-        backgroundColor: '#f5f5f5',
-        padding: 15,
-        borderRadius: 8,
-        marginBottom: 20,
-    },
-    moveFromText: {
-        fontSize: 14,
-        color: '#666',
-        marginBottom: 5,
-    },
-    mealNameBold: {
-        fontWeight: 'bold',
-        color: '#333',
-    },
-    selectDayTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        marginBottom: 15,
-        color: '#333',
-    },
-    daysList: {
-        gap: 10,
-    },
-    dayButton: {
-        backgroundColor: '#AE9CFC',
-        padding: 16,
-        borderRadius: 10,
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-        elevation: 3,
-    },
-    currentDayButton: {
-        backgroundColor: '#e0e0e0',
-        opacity: 0.6,
-    },
-    dayButtonText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#fff',
-    },
-    currentDayButtonText: {
-        color: '#999',
-    },
-    currentDayLabel: {
-        fontSize: 12,
-        color: '#999',
-        marginTop: 4,
-    },
     mealsContainer: {
         overflow: 'visible',
         zIndex: 100,
@@ -1486,16 +1297,6 @@ const styles = StyleSheet.create({
         marginTop: 2,
         textDecorationLine: 'underline',
         textAlign: 'center',
-    },
-    mealSelectModalContent: {
-        flex: 1,
-        backgroundColor: '#f9fafb',
-    },
-    mealSelectModalBody: {
-        paddingHorizontal: 0,
-    },
-    mealCreateModalBody: {
-        paddingHorizontal: 20,
     },
 })
 

@@ -26,63 +26,20 @@ import CustomText from './CustomText'
 import ListItem from './ListItem'
 import MealIngredientQuantityModal from './MealIngredientQuantityModal'
 import BarcodeProductReview from './BarcodeProductReview'
+import FoodSearchSourceTabs, {
+    FOOD_SEARCH_TABS,
+} from './FoodSearchSourceTabs'
 import {
     applyIngredientQuantity,
     stripCatalogLocationQuantity,
 } from '../utils/mealFoodItem'
 import { DEFAULT_SERVINGS } from '../utils/mealServings'
+import { dedupeFoodItems } from '../utils/foodSearchDedupe'
 import {
     buildGuestFoodItemFromOpenFoodFacts,
     mapOpenFoodFactsToFoodItemFields,
     shoppingListLineFromMappedPackage,
 } from '../utils/openFoodFactsMapper'
-
-const normalizeItemName = (name) =>
-    String(name || '')
-        .toLowerCase()
-        .trim()
-
-const getItemIdentity = (item) => {
-    if (item?._id) return `id:${item._id}`
-    if (item?.barcode) return `barcode:${item.barcode}`
-    return null
-}
-
-/** Prefer richer / more recently used catalog item when collapsing duplicates. */
-const scoreFoodItem = (item) => {
-    const hasImage = item.image?.url || item.imageUrl ? 1 : 0
-    const hasOff = item.openFoodFactsData ? 1 : 0
-    const updatedAt = item.updatedAt ? new Date(item.updatedAt).getTime() : 0
-    return hasImage * 5 + hasOff * 3 + updatedAt / 1e12
-}
-
-const dedupeFoodItems = (items = []) => {
-    const byIdentity = new Map()
-
-    for (const item of items) {
-        const identity = getItemIdentity(item)
-        if (!identity) {
-            byIdentity.set(`anon:${byIdentity.size}`, item)
-            continue
-        }
-        const existing = byIdentity.get(identity)
-        if (!existing || scoreFoodItem(item) > scoreFoodItem(existing)) {
-            byIdentity.set(identity, item)
-        }
-    }
-
-    const byName = new Map()
-    for (const item of byIdentity.values()) {
-        const name = normalizeItemName(item.name)
-        if (!name) continue
-        const existing = byName.get(name)
-        if (!existing || scoreFoodItem(item) > scoreFoodItem(existing)) {
-            byName.set(name, item)
-        }
-    }
-
-    return [...byName.values()]
-}
 
 const UnifiedFoodSearch = ({
     onSelectItem,
@@ -106,7 +63,7 @@ const UnifiedFoodSearch = ({
     const [loading, setLoading] = useState(false)
     const [isListVisible, setIsListVisible] = useState(false)
     const [addedItems, setAddedItems] = useState(new Set())
-    const [activeTab, setActiveTab] = useState('all') // 'all', 'local', 'openfoodfacts'
+    const [activeTab, setActiveTab] = useState(FOOD_SEARCH_TABS.ALL)
     const [pendingMealPick, setPendingMealPick] = useState(null)
     const [pendingBarcodeReview, setPendingBarcodeReview] = useState(null)
     const searchContainerRef = useRef(null)
@@ -1046,67 +1003,12 @@ const UnifiedFoodSearch = ({
 
             {isListVisible && searchQuery.length >= 2 && (
                 <View style={styles.resultsContainer}>
-                    {/* Tab selector */}
-                    <View style={styles.tabContainer}>
-                        <TouchableOpacity
-                            style={[
-                                styles.tab,
-                                activeTab === 'all' && styles.activeTab,
-                            ]}
-                            onPress={() => setActiveTab('all')}
-                        >
-                            <CustomText
-                                style={[
-                                    styles.tabText,
-                                    activeTab === 'all' && styles.activeTabText,
-                                ]}
-                            >
-                                {String(
-                                    `Kaikki (${
-                                        filteredLocalItems.length +
-                                        openFoodFactsItems.length
-                                    })`
-                                )}
-                            </CustomText>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[
-                                styles.tab,
-                                activeTab === 'local' && styles.activeTab,
-                            ]}
-                            onPress={() => setActiveTab('local')}
-                        >
-                            <CustomText
-                                style={[
-                                    styles.tabText,
-                                    activeTab === 'local' &&
-                                        styles.activeTabText,
-                                ]}
-                            >
-                                {String(`Omat (${filteredLocalItems.length})`)}
-                            </CustomText>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[
-                                styles.tab,
-                                activeTab === 'openfoodfacts' &&
-                                    styles.activeTab,
-                            ]}
-                            onPress={() => setActiveTab('openfoodfacts')}
-                        >
-                            <CustomText
-                                style={[
-                                    styles.tabText,
-                                    activeTab === 'openfoodfacts' &&
-                                        styles.activeTabText,
-                                ]}
-                            >
-                                {String(
-                                    `Tietokanta (${openFoodFactsItems.length})`
-                                )}
-                            </CustomText>
-                        </TouchableOpacity>
-                    </View>
+                    <FoodSearchSourceTabs
+                        activeTab={activeTab}
+                        onChange={setActiveTab}
+                        localCount={filteredLocalItems.length}
+                        openFoodFactsCount={openFoodFactsItems.length}
+                    />
 
                     {memoizedData.length === 0 && !loading ? (
                         <View style={styles.emptyContainer}>
@@ -1193,29 +1095,6 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 10,
-    },
-    tabContainer: {
-        flexDirection: 'row',
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-    },
-    tab: {
-        flex: 1,
-        paddingVertical: 12,
-        paddingHorizontal: 8,
-        alignItems: 'center',
-    },
-    activeTab: {
-        borderBottomWidth: 2,
-        borderBottomColor: '#5844BB',
-    },
-    tabText: {
-        fontSize: 12,
-        color: '#666',
-    },
-    activeTabText: {
-        color: '#5844BB',
-        fontWeight: 'bold',
     },
     resultsList: {
         maxHeight: 280,
