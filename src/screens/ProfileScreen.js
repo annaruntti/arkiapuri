@@ -169,8 +169,9 @@ const ProfileScreen = () => {
 
     const getContainerStyle = () => [
         styles.container,
-        isDesktop && styles.desktopContainer,
         isTablet && styles.tabletContainer,
+        isDesktop && styles.desktopContainer,
+        isDesktop && { paddingHorizontal: 0 },
     ]
 
     const getContentStyle = () => [

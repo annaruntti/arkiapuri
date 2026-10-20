@@ -1,22 +1,46 @@
 import { StyleSheet, View } from 'react-native'
+import { DESKTOP_SIDEBAR_WIDTH } from './DesktopNavigation'
 import { useResponsiveDimensions } from '../utils/responsive'
 
 /**
  * Keeps list, form, and button widths readable on tablet and desktop.
- * Mobile stays full width. Tablet stays centered; desktop sits on the left.
+ * Mobile stays full width. Tablet stays centered; desktop sits on the left
+ * with the same inset from both edges of the content area.
  */
 const ContentContainer = ({ children, style, maxWidth }) => {
-    const { isDesktop, isTablet, containerMaxWidth } = useResponsiveDimensions()
+    const {
+        width,
+        isDesktop,
+        isTablet,
+        containerMaxWidth,
+        responsivePadding,
+    } = useResponsiveDimensions()
     const constrain = isDesktop || isTablet
+    const contentMaxWidth = maxWidth ?? containerMaxWidth
+    const inset = isDesktop ? responsivePadding : 0
+    const contentAreaWidth = isDesktop
+        ? Math.max(0, width - DESKTOP_SIDEBAR_WIDTH)
+        : width
+    const desktopWidth = Math.min(
+        contentMaxWidth,
+        Math.max(0, contentAreaWidth - inset * 2)
+    )
 
     return (
         <View
             style={[
                 styles.root,
-                constrain && styles.constrained,
-                constrain && {
-                    maxWidth: maxWidth ?? containerMaxWidth,
-                    alignSelf: isDesktop ? 'flex-start' : 'center',
+                constrain && !isDesktop && styles.constrained,
+                isTablet &&
+                    !isDesktop && {
+                        maxWidth: contentMaxWidth,
+                        alignSelf: 'center',
+                    },
+                isDesktop && {
+                    width: desktopWidth,
+                    maxWidth: desktopWidth,
+                    marginLeft: inset,
+                    alignSelf: 'flex-start',
                 },
                 style,
             ]}

@@ -24,6 +24,7 @@ import FormAddMeal from './FormAddMeal'
 import MealItemDetail from './MealItemDetail'
 import MealSelectionList from './MealSelectionList'
 import { MEAL_PLACEHOLDER_IMAGE_URL } from '../constants/images'
+import { useResponsiveDimensions } from '../utils/responsive'
 import ResponsiveModal from './ResponsiveModal'
 import { useMealCalendar } from '../hooks/useMealCalendar'
 import { 
@@ -33,6 +34,7 @@ import {
 } from '../utils/mealCalendarUtils'
 
 const TableMonth = ({ onRequireLogin }) => {
+    const { isDesktop } = useResponsiveDimensions()
     const [currentMonth, setCurrentMonth] = useState(new Date())
     const [monthDates, setMonthDates] = useState([])
     const [mealSelectView, setMealSelectView] = useState('select') // 'select' | 'create' | 'details'
@@ -289,7 +291,12 @@ const TableMonth = ({ onRequireLogin }) => {
                 </View>
             )}
             {/* Month Navigation */}
-            <View style={styles.monthHeader}>
+            <View
+                style={[
+                    styles.monthHeader,
+                    isDesktop && styles.monthHeaderDesktop,
+                ]}
+            >
                 <TouchableOpacity
                     style={styles.navButton}
                     onPress={() => navigateMonth('prev')}
@@ -423,6 +430,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
+    },
+    monthHeaderDesktop: {
+        paddingHorizontal: 0,
     },
     navButton: {
         padding: 6,

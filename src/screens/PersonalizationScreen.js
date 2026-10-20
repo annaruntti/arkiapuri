@@ -20,7 +20,7 @@ import storage from '../utils/storage'
 const PersonalizationScreen = () => {
     const navigation = useNavigation()
     const route = useRoute()
-    const { isDesktop, isTablet } = useResponsiveDimensions()
+    const { isDesktop, isTablet, responsivePadding } = useResponsiveDimensions()
     const { setProfile, setIsLoggedIn, profile } = useLogin()
     const initialShowNutrition = getShowNutrition(
         route.params?.userData || profile
@@ -107,6 +107,7 @@ const PersonalizationScreen = () => {
                 styles.container,
                 (isDesktop || isTablet) && styles.wideContainer,
                 isDesktop && styles.desktopContainer,
+                isDesktop && { paddingHorizontal: responsivePadding },
             ]}
         >
             <CustomText

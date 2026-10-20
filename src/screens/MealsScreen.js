@@ -25,6 +25,7 @@ import SearchSection from '../components/SearchSection'
 import StickyListLayout from '../components/StickyListLayout'
 import PantryScanLockedModal from '../components/PantryScanLockedModal'
 import { getServerUrl } from '../utils/getServerUrl'
+import { useResponsiveDimensions } from '../utils/responsive'
 import { DEFAULT_SERVINGS } from '../utils/mealServings'
 import { processFormCategories } from '../utils/foodCategories'
 import {
@@ -57,6 +58,7 @@ import { groupMealsByCategory } from '../utils/mealGrouping'
 import storage from '../utils/storage'
 
 const MealsScreen = ({ route, navigation }) => {
+    const { isDesktop } = useResponsiveDimensions()
     const [modalVisible, setModalVisible] = useState(false)
     const [addMealNested, setAddMealNested] = useState(false)
     const addMealBackRef = useRef(null)
@@ -501,7 +503,7 @@ const MealsScreen = ({ route, navigation }) => {
     })()
 
     const content = (
-        <View style={styles.container}>
+        <View style={[styles.container, isDesktop && styles.desktopContainer]}>
             <ResponsiveModal
                 visible={modalVisible}
                 onClose={closeAddMealModal}
@@ -674,6 +676,9 @@ const styles = StyleSheet.create({
         // todo: add these styles only to tablet
         // marginVertical: 15,
         // borderRadius: 10,
+    },
+    desktopContainer: {
+        paddingHorizontal: 0,
     },
     introText: {
         fontSize: 17,

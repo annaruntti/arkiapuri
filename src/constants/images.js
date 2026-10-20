@@ -40,6 +40,14 @@ export const LANDING_HERO_IMAGE = {
     uri: 'https://images.ctfassets.net/hef5a6s5axrs/4GwuSgvoXA0VX6cv5ix521/8545dbed4f7a510976eb78f8dcf4b91e/pexels-katerina-holmes-5907832.jpg',
 }
 
+'https://images.ctfassets.net/2pij69ehhf4n/dV2UGoK64R1sT2VmFFHb8/beccc09403ccd939f0bbdd519eb862cf/pexels-karola-g-7681236.jpg'
+'https://images.ctfassets.net/2pij69ehhf4n/2gLa5t2U2KAt6rykv3scHh/3be708109afff22cda961e455c9d9b18/pexels-lulizler-20092337.jpg'
+'https://images.ctfassets.net/2pij69ehhf4n/38PWYGjTAGr4VtUNM55t0k/fe51e098026add7005abeccd101dd92e/pexels-cottonbro-3298607.jpg'
+'https://images.ctfassets.net/2pij69ehhf4n/1ZDEEilwqBgNUpAkpZ62cc/cf8f4995cb1395c8f498a1fe551c11c8/pexels-tara-clark-89384110-9070106.jpg'
+'https://images.ctfassets.net/2pij69ehhf4n/22vckJZOsQYsur8QfzAh2R/18faf136fb484468c1618d83569fd302/pexels-thirdman-7236730.jpg'
+'https://images.ctfassets.net/2pij69ehhf4n/3xQwlD3SRjWZK6VlPRqouY/b7e64f1652b48d2a2af6eafe11e1ef35/pexels-n-voitkevich-8939558.jpg'
+
+
 /** Home screen navigation / feature card illustrations */
 export const HOME_CARD_IMAGES = {
     meals: {

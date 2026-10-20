@@ -155,7 +155,12 @@ const ShoppingListsScreen = ({ route }) => {
     return (
         <ResponsiveLayout contentBackgroundColor="#f9fafb">
             <ContentContainer>
-                <View style={styles.container}>
+                <View
+                    style={[
+                        styles.container,
+                        isDesktop && styles.desktopContainer,
+                    ]}
+                >
                     <ResponsiveModal
                         visible={modalVisible}
                         onClose={() => setModalVisible(false)}
@@ -210,6 +215,9 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#f9fafb',
         padding: 10,
+    },
+    desktopContainer: {
+        paddingHorizontal: 0,
     },
     listLayout: {
         backgroundColor: '#f9fafb',

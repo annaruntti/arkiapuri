@@ -4,7 +4,7 @@ import CustomText from '../components/CustomText'
 import { useResponsiveDimensions } from '../utils/responsive'
 
 const TermsOfServiceScreen = () => {
-    const { isDesktop, isTablet } = useResponsiveDimensions()
+    const { isDesktop, isTablet, responsivePadding } = useResponsiveDimensions()
 
     return (
         <ScrollView
@@ -13,6 +13,7 @@ const TermsOfServiceScreen = () => {
                 styles.scrollContent,
                 (isDesktop || isTablet) && styles.wideScrollContent,
                 isDesktop && styles.desktopScrollContent,
+                isDesktop && { paddingHorizontal: responsivePadding },
             ]}
             showsVerticalScrollIndicator
         >

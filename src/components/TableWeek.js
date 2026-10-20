@@ -44,14 +44,25 @@ import WeekMoveMealModal from './WeekMoveMealModal'
 import { MEAL_PLACEHOLDER_IMAGE_URL } from '../constants/images'
 
 const Table = ({ onRequireLogin }) => {
-    const { width: windowWidth, isDesktop, containerMaxWidth } =
-        useResponsiveDimensions()
+    const {
+        width: windowWidth,
+        isDesktop,
+        containerMaxWidth,
+        responsivePadding,
+    } = useResponsiveDimensions()
+    const contentPadding = isDesktop ? responsivePadding : 0
     const contentAreaWidth = isDesktop
         ? Math.max(0, windowWidth - DESKTOP_SIDEBAR_WIDTH)
         : windowWidth
-    const weekColumnWidth = Math.min(containerMaxWidth, contentAreaWidth)
+    const weekColumnWidth = isDesktop
+        ? Math.min(
+              containerMaxWidth,
+              Math.max(0, contentAreaWidth - contentPadding * 2)
+          )
+        : Math.min(containerMaxWidth, contentAreaWidth)
+    const weekBarLeftBleed = contentPadding
     const weekBarRightBleed = isDesktop
-        ? Math.max(0, contentAreaWidth - weekColumnWidth)
+        ? Math.max(0, contentAreaWidth - contentPadding - weekColumnWidth)
         : 0
     const { continueWithoutLogin } = useLogin()
     const [dates, setDates] = useState([])
@@ -474,7 +485,12 @@ const Table = ({ onRequireLogin }) => {
 
     const renderHeader = () => {
         return (
-            <View style={styles.headerContainer}>
+            <View
+                style={[
+                    styles.headerContainer,
+                    isDesktop && styles.headerContainerDesktop,
+                ]}
+            >
                 <CustomText style={styles.introText}>
                     Lisää ateriat viikon päiville.
                 </CustomText>
@@ -494,22 +510,13 @@ const Table = ({ onRequireLogin }) => {
             <View
                 style={[
                     styles.bottomWeekNavigation,
-                    weekBarRightBleed > 0 && {
+                    (weekBarLeftBleed > 0 || weekBarRightBleed > 0) && {
+                        left: -weekBarLeftBleed,
                         right: -weekBarRightBleed,
-                        paddingHorizontal: 0,
                     },
                 ]}
             >
-                <View
-                    style={[
-                        styles.bottomWeekNavigationInner,
-                        isDesktop && {
-                            width: weekColumnWidth,
-                            maxWidth: weekColumnWidth,
-                            alignSelf: 'flex-start',
-                        },
-                    ]}
-                >
+                <View style={styles.bottomWeekNavigationInner}>
                     <TouchableOpacity
                         onPress={goToPreviousWeek}
                         style={styles.bottomNavButton}
@@ -683,7 +690,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
     },
     listDesktop: {
-        paddingHorizontal: 40,
+        paddingHorizontal: 0,
     },
     listContent: {
         paddingBottom: 80,
@@ -694,6 +701,9 @@ const styles = StyleSheet.create({
         paddingTop: 20,
         paddingBottom: 10,
         paddingHorizontal: 10,
+    },
+    headerContainerDesktop: {
+        paddingHorizontal: 0,
     },
     introText: {
         fontSize: 21,

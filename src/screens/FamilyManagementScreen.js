@@ -47,7 +47,7 @@ const getRoleLabel = (role) => {
 
 const FamilyManagementScreen = ({ navigation }) => {
     const { profile } = useLogin()
-    const { isDesktop, isTablet } = useResponsiveDimensions()
+    const { isDesktop, isTablet, responsivePadding } = useResponsiveDimensions()
     const [household, setHousehold] = useState(null)
     const [loading, setLoading] = useState(true)
     const [inviteEmail, setInviteEmail] = useState('')
@@ -278,8 +278,9 @@ const FamilyManagementScreen = ({ navigation }) => {
 
     const getContainerStyle = () => [
         styles.container,
-        isDesktop && styles.desktopContainer,
         isTablet && styles.tabletContainer,
+        isDesktop && styles.desktopContainer,
+        isDesktop && { paddingHorizontal: responsivePadding },
     ]
 
     const getContentStyle = () => [

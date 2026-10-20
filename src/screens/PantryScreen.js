@@ -40,6 +40,7 @@ import { useFilteredItemList } from '../hooks/useFilteredItemList'
 import { PANTRY_SORT_OPTIONS, SORT_OPTION_IDS } from '../utils/listSort'
 import { groupItemsByFoodCategory } from '../utils/foodCategories'
 import { getServerUrl } from '../utils/getServerUrl'
+import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 import {
     addPantryItem,
@@ -64,6 +65,7 @@ import {
 import { buildPantryItemPayload } from '../utils/pantryAddItem'
 
 const PantryScreen = ({}) => {
+    const { isDesktop } = useResponsiveDimensions()
     const { continueWithoutLogin } = useLogin()
     const { showLoginPrompt, loginPromptProps } = useLoginPrompt()
     const [pantryItems, setPantryItems] = useState([])
@@ -691,7 +693,12 @@ const PantryScreen = ({}) => {
             contentBackgroundColor="#f9fafb"
         >
             <ContentContainer>
-                <View style={styles.container}>
+                <View
+                    style={[
+                        styles.container,
+                        isDesktop && styles.desktopContainer,
+                    ]}
+                >
                     <LoginPromptModal {...loginPromptProps} />
 
                     <ResponsiveModal
@@ -943,6 +950,9 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#f9fafb',
         padding: 15,
+    },
+    desktopContainer: {
+        paddingHorizontal: 0,
     },
     productListContainer: {
         flex: 1,

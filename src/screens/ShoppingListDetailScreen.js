@@ -7,12 +7,14 @@ import ResponsiveLayout from '../components/ResponsiveLayout'
 import ShoppingListDetail from '../components/ShoppingListDetail'
 import useLoginPrompt from '../hooks/useLoginPrompt'
 import { getServerUrl } from '../utils/getServerUrl'
+import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 
 const isValidShoppingList = (list) =>
     Boolean(list && typeof list === 'object' && list._id)
 
 const ShoppingListDetailScreen = ({ route, navigation }) => {
+    const { isDesktop } = useResponsiveDimensions()
     const { showLoginPrompt, loginPromptProps } = useLoginPrompt()
     const [shoppingList, setShoppingList] = useState(
         isValidShoppingList(route.params?.shoppingList)
@@ -167,7 +169,12 @@ const ShoppingListDetailScreen = ({ route, navigation }) => {
             contentBackgroundColor="#f9fafb"
         >
             <ContentContainer>
-                <View style={styles.container}>
+                <View
+                    style={[
+                        styles.container,
+                        isDesktop && styles.desktopContainer,
+                    ]}
+                >
                     <ShoppingListDetail
                         shoppingList={shoppingList}
                         resetView={route.params?.resetView}
@@ -191,6 +198,9 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#f9fafb',
         padding: 15,
+    },
+    desktopContainer: {
+        paddingHorizontal: 0,
     },
     missing: {
         flex: 1,

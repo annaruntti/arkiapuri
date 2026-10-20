@@ -27,7 +27,7 @@ import storage from '../utils/storage'
 const EditProfileScreen = () => {
     const { profile, setProfile, logout } = useLogin()
     const navigation = useNavigation()
-    const { isDesktop, isTablet } = useResponsiveDimensions()
+    const { isDesktop, isTablet, responsivePadding } = useResponsiveDimensions()
     const [loading, setLoading] = useState(false)
     const [showPasswordFields, setShowPasswordFields] = useState(false)
     const [showNutrition, setShowNutrition] = useState(
@@ -248,8 +248,9 @@ const EditProfileScreen = () => {
 
     const getContainerStyle = () => [
         styles.container,
-        isDesktop && styles.desktopContainer,
         isTablet && styles.tabletContainer,
+        isDesktop && styles.desktopContainer,
+        isDesktop && { paddingHorizontal: responsivePadding },
     ]
 
     const getContentStyle = () => [

@@ -637,7 +637,7 @@ const styles = StyleSheet.create({
     },
     // Desktop-specific styles
     desktopHeaderSection: {
-        paddingHorizontal: 20,
+        paddingHorizontal: 0,
         paddingTop: 20,
         width: '100%',
     },
@@ -646,13 +646,13 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         paddingTop: 20,
         paddingHorizontal: 0,
-        alignItems: 'center',
+        alignItems: 'flex-start',
     },
     desktopNavigationWrapper: {
         flex: 1,
     },
     desktopNavigationGradient: {
-        paddingHorizontal: 20,
+        paddingHorizontal: 0,
         flex: 1,
     },
     desktopNavigationWithWave: {
@@ -660,15 +660,15 @@ const styles = StyleSheet.create({
     },
     desktopIntroTitle: {
         fontSize: 32,
-        textAlign: 'center',
+        textAlign: 'left',
         marginBottom: 8,
     },
     desktopIntroText: {
         fontSize: 21,
-        textAlign: 'center',
+        textAlign: 'left',
         lineHeight: 26,
         maxWidth: '100%',
-        paddingLeft: 0,
+        paddingHorizontal: 0,
         paddingVertical: 16,
     },
     desktopGrid: {

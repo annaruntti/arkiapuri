@@ -10,6 +10,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons'
 
 import { MEAL_PLACEHOLDER_IMAGE_URL } from '../constants/images'
+import { useResponsiveDimensions } from '../utils/responsive'
 import { getMealTypeText } from '../utils/mealUtils'
 import Button from './Button'
 import CustomText from './CustomText'
@@ -33,6 +34,7 @@ const WeekDaySection = ({
     onDragEnd,
     onDragPosition,
 }) => {
+    const { isDesktop } = useResponsiveDimensions()
     const dateKey = format(date, 'yyyy-MM-dd')
     const isToday = dateKey === format(new Date(), 'yyyy-MM-dd')
     const formattedDate = format(date, 'EEEE d.M.yyyy', { locale: fi })
@@ -52,6 +54,7 @@ const WeekDaySection = ({
             }}
             style={[
                 styles.dateSection,
+                isDesktop && styles.dateSectionDesktop,
                 isDropTarget && styles.dateSectionDropTarget,
             ]}
         >
@@ -193,6 +196,9 @@ const styles = StyleSheet.create({
         elevation: 0,
         overflow: 'visible',
         position: 'relative',
+    },
+    dateSectionDesktop: {
+        marginHorizontal: 0,
     },
     dateSectionDropTarget: {
         backgroundColor: '#E8E0FF',

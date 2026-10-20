@@ -1,4 +1,5 @@
 import { ScrollView, StyleSheet, View } from 'react-native'
+import { useResponsiveDimensions } from '../utils/responsive'
 
 /**
  * Optional intro/header scrolls away. When `sticky` is provided it stays
@@ -15,6 +16,7 @@ const StickyListLayout = ({
     showsVerticalScrollIndicator = false,
     keyboardShouldPersistTaps = 'handled',
 }) => {
+    const { isDesktop } = useResponsiveDimensions()
     const hasHeader = header != null
     const hasSticky = sticky != null
     const chromeStyle = chromeBackgroundColor && {
@@ -31,7 +33,15 @@ const StickyListLayout = ({
             keyboardShouldPersistTaps={keyboardShouldPersistTaps}
         >
             {hasHeader ? (
-                <View style={[styles.headerSection, chromeStyle]}>{header}</View>
+                <View
+                    style={[
+                        styles.headerSection,
+                        isDesktop && styles.headerSectionDesktop,
+                        chromeStyle,
+                    ]}
+                >
+                    {header}
+                </View>
             ) : null}
             {hasSticky ? (
                 <View style={[styles.stickySection, chromeStyle]}>{sticky}</View>
@@ -51,6 +61,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: 5,
         paddingTop: 10,
         paddingBottom: 10,
+    },
+    headerSectionDesktop: {
+        paddingHorizontal: 0,
     },
     stickySection: {
         backgroundColor: '#fff',
