@@ -1,13 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useNavigation } from '@react-navigation/native'
 import axios from 'axios'
-import {
-    Alert,
-    View,
-    StyleSheet,
-    TouchableOpacity,
-    ScrollView,
-} from 'react-native'
+import { Alert, View, StyleSheet, ScrollView } from 'react-native'
 import { useLogin } from '../context/LoginProvider'
 import { useResponsiveDimensions } from '../utils/responsive'
 import { getServerUrl } from '../utils/getServerUrl'
@@ -32,7 +26,6 @@ const LoginPromptModal = ({
     onSocialSignIn,
     onContinueWithoutLogin,
 }) => {
-    const [isSignup, setIsSignup] = useState(false)
     const navigation = useNavigation()
     const { isLoggedIn, login } = useLogin()
     const { isTablet } = useResponsiveDimensions()
@@ -163,10 +156,6 @@ const LoginPromptModal = ({
         openAuthScreen(navigation, screen, { fromPrompt: true })
     }
 
-    const handleEmailPress = () => {
-        navigateToAuth(isSignup ? 'Luo tunnus' : 'Kirjaudu sisään')
-    }
-
     return (
         <ResponsiveModal
             visible={visible}
@@ -190,81 +179,70 @@ const LoginPromptModal = ({
                     </CustomText>
                 </View>
 
-                <View style={styles.socialButtonsSection}>
-                    <CustomText style={styles.socialLabel}>
-                        Jatka valitsemalla
-                    </CustomText>
-                    <SocialSignInButtons
-                        onSocialSignIn={handleSocialSignIn}
-                        showDivider={false}
-                        layout={useWideLayout ? 'row' : 'column'}
-                        compact={useWideLayout}
-                    />
-                </View>
-
-                <View style={styles.divider}>
-                    <View style={styles.dividerLine} />
-                    <CustomText style={styles.dividerText}>tai</CustomText>
-                    <View style={styles.dividerLine} />
-                </View>
-
-                {useWideLayout ? (
-                    <View style={styles.authButtonsRow}>
-                        <Button
-                            title="Kirjaudu sisään"
-                            onPress={() => navigateToAuth('Kirjaudu sisään')}
-                            type="PRIMARY"
-                            size="small"
-                            style={styles.authRowButton}
-                            textStyle={styles.primaryButtonText}
-                        />
-                        <Button
-                            title="Jatka ilman kirjautumista"
-                            onPress={() => {
-                                onClose()
-                                if (onContinueWithoutLogin) {
-                                    onContinueWithoutLogin()
-                                }
-                            }}
-                            type="TERTIARY"
-                            size="small"
-                            style={styles.authRowButton}
-                            textStyle={styles.tertiaryButtonText}
-                        />
-                    </View>
-                ) : (
-                    <>
-                        <View style={styles.emailSection}>
+                <View style={styles.emailSection}>
+                    {useWideLayout ? (
+                        <View style={styles.authButtonsRow}>
                             <Button
-                                title={
-                                    isSignup
-                                        ? 'Luo tili ja tallenna'
-                                        : triggerType === 'ai_feature'
-                                          ? 'Tallenna tietoni'
-                                          : 'Kirjaudu sähköpostiosoitteella'
+                                title="Kirjaudu sisään"
+                                onPress={() =>
+                                    navigateToAuth('Kirjaudu sisään')
                                 }
-                                onPress={handleEmailPress}
+                                type="PRIMARY"
+                                size="small"
+                                style={styles.authRowButton}
+                                textStyle={styles.primaryButtonText}
+                            />
+                            <Button
+                                title="Luo käyttäjätunnus"
+                                onPress={() => navigateToAuth('Luo tunnus')}
+                                type="SECONDARY"
+                                size="small"
+                                style={styles.authRowButton}
+                                textStyle={styles.primaryButtonText}
+                            />
+                            <Button
+                                title="Jatka ilman kirjautumista"
+                                onPress={() => {
+                                    onClose()
+                                    if (onContinueWithoutLogin) {
+                                        onContinueWithoutLogin()
+                                    }
+                                }}
+                                type="TERTIARY"
+                                size="small"
+                                style={styles.authRowButton}
+                                textStyle={styles.tertiaryButtonText}
+                            />
+                        </View>
+                    ) : (
+                        <>
+                            <Button
+                                title="Kirjaudu sisään"
+                                onPress={() =>
+                                    navigateToAuth('Kirjaudu sisään')
+                                }
                                 type="PRIMARY"
                                 style={styles.primaryButton}
                                 textStyle={styles.primaryButtonText}
                             />
-                        </View>
-
-                        <View style={styles.toggleSection}>
-                            <CustomText style={styles.toggleText}>
-                                {isSignup
-                                    ? 'Onko sinulla jo tili? '
-                                    : 'Ei vielä tiliä? '}
-                            </CustomText>
-                            <TouchableOpacity
-                                onPress={() => setIsSignup(!isSignup)}
-                            >
-                                <CustomText style={styles.toggleLink}>
-                                    {isSignup ? 'Kirjaudu' : 'Luo tili'}
+                            <View style={styles.accountPrompt}>
+                                <CustomText style={styles.accountPromptText}>
+                                    Eikö sinulla ole vielä käyttäjätunnusta?
                                 </CustomText>
-                            </TouchableOpacity>
-                        </View>
+                                <Button
+                                    title="Luo käyttäjätunnus"
+                                    onPress={() =>
+                                        navigateToAuth('Luo tunnus')
+                                    }
+                                    type="SECONDARY"
+                                    style={styles.primaryButton}
+                                    textStyle={styles.primaryButtonText}
+                                />
+                            </View>
+                        </>
+                    )}
 
+                    {useWideLayout ? null : (
                         <View style={styles.continueWithoutLoginSection}>
                             <Button
                                 title="Jatka ilman kirjautumista"
@@ -279,8 +257,16 @@ const LoginPromptModal = ({
                                 textStyle={styles.tertiaryButtonText}
                             />
                         </View>
-                    </>
-                )}
+                    )}
+                </View>
+
+                <View style={styles.socialButtonsSection}>
+                    <SocialSignInButtons
+                        onSocialSignIn={handleSocialSignIn}
+                        layout={useWideLayout ? 'row' : 'column'}
+                        compact={useWideLayout}
+                    />
+                </View>
             </ScrollView>
         </ResponsiveModal>
     )
@@ -317,53 +303,43 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     socialButtonsSection: {
-        marginBottom: 16,
+        marginTop: 4,
+        marginBottom: 8,
         paddingHorizontal: 20,
-    },
-    socialLabel: {
-        fontSize: 12,
-        fontWeight: '600',
-        color: '#999',
-        textAlign: 'center',
-        marginBottom: 10,
-        textTransform: 'uppercase',
-        letterSpacing: 0.5,
-    },
-    divider: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginVertical: 16,
-    },
-    dividerLine: {
-        flex: 1,
-        height: 1,
-        backgroundColor: '#ddd',
-    },
-    dividerText: {
-        marginHorizontal: 12,
-        color: '#999',
-        fontSize: 14,
     },
     emailSection: {
-        marginBottom: 12,
         paddingHorizontal: 20,
+    },
+    accountPrompt: {
+        marginTop: 12,
+        gap: 10,
+    },
+    accountPromptText: {
+        fontSize: 14,
+        color: '#6b7280',
+        textAlign: 'center',
+        lineHeight: 20,
     },
     authButtonsRow: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
         gap: 10,
-        paddingHorizontal: 20,
-        marginBottom: 16,
+        marginBottom: 4,
         justifyContent: 'center',
     },
     authRowButton: {
-        flex: 1,
+        flexGrow: 0,
+        flexShrink: 0,
         width: 'auto',
-        maxWidth: 190,
         borderRadius: 25,
+        paddingVertical: 7,
+        paddingHorizontal: 14,
+        minHeight: 40,
+        minWidth: 0,
     },
     continueWithoutLoginSection: {
-        marginBottom: 12,
-        paddingHorizontal: 20,
+        marginTop: 12,
+        marginBottom: 4,
     },
     primaryButton: {
         width: '100%',
@@ -375,21 +351,6 @@ const styles = StyleSheet.create({
         color: '#000000',
         fontWeight: '600',
         fontSize: 14,
-    },
-    toggleSection: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 16,
-    },
-    toggleText: {
-        fontSize: 14,
-        color: '#666',
-    },
-    toggleLink: {
-        fontSize: 14,
-        color: '#AE9CFC',
-        fontWeight: '600',
     },
     tertiaryButton: {
         width: '100%',
