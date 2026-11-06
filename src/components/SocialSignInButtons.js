@@ -7,11 +7,44 @@ import {
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import * as WebBrowser from 'expo-web-browser'
+import axios from 'axios'
 import { getServerUrl } from '../utils/getServerUrl'
 import CustomText from './CustomText'
 
-// Complete the auth session for better UX
 WebBrowser.maybeCompleteAuthSession()
+
+const ALLOWED_PROVIDERS = new Set(['google', 'apple', 'facebook'])
+
+const oauthSessions = new Map()
+
+const closePopupWindow = (popup) => {
+    if (!popup) return
+    try {
+        if (!popup.closed) popup.close()
+    } catch {
+        // Cross-origin redirects can revoke access to the popup.
+    }
+}
+
+const endOAuthSession = (provider, sessionId) => {
+    const session = oauthSessions.get(provider)
+    if (!session || (sessionId && session.id !== sessionId)) return
+    oauthSessions.delete(provider)
+    clearInterval(session.pollInterval)
+    clearTimeout(session.timeoutId)
+    closePopupWindow(session.popup)
+}
+
+const exchangeCodeForSession = async (code) => {
+    const response = await axios.post(getServerUrl('/auth/exchange'), { code })
+    if (!response.data?.success || !response.data?.token) {
+        throw new Error(response.data?.message || 'Kirjautuminen epäonnistui')
+    }
+    return {
+        token: response.data.token,
+        user: response.data.user,
+    }
+}
 
 const SocialSignInButtons = ({
     onSocialSignIn,
@@ -20,44 +53,39 @@ const SocialSignInButtons = ({
     compact = false,
     alignStart = false,
 }) => {
-    // OAuth configuration
     const googleAuthUrl = `${getServerUrl('')}/auth/google`
     const appleAuthUrl = `${getServerUrl('')}/auth/apple`
     const facebookAuthUrl = `${getServerUrl('')}/auth/facebook`
 
     const handleGoogleSignIn = () => {
-        console.log('Google sign in button pressed')
         handleOAuthLogin(googleAuthUrl, 'google')
     }
 
     const handleAppleSignIn = () => {
-        console.log('Apple sign in button pressed')
         handleOAuthLogin(appleAuthUrl, 'apple')
     }
 
     const handleFacebookSignIn = () => {
-        console.log('Facebook sign in button pressed')
         handleOAuthLogin(facebookAuthUrl, 'facebook')
     }
 
     const handleOAuthLogin = async (authUrl, provider) => {
-        console.log(`Starting OAuth flow for ${provider}`)
-        console.log('Backend URL:', authUrl)
-        console.log('Platform:', Platform.OS)
-
+        if (!ALLOWED_PROVIDERS.has(provider)) {
+            Alert.alert('Virhe', 'Tuntematon kirjautumistapa')
+            return
+        }
         if (Platform.OS === 'web') {
-            // Web: Use popup window with localStorage
             handleWebOAuth(authUrl, provider)
         } else {
-            // Mobile: Use WebBrowser API
             handleMobileOAuth(authUrl, provider)
         }
     }
 
     const handleWebOAuth = (authUrl, provider) => {
         const storageKey = `${provider}_auth_result`
+        endOAuthSession(provider)
+        localStorage.removeItem(storageKey)
 
-        // Open OAuth in a popup window
         const width = 500
         const height = 600
         const left = window.screenX + (window.outerWidth - width) / 2
@@ -69,50 +97,75 @@ const SocialSignInButtons = ({
             `width=${width},height=${height},left=${left},top=${top}`
         )
 
-        // Poll localStorage for the auth result
-        console.log('Starting to poll localStorage for auth result')
-        const pollInterval = setInterval(() => {
+        if (!popup) {
+            Alert.alert(
+                'Virhe',
+                'Kirjautumisikkuna estettiin. Salli ponnahdusikkunat ja yritä uudelleen.'
+            )
+            return
+        }
+
+        const session = {
+            id: `${provider}-${Date.now()}`,
+            popup,
+            pollInterval: null,
+            timeoutId: null,
+        }
+        oauthSessions.set(provider, session)
+
+        const finishSession = () => {
+            endOAuthSession(provider, session.id)
+            localStorage.removeItem(storageKey)
+        }
+
+        session.pollInterval = setInterval(async () => {
+            if (oauthSessions.get(provider)?.id !== session.id) return
+
+            let popupClosed = false
+            try {
+                popupClosed = popup.closed
+            } catch {
+                popupClosed = false
+            }
+
             const result = localStorage.getItem(storageKey)
+            if (!result) {
+                if (popupClosed) finishSession()
+                return
+            }
 
-            if (result) {
-                console.log('Found auth result in localStorage!')
-                clearInterval(pollInterval)
+            finishSession()
 
-                // Clear the result from localStorage
-                localStorage.removeItem(storageKey)
-
+            try {
                 const authData = JSON.parse(result)
-                console.log('Auth data:', authData)
-
-                if (authData.type === 'success') {
-                    console.log('✅ Login successful, calling onSocialSignIn')
+                if (authData.type === 'success' && authData.code) {
+                    const authSession = await exchangeCodeForSession(
+                        authData.code
+                    )
+                    onSocialSignIn(provider, authSession)
+                } else if (authData.type === 'success' && authData.token) {
+                    // Legacy fallback during rollout
                     onSocialSignIn(provider, {
                         token: authData.token,
                         user: authData.user,
                     })
                 } else if (authData.type === 'error') {
-                    console.error('❌ Login error:', authData.error)
                     Alert.alert('Virhe', authData.error)
                 }
+            } catch (error) {
+                Alert.alert(
+                    'Virhe',
+                    error.message || 'Kirjautuminen epäonnistui'
+                )
             }
         }, 500)
 
-        // Stop polling after 60 seconds (timeout)
-        setTimeout(() => {
-            clearInterval(pollInterval)
-            console.log('⏱️ Auth polling timeout - stopped waiting')
-            localStorage.removeItem(storageKey)
-        }, 60000) // Increased to 60 seconds to ensure we catch the data
+        session.timeoutId = setTimeout(finishSession, 60000)
     }
 
     const handleMobileOAuth = async (authUrl, provider) => {
         try {
-            console.log('Opening mobile WebBrowser for OAuth')
-
-            // Add platform parameter to tell backend this is mobile
             const mobileAuthUrl = `${authUrl}?platform=mobile`
-
-            // Use the deep link prefix from your app
             const redirectUrl = 'arkiapuri://auth/callback'
 
             const result = await WebBrowser.openAuthSessionAsync(
@@ -120,53 +173,27 @@ const SocialSignInButtons = ({
                 redirectUrl
             )
 
-            console.log('WebBrowser result:', result)
-
             if (result.type === 'success') {
-                // Parse the callback URL
                 const url = result.url
-                console.log('Callback URL:', url)
-
-                // Parse query parameters from the URL
                 const urlParts = url.split('?')
                 if (urlParts.length > 1) {
                     const params = new URLSearchParams(urlParts[1])
-
-                    const token = params.get('token')
-                    const userParam = params.get('user')
+                    const code = params.get('code')
                     const error = params.get('error')
-
-                    console.log(
-                        'Parsed params - token:',
-                        !!token,
-                        'user:',
-                        !!userParam,
-                        'error:',
-                        error
-                    )
 
                     if (error) {
                         Alert.alert('Virhe', decodeURIComponent(error))
-                    } else if (token && userParam) {
-                        const user = JSON.parse(decodeURIComponent(userParam))
-                        console.log(
-                            '✅ Mobile OAuth successful, user:',
-                            user.email
-                        )
-                        onSocialSignIn(provider, { token, user })
+                    } else if (code) {
+                        const session = await exchangeCodeForSession(code)
+                        onSocialSignIn(provider, session)
                     } else {
-                        console.error('Missing token or user in callback')
                         Alert.alert('Virhe', 'Kirjautumistiedot puuttuvat')
                     }
                 } else {
-                    console.error('No query parameters in callback URL')
                     Alert.alert('Virhe', 'Virheellinen callback URL')
                 }
-            } else if (result.type === 'cancel') {
-                console.log('User cancelled OAuth')
             }
         } catch (error) {
-            console.error('Mobile OAuth error:', error)
             Alert.alert('Virhe', 'Kirjautuminen epäonnistui: ' + error.message)
         }
     }
@@ -178,91 +205,78 @@ const SocialSignInButtons = ({
             {showDivider && (
                 <View
                     style={[
-                        styles.dividerContainer,
-                        alignStart && styles.dividerContainerStart,
+                        styles.dividerRow,
+                        isRow && styles.dividerRowHorizontal,
                     ]}
                 >
-                    {alignStart ? null : <View style={styles.divider} />}
-                    <CustomText
-                        style={[
-                            styles.dividerText,
-                            alignStart && styles.dividerTextStart,
-                        ]}
-                    >
-                        tai kirjaudu
-                    </CustomText>
-                    <View style={styles.divider} />
+                    <View style={styles.dividerLine} />
+                    <CustomText style={styles.dividerText}>tai</CustomText>
+                    <View style={styles.dividerLine} />
                 </View>
             )}
 
             <View
                 style={[
-                    styles.buttonsWrap,
+                    styles.buttons,
                     isRow && styles.buttonsRow,
-                    isRow && alignStart && styles.buttonsRowStart,
+                    alignStart && styles.buttonsAlignStart,
                 ]}
             >
                 <TouchableOpacity
                     style={[
-                        styles.socialButton,
-                        styles.googleButton,
-                        compact && styles.socialButtonCompact,
-                        isRow && !alignStart && styles.socialButtonInRow,
-                        isRow && alignStart && styles.socialButtonStart,
+                        styles.button,
+                        compact && styles.buttonCompact,
+                        isRow && styles.buttonRow,
                     ]}
                     onPress={handleGoogleSignIn}
+                    accessibilityRole="button"
+                    accessibilityLabel="Kirjaudu Googlella"
                 >
-                    <Ionicons
-                        name="logo-google"
-                        size={compact ? 18 : 20}
-                        color="#fff"
-                    />
-                    <CustomText
-                        style={[
-                            styles.socialButtonText,
-                            compact && styles.socialButtonTextCompact,
-                        ]}
-                    >
-                        {compact ? 'Google' : 'Google-tilillä'}
-                    </CustomText>
+                    <Ionicons name="logo-google" size={20} color="#DB4437" />
+                    {!compact && (
+                        <CustomText style={styles.buttonText}>
+                            Google
+                        </CustomText>
+                    )}
                 </TouchableOpacity>
+
+                {Platform.OS === 'ios' && (
+                    <TouchableOpacity
+                        style={[
+                            styles.button,
+                            compact && styles.buttonCompact,
+                            isRow && styles.buttonRow,
+                        ]}
+                        onPress={handleAppleSignIn}
+                        accessibilityRole="button"
+                        accessibilityLabel="Kirjaudu Applella"
+                    >
+                        <Ionicons name="logo-apple" size={20} color="#000" />
+                        {!compact && (
+                            <CustomText style={styles.buttonText}>
+                                Apple
+                            </CustomText>
+                        )}
+                    </TouchableOpacity>
+                )}
 
                 <TouchableOpacity
                     style={[
-                        styles.socialButton,
-                        styles.facebookButton,
-                        compact && styles.socialButtonCompact,
-                        isRow && !alignStart && styles.socialButtonInRow,
-                        isRow && alignStart && styles.socialButtonStart,
+                        styles.button,
+                        compact && styles.buttonCompact,
+                        isRow && styles.buttonRow,
                     ]}
                     onPress={handleFacebookSignIn}
+                    accessibilityRole="button"
+                    accessibilityLabel="Kirjaudu Facebookilla"
                 >
-                    <Ionicons
-                        name="logo-facebook"
-                        size={compact ? 18 : 20}
-                        color="#fff"
-                    />
-                    <CustomText
-                        style={[
-                            styles.socialButtonText,
-                            compact && styles.socialButtonTextCompact,
-                        ]}
-                    >
-                        {compact ? 'Facebook' : 'Facebook-tilillä'}
-                    </CustomText>
+                    <Ionicons name="logo-facebook" size={20} color="#1877F2" />
+                    {!compact && (
+                        <CustomText style={styles.buttonText}>
+                            Facebook
+                        </CustomText>
+                    )}
                 </TouchableOpacity>
-
-                {/* Apple Sign-In - Hidden until Apple Developer enrollment is complete
-            <TouchableOpacity
-                style={[styles.socialButton, styles.appleButton]}
-                onPress={handleAppleSignIn}
-            >
-                <Ionicons name="logo-apple" size={20} color="#fff" />
-                <CustomText style={styles.socialButtonText}>
-                    Apple ID:llä
-                </CustomText>
-            </TouchableOpacity>
-            */}
             </View>
         </View>
     )
@@ -272,89 +286,57 @@ const styles = StyleSheet.create({
     container: {
         width: '100%',
     },
-    buttonsWrap: {
-        width: '100%',
-    },
-    buttonsRow: {
-        flexDirection: 'row',
-        gap: 10,
-        justifyContent: 'center',
-    },
-    buttonsRowStart: {
-        justifyContent: 'flex-start',
-    },
-    dividerContainer: {
+    dividerRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginVertical: 10,
+        marginVertical: 16,
     },
-    divider: {
+    dividerRowHorizontal: {
+        marginVertical: 12,
+    },
+    dividerLine: {
         flex: 1,
         height: 1,
-        backgroundColor: '#E5E5E5',
+        backgroundColor: '#ddd',
     },
     dividerText: {
-        marginHorizontal: 15,
+        marginHorizontal: 12,
         color: '#666',
         fontSize: 14,
     },
-    dividerContainerStart: {
-        justifyContent: 'flex-start',
+    buttons: {
+        gap: 10,
     },
-    dividerTextStart: {
-        marginLeft: 0,
-        textAlign: 'left',
-        paddingVertical: 12,
+    buttonsRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
     },
-    socialButton: {
+    buttonsAlignStart: {
+        alignItems: 'flex-start',
+    },
+    button: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 7,
-        paddingHorizontal: 14,
+        gap: 8,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
         borderRadius: 25,
-        marginVertical: 4,
-        minHeight: 45,
+        borderWidth: 1,
+        borderColor: '#ddd',
+        backgroundColor: '#fff',
     },
-    socialButtonCompact: {
-        paddingVertical: 6,
+    buttonCompact: {
         paddingHorizontal: 12,
-        minHeight: 34,
-        marginVertical: 0,
+        minWidth: 48,
     },
-    socialButtonInRow: {
-        flex: 1,
-        width: 'auto',
-        maxWidth: 190,
+    buttonRow: {
+        flexGrow: 1,
     },
-    socialButtonStart: {
-        flexGrow: 0,
-        flexShrink: 0,
-        width: 'auto',
-        maxWidth: 'none',
-        minHeight: 40,
-        marginVertical: 0,
-        paddingVertical: 7,
-        paddingHorizontal: 14,
-    },
-    googleButton: {
-        backgroundColor: '#DB4437',
-    },
-    appleButton: {
-        backgroundColor: '#000000',
-    },
-    facebookButton: {
-        backgroundColor: '#4267B2',
-    },
-    socialButtonText: {
-        color: '#fff',
-        fontSize: 14,
+    buttonText: {
+        fontSize: 15,
         fontWeight: '600',
-        marginLeft: 10,
-    },
-    socialButtonTextCompact: {
-        fontSize: 13,
-        marginLeft: 8,
+        color: '#333',
     },
 })
 

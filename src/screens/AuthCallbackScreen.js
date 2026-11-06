@@ -2,61 +2,50 @@ import React, { useEffect } from 'react'
 import { View, StyleSheet, ActivityIndicator } from 'react-native'
 import CustomText from '../components/CustomText'
 
+const ALLOWED_PROVIDERS = new Set(['google', 'apple', 'facebook'])
+
 const AuthCallbackScreen = () => {
-    console.log('🔵 AuthCallbackScreen component rendered!')
-    
     useEffect(() => {
-        console.log('🟢 === Auth Callback Screen useEffect Started ===')
-        console.log('Current URL:', window.location.href)
-
-        // Get token, user data, and provider from URL
         const urlParams = new URLSearchParams(window.location.search)
-        const token = urlParams.get('token')
-        const userParam = urlParams.get('user')
+        const code = urlParams.get('code')
+        const token = urlParams.get('token') // legacy during rollout
         const error = urlParams.get('error')
-        const provider = urlParams.get('provider') || 'google' // default to google for backward compatibility
+        const providerRaw = urlParams.get('provider') || 'google'
+        const provider = ALLOWED_PROVIDERS.has(providerRaw)
+            ? providerRaw
+            : 'google'
 
-        console.log('Provider:', provider)
-        console.log('Token:', token ? 'YES' : 'NO')
-        console.log('User:', userParam ? 'YES' : 'NO')
-        console.log('Error:', error)
-        console.log('Has window.opener:', !!window.opener)
-
-        // Determine which storage key to use based on provider
         const storageKey = `${provider}_auth_result`
 
         if (error) {
-            console.log('🔴 Storing error in localStorage')
-            localStorage.setItem(storageKey, JSON.stringify({
-                type: 'error',
-                error: decodeURIComponent(error)
-            }))
+            localStorage.setItem(
+                storageKey,
+                JSON.stringify({
+                    type: 'error',
+                    error: decodeURIComponent(error),
+                })
+            )
+        } else if (code) {
+            localStorage.setItem(
+                storageKey,
+                JSON.stringify({
+                    type: 'success',
+                    code,
+                })
+            )
         } else if (token) {
-            // Parse user data
-            let userData = null
-            if (userParam) {
-                try {
-                    userData = JSON.parse(decodeURIComponent(userParam))
-                    console.log('Parsed user data:', userData)
-                } catch (e) {
-                    console.error('Error parsing user data:', e)
-                }
-            }
-
-            console.log('🟢 Storing success in localStorage')
-            localStorage.setItem(storageKey, JSON.stringify({
-                type: 'success',
-                token: token,
-                user: userData
-            }))
-            console.log('✅ Data stored! Closing in 1 second...')
+            localStorage.setItem(
+                storageKey,
+                JSON.stringify({
+                    type: 'success',
+                    token,
+                })
+            )
         }
 
-        // Close popup after a longer delay to ensure main window processes the login
         setTimeout(() => {
-            console.log('⏰ Closing popup now...')
             window.close()
-        }, 3000) // Increased to 3 seconds
+        }, 1500)
     }, [])
 
     return (
@@ -102,4 +91,3 @@ const styles = StyleSheet.create({
 })
 
 export default AuthCallbackScreen
-
