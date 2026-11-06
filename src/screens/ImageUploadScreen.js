@@ -19,7 +19,7 @@ import CustomText from '../components/CustomText'
 
 const ImageUpload = (props) => {
     const [profileImage, setProfileImage] = useState('')
-    const { token, fromPrompt, userData } = props.route.params || {}
+    const { fromPrompt, userData } = props.route.params || {}
     const navigation = useNavigation()
 
     const openImageLibrary = async () => {
@@ -45,11 +45,7 @@ const ImageUpload = (props) => {
 
     const goToPersonalization = async (userDataOverride = {}) => {
         try {
-            if (token) {
-                await storage.setItem('userToken', token)
-            }
             navigation.navigate('Personoi Arkiapuri', {
-                token,
                 userData: { ...(userData || {}), ...userDataOverride },
                 fromPrompt,
             })
@@ -61,6 +57,7 @@ const ImageUpload = (props) => {
 
     const uploadImage = async () => {
         try {
+            const token = await storage.getItem('userToken')
             if (!token) {
                 throw new Error('No token found')
             }

@@ -143,14 +143,10 @@ const SocialSignInButtons = ({
                         authData.code
                     )
                     onSocialSignIn(provider, authSession)
-                } else if (authData.type === 'success' && authData.token) {
-                    // Legacy fallback during rollout
-                    onSocialSignIn(provider, {
-                        token: authData.token,
-                        user: authData.user,
-                    })
                 } else if (authData.type === 'error') {
                     Alert.alert('Virhe', authData.error)
+                } else {
+                    Alert.alert('Virhe', 'Kirjautumiskoodi puuttuu')
                 }
             } catch (error) {
                 Alert.alert(

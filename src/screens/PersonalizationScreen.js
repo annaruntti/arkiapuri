@@ -29,11 +29,6 @@ const PersonalizationScreen = () => {
     const [loading, setLoading] = useState(false)
 
     const completeLogin = async (userData) => {
-        const token =
-            route.params?.token || (await storage.getItem('userToken'))
-        if (token) {
-            await storage.setItem('userToken', token)
-        }
         await storage.setItem('profile', JSON.stringify(userData))
         await storage.setItem('isLoggedIn', 'true')
         setProfile({
@@ -47,8 +42,7 @@ const PersonalizationScreen = () => {
     const onContinue = async () => {
         try {
             setLoading(true)
-            const token =
-                route.params?.token || (await storage.getItem('userToken'))
+            const token = await storage.getItem('userToken')
             if (!token) {
                 throw new Error('No token found')
             }

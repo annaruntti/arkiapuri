@@ -1,12 +1,11 @@
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useNavigation, useRoute } from '@react-navigation/core'
 import axios from 'axios'
-import React from 'react'
 import { useForm } from 'react-hook-form'
 import { Alert, View } from 'react-native'
 import { getServerUrl } from '../utils/getServerUrl'
 import { authFormStyles } from '../styles/authFormStyles'
 import { useResponsiveDimensions } from '../utils/responsive'
+import storage from '../utils/storage'
 
 import AuthLayout from '../components/AuthLayout'
 import Button from '../components/Button'
@@ -49,10 +48,9 @@ const SignUpScreen = () => {
                 )
                 const signInRes = signInResponse.data
                 if (signInRes.success) {
-                    await AsyncStorage.setItem('userToken', signInRes.token)
+                    await storage.setItem('userToken', signInRes.token)
 
                     navigation.navigate('Lataa profiilikuva', {
-                        token: signInRes.token,
                         fromPrompt: route.params?.fromPrompt,
                         userData: signInRes.user,
                     })

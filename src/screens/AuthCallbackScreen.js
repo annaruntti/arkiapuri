@@ -8,7 +8,6 @@ const AuthCallbackScreen = () => {
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search)
         const code = urlParams.get('code')
-        const token = urlParams.get('token') // legacy during rollout
         const error = urlParams.get('error')
         const providerRaw = urlParams.get('provider') || 'google'
         const provider = ALLOWED_PROVIDERS.has(providerRaw)
@@ -33,12 +32,12 @@ const AuthCallbackScreen = () => {
                     code,
                 })
             )
-        } else if (token) {
+        } else {
             localStorage.setItem(
                 storageKey,
                 JSON.stringify({
-                    type: 'success',
-                    token,
+                    type: 'error',
+                    error: 'Kirjautumiskoodi puuttuu',
                 })
             )
         }

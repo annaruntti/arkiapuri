@@ -26,10 +26,9 @@ const SignInScreen = () => {
 
     const { control, handleSubmit, setError } = useForm()
 
-    const navigateAfterAuth = (user, token) => {
+    const navigateAfterAuth = (user) => {
         if (!hasCompletedPersonalization(user)) {
             navigation.navigate('Personoi Arkiapuri', {
-                token,
                 userData: user,
                 fromPrompt: route.params?.fromPrompt,
             })
@@ -56,7 +55,7 @@ const SignInScreen = () => {
             if (response.data.success) {
                 await storage.setItem('userToken', response.data.token)
                 await login(response.data.user)
-                navigateAfterAuth(response.data.user, response.data.token)
+                navigateAfterAuth(response.data.user)
             } else {
                 console.error('Sign in failed:', response.data.message)
                 const message =
@@ -123,7 +122,7 @@ const SignInScreen = () => {
             ) {
                 await storage.setItem('userToken', data.token)
                 await login(data.user)
-                navigateAfterAuth(data.user, data.token)
+                navigateAfterAuth(data.user)
                 return
             }
 
@@ -135,7 +134,7 @@ const SignInScreen = () => {
             if (response.data.success) {
                 await storage.setItem('userToken', response.data.token)
                 await login(response.data.user)
-                navigateAfterAuth(response.data.user, response.data.token)
+                navigateAfterAuth(response.data.user)
             } else {
                 Alert.alert(
                     'Virhe',
