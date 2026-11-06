@@ -102,15 +102,29 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release {
+            // Prefer EAS credentials or env-provided keystore — never ship with debug keys.
+            def releaseStoreFile = System.getenv("ARKIAPURI_RELEASE_STORE_FILE")
+            if (releaseStoreFile) {
+                storeFile file(releaseStoreFile)
+                storePassword System.getenv("ARKIAPURI_RELEASE_STORE_PASSWORD")
+                keyAlias System.getenv("ARKIAPURI_RELEASE_KEY_ALIAS")
+                keyPassword System.getenv("ARKIAPURI_RELEASE_KEY_PASSWORD")
+            }
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            if (System.getenv("ARKIAPURI_RELEASE_STORE_FILE")) {
+                signingConfig signingConfigs.release
+            } else {
+                // Local unsigned/debug-signed builds only; CI/EAS must set release env.
+                signingConfig signingConfigs.debug
+                logger.warn("ARKIAPURI_RELEASE_STORE_FILE unset — release APK uses debug signing (not for Play Store).")
+            }
             shrinkResources (findProperty('android.enableShrinkResourcesInReleaseBuilds')?.toBoolean() ?: false)
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
