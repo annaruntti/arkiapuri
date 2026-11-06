@@ -3,11 +3,13 @@
         "name": "Arkiapuri",
         "slug": "arkiapuri",
         "version": "1.0.0",
+        "scheme": "arkiapuri",
         "orientation": "portrait",
         "icon": "./src/assets/images/arkiapuri-logo.png",
         "userInterfaceStyle": "light",
         "assetBundlePatterns": ["**/*"],
         "plugins": [
+            "expo-secure-store",
             [
                 "expo-font",
                 {
