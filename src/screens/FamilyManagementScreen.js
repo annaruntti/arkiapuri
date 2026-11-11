@@ -3,7 +3,6 @@ import { useFocusEffect } from '@react-navigation/native'
 import axios from 'axios'
 import React, { useState } from 'react'
 import { Alert, ScrollView, StyleSheet, TextInput, View } from 'react-native'
-import { AUTH_FORM_MAX_WIDTH } from '../components/AuthLayout'
 import Button from '../components/Button'
 import ContentContainer from '../components/ContentContainer'
 import CustomText from '../components/CustomText'
@@ -658,13 +657,11 @@ const styles = StyleSheet.create({
     },
     content: {
         width: '100%',
-        maxWidth: AUTH_FORM_MAX_WIDTH,
-        alignItems: 'center',
+        alignItems: 'stretch',
     },
     wideContent: {
-        maxWidth: AUTH_FORM_MAX_WIDTH,
         width: '100%',
-        alignItems: 'center',
+        alignItems: 'stretch',
         padding: 0,
     },
     desktopContent: {
@@ -762,15 +759,18 @@ const styles = StyleSheet.create({
         width: '100%',
     },
     header: {
-        alignItems: 'center',
+        alignSelf: 'stretch',
+        alignItems: 'flex-start',
         marginBottom: 28,
         width: '100%',
     },
     title: {
+        alignSelf: 'stretch',
+        width: '100%',
         fontSize: 24,
         fontWeight: '700',
         color: '#1f2937',
-        textAlign: 'center',
+        textAlign: 'left',
         marginBottom: 8,
     },
     desktopTitle: {
@@ -779,9 +779,11 @@ const styles = StyleSheet.create({
         textAlign: 'left',
     },
     subtitle: {
+        alignSelf: 'stretch',
+        width: '100%',
         fontSize: 16,
         color: '#6b7280',
-        textAlign: 'center',
+        textAlign: 'left',
     },
     desktopSubtitle: {
         fontSize: 18,
