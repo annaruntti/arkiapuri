@@ -28,6 +28,8 @@ import AuthCallbackScreen from '../screens/AuthCallbackScreen'
 import ConfirmEmailScreen from '../screens/ConfirmEmailScreen'
 import EditProfileScreen from '../screens/EditProfileScreen'
 import FamilyManagementScreen from '../screens/FamilyManagementScreen'
+import AdminCatalogScreen from '../screens/AdminCatalogScreen'
+import SharedCatalogScreen from '../screens/SharedCatalogScreen'
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen'
 import HomeScreen from '../screens/HomeScreen'
 import ImageUploadScreen from '../screens/ImageUploadScreen'
@@ -508,6 +510,14 @@ function ProfileStackScreen() {
                 name="Hallinnoi perhettä"
                 component={FamilyManagementScreen}
             />
+            <ProfileStack.Screen
+                name="Ylläpito"
+                component={AdminCatalogScreen}
+            />
+            <ProfileStack.Screen
+                name="Avoin katalogi"
+                component={SharedCatalogScreen}
+            />
         </ProfileStack.Navigator>
     )
 }
@@ -745,6 +755,8 @@ const linking = {
                             'Omat tiedot': 'profile',
                             'Muokkaa tietoja': 'edit-profile',
                             'Hallinnoi perhettä': 'family-management',
+                            Ylläpito: 'admin-catalog',
+                            'Avoin katalogi': 'shared-catalog',
                         },
                     },
                 },

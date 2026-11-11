@@ -393,6 +393,34 @@ const ProfileScreen = () => {
                                                     )
                                                 }
                                             />
+                                            <Button
+                                                title="Avoin katalogi"
+                                                type="SECONDARY"
+                                                style={[
+                                                    styles.lastActionButton,
+                                                    styles.compactActionButton,
+                                                ]}
+                                                onPress={() =>
+                                                    navigation.navigate(
+                                                        'Avoin katalogi'
+                                                    )
+                                                }
+                                            />
+                                            {profile?.platformRole ===
+                                            'admin' ? (
+                                                <Button
+                                                    title="Ylläpito"
+                                                    style={[
+                                                        styles.lastActionButton,
+                                                        styles.compactActionButton,
+                                                    ]}
+                                                    onPress={() =>
+                                                        navigation.navigate(
+                                                            'Ylläpito'
+                                                        )
+                                                    }
+                                                />
+                                            ) : null}
                                         </View>
                                     ) : null}
                                 </View>
