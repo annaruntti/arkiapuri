@@ -73,10 +73,11 @@ const ShoppingListDetail = ({
     const boughtItemCount = (shoppingList?.items || []).filter(
         (item) => item.bought
     ).length
+    const checkedIdSet = new Set(checkedItems.map((id) => String(id)))
     const checkedFoodItemIds = (shoppingList?.items || [])
         .filter(
             (item) =>
-                checkedItems.includes(getListItemId(item)) &&
+                checkedIdSet.has(String(getListItemId(item))) &&
                 item.isFood !== false
         )
         .map((item) => getListItemId(item))
@@ -466,7 +467,7 @@ const ShoppingListDetail = ({
     const renderItem = ({ item }) => (
         <ShoppingListDetailItemRow
             item={item}
-            checked={checkedItems.includes(getListItemId(item))}
+            checked={checkedIdSet.has(String(getListItemId(item)))}
             onPress={() => handleItemPress(item)}
             onImagePress={() => handleItemDetailsPress(item)}
             onLongPress={() => handleCheckItem(item)}
@@ -491,11 +492,7 @@ const ShoppingListDetail = ({
                     <StickyListLayout
                         chromeBackgroundColor="#f9fafb"
                         style={styles.listLayout}
-                        contentContainerStyle={
-                            checkedItems.length > 0
-                                ? styles.scrollContentWithFloatingBar
-                                : undefined
-                        }
+                        contentContainerStyle={styles.listContent}
                         header={
                             <>
                                 <View style={styles.header}>
@@ -612,10 +609,12 @@ const ShoppingListDetail = ({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        minHeight: 0,
         backgroundColor: '#f9fafb',
     },
     listLayout: {
         flex: 1,
+        minHeight: 0,
         backgroundColor: '#f9fafb',
     },
     formWrapper: {
@@ -694,9 +693,6 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         borderColor: '#5844BB',
         whiteSpace: 'nowrap',
-    },
-    scrollContentWithFloatingBar: {
-        paddingBottom: 120,
     },
     addItemButtonsContainer: {
         flexDirection: 'row',

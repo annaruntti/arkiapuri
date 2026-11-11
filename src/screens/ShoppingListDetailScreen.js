@@ -196,6 +196,7 @@ const ShoppingListDetailScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        minHeight: 0,
         backgroundColor: '#f9fafb',
         padding: 15,
     },

@@ -13,9 +13,7 @@ const ShoppingListFloatingActions = ({
     if (!checkedCount) return null
 
     return (
-        <View
-            style={[styles.floatingActionBar, { pointerEvents: 'box-none' }]}
-        >
+        <View style={styles.floatingActionBar}>
             <View style={styles.floatingActionBarInner}>
                 {checkedFoodCount > 0 && (
                     <Button
@@ -43,15 +41,11 @@ const ShoppingListFloatingActions = ({
 
 const styles = StyleSheet.create({
     floatingActionBar: {
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 50,
-        paddingHorizontal: 0,
+        width: '100%',
+        zIndex: 20,
         paddingTop: 8,
         paddingBottom: Platform.OS === 'ios' ? 16 : 10,
-        backgroundColor: 'transparent',
+        backgroundColor: '#f9fafb',
     },
     floatingActionBarInner: {
         width: '100%',
