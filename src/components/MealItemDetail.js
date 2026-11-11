@@ -131,14 +131,6 @@ const MealItemDetail = ({
                         field === 'difficultyLevel'
                             ? meal.difficultyLevel || 'medium'
                             : meal[field],
-                    ...(field === 'recipe'
-                        ? {
-                              recipeSteps: resolveRecipeSteps(
-                                  values.recipeSteps,
-                                  values.recipe || meal.recipe
-                              ),
-                          }
-                        : {}),
                 }))
             }
             return {
@@ -441,7 +433,6 @@ const MealItemDetail = ({
                 onAddFoodItem={() => setShowFoodItemForm(true)}
                 onOpenFoodItem={handleOpenFoodItem}
                 onRemoveFoodItem={handleRemoveFoodItem}
-                onToggleRecipeEdit={() => toggleEdit('recipe')}
                 onAddToShoppingList={requestAddToShoppingList}
                 onAddToPantry={addItemToPantry}
                 onImageUpdate={(updatedMeal) =>

@@ -25,6 +25,7 @@ import MealIngredientQuantityEditor from './MealIngredientQuantityEditor'
 import MealServingsStepper from './MealServingsStepper'
 import MealTabs from './MealTabs'
 import PlannedEatingDates from './PlannedEatingDates'
+import RecipeStepsEditor from './RecipeStepsEditor'
 
 const MealDetailsForm = ({
     meal,
@@ -39,7 +40,6 @@ const MealDetailsForm = ({
     onAddFoodItem,
     onOpenFoodItem,
     onRemoveFoodItem,
-    onToggleRecipeEdit,
     onAddToShoppingList,
     onAddToPantry,
     onImageUpdate,
@@ -124,12 +124,7 @@ const MealDetailsForm = ({
                 recipeSteps={editedValues.recipeSteps}
                 mealId={meal?._id}
                 visible={visible}
-                isRecipeEditing={editableFields.recipe}
-                onAddFoodItem={onAddFoodItem}
                 onOpenFoodItem={onOpenFoodItem}
-                onRemoveFoodItem={onRemoveFoodItem}
-                onRecipeStepsChange={(steps) => onChange('recipeSteps', steps)}
-                onToggleRecipeEdit={onToggleRecipeEdit}
                 onAddToShoppingList={onAddToShoppingList}
                 onAddToPantry={onAddToPantry}
                 nutritionContent={
@@ -253,21 +248,37 @@ const MealDetailsForm = ({
                             cookingDate={cookingDate}
                         />
 
+                        <CustomText style={styles.sectionLabel}>
+                            Valmistusohje
+                        </CustomText>
+                        <RecipeStepsEditor
+                            steps={
+                                editedValues.recipeSteps?.length
+                                    ? editedValues.recipeSteps
+                                    : ['']
+                            }
+                            onChange={(steps) =>
+                                onChange('recipeSteps', steps)
+                            }
+                        />
+
                         <MealIngredientQuantityEditor
                             foodItems={editedValues.foodItems}
                             onItemChange={onFoodItemChange}
+                            onAdd={onAddFoodItem}
+                            onRemove={onRemoveFoodItem}
                         />
+
+                        <View style={styles.buttonContainer}>
+                            <Button
+                                title="Tallenna muutokset"
+                                onPress={onSave}
+                                style={styles.saveButton}
+                            />
+                        </View>
                     </View>
                 }
             />
-
-            <View style={styles.buttonContainer}>
-                <Button
-                    title="Tallenna muutokset"
-                    onPress={onSave}
-                    style={styles.saveButton}
-                />
-            </View>
         </View>
     )
 }
@@ -322,6 +333,13 @@ const styles = StyleSheet.create({
     categorySection: {
         paddingTop: 8,
         paddingBottom: 8,
+    },
+    sectionLabel: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#1f2937',
+        marginTop: 16,
+        marginBottom: 10,
     },
     buttonContainer: {
         marginTop: 20,

@@ -1,19 +1,36 @@
 import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
 import { useState } from 'react'
+import Button from './Button'
 import CustomText from './CustomText'
 import ListItem from './ListItem'
 import { getIngredientQuantity } from '../utils/mealFoodItem'
 import { APP_UNITS, resolveAppUnit } from '../utils/units'
 
-const MealIngredientQuantityEditor = ({ foodItems = [], onItemChange }) => {
+const MealIngredientQuantityEditor = ({
+    foodItems = [],
+    onItemChange,
+    onAdd,
+    onRemove,
+}) => {
     const [openUnitIndex, setOpenUnitIndex] = useState(null)
-
-    if (!foodItems.length) return null
 
     return (
         <View style={styles.section}>
-            <CustomText style={styles.heading}>Raaka-aineiden määrät</CustomText>
+            <View style={styles.header}>
+                <CustomText style={styles.heading}>Raaka-aineet</CustomText>
+                {onAdd ? (
+                    <Button
+                        title="+ Lisää"
+                        onPress={onAdd}
+                        type="TERTIARY"
+                        size="small"
+                    />
+                ) : null}
+            </View>
+            {!foodItems.length ? (
+                <CustomText style={styles.empty}>Ei raaka-aineita</CustomText>
+            ) : null}
             {foodItems.map((item, index) => {
                 const unit = resolveAppUnit(item.unit)
                 const unitMenuOpen = openUnitIndex === index
@@ -109,6 +126,8 @@ const MealIngredientQuantityEditor = ({ foodItems = [], onItemChange }) => {
                                 </View>
                             ) : undefined
                         }
+                        onDelete={onRemove ? () => onRemove(index) : undefined}
+                        deleteAccessibilityLabel={`Poista ${item.name || 'raaka-aine'}`}
                     />
                 )
             })}
@@ -120,11 +139,20 @@ const styles = StyleSheet.create({
     section: {
         marginTop: 16,
     },
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 10,
+    },
     heading: {
         fontSize: 16,
         fontWeight: '600',
         color: '#1f2937',
-        marginBottom: 10,
+    },
+    empty: {
+        fontSize: 14,
+        color: '#6b7280',
     },
     titleRow: {
         flexDirection: 'row',

@@ -1,16 +1,14 @@
 import { useEffect, useState } from 'react'
 import { StyleSheet, TouchableOpacity, View } from 'react-native'
-import { Feather, MaterialIcons } from '@expo/vector-icons'
-import Button from './Button'
+import { MaterialIcons } from '@expo/vector-icons'
 import CustomText from './CustomText'
 import FoodItemRow from './FoodItemRow'
-import RecipeStepsEditor from './RecipeStepsEditor'
 import { normalizeRecipeSteps, resolveRecipeSteps } from '../utils/recipeSteps'
 
 const TABS = [
     { id: 'ingredients', label: 'Raaka-aineet' },
     { id: 'recipe', label: 'Valmistusohje' },
-    { id: 'details', label: 'Tiedot' },
+    { id: 'details', label: 'Muokkaa' },
 ]
 
 const MealTabs = ({
@@ -20,12 +18,7 @@ const MealTabs = ({
     recipeSteps = [],
     mealId,
     visible = true,
-    isRecipeEditing,
-    onAddFoodItem,
     onOpenFoodItem,
-    onRemoveFoodItem,
-    onRecipeStepsChange,
-    onToggleRecipeEdit,
     onAddToShoppingList,
     onAddToPantry,
     nutritionContent,
@@ -43,19 +36,13 @@ const MealTabs = ({
         if (activeTab === 'ingredients') {
             return (
                 <View style={styles.detailSection}>
-                    <View style={styles.sectionHeader}>
-                        <CustomText style={styles.sectionHint}>
-                            {foodItems?.length
-                                ? `${foodItems.length} raaka-ainetta`
-                                : 'Ei raaka-aineita'}
-                        </CustomText>
-                        <Button
-                            title="+ Lisää"
-                            onPress={onAddFoodItem}
-                            type="TERTIARY"
-                            size="small"
-                        />
-                    </View>
+                    <CustomText
+                        style={[styles.sectionHint, styles.sectionHintSpaced]}
+                    >
+                        {foodItems?.length
+                            ? `${foodItems.length} raaka-ainetta`
+                            : 'Ei raaka-aineita'}
+                    </CustomText>
                     {foodItems?.map((item, index) => {
                         // Find availability info for this item
                         const itemWithAvailability = foodItemsWithAvailability.find(
@@ -127,7 +114,6 @@ const MealTabs = ({
                                 item={item}
                                 index={index}
                                 onOpenDetails={onOpenFoodItem}
-                                onRemove={onRemoveFoodItem}
                                 details={
                                     statusParts.length ? (
                                         <CustomText
@@ -152,33 +138,16 @@ const MealTabs = ({
 
         return (
                 <View style={styles.detailSection}>
-                    <View style={styles.recipeHeader}>
-                        <CustomText style={styles.sectionHint}>
-                            {steps.length
-                                ? `${steps.length} vaihetta`
-                                : recipe
-                                  ? 'Reseptin vaiheet'
-                                  : 'Ei valmistusohjetta'}
-                        </CustomText>
-                        <TouchableOpacity
-                            style={styles.editIcon}
-                            onPress={onToggleRecipeEdit}
-                        >
-                            <Feather
-                                name={isRecipeEditing ? 'check' : 'edit-2'}
-                                size={18}
-                                color="#666"
-                            />
-                        </TouchableOpacity>
-                    </View>
-                    {isRecipeEditing ? (
-                        <RecipeStepsEditor
-                            steps={
-                                recipeSteps?.length ? recipeSteps : ['']
-                            }
-                            onChange={onRecipeStepsChange}
-                        />
-                    ) : steps.length ? (
+                    <CustomText
+                        style={[styles.sectionHint, styles.sectionHintSpaced]}
+                    >
+                        {steps.length
+                            ? `${steps.length} vaihetta`
+                            : recipe
+                              ? 'Reseptin vaiheet'
+                              : 'Ei valmistusohjetta'}
+                    </CustomText>
+                    {steps.length ? (
                         steps.map((step, index) => {
                             const done = Boolean(doneSteps[index])
                             const toggleStep = () =>
@@ -301,38 +270,11 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#6b7280',
     },
-    sectionHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+    sectionHintSpaced: {
         marginBottom: 10,
-    },
-    recipeHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 10,
-    },
-    editIcon: {
-        padding: 5,
-        marginLeft: 10,
-    },
-    input: {
-        borderBottomWidth: 1,
-        borderBottomColor: '#5844BB',
-        padding: 2,
-        minWidth: 50,
-        textAlign: 'right',
     },
     recipeText: {
         lineHeight: 24,
-        flex: 1,
-        flexWrap: 'wrap',
-        wordBreak: 'break-word',
-    },
-    recipeInput: {
-        textAlign: 'left',
-        minHeight: 100,
         flex: 1,
         flexWrap: 'wrap',
         wordBreak: 'break-word',
