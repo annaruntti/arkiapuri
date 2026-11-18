@@ -70,7 +70,6 @@ const ShoppingListPickerModal = ({
 
 const styles = StyleSheet.create({
     content: {
-        paddingHorizontal: 20,
         paddingBottom: 24,
         gap: 10,
     },

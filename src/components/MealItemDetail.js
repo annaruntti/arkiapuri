@@ -466,7 +466,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     detailScroll: {
-        paddingTop: 20,
+        paddingTop: 0,
         ...(Platform.OS === 'web' && {
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',

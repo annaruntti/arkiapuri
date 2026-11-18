@@ -363,7 +363,7 @@ const TableMonth = ({ onRequireLogin }) => {
                 bodyStyle={
                     mealSelectView === 'select'
                         ? styles.mealSelectModalBody
-                        : styles.mealCreateModalBody
+                        : undefined
                 }
             >
                 {mealSelectView === 'create' ? (
@@ -590,9 +590,6 @@ const styles = StyleSheet.create({
     },
     mealSelectModalBody: {
         paddingHorizontal: 0,
-    },
-    mealCreateModalBody: {
-        paddingHorizontal: 20,
     },
 })
 

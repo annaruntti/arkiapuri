@@ -463,7 +463,10 @@ const styles = StyleSheet.create({
         paddingVertical: 40,
     },
     tabletModalContent: {
-        borderRadius: 16,
+        borderTopLeftRadius: 16,
+        borderTopRightRadius: 16,
+        borderBottomLeftRadius: 16,
+        borderBottomRightRadius: 16,
         height: 'auto',
         maxHeight: '85%',
         width: '100%',
@@ -472,13 +475,13 @@ const styles = StyleSheet.create({
         paddingBottom: 8,
     },
     tabletModalHeader: {
-        paddingHorizontal: 40,
+        paddingHorizontal: 32,
         paddingTop: 16,
         marginBottom: 8,
     },
     tabletModalBody: {
-        paddingHorizontal: 40,
-        paddingBottom: 36,
+        paddingHorizontal: 32,
+        paddingBottom: 32,
     },
 
     desktopModalView: {
@@ -488,12 +491,14 @@ const styles = StyleSheet.create({
         paddingVertical: 40,
     },
     desktopModalContent: {
-        borderRadius: 12,
+        borderTopLeftRadius: 16,
+        borderTopRightRadius: 16,
+        borderBottomLeftRadius: 16,
+        borderBottomRightRadius: 16,
         height: 'auto',
         maxHeight: '90%',
-        minHeight: '60%',
         width: '100%',
-        paddingTop: 30,
+        paddingTop: 32,
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
@@ -504,17 +509,18 @@ const styles = StyleSheet.create({
         elevation: 20,
     },
     desktopModalHeader: {
-        paddingHorizontal: 20,
-        marginBottom: 10,
+        paddingHorizontal: 32,
+        paddingTop: 16,
+        marginBottom: 8,
     },
     desktopModalTitle: {
         fontSize: 24,
-        marginBottom: 15,
+        marginBottom: 10,
         color: '#333',
     },
     desktopModalBody: {
-        paddingHorizontal: 20,
-        paddingBottom: 30,
+        paddingHorizontal: 32,
+        paddingBottom: 32,
     },
     desktopBackButton: {
         paddingVertical: 8,

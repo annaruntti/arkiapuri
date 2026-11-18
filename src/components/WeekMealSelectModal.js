@@ -45,11 +45,7 @@ const WeekMealSelectModal = ({
         showBackButton={view === 'create' || view === 'details'}
         maxWidth={640}
         contentStyle={styles.mealSelectModalContent}
-        bodyStyle={
-            view === 'select'
-                ? styles.mealSelectModalBody
-                : styles.mealCreateModalBody
-        }
+        bodyStyle={view === 'select' ? styles.mealSelectModalBody : undefined}
     >
         {view === 'create' ? (
             <FormAddMeal
@@ -95,9 +91,6 @@ const styles = StyleSheet.create({
     },
     mealSelectModalBody: {
         paddingHorizontal: 0,
-    },
-    mealCreateModalBody: {
-        paddingHorizontal: 20,
     },
 })
 
