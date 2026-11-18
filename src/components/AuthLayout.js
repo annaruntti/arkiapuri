@@ -113,6 +113,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         justifyContent: 'center',
+        alignItems: 'center',
         paddingHorizontal: 20,
         paddingVertical: 40,
         minHeight: '100%',
@@ -131,8 +132,9 @@ const styles = StyleSheet.create({
         width: '100%',
     },
     content: {
-        width: '100%',
-        maxWidth: AUTH_FORM_MAX_WIDTH,
+        width: AUTH_FORM_MAX_WIDTH,
+        maxWidth: '100%',
+        alignSelf: 'center',
     },
     wideContent: {
         maxWidth: AUTH_FORM_MAX_WIDTH,
