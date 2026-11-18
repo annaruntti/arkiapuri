@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons'
 import * as WebBrowser from 'expo-web-browser'
 import axios from 'axios'
 import { getServerUrl } from '../utils/getServerUrl'
+import { useResponsiveDimensions } from '../utils/responsive'
 import CustomText from './CustomText'
 
 WebBrowser.maybeCompleteAuthSession()
@@ -46,13 +47,33 @@ const exchangeCodeForSession = async (code) => {
     }
 }
 
-const SocialSignInButtons = ({
-    onSocialSignIn,
-    showDivider = true,
-    layout = 'column',
-    compact = false,
-    alignStart = false,
-}) => {
+const PROVIDER_ICON_COLOR = {
+    google: '#C5221F',
+    apple: '#000000',
+    facebook: '#0C63D4',
+}
+
+const SocialProviderButton = ({
+    icon,
+    color,
+    label,
+    onPress,
+    wide,
+    accessibilityLabel,
+}) => (
+    <TouchableOpacity
+        style={[styles.button, wide ? styles.buttonContent : styles.buttonFull]}
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+    >
+        <Ionicons name={icon} size={20} color={color} />
+        <CustomText style={styles.buttonText}>{label}</CustomText>
+    </TouchableOpacity>
+)
+
+const SocialSignInButtons = ({ onSocialSignIn, showDivider = true }) => {
+    const { isTablet } = useResponsiveDimensions()
     const googleAuthUrl = `${getServerUrl('')}/auth/google`
     const appleAuthUrl = `${getServerUrl('')}/auth/apple`
     const facebookAuthUrl = `${getServerUrl('')}/auth/facebook`
@@ -194,85 +215,56 @@ const SocialSignInButtons = ({
         }
     }
 
-    const isRow = layout === 'row'
-
     return (
         <View style={styles.container}>
             {showDivider && (
-                <View
-                    style={[
-                        styles.dividerRow,
-                        isRow && styles.dividerRowHorizontal,
-                    ]}
-                >
-                    <View style={styles.dividerLine} />
-                    <CustomText style={styles.dividerText}>tai</CustomText>
+                <View style={styles.dividerRow}>
+                    <View
+                        style={
+                            isTablet
+                                ? styles.dividerLineShort
+                                : styles.dividerLine
+                        }
+                    />
+                    <CustomText
+                        style={[
+                            styles.dividerText,
+                            isTablet && styles.dividerTextStart,
+                        ]}
+                    >
+                        tai
+                    </CustomText>
                     <View style={styles.dividerLine} />
                 </View>
             )}
 
-            <View
-                style={[
-                    styles.buttons,
-                    isRow && styles.buttonsRow,
-                    alignStart && styles.buttonsAlignStart,
-                ]}
-            >
-                <TouchableOpacity
-                    style={[
-                        styles.button,
-                        compact && styles.buttonCompact,
-                        isRow && styles.buttonRow,
-                    ]}
+            <View style={[styles.buttons, isTablet && styles.buttonsRow]}>
+                <SocialProviderButton
+                    icon="logo-google"
+                    color={PROVIDER_ICON_COLOR.google}
+                    label="Google"
+                    wide={isTablet}
                     onPress={handleGoogleSignIn}
-                    accessibilityRole="button"
                     accessibilityLabel="Kirjaudu Googlella"
-                >
-                    <Ionicons name="logo-google" size={20} color="#DB4437" />
-                    {!compact && (
-                        <CustomText style={styles.buttonText}>
-                            Google
-                        </CustomText>
-                    )}
-                </TouchableOpacity>
-
+                />
                 {Platform.OS === 'ios' && (
-                    <TouchableOpacity
-                        style={[
-                            styles.button,
-                            compact && styles.buttonCompact,
-                            isRow && styles.buttonRow,
-                        ]}
+                    <SocialProviderButton
+                        icon="logo-apple"
+                        color={PROVIDER_ICON_COLOR.apple}
+                        label="Apple"
+                        wide={isTablet}
                         onPress={handleAppleSignIn}
-                        accessibilityRole="button"
                         accessibilityLabel="Kirjaudu Applella"
-                    >
-                        <Ionicons name="logo-apple" size={20} color="#000" />
-                        {!compact && (
-                            <CustomText style={styles.buttonText}>
-                                Apple
-                            </CustomText>
-                        )}
-                    </TouchableOpacity>
+                    />
                 )}
-
-                <TouchableOpacity
-                    style={[
-                        styles.button,
-                        compact && styles.buttonCompact,
-                        isRow && styles.buttonRow,
-                    ]}
+                <SocialProviderButton
+                    icon="logo-facebook"
+                    color={PROVIDER_ICON_COLOR.facebook}
+                    label="Facebook"
+                    wide={isTablet}
                     onPress={handleFacebookSignIn}
-                    accessibilityRole="button"
                     accessibilityLabel="Kirjaudu Facebookilla"
-                >
-                    <Ionicons name="logo-facebook" size={20} color="#1877F2" />
-                    {!compact && (
-                        <CustomText style={styles.buttonText}>
-                            Facebook
-                        </CustomText>
-                    )}
-                </TouchableOpacity>
+                />
             </View>
         </View>
     )
@@ -287,52 +279,65 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginVertical: 16,
     },
-    dividerRowHorizontal: {
-        marginVertical: 12,
-    },
     dividerLine: {
         flex: 1,
         height: 1,
         backgroundColor: '#ddd',
+    },
+    dividerLineShort: {
+        width: 24,
+        height: 1,
+        backgroundColor: '#ddd',
+        marginRight: 12,
     },
     dividerText: {
         marginHorizontal: 12,
         color: '#666',
         fontSize: 14,
     },
+    dividerTextStart: {
+        marginLeft: 0,
+        marginRight: 12,
+        textAlign: 'left',
+    },
     buttons: {
         gap: 10,
+        width: '100%',
     },
     buttonsRow: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-    },
-    buttonsAlignStart: {
-        alignItems: 'flex-start',
+        justifyContent: 'flex-start',
+        alignItems: 'center',
     },
     button: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 8,
-        paddingVertical: 12,
-        paddingHorizontal: 16,
+        minHeight: 40,
+        paddingVertical: 7,
+        paddingLeft: 20,
+        paddingRight: 20,
         borderRadius: 25,
         borderWidth: 1,
-        borderColor: '#ddd',
+        borderColor: '#4B5563',
         backgroundColor: '#fff',
     },
-    buttonCompact: {
-        paddingHorizontal: 12,
-        minWidth: 48,
+    buttonFull: {
+        width: '100%',
+        alignSelf: 'stretch',
     },
-    buttonRow: {
-        flexGrow: 1,
+    buttonContent: {
+        alignSelf: 'flex-start',
+        flexGrow: 0,
+        flexShrink: 0,
+        width: 'auto',
     },
     buttonText: {
-        fontSize: 15,
+        fontSize: 14,
         fontWeight: '600',
-        color: '#333',
+        color: '#1f2937',
     },
 })
 

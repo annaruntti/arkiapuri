@@ -239,11 +239,7 @@ const SignInScreen = () => {
                     </View>
                 )}
 
-                <SocialSignInButtons
-                    onSocialSignIn={onSocialSignIn}
-                    layout={isDesktop ? 'row' : 'column'}
-                    alignStart={isDesktop}
-                />
+                <SocialSignInButtons onSocialSignIn={onSocialSignIn} />
             </View>
         </AuthLayout>
     )

@@ -163,43 +163,60 @@ const LoginPromptModal = ({
             title={message.title}
             maxWidth={640}
             showCloseButton
-            headerStyle={styles.titleArea}
-            titleStyle={styles.titleText}
         >
             <ScrollView
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
             >
                 <View>
-                    <CustomText style={styles.subtitle}>
+                    <CustomText
+                        style={[
+                            styles.subtitle,
+                            useWideLayout && styles.leftCopy,
+                        ]}
+                    >
                         {message.subtitle}
                     </CustomText>
-                    <CustomText style={styles.description}>
+                    <CustomText
+                        style={[
+                            styles.description,
+                            useWideLayout && styles.leftCopy,
+                        ]}
+                    >
                         {message.description}
                     </CustomText>
                 </View>
 
-                <View style={styles.emailSection}>
+                <View
+                    style={[
+                        styles.emailSection,
+                        useWideLayout && styles.wideSection,
+                    ]}
+                >
                     {useWideLayout ? (
-                        <View style={styles.authButtonsRow}>
-                            <Button
-                                title="Kirjaudu sisään"
-                                onPress={() =>
-                                    navigateToAuth('Kirjaudu sisään')
-                                }
-                                type="PRIMARY"
-                                size="small"
-                                style={styles.authRowButton}
-                                textStyle={styles.primaryButtonText}
-                            />
-                            <Button
-                                title="Luo käyttäjätunnus"
-                                onPress={() => navigateToAuth('Luo tunnus')}
-                                type="SECONDARY"
-                                size="small"
-                                style={styles.authRowButton}
-                                textStyle={styles.primaryButtonText}
-                            />
+                        <View style={styles.authButtonsColumn}>
+                            <View style={styles.authButtonsRow}>
+                                <Button
+                                    title="Kirjaudu sisään"
+                                    onPress={() =>
+                                        navigateToAuth('Kirjaudu sisään')
+                                    }
+                                    type="PRIMARY"
+                                    size="small"
+                                    style={styles.authRowButton}
+                                    textStyle={styles.primaryButtonText}
+                                />
+                                <Button
+                                    title="Luo käyttäjätunnus"
+                                    onPress={() =>
+                                        navigateToAuth('Luo tunnus')
+                                    }
+                                    type="SECONDARY"
+                                    size="small"
+                                    style={styles.authRowButton}
+                                    textStyle={styles.primaryButtonText}
+                                />
+                            </View>
                             <Button
                                 title="Jatka ilman kirjautumista"
                                 onPress={() => {
@@ -260,12 +277,13 @@ const LoginPromptModal = ({
                     )}
                 </View>
 
-                <View style={styles.socialButtonsSection}>
-                    <SocialSignInButtons
-                        onSocialSignIn={handleSocialSignIn}
-                        layout={useWideLayout ? 'row' : 'column'}
-                        compact={useWideLayout}
-                    />
+                <View
+                    style={[
+                        styles.socialButtonsSection,
+                        useWideLayout && styles.wideSection,
+                    ]}
+                >
+                    <SocialSignInButtons onSocialSignIn={handleSocialSignIn} />
                 </View>
             </ScrollView>
         </ResponsiveModal>
@@ -273,16 +291,6 @@ const LoginPromptModal = ({
 }
 
 const styles = StyleSheet.create({
-    titleArea: {
-        padding: 20,
-        marginBottom: 0,
-        paddingRight: 48,
-    },
-    titleText: {
-        marginBottom: 0,
-        paddingTop: 20,
-        paddingHorizontal: 20,
-    },
     scrollContent: {
         paddingBottom: 20,
     },
@@ -295,6 +303,10 @@ const styles = StyleSheet.create({
         lineHeight: 22,
         paddingHorizontal: 10,
     },
+    leftCopy: {
+        textAlign: 'left',
+        paddingHorizontal: 0,
+    },
     description: {
         fontSize: 14,
         color: '#666',
@@ -306,6 +318,9 @@ const styles = StyleSheet.create({
         marginTop: 4,
         marginBottom: 8,
         paddingHorizontal: 20,
+    },
+    wideSection: {
+        paddingHorizontal: 0,
     },
     emailSection: {
         paddingHorizontal: 20,
@@ -320,12 +335,16 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         lineHeight: 20,
     },
+    authButtonsColumn: {
+        alignItems: 'flex-start',
+        gap: 10,
+        marginBottom: 4,
+    },
     authButtonsRow: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: 10,
-        marginBottom: 4,
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
     },
     authRowButton: {
         flexGrow: 0,
