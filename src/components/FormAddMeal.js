@@ -21,6 +21,7 @@ import {
 import { pickMealImage, uploadMealImage } from '../utils/mealImage'
 import { resolveMealFoodItemRefs } from '../utils/resolveMealFoodItems'
 import { clampDatesToMin } from '../utils/mealDates'
+import { buttonStyles } from '../styles/formStyles'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 
@@ -60,7 +61,7 @@ const AddMealForm = ({
     backHandlerRef,
 }) => {
     const { profile } = useLogin()
-    const { isDesktop } = useResponsiveDimensions()
+    const { isTablet } = useResponsiveDimensions()
     const [foodItems, setFoodItems] = useState(aiDraft?.foodItems || [])
     const [recipeSteps, setRecipeSteps] = useState(
         resolveRecipeSteps(aiDraft?.recipeSteps, aiDraft?.recipe)
@@ -550,12 +551,7 @@ const AddMealForm = ({
                 bounces={false}
                 keyboardShouldPersistTaps="handled"
             >
-                <View
-                    style={[
-                        styles.formContainer,
-                        isDesktop && styles.formContainerDesktop,
-                    ]}
-                >
+                <View style={styles.formContainer}>
                     <GuestWarningBanner message="Tietosi eivät tallennu pysyvästi ilman käyttäjätunnusta. Kirjaudu sisään tallentaaksesi tiedot." />
                     {aiDraft ? (
                         <NoticeBanner variant="info">
@@ -596,7 +592,6 @@ const AddMealForm = ({
                         servings={servings}
                         showItemForm={showItemForm}
                         formErrors={formErrors}
-                        isDesktop={isDesktop}
                         foodItemsErrorRef={foodItemsErrorRef}
                         onSelectItem={addSelectedItemToMeal}
                         onToggleItemForm={() => setShowItemForm((v) => !v)}
@@ -607,7 +602,12 @@ const AddMealForm = ({
                         onAddToPantry={addItemToPantry}
                     />
 
-                    <View style={styles.buttonGroup}>
+                    <View
+                        style={[
+                            styles.buttonGroup,
+                            isTablet && buttonStyles.actionsRow,
+                        ]}
+                    >
                         <Button
                             title="Tallenna ateria"
                             onPress={() => {
@@ -650,7 +650,7 @@ const AddMealForm = ({
                             }}
                             style={[
                                 styles.primaryButton,
-                                isDesktop && styles.desktopPrimaryButton,
+                                isTablet && buttonStyles.contentButton,
                             ]}
                             textStyle={styles.buttonText}
                         />
@@ -679,9 +679,6 @@ const styles = StyleSheet.create({
         paddingVertical: 5,
         zIndex: 1,
     },
-    formContainerDesktop: {
-        paddingHorizontal: 50,
-    },
     formScroll: {
         flexGrow: 1,
         paddingBottom: 20,
@@ -699,10 +696,6 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         width: '100%',
         marginBottom: 10,
-    },
-    desktopPrimaryButton: {
-        maxWidth: 300,
-        alignSelf: 'center',
     },
     buttonText: {
         color: '#000000',

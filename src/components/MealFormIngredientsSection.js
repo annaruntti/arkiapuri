@@ -1,4 +1,6 @@
 import { StyleSheet, TouchableOpacity, View } from 'react-native'
+import { buttonStyles } from '../styles/formStyles'
+import { useResponsiveDimensions } from '../utils/responsive'
 import { MaterialIcons } from '@expo/vector-icons'
 
 import Button from './Button'
@@ -15,7 +17,6 @@ const MealFormIngredientsSection = ({
     servings,
     showItemForm,
     formErrors,
-    isDesktop,
     foodItemsErrorRef,
     onSelectItem,
     onToggleItemForm,
@@ -24,7 +25,9 @@ const MealFormIngredientsSection = ({
     onUpdateQuantity,
     onAddToShoppingList,
     onAddToPantry,
-}) => (
+}) => {
+    const { isTablet } = useResponsiveDimensions()
+    return (
     <View style={styles.foodItemSelectorContainer}>
         <CustomText style={styles.label}>Raaka-aineet</CustomText>
         <UnifiedFoodSearch
@@ -48,7 +51,7 @@ const MealFormIngredientsSection = ({
         <View
             style={[
                 styles.manualAddContainer,
-                isDesktop && styles.desktopButtonContainer,
+                isTablet && styles.desktopButtonContainer,
             ]}
         >
             <Button
@@ -56,7 +59,7 @@ const MealFormIngredientsSection = ({
                 onPress={onToggleItemForm}
                 style={[
                     styles.tertiaryButton,
-                    isDesktop && styles.tertiaryButtonDesktop,
+                    isTablet && buttonStyles.contentButton,
                 ]}
                 textStyle={styles.buttonText}
             />
@@ -101,7 +104,8 @@ const MealFormIngredientsSection = ({
             </View>
         ) : null}
     </View>
-)
+    )
+}
 
 const styles = StyleSheet.create({
     label: {
@@ -172,12 +176,6 @@ const styles = StyleSheet.create({
         width: 'auto',
         borderWidth: 3,
         borderColor: '#5844BB',
-    },
-    tertiaryButtonDesktop: {
-        width: 'auto',
-        alignSelf: 'flex-start',
-        minWidth: 200,
-        maxWidth: 250,
     },
     desktopButtonContainer: {
         alignItems: 'flex-start',

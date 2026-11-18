@@ -350,14 +350,14 @@ const FamilyManagementScreen = ({ navigation }) => {
                         <View style={getContentStyle()}>
                             <View
                                 style={[
-                                    isDesktop && styles.profileCard,
-                                    isDesktop && styles.desktopProfileCard,
+                                    isTablet && styles.profileCard,
+                                    isTablet && styles.desktopProfileCard,
                                 ]}
                             >
                             <View
                                 style={[
                                     styles.emptyState,
-                                    isDesktop && styles.desktopEmptyState,
+                                    isTablet && styles.desktopEmptyState,
                                 ]}
                             >
                                 <View style={styles.emptyHeader}>
@@ -372,7 +372,7 @@ const FamilyManagementScreen = ({ navigation }) => {
                                         <CustomText
                                             style={[
                                                 styles.emptyTitle,
-                                                isDesktop &&
+                                                isTablet &&
                                                     styles.desktopEmptyTitle,
                                             ]}
                                         >
@@ -381,7 +381,7 @@ const FamilyManagementScreen = ({ navigation }) => {
                                         <CustomText
                                             style={[
                                                 styles.emptySubtitle,
-                                                isDesktop &&
+                                                isTablet &&
                                                     styles.desktopEmptySubtitle,
                                             ]}
                                         >
@@ -394,20 +394,20 @@ const FamilyManagementScreen = ({ navigation }) => {
                                 <View
                                     style={[
                                         authFormStyles.buttonSection,
-                                        isDesktop && styles.desktopActions,
+                                        isTablet && styles.desktopActions,
                                     ]}
                                 >
                                     <Button
                                         title="Luo perhe"
                                         onPress={handleCreateHousehold}
-                                        fullWidth={!isDesktop}
+                                        fullWidth={!isTablet}
                                         style={
-                                            isDesktop
+                                            isTablet
                                                 ? styles.compactButton
                                                 : authFormStyles.primaryButton
                                         }
                                         textStyle={
-                                            isDesktop
+                                            isTablet
                                                 ? undefined
                                                 : authFormStyles.buttonText
                                         }
@@ -705,6 +705,7 @@ const styles = StyleSheet.create({
         alignSelf: 'flex-start',
         flexGrow: 0,
         flexShrink: 0,
+        minWidth: 120,
     },
     loadingContainer: {
         flex: 1,
@@ -800,7 +801,6 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
     modalContent: {
-        padding: 20,
         gap: 16,
     },
     modalDescription: {

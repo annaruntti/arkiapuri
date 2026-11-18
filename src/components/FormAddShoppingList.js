@@ -20,9 +20,10 @@ import FormFoodItem from './FormFoodItem'
 import { findOrCreateFoodItem } from '../services/foodItemApi'
 import { previewShoppingListPrices } from '../services/collectionApi'
 import { formatLinePrice } from '../utils/shoppingListPrice'
+import { buttonStyles } from '../styles/formStyles'
 
 const FormAddShoppingList = ({ onSubmit, onClose }) => {
-    const { isDesktop } = useResponsiveDimensions()
+    const { isTablet } = useResponsiveDimensions()
     const [items, setItems] = useState([])
     const [showInlineFoodForm, setShowInlineFoodForm] = useState(false)
     const [pantryModalVisible, setPantryModalVisible] = useState(false)
@@ -284,14 +285,20 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
                             keyExtractor={(item) => item._id}
                             style={styles.pantryList}
                         />
-                        <View style={styles.modalButtonGroup}>
+                        <View
+                            style={
+                                isTablet
+                                    ? buttonStyles.actionsRow
+                                    : styles.modalButtonGroup
+                            }
+                        >
                             <Button
                                 title="Takaisin"
                                 onPress={() => setPantryModalVisible(false)}
                                 style={[
                                     styles.secondaryButton,
-                                    styles.fullWidthButton,
-                                    isDesktop && styles.desktopSecondaryButton,
+                                    !isTablet && styles.fullWidthButton,
+                                    isTablet && buttonStyles.contentButton,
                                 ]}
                             />
                             <Button
@@ -299,8 +306,8 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
                                 onPress={addSelectedPantryItems}
                                 style={[
                                     styles.primaryButton,
-                                    styles.fullWidthButton,
-                                    isDesktop && styles.desktopPrimaryButton,
+                                    !isTablet && styles.fullWidthButton,
+                                    isTablet && buttonStyles.contentButton,
                                 ]}
                             />
                         </View>
@@ -387,16 +394,15 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
 
                             <View
                                 style={
-                                    isDesktop
-                                        ? styles.buttonsRowDesktop
+                                    isTablet
+                                        ? buttonStyles.actionsRow
                                         : styles.buttonsColumnMobile
                                 }
                             >
                                 <Button
                                     style={[
                                         styles.secondaryButton,
-                                        isDesktop &&
-                                            styles.desktopSecondaryButton,
+                                        isTablet && buttonStyles.contentButton,
                                     ]}
                                     textStyle={styles.buttonText}
                                     title="Lisää ostoslistalle tuote"
@@ -409,7 +415,7 @@ const FormAddShoppingList = ({ onSubmit, onClose }) => {
                                 <Button
                                     style={[
                                         styles.primaryButton,
-                                        isDesktop && styles.desktopPrimaryButton,
+                                        isTablet && buttonStyles.contentButton,
                                     ]}
                                     textStyle={styles.buttonText}
                                     title="Tallenna ostoslista"
@@ -518,10 +524,6 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         width: '100%',
     },
-    desktopPrimaryButton: {
-        flex: 1,
-        width: 'auto',
-    },
     secondaryButton: {
         borderRadius: 25,
         paddingTop: 7,
@@ -535,20 +537,10 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         width: '100%',
     },
-    desktopSecondaryButton: {
-        flex: 1,
-        width: 'auto',
-    },
     buttonContainer: {
         alignItems: 'center',
         width: '100%',
         marginTop: 10,
-    },
-    buttonsRowDesktop: {
-        flexDirection: 'row',
-        gap: 15,
-        width: '100%',
-        paddingTop: 20,
     },
     buttonsColumnMobile: {
         flexDirection: 'column',

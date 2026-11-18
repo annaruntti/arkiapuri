@@ -88,6 +88,26 @@ export const buttonStyles = StyleSheet.create({
         width: '100%',
         paddingTop: 15,
     },
+    /** Tablet/desktop modal actions: content-sized, left aligned */
+    actionsRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 10,
+        width: '100%',
+        paddingTop: 20,
+        justifyContent: 'flex-start',
+        alignItems: 'center',
+    },
+    contentButton: {
+        width: 'auto',
+        alignSelf: 'flex-start',
+        flexGrow: 0,
+        flexShrink: 0,
+        minWidth: 0,
+        minHeight: 40,
+        paddingLeft: 20,
+        paddingRight: 20,
+    },
 })
 
 export const formStyles = StyleSheet.create({

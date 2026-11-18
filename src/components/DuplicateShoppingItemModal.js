@@ -1,6 +1,9 @@
-import { Modal, Pressable, StyleSheet, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import Button from './Button'
 import CustomText from './CustomText'
+import ResponsiveModal from './ResponsiveModal'
+import { buttonStyles } from '../styles/formStyles'
+import { useResponsiveDimensions } from '../utils/responsive'
 import {
     alignShoppingItemsForMerge,
     formatShoppingQuantity,
@@ -26,95 +29,50 @@ const DuplicateShoppingItemModal = ({
     const newQty = mergedShoppingQuantity(aligned.existing, aligned.incoming)
     const quantityLabel = formatShoppingQuantity(newQty, unit)
     const resultLabel = `${name} ${quantityLabel}`
+    const { isTablet } = useResponsiveDimensions()
 
     return (
-        <Modal
+        <ResponsiveModal
             visible={visible}
-            transparent
-            animationType="fade"
-            presentationStyle="overFullScreen"
-            statusBarTranslucent
-            onRequestClose={onCancel}
+            onClose={onCancel}
+            title="Tuote on jo listalla"
+            maxWidth={480}
         >
-            <View style={styles.backdrop}>
-                <Pressable
-                    style={StyleSheet.absoluteFillObject}
-                    onPress={onCancel}
-                    accessibilityRole="button"
-                    accessibilityLabel="Sulje"
-                />
-                <View
-                    style={styles.card}
-                    accessibilityViewIsModal
-                    accessibilityRole="alertdialog"
-                    accessibilityLabel="Tuote on jo listalla"
-                >
-                    <CustomText style={styles.title}>
-                        Tuote on jo listalla
-                    </CustomText>
-                    <CustomText style={styles.body}>
-                        {name} on jo ostoslistalla. Voit jättää lisäämättä tai
-                        yhdistää saman rivin määrään.
-                    </CustomText>
-                    <View style={styles.resultBox}>
-                        <CustomText style={styles.resultLabel}>
-                            Yhdistettynä
-                        </CustomText>
-                        <CustomText style={styles.resultValue}>
-                            {resultLabel}
-                        </CustomText>
-                    </View>
-                    <Button
-                        title={`Lisää määrään (${quantityLabel})`}
-                        type="PRIMARY"
-                        onPress={onConfirm}
-                        style={styles.primaryButton}
-                        textStyle={styles.primaryButtonText}
-                    />
-                    <Button
-                        title="Älä lisää"
-                        type="TERTIARY"
-                        onPress={onCancel}
-                        style={styles.tertiaryButton}
-                        textStyle={styles.tertiaryButtonText}
-                    />
-                </View>
+            <CustomText style={styles.body}>
+                {name} on jo ostoslistalla. Voit jättää lisäämättä tai yhdistää
+                saman rivin määrään.
+            </CustomText>
+            <View style={styles.resultBox}>
+                <CustomText style={styles.resultLabel}>Yhdistettynä</CustomText>
+                <CustomText style={styles.resultValue}>{resultLabel}</CustomText>
             </View>
-        </Modal>
+            <View style={isTablet ? buttonStyles.actionsRow : styles.actions}>
+                <Button
+                    title={`Lisää määrään (${quantityLabel})`}
+                    type="PRIMARY"
+                    onPress={onConfirm}
+                    style={isTablet ? buttonStyles.contentButton : styles.fullWidthButton}
+                    textStyle={styles.buttonText}
+                />
+                <Button
+                    title="Älä lisää"
+                    type="TERTIARY"
+                    onPress={onCancel}
+                    style={isTablet ? buttonStyles.contentButton : styles.fullWidthButton}
+                    textStyle={styles.buttonText}
+                />
+            </View>
+        </ResponsiveModal>
     )
 }
 
 const styles = StyleSheet.create({
-    backdrop: {
-        flex: 1,
-        backgroundColor: 'rgba(34, 27, 58, 0.55)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingHorizontal: 24,
-    },
-    card: {
-        width: '100%',
-        maxWidth: 400,
-        backgroundColor: '#F3F0FF',
-        borderRadius: 16,
-        paddingHorizontal: 20,
-        paddingTop: 22,
-        paddingBottom: 18,
-        borderWidth: 1,
-        borderColor: '#D7CFFA',
-        gap: 12,
-    },
-    title: {
-        fontSize: 20,
-        fontWeight: '700',
-        color: '#1F1635',
-        textAlign: 'center',
-    },
     body: {
         fontSize: 15,
         lineHeight: 22,
         color: '#2D2640',
-        textAlign: 'center',
+        textAlign: 'left',
+        marginBottom: 12,
     },
     resultBox: {
         backgroundColor: '#FFFFFF',
@@ -138,19 +96,15 @@ const styles = StyleSheet.create({
         color: '#1F1635',
         textAlign: 'center',
     },
-    primaryButton: {
+    actions: {
+        gap: 10,
+        marginTop: 12,
+    },
+    fullWidthButton: {
         width: '100%',
     },
-    primaryButtonText: {
+    buttonText: {
         color: '#000000',
-        fontWeight: '700',
-    },
-    tertiaryButton: {
-        width: '100%',
-        backgroundColor: '#FFFFFF',
-    },
-    tertiaryButtonText: {
-        color: '#5844BB',
         fontWeight: '700',
     },
 })
