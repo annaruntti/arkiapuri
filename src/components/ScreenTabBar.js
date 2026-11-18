@@ -20,13 +20,14 @@ const ScreenTabBar = ({ tabs, activeId, onChange, children }) => {
                     isMobile && styles.tabContainerMobile,
                 ]}
             >
-                {tabs.map((tab) => {
+                {tabs.map((tab, index) => {
                     const active = tab.id === activeId
                     return (
                         <TouchableOpacity
                             key={tab.id}
                             style={[
                                 styles.tabButton,
+                                index > 0 && styles.tabButtonDivider,
                                 isMobile && styles.tabButtonMobile,
                                 active && styles.activeTabButton,
                             ]}
@@ -92,6 +93,10 @@ const styles = StyleSheet.create({
         borderBottomWidth: 3,
         borderBottomColor: '#dee2e6',
     },
+    tabButtonDivider: {
+        borderLeftWidth: StyleSheet.hairlineWidth,
+        borderLeftColor: '#cfd4da',
+    },
     tabButtonMobile: {
         flex: 1,
         alignItems: 'center',
@@ -100,6 +105,7 @@ const styles = StyleSheet.create({
     activeTabButton: {
         backgroundColor: '#fff',
         borderBottomColor: '#5844BB',
+        borderLeftColor: '#cfd4da',
         zIndex: 1,
         elevation: 3,
         boxShadow: '0 1px 6px rgba(88, 68, 187, 0.28)',
