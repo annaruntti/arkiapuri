@@ -1,15 +1,28 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { Alert, FlatList, StyleSheet, View } from 'react-native'
+import {
+    Alert,
+    FlatList,
+    Modal,
+    StyleSheet,
+    TextInput,
+    View,
+} from 'react-native'
 import { useFocusEffect } from '@react-navigation/native'
 import axios from 'axios'
 import CustomText from '../components/CustomText'
 import Button from '../components/Button'
 import ContentContainer from '../components/ContentContainer'
-import ListItem from '../components/ListItem'
+import FoodListItemRow from '../components/FoodListItemRow'
+import MealItem from '../components/MealItem'
 import ResponsiveLayout from '../components/ResponsiveLayout'
 import ScreenTabBar from '../components/ScreenTabBar'
 import SearchSection from '../components/SearchSection'
+import { useLogin } from '../context/LoginProvider'
 import { getServerUrl } from '../utils/getServerUrl'
+import {
+    updateOpenCatalogFoodItem,
+    updateOpenCatalogMeal,
+} from '../utils/publishToOpenCatalog'
 import { useResponsiveDimensions } from '../utils/responsive'
 import storage from '../utils/storage'
 
@@ -18,13 +31,22 @@ const TABS = [
     { id: 'meals', label: 'Ateriat' },
 ]
 
+const WHITE_CARD = { backgroundColor: '#ffffff' }
+
 const SharedCatalogScreen = () => {
+    const { profile } = useLogin()
+    const isAdmin = profile?.platformRole === 'admin'
     const { isDesktop, isTablet } = useResponsiveDimensions()
     const [tab, setTab] = useState('foods')
     const [query, setQuery] = useState('')
     const [debouncedQuery, setDebouncedQuery] = useState('')
     const [items, setItems] = useState([])
     const [loading, setLoading] = useState(false)
+    const [editingItem, setEditingItem] = useState(null)
+    const [editName, setEditName] = useState('')
+    const [editUnit, setEditUnit] = useState('')
+    const [editRecipe, setEditRecipe] = useState('')
+    const [savingEdit, setSavingEdit] = useState(false)
 
     useEffect(() => {
         const timeoutId = setTimeout(() => {
@@ -97,6 +119,60 @@ const SharedCatalogScreen = () => {
         }
     }
 
+    const openEdit = (item) => {
+        setEditingItem(item)
+        setEditName(item.name || '')
+        setEditUnit(item.unit || '')
+        setEditRecipe(item.recipe || '')
+    }
+
+    const saveEdit = async () => {
+        if (!editingItem) return
+        try {
+            setSavingEdit(true)
+            if (tab === 'foods') {
+                await updateOpenCatalogFoodItem(editingItem._id, {
+                    name: editName.trim(),
+                    unit: editUnit.trim() || 'kpl',
+                })
+            } else {
+                await updateOpenCatalogMeal(editingItem._id, {
+                    name: editName.trim(),
+                    recipe: editRecipe,
+                })
+            }
+            setEditingItem(null)
+            await load()
+            Alert.alert('Tallennettu', 'Katalogikohde päivitetty')
+        } catch (error) {
+            Alert.alert(
+                'Virhe',
+                error?.response?.data?.message ||
+                    error?.message ||
+                    'Tallennus epäonnistui'
+            )
+        } finally {
+            setSavingEdit(false)
+        }
+    }
+
+    const deletePublished = async (item) => {
+        try {
+            const headers = await authHeaders()
+            const path =
+                tab === 'foods'
+                    ? `/admin/catalog/food-items/${item._id}`
+                    : `/admin/catalog/meals/${item._id}`
+            await axios.delete(getServerUrl(path), { headers })
+            await load()
+        } catch (error) {
+            Alert.alert(
+                'Virhe',
+                error.response?.data?.message || 'Poisto epäonnistui'
+            )
+        }
+    }
+
     return (
         <ResponsiveLayout
             activeRoute="ProfileStack"
@@ -117,8 +193,9 @@ const SharedCatalogScreen = () => {
                                 isDesktop && styles.desktopIntro,
                             ]}
                         >
-                            Lisää ylläpitäjän jakamia tuotteita ja reseptejä
-                            omiin tietoihisi.
+                            {isAdmin
+                                ? 'Selaa ja muokkaa avoimen katalogin tuotteita ja aterioita. Muut käyttäjät voivat kopioida ne omiin tietoihinsa.'
+                                : 'Lisää ylläpitäjän jakamia tuotteita ja reseptejä omiin tietoihisi.'}
                         </CustomText>
                         <SearchSection
                             heading={
@@ -146,28 +223,66 @@ const SharedCatalogScreen = () => {
                                 contentContainerStyle={styles.listContent}
                                 keyExtractor={(item) => String(item._id)}
                                 keyboardShouldPersistTaps="handled"
-                                renderItem={({ item }) => (
-                                    <ListItem
-                                        title={item.name}
-                                        subtitle={
-                                            tab === 'foods'
-                                                ? (item.category || []).join(
-                                                      ', '
-                                                  ) ||
-                                                  item.unit ||
-                                                  ''
-                                                : ''
-                                        }
-                                        trailing={
+                                renderItem={({ item }) => {
+                                    const actions = (
+                                        <View style={styles.actions}>
+                                            {isAdmin ? (
+                                                <>
+                                                    <Button
+                                                        title="Muokkaa"
+                                                        size="small"
+                                                        type="SECONDARY"
+                                                        onPress={() =>
+                                                            openEdit(item)
+                                                        }
+                                                    />
+                                                    <Button
+                                                        title="Poista"
+                                                        size="small"
+                                                        type="TERTIARY"
+                                                        onPress={() =>
+                                                            deletePublished(
+                                                                item
+                                                            )
+                                                        }
+                                                    />
+                                                </>
+                                            ) : null}
                                             <Button
                                                 title="Lisää omiin"
                                                 size="small"
                                                 type="SECONDARY"
                                                 onPress={() => copyItem(item)}
                                             />
-                                        }
-                                    />
-                                )}
+                                        </View>
+                                    )
+
+                                    if (tab === 'meals') {
+                                        return (
+                                            <MealItem
+                                                item={item}
+                                                trailing={actions}
+                                            />
+                                        )
+                                    }
+
+                                    return (
+                                        <FoodListItemRow
+                                            variant="card"
+                                            item={item}
+                                            style={WHITE_CARD}
+                                            hideQuantityInDetails
+                                            detail={
+                                                (item.category || []).join(
+                                                    ', '
+                                                ) ||
+                                                item.unit ||
+                                                ''
+                                            }
+                                            trailingAction={actions}
+                                        />
+                                    )
+                                }}
                                 ListEmptyComponent={
                                     <CustomText style={styles.emptyText}>
                                         Ei julkaistuja kohteita
@@ -178,6 +293,66 @@ const SharedCatalogScreen = () => {
                     </View>
                 </ContentContainer>
             </ScreenTabBar>
+
+            <Modal
+                visible={Boolean(editingItem)}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setEditingItem(null)}
+            >
+                <View style={styles.modalBackdrop}>
+                    <View style={styles.modalCard}>
+                        <CustomText style={styles.modalTitle}>
+                            Muokkaa katalogikohdetta
+                        </CustomText>
+                        <CustomText style={styles.modalLabel}>Nimi</CustomText>
+                        <TextInput
+                            style={styles.modalInput}
+                            value={editName}
+                            onChangeText={setEditName}
+                        />
+                        {tab === 'foods' ? (
+                            <>
+                                <CustomText style={styles.modalLabel}>
+                                    Yksikkö
+                                </CustomText>
+                                <TextInput
+                                    style={styles.modalInput}
+                                    value={editUnit}
+                                    onChangeText={setEditUnit}
+                                />
+                            </>
+                        ) : (
+                            <>
+                                <CustomText style={styles.modalLabel}>
+                                    Resepti
+                                </CustomText>
+                                <TextInput
+                                    style={[
+                                        styles.modalInput,
+                                        styles.modalTextArea,
+                                    ]}
+                                    value={editRecipe}
+                                    onChangeText={setEditRecipe}
+                                    multiline
+                                />
+                            </>
+                        )}
+                        <View style={styles.modalActions}>
+                            <Button
+                                title="Peruuta"
+                                type="TERTIARY"
+                                onPress={() => setEditingItem(null)}
+                            />
+                            <Button
+                                title={savingEdit ? 'Tallennetaan…' : 'Tallenna'}
+                                onPress={saveEdit}
+                                disabled={savingEdit || !editName.trim()}
+                            />
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </ResponsiveLayout>
     )
 }
@@ -215,6 +390,50 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginTop: 20,
         color: '#666',
+    },
+    actions: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 6,
+        justifyContent: 'flex-end',
+        maxWidth: 280,
+    },
+    modalBackdrop: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.4)',
+        justifyContent: 'center',
+        padding: 20,
+    },
+    modalCard: {
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        padding: 16,
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        marginBottom: 12,
+    },
+    modalLabel: {
+        marginTop: 8,
+        marginBottom: 4,
+        color: '#555',
+    },
+    modalInput: {
+        borderWidth: 1,
+        borderColor: '#d1d5db',
+        borderRadius: 8,
+        padding: 10,
+    },
+    modalTextArea: {
+        minHeight: 100,
+        textAlignVertical: 'top',
+    },
+    modalActions: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        gap: 8,
+        marginTop: 16,
     },
 })
 
