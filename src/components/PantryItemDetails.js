@@ -33,6 +33,7 @@ import CustomText from './CustomText'
 import InlineCategorySelect from './InlineCategorySelect'
 import FormDateField from './FormDateField'
 import PantryItemOffSection from './PantryItemOffSection'
+import PublishToOpenCatalogButton from './PublishToOpenCatalogButton'
 import ResponsiveModal from './ResponsiveModal'
 
 const EMPTY_LOCATIONS = []
@@ -50,6 +51,7 @@ const PantryItemDetails = ({
     onUpdate,
     embedded = false,
     showInventoryFields = true,
+    showPublishToCatalog = true,
     locations = EMPTY_LOCATIONS,
 }) => {
     const [editableFields, setEditableFields] = useState({})
@@ -488,15 +490,28 @@ const PantryItemDetails = ({
                     />
                 ) : null}
 
-                {hasChanges ? (
-                    <View style={styles.buttonContainer}>
+                <View style={styles.buttonContainer}>
+                    {showPublishToCatalog ? (
+                        <PublishToOpenCatalogButton
+                            kind="food"
+                            type="SECONDARY"
+                            itemId={
+                                item?.foodId?._id || item?.foodId || item?._id
+                            }
+                            style={[
+                                styles.actionButton,
+                                hasChanges && styles.actionButtonSpacing,
+                            ]}
+                        />
+                    ) : null}
+                    {hasChanges ? (
                         <Button
                             title="Tallenna muutokset"
                             onPress={handleSave}
-                            style={styles.saveButton}
+                            style={[styles.actionButton, styles.saveButton]}
                         />
-                    </View>
-                ) : null}
+                    ) : null}
+                </View>
             </View>
         </ScrollView>
     )
@@ -525,8 +540,8 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     detailScroll: {
-        paddingTop: 20,
-        paddingHorizontal: 20,
+        paddingTop: 0,
+        paddingHorizontal: 0,
         ...(Platform.OS === 'web' && {
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
@@ -653,14 +668,21 @@ const styles = StyleSheet.create({
         marginTop: 20,
         marginBottom: 20,
         alignItems: 'center',
+        width: '100%',
     },
-    saveButton: {
-        backgroundColor: '#AE9CFC',
+    actionButton: {
         borderRadius: 25,
         paddingVertical: 10,
         paddingHorizontal: 20,
         minWidth: 200,
         width: '100%',
+    },
+    actionButtonSpacing: {
+        marginBottom: 12,
+    },
+    saveButton: {
+        backgroundColor: '#AE9CFC',
+        marginBottom: 8,
     },
 })
 

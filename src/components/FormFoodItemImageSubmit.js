@@ -3,6 +3,7 @@ import { MaterialIcons } from '@expo/vector-icons'
 
 import Button from './Button'
 import CustomText from './CustomText'
+import PublishToOpenCatalogButton from './PublishToOpenCatalogButton'
 import { formStyles } from '../styles/formStyles'
 
 /**
@@ -12,6 +13,9 @@ const FormFoodItemImageSubmit = ({
     foodItemImage,
     onPickImage,
     onSubmit,
+    onSubmitAndPublish,
+    showPublishAction = false,
+    existingFoodItemId,
     style,
 }) => (
     <View style={[styles.formSingleColumn, style]}>
@@ -45,6 +49,22 @@ const FormFoodItemImageSubmit = ({
                 style={styles.submitButton}
                 textStyle={styles.submitButtonText}
             />
+            {showPublishAction && onSubmitAndPublish ? (
+                <Button
+                    title="Tallenna ja lisää avoimeen katalogiin"
+                    type="SECONDARY"
+                    onPress={onSubmitAndPublish}
+                    style={styles.submitButton}
+                    textStyle={styles.submitButtonText}
+                />
+            ) : null}
+            {showPublishAction && existingFoodItemId ? (
+                <PublishToOpenCatalogButton
+                    kind="food"
+                    itemId={existingFoodItemId}
+                    style={styles.submitButton}
+                />
+            ) : null}
         </View>
     </View>
 )

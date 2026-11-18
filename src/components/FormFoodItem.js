@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { forwardRef, useState } from 'react'
+import { forwardRef, useRef, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import {
     Alert,
@@ -34,6 +34,12 @@ import FoodItemNutritionFields from './FoodItemNutritionFields'
 import FormFoodItemIsFoodToggle from './FormFoodItemIsFoodToggle'
 import FormFoodItemImageSubmit from './FormFoodItemImageSubmit'
 import FormFoodItemLocationTargets from './FormFoodItemLocationTargets'
+import { useLogin } from '../context/LoginProvider'
+import {
+    alertPublishError,
+    alertPublishSuccess,
+    publishFoodItemToOpenCatalog,
+} from '../utils/publishToOpenCatalog'
 import InlineCategorySelect from './InlineCategorySelect'
 import UnifiedFoodSearch from './UnifiedFoodSearch'
 import UnitSelect from './UnitSelect'
@@ -59,6 +65,11 @@ const FormFoodItem = forwardRef(
         ref
     ) => {
         const { isDesktop } = useResponsiveDimensions()
+        const { profile } = useLogin()
+        const isPlatformAdmin = profile?.platformRole === 'admin'
+        const publishAfterCreateRef = useRef(false)
+        const existingFoodItemId =
+            initialValues?._id || initialValues?.foodId?._id || initialValues?.foodId
         const showNutrition = useShowNutrition()
         const [nutritionExpanded, setNutritionExpanded] = useState(
             hasAnyInitialNutrition(initialValues)
@@ -173,7 +184,10 @@ const FormFoodItem = forwardRef(
                     quantities,
                 })
 
-                if (location === 'meal' || location === 'shopping-list') {
+                if (
+                    (location === 'meal' || location === 'shopping-list') &&
+                    !(isPlatformAdmin && publishAfterCreateRef.current)
+                ) {
                     onSubmit(formData)
                     // Form reset and closing handled by parent component
                 } else {
@@ -214,6 +228,22 @@ const FormFoodItem = forwardRef(
                                     'Food item created but image upload failed: ' +
                                         imageError.message
                                 )
+                            }
+                        }
+
+                        if (
+                            publishAfterCreateRef.current &&
+                            finalFoodItem?._id
+                        ) {
+                            try {
+                                await publishFoodItemToOpenCatalog(
+                                    finalFoodItem._id
+                                )
+                                alertPublishSuccess('food')
+                            } catch (publishError) {
+                                alertPublishError(publishError)
+                            } finally {
+                                publishAfterCreateRef.current = false
                             }
                         }
 
@@ -471,7 +501,16 @@ const FormFoodItem = forwardRef(
                 <FormFoodItemImageSubmit
                     foodItemImage={foodItemImage}
                     onPickImage={pickImage}
-                    onSubmit={handleSubmit(handleFormSubmit)}
+                    onSubmit={handleSubmit((data) => {
+                        publishAfterCreateRef.current = false
+                        return handleFormSubmit(data)
+                    })}
+                    showPublishAction={isPlatformAdmin}
+                    existingFoodItemId={existingFoodItemId}
+                    onSubmitAndPublish={handleSubmit((data) => {
+                        publishAfterCreateRef.current = true
+                        return handleFormSubmit(data)
+                    })}
                     style={unitMenuOpen ? styles.unitColumnBehind : undefined}
                 />
             </View>

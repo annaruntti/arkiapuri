@@ -73,6 +73,7 @@ const MealItemDetail = ({
     embedded = false,
     backHandlerRef,
     onHeaderStateChange,
+    showPublishToCatalog = true,
 }) => {
     const [editableFields, setEditableFields] = useState({})
     const [editedValues, setEditedValues] = useState({})
@@ -440,6 +441,7 @@ const MealItemDetail = ({
                 }
                 onServingsChange={handleServingsChange}
                 onSave={handleSave}
+                showPublishToCatalog={showPublishToCatalog}
             />
         </ScrollView>
     )

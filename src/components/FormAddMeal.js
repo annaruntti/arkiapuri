@@ -48,11 +48,17 @@ import {
 } from '../utils/recipeSteps'
 import MealFormBasicsSection from './MealFormBasicsSection'
 import MealFormIngredientsSection from './MealFormIngredientsSection'
+import PublishToOpenCatalogButton from './PublishToOpenCatalogButton'
 import { scrollMealFormToFirstError } from '../utils/mealFormScroll'
 import {
     buildGuestMealPayload,
     buildPersistedMealPayload,
 } from '../utils/mealFormSubmit'
+import {
+    alertPublishError,
+    alertPublishSuccess,
+    publishMealToOpenCatalog,
+} from '../utils/publishToOpenCatalog'
 
 const AddMealForm = ({
     onSubmit,
@@ -98,6 +104,8 @@ const AddMealForm = ({
     const [showItemForm, setShowItemForm] = useState(false)
     const [mealImage, setMealImage] = useState(aiDraft?.image || null)
     const [formErrors, setFormErrors] = useState({})
+    const publishAfterCreateRef = useRef(false)
+    const isPlatformAdmin = profile?.platformRole === 'admin'
 
     // Refs scroll-to-error -toimintoa varten
     const scrollViewRef = useRef(null)
@@ -271,6 +279,17 @@ const AddMealForm = ({
                             'Varoitus',
                             'Ateria luotu, mutta kuvan lähetys epäonnistui'
                         )
+                    }
+                }
+
+                if (publishAfterCreateRef.current && finalMeal?._id) {
+                    try {
+                        await publishMealToOpenCatalog(finalMeal._id)
+                        alertPublishSuccess('meal')
+                    } catch (publishError) {
+                        alertPublishError(publishError)
+                    } finally {
+                        publishAfterCreateRef.current = false
                     }
                 }
 
@@ -611,6 +630,7 @@ const AddMealForm = ({
                         <Button
                             title="Tallenna ateria"
                             onPress={() => {
+                                publishAfterCreateRef.current = false
                                 const customErrors = {}
                                 if (
                                     !selectedRoles ||
@@ -654,6 +674,63 @@ const AddMealForm = ({
                             ]}
                             textStyle={styles.buttonText}
                         />
+                        {isPlatformAdmin ? (
+                            <Button
+                                title="Tallenna ja lisää avoimeen katalogiin"
+                                type="SECONDARY"
+                                onPress={() => {
+                                    publishAfterCreateRef.current = true
+                                    const customErrors = {}
+                                    if (
+                                        !selectedRoles ||
+                                        selectedRoles.length === 0
+                                    ) {
+                                        customErrors.roles =
+                                            'Valitse vähintään yksi ateriatyyppi'
+                                        setRolesExpanded(true)
+                                    }
+                                    if (!foodItems || foodItems.length === 0) {
+                                        customErrors.foodItems =
+                                            'Lisää vähintään yksi raaka-aine'
+                                    }
+                                    setFormErrors(customErrors)
+                                    handleRHFSubmit(
+                                        (data) => handleFormSubmit(data),
+                                        (rhfErrors) => {
+                                            scrollToFirstError(
+                                                rhfErrors,
+                                                customErrors
+                                            )
+                                        }
+                                    )()
+                                    if (Object.keys(customErrors).length > 0) {
+                                        setTimeout(
+                                            () =>
+                                                scrollToFirstError(
+                                                    null,
+                                                    customErrors
+                                                ),
+                                            50
+                                        )
+                                    }
+                                }}
+                                style={[
+                                    styles.primaryButton,
+                                    isTablet && buttonStyles.contentButton,
+                                ]}
+                                textStyle={styles.buttonText}
+                            />
+                        ) : null}
+                        {isPlatformAdmin && aiDraft?._id ? (
+                            <PublishToOpenCatalogButton
+                                kind="meal"
+                                itemId={aiDraft._id}
+                                style={[
+                                    styles.primaryButton,
+                                    isTablet && buttonStyles.contentButton,
+                                ]}
+                            />
+                        ) : null}
                     </View>
                 </View>
             </ScrollView>

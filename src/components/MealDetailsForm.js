@@ -16,6 +16,7 @@ import {
 import Button from './Button'
 import CollapsibleFormSection from './CollapsibleFormSection'
 import CustomText from './CustomText'
+import PublishToOpenCatalogButton from './PublishToOpenCatalogButton'
 import EditableField from './EditableField'
 import FormDateField from './FormDateField'
 import MealCategorySelector from './MealCategorySelector'
@@ -45,6 +46,7 @@ const MealDetailsForm = ({
     onImageUpdate,
     onSave,
     onServingsChange,
+    showPublishToCatalog = true,
 }) => {
     const showNutrition = useShowNutrition()
     const servings = normalizeServings(
@@ -270,6 +272,17 @@ const MealDetailsForm = ({
                         />
 
                         <View style={styles.buttonContainer}>
+                            {showPublishToCatalog ? (
+                                <PublishToOpenCatalogButton
+                                    kind="meal"
+                                    type="SECONDARY"
+                                    itemId={meal?._id}
+                                    style={[
+                                        styles.saveButton,
+                                        styles.publishButtonSpacing,
+                                    ]}
+                                />
+                            ) : null}
                             <Button
                                 title="Tallenna muutokset"
                                 onPress={onSave}
@@ -352,6 +365,11 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         paddingHorizontal: 20,
         minWidth: 200,
+        width: '100%',
+    },
+    publishButtonSpacing: {
+        marginBottom: 12,
+        backgroundColor: undefined,
     },
 })
 
