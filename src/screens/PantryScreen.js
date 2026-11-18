@@ -318,7 +318,7 @@ const PantryScreen = ({}) => {
 
             if (result.status === 'need_login') {
                 showLoginPrompt('save')
-                return
+                return false
             }
 
             if (result.status === 'guest') {
@@ -328,11 +328,12 @@ const PantryScreen = ({}) => {
                     )
                 )
                 setDetailsVisible(false)
-                return
+                return true
             }
 
             await fetchPantryItems()
             setDetailsVisible(false)
+            return true
         } catch (error) {
             console.error('Error updating item:', error)
             Alert.alert(
@@ -340,6 +341,7 @@ const PantryScreen = ({}) => {
                 'Tuotteen päivitys epäonnistui: ' +
                     (error.response?.data?.message || error.message)
             )
+            return false
         } finally {
             setLoading(false)
         }

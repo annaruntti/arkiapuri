@@ -444,7 +444,7 @@ const ShoppingListDetail = ({
             )
             if (!currentItem) {
                 Alert.alert('Virhe', 'Tuotetta ei löytynyt')
-                return
+                return false
             }
 
             const data = await updateShoppingListItemWithCatalog({
@@ -457,10 +457,12 @@ const ShoppingListDetail = ({
             if (!options.keepView) {
                 goToListView()
             }
+            return true
         } catch (error) {
             console.error('Error updating item:', error)
             console.error('Error response:', error.response?.data)
             Alert.alert('Virhe', 'Tuotteen päivitys epäonnistui')
+            return false
         }
     }
 

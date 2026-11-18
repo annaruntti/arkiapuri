@@ -54,6 +54,7 @@ const PantryItemDetails = ({
 }) => {
     const [editableFields, setEditableFields] = useState({})
     const [editedValues, setEditedValues] = useState({})
+    const [baselineValues, setBaselineValues] = useState(null)
     const [isUploadingImage, setIsUploadingImage] = useState(false)
     const showNutrition = useShowNutrition()
 
@@ -65,31 +66,19 @@ const PantryItemDetails = ({
         const categoryNames = (item.category || [])
             .map((entry) => toCategoryDisplayName(entry))
             .filter(Boolean)
-
-        setEditedValues((prev) => {
-            const prevKey = resolveEntityKey(prev)
-            if (itemKey && prevKey === itemKey) {
-                const inferredLocationId = inferLocationIdFromCategories(
-                    prev.category,
-                    locations
-                )
-                if (!prev.locationId && inferredLocationId) {
-                    return { ...prev, locationId: inferredLocationId }
-                }
-                return prev
-            }
-
-            return {
-                ...item,
-                category: categoryNames,
-                locationId:
-                    locationIdOf(item) ||
-                    inferLocationIdFromCategories(categoryNames, locations),
-                expirationDate: item.expirationDateSetByUser
-                    ? item.expirationDate
-                    : null,
-            }
-        })
+        const next = {
+            ...item,
+            category: categoryNames,
+            locationId:
+                locationIdOf(item) ||
+                inferLocationIdFromCategories(categoryNames, locations),
+            expirationDate: item.expirationDateSetByUser
+                ? item.expirationDate
+                : null,
+        }
+        setEditedValues(next)
+        setBaselineValues(next)
+        setEditableFields({})
     }, [item, itemKey, locations])
 
     if (!item) return null
@@ -160,6 +149,45 @@ const PantryItemDetails = ({
         }))
     }
 
+    const categoriesEqual = (a = [], b = []) => {
+        const normalize = (list) =>
+            list
+                .map((entry) => toCategoryDisplayName(entry))
+                .filter(Boolean)
+                .slice()
+                .sort()
+                .join('\0')
+        return normalize(a) === normalize(b)
+    }
+
+    const expirationEqual = (a, b) => {
+        const toKey = (value) => {
+            if (!value) return ''
+            const date = value instanceof Date ? value : new Date(value)
+            return Number.isNaN(date.getTime()) ? String(value) : date.toISOString()
+        }
+        return toKey(a) === toKey(b)
+    }
+
+    const hasChanges =
+        Boolean(baselineValues) &&
+        (String(editedValues.name ?? '') !== String(baselineValues.name ?? '') ||
+            String(editedValues.quantity ?? '') !==
+                String(baselineValues.quantity ?? '') ||
+            String(editedValues.unit ?? '') !==
+                String(baselineValues.unit ?? '') ||
+            parsePriceInput(editedValues.price) !==
+                parsePriceInput(baselineValues.price) ||
+            String(editedValues.calories ?? '') !==
+                String(baselineValues.calories ?? '') ||
+            String(editedValues.locationId || '') !==
+                String(baselineValues.locationId || '') ||
+            !categoriesEqual(editedValues.category, baselineValues.category) ||
+            !expirationEqual(
+                editedValues.expirationDate,
+                baselineValues.expirationDate
+            ))
+
     const handleSave = async () => {
         try {
             const categoryIds = (editedValues.category || []).map((name) =>
@@ -176,8 +204,14 @@ const PantryItemDetails = ({
                 expirationDateSetByUser: Boolean(editedValues.expirationDate),
             }
 
-            await onUpdate(item._id, updatedValues)
+            const saved = await onUpdate(item._id, updatedValues)
+            if (saved === false) return
+
             setEditableFields({})
+            setBaselineValues({
+                ...editedValues,
+                price: parsedPrice,
+            })
         } catch (error) {
             console.error('Error saving updates:', error)
         }
@@ -454,7 +488,7 @@ const PantryItemDetails = ({
                     />
                 ) : null}
 
-                {Object.keys(editedValues).length > 0 && (
+                {hasChanges ? (
                     <View style={styles.buttonContainer}>
                         <Button
                             title="Tallenna muutokset"
@@ -462,7 +496,7 @@ const PantryItemDetails = ({
                             style={styles.saveButton}
                         />
                     </View>
-                )}
+                ) : null}
             </View>
         </ScrollView>
     )

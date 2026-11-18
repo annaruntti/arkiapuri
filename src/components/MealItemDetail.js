@@ -259,7 +259,7 @@ const MealItemDetail = ({
                 if (error.response?.status !== 404) {
                     console.error('Error updating food item:', error)
                     Alert.alert('Virhe', 'Raaka-aineen päivitys epäonnistui')
-                    return
+                    return false
                 }
             }
         }
